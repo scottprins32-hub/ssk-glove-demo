@@ -53,3 +53,38 @@ single source of truth for any coding session on this repo — no external conte
   instance, wired to ScrollTrigger (see bp-padel-website `components/SmoothScroll.tsx`).
 - Accent discipline: ~90% monochrome; accent as punctuation only.
 - `npm run build` must pass before any push.
+
+## Real data (scraped from sskeurope.ccvshop.nl, 2026-07-17 — use ONLY this, no inventing)
+
+### Company / contact (for §5 Contact)
+- Naam: SSK European Baseball Center
+- Adres: Heulweg 128B, 2295KK Kwintsheul
+- Telefoon: +31 174 501 888
+- E-mail: info@sskeurope.com
+
+### SSK glove series & prices (for §3 Collectie + stats)
+Current SSK-branded field gloves in the shop (prices as listed):
+- **ProEdge** — €349,95 (top line; 11.5" infield, 12.75" outfield)
+- **Pro Custom** — €294,95 (11.5"–12.75" + 33"/33.5" catcher)
+- **Z9** — €249,95 (11.5" infield, 12" pitcher, 12.75" outfield)
+- **Advanced** — €194,95–€249,95 (11.5"–12.75"; also softball + 34" catcher €249,95)
+- **Z7** — €199,95 (11.5" infield)
+- **EBC50** — €149,95 (catcher, 32"–33.5", "Crocodile Pattern")
+Series filter on the shop also lists: S20, Win-Dream, EBC20, EBC10, Hero's Dream.
+Shop sells other brands too (Rawlings, Wilson, …) — the demo pitches SSK only.
+
+### Product-level facts (from SSK Z9 product page — for §2 Craft copy)
+- "Premium Japanese Nameshi Leather" — feel, durability, shape retention
+- Top grain leather lacing; plush leather palm lining; premium leather binding;
+  rolled welting for shape retention; palm overlap for stability
+- Double Spiral I Web ("dirt easily escapes through the web")
+- 25% factory break-in / 75% player break-in
+- SSK branded glove bag included
+- Positions per model (infield/pitcher/outfield/catcher/first base), RHT/LHT
+
+### Product photos
+- Shop photo URL pattern:
+  `https://sskeurope.ccvshop.nl//Files/2/81000/81585/ProductPhotos/1500x1500/<id>.jpg`
+  (white background; cut out for dark sections — see `public/gloves/`)
+- In repo: `public/gloves/advanced-tan-1175.webp` = SSK Advanced 11.75"
+  Pitcher/Infield Glove Tan RHT, €249,95 (cutout, used in hero)

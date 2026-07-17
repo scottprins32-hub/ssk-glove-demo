@@ -18,7 +18,7 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "SSK — Elk onderdeel telt.",
   description:
-    "SSK honkbalhandschoenen — bekijk de collectie en ontdek waarom elk onderdeel telt.",
+    "SSK honkbalhandschoenen bij het SSK European Baseball Center in Kwintsheul — van de Advanced-serie tot ProEdge. Elk onderdeel telt.",
 };
 
 export default function RootLayout({

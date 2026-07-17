@@ -1,13 +1,17 @@
+import Image from "next/image";
+import gloveTan from "@/public/gloves/advanced-tan-1175.webp";
+
 /**
  * Hero — static-placeholder form (§1 of the brief).
  *
  * The scroll-scrubbed exploded-glove video isn't in yet. Until it lands, the
  * background is a CSS dark-studio set (spotlight + vignette + noise) with a
- * clearly marked slot where the glove still goes. The overlay contract below
+ * real product still: the SSK Advanced 11.75" Pitcher/Infield Glove Tan
+ * (sskeurope.ccvshop.nl, cut out from the shop photo). The overlay contract
  * (eyebrow / two-tone headline / lead / CTA / frame bars) is final and carries
  * over unchanged to the canvas-scrub version.
  *
- * When the video arrives: swap the background + glove-slot layers for the
+ * When the video arrives: swap the backdrop + glove layers for the
  * ScrollVideo component (see BRIEF.md §1 for the ffmpeg frame-extraction step).
  */
 export default function Hero() {
@@ -27,16 +31,18 @@ export default function Hero() {
         }}
       />
 
-      {/* Placeholder slot for the dark-studio glove still ([CHECK] asset pending) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[62%] hidden aspect-square w-[min(44vw,560px)] -translate-y-1/2 items-center justify-center rounded-full md:left-[68%] md:flex md:-translate-x-1/2"
-      >
-        <div className="absolute inset-0 rounded-full border border-white/[0.06]" />
-        <div className="absolute inset-6 rounded-full border border-dashed border-white/[0.08]" />
-        <span className="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/25">
-          studiofoto volgt
-        </span>
+      {/* Real product still in the studio spotlight (SSK Advanced 11.75" Tan) */}
+      <div className="pointer-events-none absolute bottom-[6%] right-[-14%] w-[min(56vw,290px)] md:bottom-auto md:left-[68%] md:right-auto md:top-[58%] md:w-[min(36vw,500px)] md:-translate-x-1/2 md:-translate-y-1/2">
+        <Image
+          src={gloveTan}
+          alt="SSK Advanced 11.75″ Pitcher/Infield handschoen, tan leer"
+          fetchPriority="high"
+          sizes="(min-width: 768px) 36vw, 56vw"
+          className="h-auto w-full drop-shadow-[0_48px_90px_rgba(0,0,0,0.65)]"
+        />
+        <p className="mt-5 hidden text-center font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/35 md:block">
+          Advanced · 11.75″ Pitcher/Infield · € 249,95
+        </p>
       </div>
 
       <div className="noise-overlay relative z-10 flex h-full w-full flex-col justify-between px-6 py-10 md:px-12">
@@ -60,9 +66,9 @@ export default function Hero() {
             <span className="text-gradient-leather shimmer">telt</span>
             <span className="text-gradient">.</span>
           </h1>
-          <p className="mt-6 max-w-[52ch] text-[clamp(1rem,1.1vw,1.1rem)] font-light leading-[1.65] text-white/70">
+          <p className="mt-6 max-w-[46ch] text-[clamp(1rem,1.1vw,1.1rem)] font-light leading-[1.65] text-white/70">
             Leer, vetersluiting, web, voering — in een SSK-handschoen heeft
-            elk detail een reden. Bekijk ze van dichtbij.
+            elk detail een reden. Ontdek de series, van Advanced tot ProEdge.
           </p>
           <a
             href="#contact"
@@ -75,7 +81,7 @@ export default function Hero() {
         {/* Bottom bar */}
         <footer className="flex items-end justify-between">
           <span className="font-mono text-[0.62rem] uppercase tracking-[0.3em] text-white/40">
-            01 — 05
+            SSK European Baseball Center · Kwintsheul
           </span>
           <span className="font-mono text-[0.62rem] uppercase tracking-[0.3em] text-white/40">
             Scroll ↓
