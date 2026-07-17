@@ -1,26 +1,137 @@
 @import "tailwindcss";
 
+/* ─── SSK design tokens ──────────────────────────────────────────────
+   Surfaces: warm near-black "ink" (leather-adjacent) and warm "paper".
+   Sections alternate between them down the page.
+   ONE accent: glove-leather amber/tan, used as punctuation only
+   (one headline word, stats, hairlines, dots). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-ink: #0d0b09;
+  --color-paper: #f4f1ea;
+
+  --color-leather: #b97b2e;
+  --leather-grad: linear-gradient(100deg, #e0a860 0%, #b97b2e 45%, #f0c07a 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-strong: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+
+  --background: var(--color-ink);
+  --foreground: #f1ede6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--color-ink);
+  --color-paper: var(--color-paper);
+  --color-leather: var(--color-leather);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-manrope);
+  --font-serif: var(--font-instrument-serif);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+/* Headline gradients — bright fading to ~55% at the bottom */
+.text-gradient {
+  background: linear-gradient(to bottom, #f6f2ea 0%, rgba(246, 242, 234, 0.55) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gradient-dark {
+  background: linear-gradient(to bottom, #16120d 0%, rgba(22, 18, 13, 0.55) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The accent word treatment */
+.text-gradient-leather {
+  background: var(--leather-grad);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.shimmer {
+  animation: shimmer 8s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Glass panels for floating elements on dark surfaces */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.glass-panel-strong {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border-strong);
+  backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 32px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* Fading 1px dividers */
+.hairline {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.14), transparent);
+}
+.hairline-dark {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(13, 11, 9, 0.16), transparent);
+}
+.hairline-leather {
+  height: 1px;
+  background: linear-gradient(to right, var(--color-leather), transparent);
+}
+
+/* Noise texture overlay */
+.noise-overlay { position: relative; }
+.noise-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* CSS-only scroll-in reveal (paired with the Reveal component) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
 }
