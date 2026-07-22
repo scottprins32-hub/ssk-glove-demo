@@ -1,5 +1,12 @@
 # Hero video — production guide
 
+> **Status: DONE.** The Kling clip landed (`hero-video.mp4`, 1080p 24fps ~5s).
+> 121 native frames extracted with the KlingAI watermark cropped off
+> (`ffmpeg -vf "crop=1920:1008:0:0,scale=1280:-2:flags=lanczos" -qscale:v 2`),
+> ScrollVideo wired in `components/Hero.tsx` (`count: 121`). Mobile and
+> reduced-motion keep the static-image form. The guide below is kept for
+> retakes.
+
 Everything needed to produce the scroll-scrubbed exploded-glove clip and wire
 it into the site. The overlay (headline/CTA) is already final in
 `components/Hero.tsx`; only the background layers get swapped.
