@@ -62,27 +62,29 @@ export const OFFSTAGE = {
   pad_color: 'Only visible with a pad or hood fitted'
 };
 
-// `group` drives the Start screen's flat ordering: stock -> national -> signature -> blank.
+// Blank first: a visitor starts from a clean glove and builds it up, rather
+// than being handed someone else's colourway to undo. Then signature,
+// national, stock. app.js applies STARTERS[0] on load, so this is the default.
 // `slot: true` marks a signature card that still needs a real SSK athlete attached.
 export const STARTERS = [
-  { id: 'Navy & Orange', en: 'Navy & Orange', nl: 'Navy & Oranje', group: 'stock', bullet: 14 },
-  { id: 'Classic Tan', en: 'Classic Tan', nl: 'Klassiek Tan', group: 'stock', bullet: 7 },
-  { id: 'Black & Pink', en: 'Black & Pink', nl: 'Zwart & Roze', group: 'stock', bullet: 8 },
-  { id: 'nl', en: 'Netherlands', nl: 'Nederland', group: 'national', bullet: 14,
-    colors: { _panels: '35', welting: '70', laces: '70', binding: '70', lining: '70',
-              thumb_loops: '70', pinky_loops: '70', embroidery: '10', stitching: '70' } },
-  { id: 'cw', en: 'Curaçao', nl: 'Curaçao', group: 'national', bullet: 13,
-    colors: { _panels: '60', welting: '45', laces: '45', binding: '45', lining: '60',
-              thumb_loops: '45', pinky_loops: '45', embroidery: '10', stitching: '45' } },
+  { id: 'blank', en: 'Blank glove', nl: 'Blanco handschoen', group: 'blank', marks: false, bullet: 7,
+    colors: { _panels: '10', welting: '10', laces: '10', binding: '10', lining: '10',
+              thumb_loops: '10', pinky_loops: '10', embroidery: '10', stitching: '10' } },
   { id: 'pro', en: 'Black / Gold', nl: 'Zwart / Goud', group: 'signature', slot: true, bullet: 7,
     colors: { _panels: '90', welting: 'GF', laces: '90', binding: '90', lining: '40',
               thumb_loops: '90', pinky_loops: '90', embroidery: '39', stitching: '90' } },
   { id: 'sig2', en: 'Cardinal / White', nl: 'Cardinal / Wit', group: 'signature', slot: true, bullet: 5,
     colors: { _panels: '20', welting: '10', laces: '10', binding: '20', lining: '20',
               thumb_loops: '10', pinky_loops: '10', embroidery: '10', stitching: '10' } },
-  { id: 'blank', en: 'Blank glove', nl: 'Blanco handschoen', group: 'blank', marks: false, bullet: 7,
-    colors: { _panels: '10', welting: '10', laces: '10', binding: '10', lining: '10',
-              thumb_loops: '10', pinky_loops: '10', embroidery: '10', stitching: '10' } }
+  { id: 'nl', en: 'Netherlands', nl: 'Nederland', group: 'national', bullet: 14,
+    colors: { _panels: '35', welting: '70', laces: '70', binding: '70', lining: '70',
+              thumb_loops: '70', pinky_loops: '70', embroidery: '10', stitching: '70' } },
+  { id: 'cw', en: 'Curaçao', nl: 'Curaçao', group: 'national', bullet: 13,
+    colors: { _panels: '60', welting: '45', laces: '45', binding: '45', lining: '60',
+              thumb_loops: '45', pinky_loops: '45', embroidery: '10', stitching: '45' } },
+  { id: 'Navy & Orange', en: 'Navy & Orange', nl: 'Navy & Oranje', group: 'stock', bullet: 14 },
+  { id: 'Classic Tan', en: 'Classic Tan', nl: 'Klassiek Tan', group: 'stock', bullet: 7 },
+  { id: 'Black & Pink', en: 'Black & Pink', nl: 'Zwart & Roze', group: 'stock', bullet: 8 }
 ];
 
 // The flat build order. One step, one decision — no category inside a category.

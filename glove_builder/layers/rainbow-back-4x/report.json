@@ -14,18 +14,18 @@
     "edge_px_after": 2330
   },
   "binding": {
-    "pixels": 262647,
-    "coverage_pct": 3.45,
+    "pixels": 216542,
+    "coverage_pct": 2.85,
     "smoothed": true,
-    "edge_px_before": 12052,
-    "edge_px_after": 9159
+    "edge_px_before": 7370,
+    "edge_px_after": 6442
   },
   "laces": {
-    "pixels": 231847,
-    "coverage_pct": 3.05,
+    "pixels": 263377,
+    "coverage_pct": 3.46,
     "smoothed": true,
-    "edge_px_before": 18502,
-    "edge_px_after": 14114
+    "edge_px_before": 19274,
+    "edge_px_after": 14858
   },
   "bullet_logo": {
     "pixels": 97275,
@@ -42,11 +42,11 @@
     "edge_px_after": 2212
   },
   "welting": {
-    "pixels": 274906,
-    "coverage_pct": 3.61,
+    "pixels": 293641,
+    "coverage_pct": 3.86,
     "smoothed": true,
-    "edge_px_before": 35365,
-    "edge_px_after": 21063
+    "edge_px_before": 33020,
+    "edge_px_after": 21024
   },
   "back9": {
     "pixels": 0,
@@ -70,15 +70,15 @@
     "edge_px_after": 5588
   },
   "web": {
-    "pixels": 741352,
-    "coverage_pct": 9.74,
+    "pixels": 742114,
+    "coverage_pct": 9.75,
     "smoothed": true,
     "edge_px_before": 7092,
     "edge_px_after": 5838
   },
   "back2": {
-    "pixels": 233540,
-    "coverage_pct": 3.07,
+    "pixels": 234655,
+    "coverage_pct": 3.08,
     "smoothed": true,
     "edge_px_before": 2390,
     "edge_px_after": 2077
@@ -91,36 +91,36 @@
     "edge_px_after": 3536
   },
   "back5": {
-    "pixels": 497527,
+    "pixels": 497248,
     "coverage_pct": 6.54,
     "smoothed": true,
     "edge_px_before": 4774,
     "edge_px_after": 4686
   },
   "back6": {
-    "pixels": 197514,
+    "pixels": 197477,
     "coverage_pct": 2.6,
     "smoothed": true,
     "edge_px_before": 4335,
     "edge_px_after": 4279
   },
   "back3": {
-    "pixels": 547033,
+    "pixels": 547131,
     "coverage_pct": 7.19,
     "smoothed": true,
     "edge_px_before": 5063,
     "edge_px_after": 4929
   },
   "back4": {
-    "pixels": 360513,
-    "coverage_pct": 4.74,
+    "pixels": 360127,
+    "coverage_pct": 4.73,
     "smoothed": true,
     "edge_px_before": 4602,
     "edge_px_after": 4492
   },
   "back78": {
-    "pixels": 558023,
-    "coverage_pct": 7.33,
+    "pixels": 556406,
+    "coverage_pct": 7.31,
     "smoothed": false
   },
   "glove": {
