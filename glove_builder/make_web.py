@@ -222,7 +222,8 @@ def quad(mask):
     return box[order].astype(np.float32)
 
 
-def fit(layers, web_mask, height=1100, extend=0.06):
+def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
+        lean=0.55):
     """Warp a cutout onto the reference glove's web aperture.
 
     Not a stretch — a perspective transform. The reference glove is
@@ -242,7 +243,24 @@ def fit(layers, web_mask, height=1100, extend=0.06):
         ctr = dst.mean(0)
         low = np.argsort(dst[:, 1])[-2:]
         dst[low] += (dst[low] - ctr) * extend
-    M = cv2.getPerspectiveTransform(quad(web_mask), dst)
+    # With a finger edge in the cutout the fit has to account for it, or the
+    # warp lands the web correctly and leaves the finger edge hanging short of
+    # the glove's own finger — a gap where the join should be. Widen the
+    # destination on the finger side by however much wider the cutout is than
+    # the web alone, and fit from the two together.
+    src = web_mask
+    if finger is not None and finger.any():
+        src = web_mask | finger
+        wide = quad(src)
+        narrow = quad(web_mask)
+        span = lambda q: float(np.ptp(q[:, 0]))
+        grow = (span(wide) / max(span(narrow), 1.0)) - 1.0
+        left = np.argsort(dst[:, 0])[:2]
+        # the bottom of the two leans out further: the finger flares there
+        order = left[np.argsort(dst[left, 1])]
+        for corner, share in zip(order, (1.0 - lean, 1.0 + lean)):
+            dst[corner, 0] -= span(narrow) * grow * share
+    M = cv2.getPerspectiveTransform(quad(src), dst)
     return {n: Image.fromarray(
                 cv2.warpPerspective(np.asarray(im), M, (w, height),
                                     flags=cv2.INTER_LANCZOS4), "RGBA")
@@ -264,7 +282,7 @@ def main():
     for n, layer in layers.items():
         layer.save(out / f"{n}.png")
 
-    aligned = fit(layers, web | lace)
+    aligned = fit(layers, web | lace, finger=finger)
     # where build_assets.py picks them up, alongside the glove's own layers
     lay = HERE / "layers" / "webs" / args.web
     lay.mkdir(parents=True, exist_ok=True)
