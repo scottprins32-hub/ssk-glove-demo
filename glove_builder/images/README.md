@@ -10,9 +10,10 @@ that was baked in.
 | folder | what goes in it |
 |---|---|
 | `SSK-Pro-Custom-12.5-Outfield-Glove-Rainbow-RHT/` | the rainbow calibration glove every zone is segmented from |
-| `webs/` | one sub-folder per web type — `webs/spiral-i/`, `webs/h/`, … |
+| `webs/` | one sub-folder per web type — `webs/closed-diamond-net/`, `webs/h/`, … |
 | `palm-2026-07/` | palm views |
 | `scott-glove-2026-07/` | detail shots: thumb, pinky, finger pad, middle finger |
+| `drive-2026-07/` | as pulled from the SSK Europe Drive folder, before sorting |
 
 ## Naming
 
@@ -52,9 +53,16 @@ instead of an edge detector guessing. Same for palms.
 **No crops, no filters, no portrait mode.** Portrait mode blurs the background
 by inventing a depth map, and it gets glove edges wrong.
 
+## Naming the web itself
+
+A web can only be named by someone holding the glove. The Columbia/navy glove
+was called a Spiral I-Web and then corrected to Closed Diamond Net-Web, and
+guessing from a photograph is what caused that — the two look alike at a
+three-quarter angle. Put the web's name in the folder, and the name SSK's
+order form uses, not a description of what it looks like.
+
 ## Which shots are still wanted
 
-- Spiral I-Web: back and palm, both colourways (navy/tan, navy/columbia)
-- the remaining web types, same treatment
+- the remaining web types: back and palm, ideally in two colourways each
 - palm view of the calibration glove, square on
 - finger hood (no photograph of one yet)
