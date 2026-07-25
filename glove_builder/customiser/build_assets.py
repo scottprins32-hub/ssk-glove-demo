@@ -485,8 +485,15 @@ def main():
     # lace runs through a web is part of the web, so the two travel together.
     webs = {}
     web_dir = pathlib.Path(__file__).parent.parent / "layers" / "webs"
-    # the sheen a swapped-in web has to match: the one it replaces
-    web_hi_p95 = sheen_p95(spec_base(load("web")) if load("web") else None)
+    # The sheen each layer has to match is the sheen of the layer it stands
+    # in for — the web's for the web and its lacing, back 3's for the strip of
+    # index finger. Matching the finger strip to the web made it twice as
+    # glossy as the finger it continues, which is what read as two pieces.
+    sheen_for = {}
+    for part, zone in (("web", "web"), ("laceweb", "web"),
+                       ("webfinger", "back3")):
+        im0 = load(zone)
+        sheen_for[part] = sheen_p95(spec_base(im0)) if im0 is not None else None
     # A cut-out web never covers the stock web's opening exactly. Backing it
     # with the opening filled solid means the leftover shows as leather in the
     # web's own colour rather than as a hole punched through the glove.
@@ -519,8 +526,17 @@ def main():
                 continue
             im = Image.open(f).convert("RGBA").resize((W, H), Image.LANCZOS)
             name = f"{key}_{d.name}"
+            if key == "webfinger":
+                # Soften the edge where the strip meets the glove's own finger.
+                # Two photographs will never grain-match exactly, and a hard
+                # cut between them reads as a join however well the tone is
+                # matched. The web draws over the other side, so a feather all
+                # round costs nothing.
+                a = np.asarray(im).astype(np.float32)
+                a[..., 3] = ndimage.gaussian_filter(a[..., 3], 3.0)
+                im = Image.fromarray(a.astype(np.uint8), "RGBA")
             assets[name] = to_data_uri(tint_base(im), quality=85, method=4)
-            sp = match_sheen(spec_base(im), web_hi_p95)
+            sp = match_sheen(spec_base(im), sheen_for.get(key))
             if sp is not None:
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
             pair[key] = name
