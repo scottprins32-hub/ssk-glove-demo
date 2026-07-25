@@ -516,8 +516,32 @@ def main():
                 # zone's own midtone, and those panels then paint over the
                 # ghost in their own colours. With the knot drawn it is
                 # hidden underneath, so this costs nothing.
+                #
+                # Only where it lies over the glove, though. The knot hangs
+                # off the rim into open air, and a panel grown out there is a
+                # lace-shaped tongue of leather floating beside the glove —
+                # the same ghost in a different colour, which is what Scott
+                # kept seeing after the first fix. Those pixels have nothing
+                # behind them, so they are cut away instead: see knot_cut.
                 zmask, zname = {}, {}
                 occupied = np.zeros(knot.shape, np.int32)
+                zu = np.zeros(knot.shape, bool)
+                for _zn, _g2, _l2 in STACK:
+                    _zim = load(_zn)
+                    if _zim is not None:
+                        zu |= np.asarray(_zim)[..., 3] > 90
+                # the glove with the knot lifted off it: closing bridges the
+                # channel the knot leaves where it crosses the rim, filling
+                # holes closes the ones it leaves crossing the middle
+                body = ndimage.binary_fill_holes(
+                    ndimage.binary_closing(zu & ~knot, np.ones((9, 9), bool)))
+                core = knot & ~body
+                # plus the soft edge the knot has in the neutral base, which
+                # belongs to no zone and would otherwise stay behind as a
+                # pencil outline of the knot that was removed
+                air = core | (ndimage.binary_dilation(
+                    core, np.ones((3, 3), bool), iterations=4) & ~zu)
+                over = knot & body
                 for zi, (zn, _g, _l) in enumerate(STACK, 1):
                     # Leather panels only. Not the web — it is cut out when
                     # another is swapped in, and anything grown into it goes
@@ -540,7 +564,7 @@ def main():
                 owner = occupied[iy, ix]
                 grew = []
                 for zi, zn in zname.items():
-                    add = knot & (owner == zi)
+                    add = over & (owner == zi)
                     if add.sum() < 200:
                         continue
                     zim = load(zn)
@@ -559,6 +583,15 @@ def main():
                 if grew:
                     print("  panels grown into its footprint: "
                           + ", ".join(grew))
+                if air.any():
+                    cut = np.zeros(knot.shape + (4,), np.uint8)
+                    cut[..., 3] = np.where(air, 255, 0)
+                    # lossless: this one is a stencil, and a lossy edge on it
+                    # leaves a half-erased fringe of knot behind
+                    assets["knot_cut"] = to_data_uri(
+                        Image.fromarray(cut, "RGBA"), lossless=True, method=4)
+                    print(f"  hanging off the rim: {int(air.sum())} px "
+                          "-> knot_cut")
             print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
 
     # The index finger is a single piece when it carries a flag, so the welt
