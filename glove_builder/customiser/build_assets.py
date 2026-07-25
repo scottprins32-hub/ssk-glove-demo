@@ -95,6 +95,13 @@ NO_KNOT = {"standard-i"}
 # centred in here goes with it.
 KNOT_REGION = (480, 500, 860, 820)
 
+# Traced by hand where the region is not enough. A lace piece that touches one
+# of these belongs to the knot however far it runs — the box rule works on
+# where a piece is centred, and this lace carries on up past the web where its
+# centre no longer lands in the corner, so the box was taking half of it and
+# leaving the rest. Points are (x, y) in canvas pixels.
+KNOT_POLYS = []
+
 PRESETS = {
     "Navy & Orange": {"_panels": "70", "welting": "35", "laces": "35",
                       "binding": "35", "lining": "35", "thumb_loops": "35",
@@ -480,6 +487,13 @@ def main():
             cand = (np.nonzero((cm[:, 1] >= kx0) & (cm[:, 1] <= kx1)
                                & (cm[:, 0] >= ky0) & (cm[:, 0] <= ky1)
                                & (sizes > 200))[0] if n else np.zeros(0, int))
+            if KNOT_POLYS:
+                import cv2 as _cv
+                traced = np.zeros(la.shape, np.uint8)
+                for poly in KNOT_POLYS:
+                    _cv.fillPoly(traced, [np.array(poly, np.int32)], 1)
+                hit = np.unique(lbl[la & traced.astype(bool)])
+                cand = np.unique(np.concatenate([cand, hit[hit > 0] - 1]))
             if len(cand):
                 knot = np.isin(lbl, cand + 1)
                 rest = la & ~inside & ~knot
