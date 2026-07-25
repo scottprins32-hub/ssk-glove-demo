@@ -230,6 +230,32 @@ def quad(mask):
     return np.roll(box, -start, axis=0).astype(np.float32)
 
 
+def straighten(img):
+    """Trim a layer's left edge back to the straight line through its ends.
+
+    The finger strip is traced by hand, so its outer edge wanders, and on the
+    glove that wander is the only thing marking where one photograph stops and
+    the other starts. A homography maps straight lines to straight lines, so
+    cutting it straight here leaves it straight on the glove.
+
+    This only ever removes pixels — the edge is pulled in to the line, never
+    invented out to it.
+    """
+    a = np.asarray(img).copy()
+    m = a[..., 3] > 90
+    rows = np.nonzero(m.any(1))[0]
+    if len(rows) < 20:
+        return img
+    y0, y1 = int(rows[0]), int(rows[-1])
+    x0 = float(np.nonzero(m[y0])[0].min())
+    x1 = float(np.nonzero(m[y1])[0].min())
+    ys = np.arange(a.shape[0], dtype=np.float32)
+    bound = x0 + (x1 - x0) * (ys - y0) / max(y1 - y0, 1)
+    cols = np.arange(a.shape[1])[None, :]
+    a[..., 3] = np.where(cols >= bound[:, None], a[..., 3], 0)
+    return Image.fromarray(a, "RGBA")
+
+
 def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
         lean=0.55):
     """Warp a cutout onto the reference glove's web aperture.
@@ -302,6 +328,8 @@ def main():
         layer.save(out / f"{n}.png")
 
     aligned = fit(layers, web | lace, finger=finger)
+    if "finger" in aligned:
+        aligned["finger"] = straighten(aligned["finger"])
     # where build_assets.py picks them up, alongside the glove's own layers
     lay = HERE / "layers" / "webs" / args.web
     lay.mkdir(parents=True, exist_ok=True)
