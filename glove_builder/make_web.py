@@ -52,10 +52,16 @@ WEBS = {
     "spiral-i": {
         "photo": "images/drive-2026-07/Blue1.jpg",
         "glove_mask": "runs/spiral-i-blue/masks/glove.png",
-        "dark": 100,
-        "leather_is_dark": True,
-        "seam": [(0, 0), (790, 0), (800, 690), (850, 715), (900, 745),
-                 (950, 765), (1000, 800), (1100, 870), (1300, 950)],
+
+        # traced off the photograph: down the outer rim, across the bottom,
+        # back up the edge against the index finger
+        "outline": [(895, 45), (985, 35), (1065, 70), (1120, 150), (1150, 280),
+                    (1150, 400), (1120, 530), (1080, 650), (1030, 760),
+                    (975, 860), (930, 940), (880, 1000), (800, 1020),
+                    (740, 1000), (700, 950), (690, 880), (700, 810),
+                    (760, 760), (800, 700), (830, 640), (845, 560),
+                    (838, 480), (848, 400), (862, 300), (878, 200),
+                    (890, 110)],
         # The low loop beside back 2 is a strap running diagonally down to the
         # heel, not a blob, so a box round it takes back 2's leather with it —
         # three tries proved that. Traced as a polygon off Scott's reading of
@@ -70,6 +76,40 @@ def cut(spec):
     a = np.asarray(im).astype(float)
     lum = a @ [0.299, 0.587, 0.114]
     glove = np.asarray(Image.open(HERE / spec["glove_mask"]).convert("L")) > 127
+
+    if "outline" in spec:
+        # Trace the web's boundary and take everything inside it.
+        #
+        # Hunting for the web by colour does not work on every glove. On the
+        # Columbia Spiral I the web's leather runs from V 0.29 in shadow to
+        # 0.60 in light, while the shell in shadow drops to 0.60 too — they
+        # overlap in every channel, so any threshold either loses half the web
+        # or swallows half the glove. Inside a traced outline the problem goes
+        # away: the only bright thing in there is lace.
+        import cv2
+        poly = np.zeros(glove.shape, np.uint8)
+        cv2.fillPoly(poly, [np.array(spec["outline"], np.int32)], 1)
+        region = glove & poly.astype(bool)
+        hsv = np.asarray(im.convert("HSV")).astype(float)
+        val = hsv[..., 2] / 255
+        # Inside the outline the split is a clean two-way one, so let Otsu
+        # find it rather than carrying a hand-tuned number per photograph.
+        # Guessing 0.68 here put the shaded laces on the leather side; Otsu
+        # says 0.451 for this glove.
+        cutv = spec.get("lace_v")
+        if cutv is None:
+            cutv = cv2.threshold((val[region] * 255).astype(np.uint8), 0, 255,
+                                 cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0] / 255
+            print(f"leather/lace split at V = {cutv:.3f} (Otsu)")
+        web = region & (val < cutv)
+        web = ndimage.binary_closing(web, np.ones((7, 7), bool))
+        web = ndimage.binary_opening(web, np.ones((3, 3), bool))
+        lace = region & ~web
+        lace = ndimage.binary_opening(lace, np.ones((3, 3), bool))
+        lbl, n = ndimage.label(lace)
+        sizes = ndimage.sum(lace, lbl, range(1, n + 1))
+        lace = np.isin(lbl, np.nonzero(sizes > 120)[0] + 1)
+        return im, web, lace
 
     if "leather_hue" in spec:
         # Brightness alone cannot always tell leather from lace: on the Japan
