@@ -17,6 +17,9 @@ export const PADS = [
   { id: 'Finger Hood', en: 'Finger hood', nl: 'Vingerkap', img: F + 'finger_pad/Finger_Hood.jpg' }
 ];
 
+// `render` is the slug of a web cut from a photograph (make_web.py). Without
+// one the glove keeps its own web and the choice is recorded on the order
+// sheet only — which is honest, rather than showing the wrong web.
 export const WEBS = [
   { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'] },
   { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'] },
@@ -29,7 +32,8 @@ export const WEBS = [
   { id: 'Em Rocket-Web', img: F + 'webs/Em_Rocket_Web.jpg', sizes: ['12"'] },
   { id: 'Sasaki 1-Web', img: F + 'webs/Sasaki_1_Web.jpg', sizes: ['12"'] },
   { id: 'Sasaki 2-Web', img: F + 'webs/Sasaki_2_Web.jpg', sizes: ['12"', '12.25"'] },
-  { id: 'Closed Diamond Net-Web', img: F + 'webs/Closed_Diamond_Net_Web.jpg', sizes: ['12.25"'] },
+  { id: 'Closed Diamond Net-Web', img: F + 'webs/Closed_Diamond_Net_Web.jpg', sizes: ['12.25"'],
+    render: 'closed-diamond-net' },
   { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'] }
 ];
 

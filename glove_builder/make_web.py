@@ -40,12 +40,9 @@ WEBS = {
         "seam": [(0, 686), (700, 700), (750, 712), (800, 740),
                  (850, 790), (900, 855), (950, 925), (1000, 1000)],
         # the leather loops the lace passes through: web, but the seam cuts
-        # them off because they sit on the finger side of it.
-        #
-        # There is a fourth, low down beside back 2. It is left out: at this
-        # angle it and back 2's leather are one unbroken dark region — erosion
-        # will not part them — so a box round it takes panel as well, which
-        # reads worse than the missing loop does.
+        # them off because they sit on the finger side of it. The low one sits
+        # beside back 2, penned in by the welt on its left and the lace on its
+        # right, which is what keeps the box off back 2's leather.
         "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
     },
 }
@@ -82,14 +79,22 @@ def cut(spec):
         box[y0:y1, x0:x1] = True
         web |= body & box
 
-    # the lacing is whatever sits inside the web's outline and is not leather
+    # The lacing is whatever sits in the web's outline and is not leather —
+    # but taken as whole pieces, not clipped to the outline. The loops round
+    # the rim straddle it, and half a loop rendered is worse than none: the
+    # outer half would stay the old web's colour while the inner half changed.
     hull = ndimage.binary_fill_holes(
         ndimage.binary_closing(web, np.ones((45, 45), bool))) & keep
-    lace = hull & glove & ~web
-    lace = ndimage.binary_opening(lace, np.ones((3, 3), bool))
-    lbl, n = ndimage.label(lace)
-    sizes = ndimage.sum(lace, lbl, range(1, n + 1))
-    lace = np.isin(lbl, np.nonzero(sizes > 120)[0] + 1)   # drop speckle
+    light = glove & ~body
+    light = ndimage.binary_opening(light, np.ones((3, 3), bool))
+    lbl, n = ndimage.label(light)
+    sizes = ndimage.sum(light, lbl, range(1, n + 1))
+    inside = ndimage.sum(light & hull, lbl, range(1, n + 1))
+    # a piece is web lacing if it reaches into the outline and is lace-sized:
+    # the shell beside the web touches it too, and is twenty times bigger
+    cap = spec.get("lace_max", 20000)
+    take = np.nonzero((inside > 60) & (sizes > 120) & (sizes < cap))[0] + 1
+    lace = np.isin(lbl, take)
     return im, web, lace
 
 
@@ -109,7 +114,7 @@ def quad(mask):
     return box[order].astype(np.float32)
 
 
-def fit(layers, web_mask, height=1100):
+def fit(layers, web_mask, height=1100, extend=0.06):
     """Warp a cutout onto the reference glove's web aperture.
 
     Not a stretch — a perspective transform. The reference glove is
@@ -121,7 +126,15 @@ def fit(layers, web_mask, height=1100):
     ref_im = Image.open(HERE / "layers/rainbow-back-4x/web.png").convert("RGBA")
     w = int(ref_im.width * height / ref_im.height)
     ref = np.asarray(ref_im.resize((w, height), Image.LANCZOS))[..., 3] > 90
-    M = cv2.getPerspectiveTransform(quad(web_mask), quad(ref))
+    dst = quad(ref)
+    # Run the bottom of the web on past the opening so it disappears under the
+    # knotted lace instead of stopping just short of it. That lace is on the
+    # outside of the glove and draws over the web, so the overshoot is hidden.
+    if extend:
+        ctr = dst.mean(0)
+        low = np.argsort(dst[:, 1])[-2:]
+        dst[low] += (dst[low] - ctr) * extend
+    M = cv2.getPerspectiveTransform(quad(web_mask), dst)
     return {n: Image.fromarray(
                 cv2.warpPerspective(np.asarray(im), M, (w, height),
                                     flags=cv2.INTER_LANCZOS4), "RGBA")
@@ -142,9 +155,13 @@ def main():
         layer.save(out / f"{n}.png")
 
     aligned = fit(layers, web | lace)
+    # where build_assets.py picks them up, alongside the glove's own layers
+    lay = HERE / "layers" / "webs" / args.web
+    lay.mkdir(parents=True, exist_ok=True)
     base = Image.open(HERE / "customiser/assets/glove.webp").convert("RGBA")
     for n, layer in aligned.items():
         layer.save(out / f"{n}_aligned.png")
+        layer.save(lay / f"{n}.png")
         base.alpha_composite(layer)
     base.convert("RGB").save(out / "fit.jpg", quality=92)
 

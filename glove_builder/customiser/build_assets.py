@@ -425,6 +425,29 @@ def main():
             print(f"index-finger seam: {seam.sum()} px -> welt_index")
         flag_mount = mount_from_panel(A(w3) | A(w4))
 
+    # Alternative webs, cut from photographs by make_web.py and already warped
+    # onto this glove's web opening. Each is a pair: the leather, which takes
+    # the web colour, and its lacing, which takes the lace colour — how the
+    # lace runs through a web is part of the web, so the two travel together.
+    webs = {}
+    web_dir = pathlib.Path(__file__).parent.parent / "layers" / "webs"
+    for d in sorted(p for p in web_dir.glob("*") if p.is_dir()):
+        pair = {}
+        for part, key in (("leather", "web"), ("lace", "laceweb")):
+            f = d / f"{part}.png"
+            if not f.exists():
+                continue
+            im = Image.open(f).convert("RGBA").resize((W, H), Image.LANCZOS)
+            name = f"{key}_{d.name}"
+            assets[name] = to_data_uri(tint_base(im), quality=85, method=4)
+            sp = spec_base(im)
+            if sp is not None:
+                assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
+            pair[key] = name
+        if pair:
+            webs[d.name] = pair
+            print(f"web '{d.name}': {' + '.join(pair.values())}")
+
     bullet = load("bullet_logo")
     bullets = []
     if bullet is not None:
@@ -559,7 +582,7 @@ def main():
     data = {"w": W, "h": H, "zones": zones, "palettes": pal,
             "presets": PRESETS, "bullets": bullets,
             "bulletBox": bullet_box if bullets else None,
-            "flagMount": flag_mount,
+            "flagMount": flag_mount, "webs": webs,
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())

@@ -172,6 +172,11 @@ export class GloveRenderer {
     im.src = src;
   }
 
+  // Which web to render, by slug, or null for the glove's own.
+  setWeb(slug) {
+    this.web = (slug && this.DATA.webs && this.DATA.webs[slug]) ? slug : null;
+  }
+
   // Union of a set of layers, kept for masking. Not in the tint cache's
   // eviction list — there is one of these and it never changes.
   panelMask(ids) {
@@ -256,13 +261,34 @@ export class GloveRenderer {
     const D = this.DATA;
     ctx.clearRect(0, 0, D.w, D.h);
     ctx.drawImage(this.imgs.glove, 0, 0);
+    const swap = this.web && D.webs && D.webs[this.web];
+    // The neutral base has the stock web painted into it, so skipping the web
+    // zone leaves its leather behind in plain tan. Cut the hole first.
+    if (swap && this.imgs.web) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.drawImage(this.imgs.web, 0, 0);
+      ctx.restore();
+    }
     for (const z of D.zones) {
+      // A chosen web replaces the glove's own, whole: the stock web and the
+      // lacing through it both go, or the new one sits under the old one's
+      // laces. What stays is the lacing outside the web — the knotted lace
+      // sits on the outside of the glove and passes over any web.
+      if (swap && z.id === 'web') {
+        for (const [key, zone] of [[swap.web, 'web'], [swap.laceweb, 'laces']]) {
+          if (!key || !this.imgs[key] || !D.bbox[key]) continue;
+          const c = this.tinted(key, this.hex(zone, state));
+          ctx.drawImage(c, c._ox, c._oy);
+        }
+        continue;
+      }
       const c = this.tinted(z.id, this.hex(z.id, state));
       ctx.drawImage(c, c._ox, c._oy);
-      // The lace running through the web is split off the laces layer,
+      // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced
       // differently. It still takes the lace colour.
-      if (z.id === 'laces' && this.imgs.laces_web && D.bbox.laces_web) {
+      if (z.id === 'laces' && !swap && this.imgs.laces_web && D.bbox.laces_web) {
         const w = this.tinted('laces_web', this.hex('laces', state));
         ctx.drawImage(w, w._ox, w._oy);
       }

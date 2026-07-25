@@ -135,6 +135,8 @@ const flagArt = () => {
 };
 function draw() {
   R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
+  const w = WEBS.find(w => w.id === S.webType);
+  R.setWeb(w && w.render);
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
@@ -273,7 +275,7 @@ function renderWeb(b) {
     `${fit.length} ${t('filtered')} ${S.size}`));
   b.appendChild(cardField(t('webType'), fit.map(w => ({
     id: w.id, label: w.id, img: w.img
-  })), S.webType, v => { snapshot(); S.webType = v; paint(); }, true));
+  })), S.webType, v => { snapshot(); S.webType = v; draw(); paint(); }, true));
   b.appendChild(swatchField('web', null, true));
 }
 
