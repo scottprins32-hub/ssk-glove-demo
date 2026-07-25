@@ -74,7 +74,6 @@ export const OFFSTAGE = {
   back1: 'Wingtip — hidden behind the thumb on this view',
   back9: 'Wingtip — hidden behind the pinky on this view',
   back8: 'Preview merges Back 7 + 8 into one panel',
-  palm: 'Palm side — not photographed yet',
   pad_color: 'Only visible with a pad or hood fitted'
 };
 
@@ -151,6 +150,7 @@ export const T = {
     sendTitle: 'Your SSK custom glove', sendLead: 'Send this reference to SSK Europe with your order — it holds every choice below.',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
     webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
+    tiedTo: '(one piece with %s)',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
     stock: 'Stock colourway', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
@@ -187,6 +187,7 @@ export const T = {
     sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Stuur deze referentie mee met je bestelling bij SSK Europe — hij bevat elke keuze hieronder.',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
     webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
+    tiedTo: '(één stuk met %s)',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',
     stock: 'Standaard kleurstelling', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',

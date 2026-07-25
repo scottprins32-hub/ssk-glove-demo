@@ -24,6 +24,13 @@ const FIELD_TO_LAYER = {
 const LAYER_TO_FIELD = Object.fromEntries(
   Object.entries(FIELD_TO_LAYER).map(([f, l]) => [l, f]));
 
+/* The palm and back 2 are cut from one piece of leather, so they cannot take
+   different colours. SSK's own form says as much under Palm Color — "small
+   part on back of glove under the web is part of the palm" — and that part is
+   exactly what this view calls back 2. The form still asks twice, so both are
+   still answered; picking either one answers the other. */
+const TIED = { palm: 'back2', back2: 'palm' };
+
 /* A flag is embroidered on one piece of leather, so back3 and back4 stop
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
@@ -51,8 +58,15 @@ const BACK_NAMES = {
 };
 const fieldLabel = (f, lang) => {
   const m = /^back([1-9])$/.exec(f);
-  if (m) return `Back ${m[1]} — ${BACK_NAMES[lang][+m[1] - 1]}`;
-  return T[lang][FIELD_LABEL[f]] || f;
+  let s = m ? `Back ${m[1]} — ${BACK_NAMES[lang][+m[1] - 1]}`
+            : (T[lang][FIELD_LABEL[f]] || f);
+  if (TIED[f]) s += ` ${T[lang].tiedTo.replace('%s', fieldName(TIED[f], lang))}`;
+  return s;
+};
+/* the other half of a tied pair, named without recursing back into the suffix */
+const fieldName = (f, lang) => {
+  const m = /^back([1-9])$/.exec(f);
+  return m ? `Back ${m[1]}` : (T[lang][FIELD_LABEL[f]] || f);
 };
 
 /* 36 order-form questions. `req` mirrors the form's required flag. */
@@ -235,6 +249,9 @@ function applyStarter(st, quiet) {
     if (!pal.some(c => c[0] === v)) v = pal[0][0];
     S.colors[f] = v;
   }
+  for (const [a, b] of Object.entries(TIED))   // one piece, one colour
+    if (S.colors[a] === undefined) S.colors[a] = S.colors[b];
+  S.colors.palm = S.colors.back2;
   if (st.bullet != null) S.bullet = st.bullet;
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
@@ -478,6 +495,7 @@ function swatchField(field, note, required) {
     S.colors[field], v => {
       snapshot();
       S.colors[field] = v;
+      if (TIED[field]) S.colors[TIED[field]] = v;
       if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
         S.colors.back3 = S.colors.back4 = v;
       }

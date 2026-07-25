@@ -59,8 +59,19 @@ def cut(spec):
     lum = a @ [0.299, 0.587, 0.114]
     glove = np.asarray(Image.open(HERE / spec["glove_mask"]).convert("L")) > 127
 
-    dark = glove & (lum < spec["dark"])
-    body = dark if spec["leather_is_dark"] else (glove & ~dark)
+    if "leather_hue" in spec:
+        # Brightness alone cannot always tell leather from lace: on the Japan
+        # glove the red thumb sits at the same luminance as the navy web, so
+        # a threshold hands the thumb to the web. Hue keeps them apart —
+        # navy 212 degrees, tan lace 40, red thumb 356.
+        hsv = np.asarray(im.convert("HSV")).astype(float)
+        hue, sat = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255
+        lo, hi = spec["leather_hue"]
+        band = (hue >= lo) & (hue <= hi) if lo <= hi else (hue >= lo) | (hue <= hi)
+        body = glove & band & (sat >= spec.get("leather_sat", 0.10))
+    else:
+        dark = glove & (lum < spec["dark"])
+        body = dark if spec["leather_is_dark"] else (glove & ~dark)
 
     lbl, n = ndimage.label(body)
     sizes = ndimage.sum(body, lbl, range(1, n + 1))
