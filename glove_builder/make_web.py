@@ -1,20 +1,24 @@
-"""Cut a web out of a photograph, split into leather and lacing.
+"""Cut a web out of a photograph, split into leather, lacing and finger edge.
 
-SAM3's text prompts find the glove but not the web — "web of the baseball
-glove" scores 0.00 on these photographs, the same way it did on the rainbow
-calibration glove. What does work is colour: on every one of these gloves the
-web leather and its lacing are different colours, so once the web's outline is
-known the two separate cleanly.
+SAM3's text prompts are no help here — "web of the baseball glove" scores 0.00
+on these photographs, the same as on the rainbow calibration glove. Nor is
+colour on its own: on the Columbia glove the web's leather runs from V 0.29 in
+shadow to 0.60 in light and the shell in shadow reaches 0.60 too, so any
+threshold either loses half the web or swallows half the glove.
 
-The outline needs one thing a photograph cannot give: the seam where the web
-meets the panel beside it. Both sides are the same leather in the same colour,
-so no threshold finds it — but it is plainly visible as a welt, and a handful
-of waypoints traced off the image is enough. That is what `seam` is for.
+What works is tracing the web's outline off the photograph and taking what is
+inside it. Within the outline the split really is two-way — the only bright
+thing in there is lace — so Otsu finds it per photograph with nothing to tune.
 
-    python glove_builder/make_web.py --web closed-diamond-net
+`finger_poly` carries the index finger's own right-hand edge along with the
+web, so the join between the two comes from a single photograph instead of
+being butted against a different glove's finger. It stays a separate layer and
+takes the finger's colour, because that is what it is.
 
-Writes runs/web-<slug>/leather.png, lace.png and check.jpg — the last being
-the overlay to look at before believing any of it.
+    python glove_builder/make_web.py --web spiral-i
+
+Writes runs/web-<slug>/{leather,lace,finger}.png and check.jpg — the last
+being the overlay to look at before believing any of it.
 """
 
 import argparse
@@ -62,6 +66,20 @@ WEBS = {
                     (686, 818), (712, 784), (762, 764), (800, 700),
                     (830, 640), (845, 560), (838, 480), (848, 400),
                     (862, 300), (878, 200), (890, 110)],
+        # Scott's idea: carry the index finger's own right-hand edge in the
+        # cutout, so the join between finger and web comes from one photograph
+        # rather than being butted up against a different glove's finger. It
+        # is kept as its own layer and takes the index finger's colour, not
+        # the web's — it is finger leather, and the order form asks for it
+        # separately.
+        "finger_poly": [(890, 45), (890, 110), (878, 200), (862, 300),
+                        (848, 400), (838, 480), (845, 560), (830, 640),
+                        (800, 700), (762, 764), (712, 784), (686, 818),
+                        (674, 862), (676, 915), (692, 975), (730, 1010),
+                        (664, 1004), (616, 968), (600, 910), (602, 856),
+                        (614, 810), (646, 778), (696, 756), (734, 694),
+                        (764, 634), (778, 556), (770, 478), (780, 398),
+                        (794, 298), (810, 198), (820, 108), (822, 45)],
         # The lace that crosses from the index finger into the middle of the
         # web runs out past the web's own edge, so the outline cuts its end
         # off. Only the bright pixels in here are taken, which keeps the
@@ -119,7 +137,14 @@ def cut(spec):
             extra = np.zeros(glove.shape, np.uint8)
             cv2.fillPoly(extra, [np.array(poly, np.int32)], 1)
             lace |= glove & extra.astype(bool) & (val >= cutv)
-        return im, web, lace
+        finger = None
+        if "finger_poly" in spec:
+            fp = np.zeros(glove.shape, np.uint8)
+            cv2.fillPoly(fp, [np.array(spec["finger_poly"], np.int32)], 1)
+            finger = glove & fp.astype(bool) & ~region & ~lace
+            finger = ndimage.binary_opening(finger, np.ones((5, 5), bool))
+        return im, web, lace, finger
+
 
     if "leather_hue" in spec:
         # Brightness alone cannot always tell leather from lace: on the Japan
@@ -178,7 +203,7 @@ def cut(spec):
     cap = spec.get("lace_max", 20000)
     take = np.nonzero((inside > 60) & (sizes > 120) & (sizes < cap))[0] + 1
     lace = np.isin(lbl, take)
-    return im, web, lace
+    return im, web, lace, None
 
 
 def rgba(im, mask):
@@ -229,11 +254,13 @@ def main():
     ap.add_argument("--web", required=True, choices=sorted(WEBS))
     args = ap.parse_args()
     spec = WEBS[args.web]
-    im, web, lace = cut(spec)
+    im, web, lace, finger = cut(spec)
 
     out = HERE / "runs" / f"web-{args.web}"
     out.mkdir(parents=True, exist_ok=True)
     layers = {"leather": rgba(im, web), "lace": rgba(im, lace)}
+    if finger is not None and finger.sum() > 500:
+        layers["finger"] = rgba(im, finger)
     for n, layer in layers.items():
         layer.save(out / f"{n}.png")
 
@@ -249,6 +276,9 @@ def main():
     base.convert("RGB").save(out / "fit.jpg", quality=92)
 
     ov = np.asarray(im).copy()
+    if finger is not None:
+        ov[finger] = (0.35 * ov[finger]
+                      + 0.65 * np.array([250, 200, 40])).astype(np.uint8)
     ov[web] = (0.35 * ov[web] + 0.65 * np.array([255, 60, 60])).astype(np.uint8)
     ov[lace] = (0.35 * ov[lace] + 0.65 * np.array([60, 230, 90])).astype(np.uint8)
     Image.fromarray(ov).save(out / "check.jpg", quality=92)
@@ -256,6 +286,7 @@ def main():
     ys, xs = np.nonzero(web)
     report = {"web": args.web, "photo": spec["photo"],
               "leather_px": int(web.sum()), "lace_px": int(lace.sum()),
+              "finger_px": int(finger.sum()) if finger is not None else 0,
               "bbox": [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())]}
     (out / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))

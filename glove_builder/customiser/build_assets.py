@@ -512,7 +512,8 @@ def main():
         print(f"web backing: {solid.sum()} px -> web_fill")
     for d in sorted(p for p in web_dir.glob("*") if p.is_dir()):
         pair = {}
-        for part, key in (("leather", "web"), ("lace", "laceweb")):
+        for part, key in (("leather", "web"), ("lace", "laceweb"),
+                          ("finger", "webfinger")):
             f = d / f"{part}.png"
             if not f.exists():
                 continue

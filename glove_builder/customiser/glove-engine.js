@@ -283,7 +283,12 @@ export class GloveRenderer {
       // laces. What stays is the lacing outside the web — the knotted lace
       // sits on the outside of the glove and passes over any web.
       if (swap && z.id === 'web') {
-        for (const [key, zone] of [[swap.web, 'web'], [swap.laceweb, 'laces']]) {
+        // webfinger is the index finger's own edge, carried in the same
+        // cutout so the join comes from one photograph. It is finger leather,
+        // so it takes back3's colour, not the web's.
+        for (const [key, zone] of [[swap.webfinger, 'back3'],
+                                   [swap.web, 'web'],
+                                   [swap.laceweb, 'laces']]) {
           if (!key || !this.imgs[key] || !D.bbox[key]) continue;
           const c = this.tinted(key, this.hex(zone, state));
           ctx.drawImage(c, c._ox, c._oy);
