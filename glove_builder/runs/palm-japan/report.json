@@ -1,0 +1,55 @@
+{
+  "glove": {
+    "tried": {
+      "baseball glove": {
+        "instances": 1,
+        "top": 0.935
+      }
+    },
+    "chosen": "baseball glove",
+    "instances": 1,
+    "scores": [
+      0.935
+    ]
+  },
+  "web": {
+    "tried": {
+      "web of the baseball glove": {
+        "instances": 0,
+        "top": 0.0
+      },
+      "woven leather netting of the baseball glove": {
+        "instances": 0,
+        "top": 0.0
+      },
+      "glove web between thumb and index finger": {
+        "instances": 0,
+        "top": 0.0
+      }
+    },
+    "chosen": null,
+    "instances": 0,
+    "scores": []
+  },
+  "laces": {
+    "tried": {
+      "leather lace of the baseball glove": {
+        "instances": 1,
+        "top": 0.592
+      },
+      "rawhide shoelace": {
+        "instances": 0,
+        "top": 0.0
+      },
+      "thin leather strap": {
+        "instances": 0,
+        "top": 0.0
+      }
+    },
+    "chosen": "leather lace of the baseball glove",
+    "instances": 1,
+    "scores": [
+      0.592
+    ]
+  }
+}
