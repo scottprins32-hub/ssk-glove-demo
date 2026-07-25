@@ -271,6 +271,7 @@ export class GloveRenderer {
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.imgs.web, 0, 0);
+      if (this.imgs.laces_web) ctx.drawImage(this.imgs.laces_web, 0, 0);
       ctx.restore();
       if (this.imgs.web_fill && D.bbox.web_fill) {
         const f = this.tinted('web_fill', this.hex('web', state));

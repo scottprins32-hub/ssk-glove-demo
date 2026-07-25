@@ -412,12 +412,27 @@ def main():
     # themselves, or the split would show as a step in brightness.
     lac = load("laces")
     web_im = load("web")
+    web_lace_mask = None
     if lac is not None and web_im is not None:
         webm = np.asarray(web_im)[..., 3] > 90
         hull = ndimage.binary_fill_holes(
             ndimage.binary_closing(webm, np.ones((25, 25), bool)))
         la = np.asarray(lac)[..., 3] > 40
-        inside = la & hull
+        # Whole pieces, not the part inside the outline: the lace that wraps
+        # the top of the web crosses its edge, so clipping left the outer half
+        # behind on the general laces layer, where it survived the swap and
+        # sat on top of the new web.
+        #
+        # But "touches the web" is too generous — the knotted lace touches it
+        # too, and that one belongs to the glove and has to stay. How much of
+        # a piece lies inside tells them apart cleanly: the loops around the
+        # rim are a third to two thirds in, the knot is a seventh.
+        lbl, n = ndimage.label(la)
+        sizes = ndimage.sum(la, lbl, range(1, n + 1))
+        within = ndimage.sum(la & hull, lbl, range(1, n + 1))
+        frac = np.divide(within, sizes, out=np.zeros_like(within),
+                         where=sizes > 0)
+        inside = np.isin(lbl, np.nonzero(frac >= 0.35)[0] + 1)
         if inside.sum() > 500:
             def half(src, keep):
                 a = np.asarray(src).copy()
@@ -430,6 +445,7 @@ def main():
                 assets["laces_hi"] = to_data_uri(half(sp, ~inside), quality=80, method=4)
                 assets["laces_web_hi"] = to_data_uri(half(sp, inside), quality=80,
                                                      method=4)
+            web_lace_mask = inside
             print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
 
     # The index finger is a single piece when it carries a flag, so the welt
@@ -468,8 +484,14 @@ def main():
     web_im = load("web")
     if web_im is not None and any(p.is_dir() for p in web_dir.glob("*")):
         wa = np.asarray(tint_base(web_im)).copy()
+        # The backing has to cover everything the swap removes — the web and
+        # its lacing both — or the neutral base shows through as bare tan
+        # where a lace used to be.
+        gone = wa[..., 3] > 90
+        if web_lace_mask is not None:
+            gone = gone | web_lace_mask
         solid = ndimage.binary_fill_holes(
-            ndimage.binary_closing(wa[..., 3] > 90, np.ones((25, 25), bool)))
+            ndimage.binary_closing(gone, np.ones((25, 25), bool)))
         gap = solid & (wa[..., 3] <= 90)
         if gap.any():
             iy, ix = ndimage.distance_transform_edt(
