@@ -24,10 +24,10 @@ const FIELD_TO_LAYER = {
 const LAYER_TO_FIELD = Object.fromEntries(
   Object.entries(FIELD_TO_LAYER).map(([f, l]) => [l, f]));
 
-/* A flag (or a name) on the middle finger is embroidered on one piece of
-   leather, so back5 and back6 stop being separate choices — see Scott's
-   glove, where the signature sits on a single unsplit panel. */
-const middleIsOnePiece = () => !!S.flag && S.flag !== 'None';
+/* A flag is embroidered on one piece of leather, so back3 and back4 stop
+   being separate choices — see the orange glove, where the Dutch flag sits
+   on a single unsplit index-finger panel. */
+const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
 
 const PALETTE_OF = f =>
   f === 'stitching' ? 'stitching' :
@@ -129,11 +129,16 @@ function layerState() {
 const code = () => refCode(DATA, layerState(), S.bullet);
 
 /* ----------------------------------------------------------------- canvas */
+const flagArt = () => {
+  const f = FLAGS.find(f => f.id === S.flag);
+  return (f && f.art) || null;
+};
 function draw() {
+  R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
-    middleIsOnePiece());
+    indexIsOnePiece());
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -179,16 +184,19 @@ function renderStart(b) {
       (st.slot ? `<span class="sub">${t('sigSlot')}</span>` : '')));
     c.onclick = () => { applyStarter(st); paint(); };
     grid.appendChild(c);
-    // thumbnail rendered from the real compositor
+    // thumbnail rendered from the real compositor, flag and all
     requestAnimationFrame(() => {
       const g = cv.getContext('2d');
-      const prev = { ...S.colors }, pb = S.bullet;
+      const prev = { ...S.colors }, pb = S.bullet, pf = S.flag;
       applyStarter(st, true);
+      R.setFlag(flagArt());
       const tmp = document.createElement('canvas');
       tmp.width = DATA.w; tmp.height = DATA.h;
-      R.draw(tmp.getContext('2d'), layerState(), S.bullet, null);
+      R.draw(tmp.getContext('2d'), layerState(), S.bullet, null,
+             indexIsOnePiece());
       g.drawImage(tmp, 0, 0, 200, 237);
-      S.colors = prev; S.bullet = pb;
+      S.colors = prev; S.bullet = pb; S.flag = pf;
+      R.setFlag(flagArt());          // the renderer holds one flag at a time
     });
   }
   b.appendChild(grid);
@@ -226,6 +234,9 @@ function applyStarter(st, quiet) {
     S.colors[f] = v;
   }
   if (st.bullet != null) S.bullet = st.bullet;
+  // a national build comes with its flag on; every other starter clears it
+  S.flag = st.flag || null;
+  if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
   if (!quiet) { S.startId = st.id; draw(); }
 }
 
@@ -271,20 +282,20 @@ function renderColours(b) {
   const parts = el('div', 'parts');
   for (const f of COLOUR_ORDER) {
     if (f === 'pad_color') continue;
-    if (f === 'back6' && middleIsOnePiece()) continue;   // merged into back5
+    if (f === 'back4' && indexIsOnePiece()) continue;   // merged into back3
     const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
     p.type = 'button';
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
-                  (f === 'back5' && middleIsOnePiece()
-                    ? t('middleOnePiece') : fieldLabel(f, S.lang));
+                  (f === 'back3' && indexIsOnePiece()
+                    ? t('indexOnePiece') : fieldLabel(f, S.lang));
     p.onclick = () => { S.part = f; paint(); };
     parts.appendChild(p);
   }
   b.appendChild(parts);
   b.appendChild(swatchField(
     S.part,
-    (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
-                                               : (OFFSTAGE[S.part] || null),
+    (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
+                                              : (OFFSTAGE[S.part] || null),
     true));
 
   if (/^back/.test(S.part)) {
@@ -324,8 +335,7 @@ function renderLogos(b) {
 function renderPersonal(b) {
   b.appendChild(refStrip([
     ['assets/ref/thumb_name.webp', t('thumbText')],
-    ['assets/ref/thumb_circle.webp', t('thumbNumber')],
-    ['assets/ref/middle_finger.webp', t('flag')]
+    ['assets/ref/thumb_circle.webp', t('thumbNumber')]
   ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
     v => { S.thumbText = v; paint(false); }));
@@ -352,7 +362,7 @@ function renderPersonal(b) {
   })), S.flag, v => {
     snapshot(); S.flag = v;
     // one piece of leather now, so the two halves share a colour
-    if (middleIsOnePiece()) S.colors.back6 = S.colors.back5;
+    if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
     draw(); paint();
   }, false));
 }
@@ -460,8 +470,8 @@ function swatchField(field, note, required) {
     S.colors[field], v => {
       snapshot();
       S.colors[field] = v;
-      if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) {
-        S.colors.back5 = S.colors.back6 = v;
+      if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
+        S.colors.back3 = S.colors.back4 = v;
       }
       draw(); paint();
     }, required, note);
@@ -500,9 +510,9 @@ function specRows() {
   rows.push(['#', t('colours')]);
   for (const f of COLOUR_ORDER) {
     if (f === 'web' || f === 'pad_color' || f === 'ring_emb') continue;
-    if (f === 'back6' && middleIsOnePiece()) continue;
-    push(f === 'back5' && middleIsOnePiece() ? t('middleOnePiece')
-                                             : fieldLabel(f, L), colName(f));
+    if (f === 'back4' && indexIsOnePiece()) continue;
+    push(f === 'back3' && indexIsOnePiece() ? t('indexOnePiece')
+                                            : fieldLabel(f, L), colName(f));
   }
   rows.push(['#', t('logos')]);
   push(t('bullet'), DATA.bullets[S.bullet] && DATA.bullets[S.bullet].name);
@@ -651,6 +661,7 @@ loadGlove().then(bundle => {
   DATA = bundle.DATA;
   R = new GloveRenderer(bundle);
   ctx = $('#glove').getContext('2d');
+  R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });
 
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;

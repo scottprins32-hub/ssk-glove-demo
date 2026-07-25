@@ -143,10 +143,116 @@ export class GloveRenderer {
     ctx.drawImage(off, 0, 0);
   }
 
+  // Eight small SVGs. Decoding them up front keeps setFlag synchronous, which
+  // is what the starter thumbnails need — they draw one glove per frame and
+  // cannot wait on a load.
+  preloadFlags(srcs) {
+    this._flags = this._flags || {};
+    return Promise.all([...new Set(srcs.filter(Boolean))].map(src =>
+      new Promise(res => {
+        const im = new Image();
+        im.onload = () => { this._flags[src] = im; res(); };
+        im.onerror = res;
+        im.src = src;
+      })));
+  }
+
+  // The flag patch on the index finger. SVGs decode asynchronously, so the
+  // app hands over a URL and gets a callback once there is something to draw.
+  setFlag(src, onReady) {
+    this._flags = this._flags || {};
+    this.flagSrc = src || null;
+    this.flagImg = src ? (this._flags[src] || null) : null;
+    if (!src || this.flagImg) return;
+    const im = new Image();
+    im.onload = () => {
+      this._flags[src] = im;
+      if (this.flagSrc === src) { this.flagImg = im; if (onReady) onReady(); }
+    };
+    im.src = src;
+  }
+
+  // Union of a set of layers, kept for masking. Not in the tint cache's
+  // eviction list — there is one of these and it never changes.
+  panelMask(ids) {
+    const key = 'mask|' + ids.join(',');
+    let c = this.cache.get(key);
+    if (c) return c;
+    c = document.createElement('canvas');
+    c.width = this.DATA.w; c.height = this.DATA.h;
+    const g = c.getContext('2d');
+    for (const id of ids) if (this.imgs[id]) g.drawImage(this.imgs[id], 0, 0);
+    this.cache.set(key, c);
+    return c;
+  }
+
+  // A rectangular embroidered patch, laid on the index finger the way SSK
+  // sews it: a quarter turn, so the stripes run along the finger, with the
+  // leather's own shading multiplied back over it.
+  drawFlag(ctx) {
+    const M = this.DATA.flagMount, im = this.flagImg;
+    if (!M || !im) return;
+    // The patch is as wide as the finger allows; its length follows the flag's
+    // own proportions, so the Stars and Stripes (19:10) does not get squashed
+    // into the 3:2 the mount was measured at.
+    const ar = im.naturalWidth && im.naturalHeight
+      ? im.naturalWidth / im.naturalHeight : M.h / M.w;
+    const L = M.w * ar;
+    const octx = this.octx, off = this.off;
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.globalCompositeOperation = 'source-over';
+    octx.clearRect(0, 0, off.width, off.height);
+
+    octx.save();
+    octx.translate(M.cx, M.cy);
+    octx.rotate(M.angle);
+    octx.save();
+    octx.rotate(Math.PI / 2);              // hoist to the fingertip
+    octx.drawImage(im, -L / 2, -M.w / 2, L, M.w);
+    octx.restore();
+    // thread ridges, running across the stripes
+    octx.globalCompositeOperation = 'multiply';
+    octx.strokeStyle = 'rgba(0,0,0,0.17)';
+    octx.lineWidth = 1;
+    octx.beginPath();
+    for (let y = -L / 2 + 1.5; y < L / 2; y += 3) {
+      octx.moveTo(-M.w / 2, y); octx.lineTo(M.w / 2, y);
+    }
+    octx.stroke();
+    octx.restore();
+
+    // Shading. A multiply onto empty canvas paints the source rather than
+    // doing nothing, so the panel would flood the whole finger — clip to the
+    // patch first. The welt is left out on purpose: its groove is exactly what
+    // the merge erases, and multiplying it back draws the seam through the
+    // flag. The clip is fixed in device space, so resetting the transform
+    // underneath it is safe.
+    octx.save();
+    octx.translate(M.cx, M.cy);
+    octx.rotate(M.angle);
+    octx.beginPath();
+    octx.rect(-M.w / 2, -L / 2, M.w, L);
+    octx.clip();
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.globalCompositeOperation = 'multiply';
+    octx.drawImage(this.panelMask(['back3', 'back4']), 0, 0);
+    octx.restore();
+
+    // Clipping does include the welt, or the closed seam slices the patch.
+    octx.globalCompositeOperation = 'destination-in';
+    octx.drawImage(this.panelMask(['back3', 'back4', 'welt_index']), 0, 0);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 6; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
+    ctx.drawImage(off, 0, 0);
+    ctx.restore();
+  }
+
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
-  // mergeMiddle: the middle finger is one piece, so close the welt seam that
-  // splits back5 from back6 by painting it in the panel's own colour.
-  draw(ctx, state, bulletSel, highlight, mergeMiddle) {
+  // mergeIndex: the index finger is one piece under a flag, so close the welt
+  // seam that splits back3 from back4 by painting it in the panel's colour.
+  draw(ctx, state, bulletSel, highlight, mergeIndex) {
     const D = this.DATA;
     ctx.clearRect(0, 0, D.w, D.h);
     ctx.drawImage(this.imgs.glove, 0, 0);
@@ -154,10 +260,11 @@ export class GloveRenderer {
       const c = this.tinted(z.id, this.hex(z.id, state));
       ctx.drawImage(c, c._ox, c._oy);
     }
-    if (mergeMiddle && this.imgs.welt_mid && D.bbox.welt_mid) {
-      const c = this.tinted('welt_mid', this.hex('back5', state));
+    if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
+      const c = this.tinted('welt_index', this.hex('back3', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
+    if (mergeIndex) this.drawFlag(ctx);
     this.drawBullet(ctx, bulletSel);
     if (highlight && highlight.id && D.bbox[highlight.id]) {
       const c = this.tinted(highlight.id, '#ffffff');

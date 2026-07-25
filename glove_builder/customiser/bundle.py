@@ -107,7 +107,16 @@ def main():
             return m.group(0)
         n += 1
         return "'" + data_uri(p) + "'"
-    body = re.sub(r"'(assets/(?:form|ref)/[^']+)'", sub_asset, body)
+    body = re.sub(r"'(assets/(?:form|ref|flags)/[^']+)'", sub_asset, body)
+    # glove-catalog builds flag paths as `FL + 'netherlands.svg'`
+    def sub_flag(m):
+        nonlocal n
+        p = HERE / "assets" / "flags" / m.group(1)
+        if not p.is_file():
+            return m.group(0)
+        n += 1
+        return "'" + data_uri(p) + "'"
+    body = re.sub(r"FL \+ '([^']+)'", sub_flag, body)
     # glove-catalog builds form paths as `F + 'webs/H_Web.jpg'`; resolve those
     def sub_concat(m):
         nonlocal n

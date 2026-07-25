@@ -283,6 +283,44 @@ def ssk_wordmark(embroidery_layer, height):
     return Image.fromarray(out, "RGBA")
 
 
+def mount_from_panel(mask, top=0.14, bot=0.42, fill=0.79, ratio=1.5):
+    """Where the flag patch sits on a finger panel.
+
+    Measured off the orange glove Scott photographed: the patch starts 14%
+    down the finger, ends at 42%, and covers 79% of the finger's width
+    there. `ratio` is the patch's length along the finger over its width —
+    a 3:2 flag turned a quarter turn, stripes running lengthwise.
+
+    Returns {cx, cy, w, h, angle} in canvas pixels, angle in radians
+    clockwise, or None if the panel is missing.
+    """
+    ys, xs = np.nonzero(mask)
+    if len(ys) < 500:
+        return None
+    y0, y1 = int(ys.min()), int(ys.max())
+    span = y1 - y0
+
+    def centre(y):
+        row = np.nonzero(mask[y])[0]
+        return (float(row.mean()), len(row)) if len(row) else (None, 0)
+
+    band = range(y0 + int(span * top), y0 + int(span * bot) + 1)
+    pts = [(y, *centre(y)) for y in band]
+    pts = [(y, c, n) for y, c, n in pts if c is not None]
+    if len(pts) < 20:
+        return None
+    yy = np.array([p[0] for p in pts], float)
+    cc = np.array([p[1] for p in pts], float)
+    # x = a*y + b: the finger leans, so the patch leans with it
+    a = np.polyfit(yy, cc, 1)[0]
+    cy = float(yy.mean())
+    cx = float(cc.mean())
+    width = float(np.median([p[2] for p in pts])) * fill
+    return {"cx": round(cx, 1), "cy": round(cy, 1),
+            "w": round(width, 1), "h": round(width * ratio, 1),
+            "angle": round(float(np.arctan(-a)), 4)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", required=True)
@@ -334,24 +372,27 @@ def main():
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
         idmap[alpha > 90] = i
         zones.append({"id": name, "n": i, "group": group, "label": label})
-    # The middle finger is a single piece when it carries a flag or a name,
-    # so the welt that splits back5 from back6 has to disappear. Export just
-    # that seam; the page paints it in the panel colour to close it up.
+    # The index finger is a single piece when it carries a flag, so the welt
+    # that splits back3 from back4 has to disappear. Export just that seam;
+    # the page paints it in the panel colour to close it up. It also gives us
+    # the patch mount: centre, size and tilt of the flag on that finger.
     import cv2 as _cv2
-    w5, w6, wl = load("back5"), load("back6"), load("welting")
-    if w5 is not None and w6 is not None and wl is not None:
+    flag_mount = None
+    w3, w4, wl = load("back3"), load("back4"), load("welting")
+    if w3 is not None and w4 is not None and wl is not None:
         A = lambda im: np.asarray(im)[..., 3] > 90
         big, small = np.ones((41, 41), np.uint8), np.ones((15, 15), np.uint8)
         seed = (A(wl)
-                & _cv2.dilate(A(w5).astype(np.uint8), big).astype(bool)
-                & _cv2.dilate(A(w6).astype(np.uint8), big).astype(bool))
+                & _cv2.dilate(A(w3).astype(np.uint8), big).astype(bool)
+                & _cv2.dilate(A(w4).astype(np.uint8), big).astype(bool))
         seam = A(wl) & _cv2.dilate(seed.astype(np.uint8), small).astype(bool)
         if seam.sum() > 500:
             sa = np.asarray(wl).copy()
             sa[..., 3] = np.where(seam, sa[..., 3], 0)
-            assets["welt_mid"] = to_data_uri(
+            assets["welt_index"] = to_data_uri(
                 tint_base(Image.fromarray(sa, "RGBA")), quality=85, method=4)
-            print(f"middle-finger seam: {seam.sum()} px -> welt_mid")
+            print(f"index-finger seam: {seam.sum()} px -> welt_index")
+        flag_mount = mount_from_panel(A(w3) | A(w4))
 
     bullet = load("bullet_logo")
     bullets = []
@@ -487,6 +528,7 @@ def main():
     data = {"w": W, "h": H, "zones": zones, "palettes": pal,
             "presets": PRESETS, "bullets": bullets,
             "bulletBox": bullet_box if bullets else None,
+            "flagMount": flag_mount,
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())

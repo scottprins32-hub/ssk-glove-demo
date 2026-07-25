@@ -39,19 +39,24 @@ export const EMB_FONTS = [
   'Block with Shadow', 'Script with Shadow', 'Brush with Shadow', 'Kanji with Shadow'
 ].map(n => ({ id: n, img: F + 'fonts/' + n.replace(/ /g, '_') + '.jpg' }));
 
-/* The flag goes on the MIDDLE finger. SSK's Google Form labels the question
-   "Flag option (Index finger)" — that label is wrong, confirmed twice against
-   the real glove (images/scott-glove-2026-07: the SSK mark is on the ring
-   finger and the flag/signature sits on the finger above it). Pim's form is
-   what wants correcting, not this. */
+/* The flag goes on the INDEX finger, exactly as SSK's Google Form says —
+   the orange glove Scott photographed has the Dutch flag on one unsplit
+   index-finger panel. `art` is the file the renderer lays on the finger;
+   the same file is the picker thumbnail. See make_flags.py. */
+const FL = 'assets/flags/';
 export const FLAGS = [
-  { id: 'None', en: 'No flag', nl: 'Geen vlag', img: null },
-  { id: 'Netherlands', en: 'Netherlands', nl: 'Nederland', img: F + 'flags/Netherlands.jpg' },
-  { id: 'Curaçao', en: 'Curaçao', nl: 'Curaçao', img: F + 'flags/Cura_ao.jpg' },
-  { id: 'Aruba', en: 'Aruba', nl: 'Aruba', img: F + 'flags/Aruba.jpg' },
-  { id: 'Sint Maarten', en: 'Sint Maarten', nl: 'Sint Maarten', img: F + 'flags/Sint_Maarten.jpg' },
-  { id: 'Other Flag', en: 'Other flag', nl: 'Andere vlag', img: null }
-];
+  { id: 'None', en: 'No flag', nl: 'Geen vlag', img: null, art: null },
+  { id: 'Netherlands', en: 'Netherlands', nl: 'Nederland', art: FL + 'netherlands.svg' },
+  { id: 'Belgium', en: 'Belgium', nl: 'België', art: FL + 'belgium.svg' },
+  { id: 'Germany', en: 'Germany', nl: 'Duitsland', art: FL + 'germany.svg' },
+  { id: 'Italy', en: 'Italy', nl: 'Italië', art: FL + 'italy.svg' },
+  { id: 'United States', en: 'United States', nl: 'Verenigde Staten', art: FL + 'usa.svg' },
+  { id: 'Japan', en: 'Japan', nl: 'Japan', art: FL + 'japan.svg' },
+  { id: 'Curaçao', en: 'Curaçao', nl: 'Curaçao', art: FL + 'curacao.svg' },
+  { id: 'Aruba', en: 'Aruba', nl: 'Aruba', art: FL + 'aruba.svg' },
+  { id: 'Sint Maarten', en: 'Sint Maarten', nl: 'Sint Maarten', art: FL + 'sint_maarten.svg' },
+  { id: 'Other Flag', en: 'Other flag', nl: 'Andere vlag', img: null, art: null }
+].map(f => ({ ...f, img: f.img === undefined ? f.art : f.img }));
 
 export const CIRCLE_COLORS = [
   ['Black', '#17161A'], ['Navy', '#1D3A8F'], ['Yellow', '#E8B84C'],
@@ -71,6 +76,8 @@ export const OFFSTAGE = {
 // than being handed someone else's colourway to undo. Then signature,
 // national, stock. app.js applies STARTERS[0] on load, so this is the default.
 // `slot: true` marks a signature card that still needs a real SSK athlete attached.
+// `flag` is a FLAGS id: a national build arrives with its flag already on the
+// index finger, which is the whole point of picking that card.
 export const STARTERS = [
   { id: 'blank', en: 'Blank glove', nl: 'Blanco handschoen', group: 'blank', marks: false, bullet: 7,
     colors: { _panels: '10', welting: '10', laces: '10', binding: '10', lining: '10',
@@ -82,9 +89,11 @@ export const STARTERS = [
     colors: { _panels: '20', welting: '10', laces: '10', binding: '20', lining: '20',
               thumb_loops: '10', pinky_loops: '10', embroidery: '10', stitching: '10' } },
   { id: 'nl', en: 'Netherlands', nl: 'Nederland', group: 'national', bullet: 14,
+    flag: 'Netherlands',
     colors: { _panels: '35', welting: '70', laces: '70', binding: '70', lining: '70',
               thumb_loops: '70', pinky_loops: '70', embroidery: '10', stitching: '70' } },
   { id: 'cw', en: 'Curaçao', nl: 'Curaçao', group: 'national', bullet: 13,
+    flag: 'Curaçao',
     colors: { _panels: '60', welting: '45', laces: '45', binding: '45', lining: '60',
               thumb_loops: '45', pinky_loops: '45', embroidery: '10', stitching: '45' } },
   { id: 'Navy & Orange', en: 'Navy & Orange', nl: 'Navy & Oranje', group: 'stock', bullet: 14 },
@@ -111,9 +120,9 @@ export const T = {
     thumbText: 'Thumb embroidery', thumbFont: 'Embroidery font', thumbMain: 'Main thread',
     thumbOutline: 'Outline / shadow thread', thumbNumber: 'Number or initials on the thumb',
     circle: 'Circle colour', numberColor: 'Number thread',
-    flag: 'Middle finger flag',
-    middleOnePiece: 'Back 5+6 — middle finger, one piece',
-    middleMerged: 'A flag is embroidered on one piece of leather, so the middle finger takes a single colour.',
+    flag: 'Index finger flag',
+    indexOnePiece: 'Back 3+4 — index finger, one piece',
+    indexMerged: 'A flag is embroidered on one piece of leather, so the index finger takes a single colour.',
     circleHint: 'Two characters — a number or initials. Leave it empty and the circle gets the small SSK logo instead.',
     name: 'Your name', phone: 'Phone number',
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
@@ -146,9 +155,9 @@ export const T = {
     thumbText: 'Borduring duim', thumbFont: 'Letterstijl', thumbMain: 'Hoofdgaren',
     thumbOutline: 'Contour / schaduwgaren', thumbNumber: 'Nummer of initialen op de duim',
     circle: 'Kleur cirkel', numberColor: 'Garen nummer',
-    flag: 'Vlag op middelvinger',
-    middleOnePiece: 'Back 5+6 — middelvinger, één stuk',
-    middleMerged: 'Een vlag wordt op één stuk leer geborduurd, dus de middelvinger krijgt één kleur.',
+    flag: 'Vlag op wijsvinger',
+    indexOnePiece: 'Back 3+4 — wijsvinger, één stuk',
+    indexMerged: 'Een vlag wordt op één stuk leer geborduurd, dus de wijsvinger krijgt één kleur.',
     circleHint: 'Twee tekens — een nummer of initialen. Laat je het leeg, dan komt het kleine SSK-logo in de cirkel.',
     name: 'Je naam', phone: 'Telefoonnummer',
     left: 'nog open', done: 'klaar', undo: 'Ongedaan', redo: 'Opnieuw', reset: 'Wissen',
