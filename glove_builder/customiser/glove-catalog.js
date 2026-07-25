@@ -25,9 +25,11 @@ export const NATIVE_WEB = 'H-Web';
 export const WEBS = [
   { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'],
     render: 'spiral-i' },
-  { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'] },
+  { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'],
+    render: 'standard-i' },
   { id: 'SMS-Web', img: F + 'webs/SMS_Web.jpg', sizes: ['11.75"'] },
-  { id: 'SMK-Web', img: F + 'webs/SMK_Web.jpg', sizes: ['11.75"'] },
+  { id: 'SMK-Web', img: F + 'webs/SMK_Web.jpg', sizes: ['11.75"'],
+    render: 'smk' },
   { id: 'H-Web', img: F + 'webs/H_Web.jpg', sizes: ['11.75"', '12"', '12.25"', '12.5"', '12.75"'] },
   { id: 'SMLEE-Web', img: F + 'webs/SMLEE_Web.jpg', sizes: ['11.75"'] },
   { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'] },

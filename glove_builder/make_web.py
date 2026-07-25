@@ -92,6 +92,49 @@ WEBS = {
         # the photograph instead.
         "loop_polys": [[(760, 840), (899, 935), (780, 935), (730, 890)]],
     },
+    # Columbia shell with yellow lacing. The web's leather is the same leather
+    # as the shell, so value cannot split it from anything — Otsu finds no
+    # edge at all. Hue does: the leather sits at 202 degrees and the lace at 45.
+    "standard-i": {
+        "photo": "images/drive-2026-07/YellowPad1.jpg",
+        "glove_mask": "runs/standard-i/masks/glove.png",
+        "lace_hue": (20, 70),
+        "outline": [(800, 40), (880, 30), (980, 60), (1060, 130), (1120, 260),
+                    (1145, 420), (1130, 560), (1090, 690), (1020, 820),
+                    (955, 920), (890, 985), (825, 1005), (778, 985),
+                    (762, 930), (764, 860), (772, 790), (782, 700),
+                    (790, 580), (795, 450), (797, 320), (798, 180)],
+        # The band stops at 752: any further left and it takes in the finger
+        # pad, and the calibration glove has no pad fitted — that is a separate
+        # question on the form, so pasting one on would answer it for the
+        # customer.
+        "finger_poly": [(800, 40), (798, 180), (797, 320), (795, 450),
+                        (790, 580), (782, 700), (772, 790), (764, 860),
+                        (762, 930), (778, 985),
+                        (752, 975), (752, 900), (754, 830), (760, 740),
+                        (764, 620), (766, 480), (767, 340), (768, 190),
+                        (768, 40)],
+    },
+    # Pink shell with light-blue lacing, and the same story: the web's leather
+    # is the shell's leather. Two clean peaks in the hue histogram, blue lacing
+    # at 200-230 degrees and pink leather at 310-330.
+    "smk": {
+        "photo": "images/drive-2026-07/SMK-Web-righty1.jpg",
+        "glove_mask": "runs/smk/masks/glove.png",
+        "lace_hue": (170, 250),
+        "outline": [(760, 40), (850, 25), (960, 55), (1050, 130), (1110, 250),
+                    (1140, 400), (1130, 540), (1090, 670), (1030, 800),
+                    (965, 910), (900, 985), (830, 1015), (770, 995),
+                    (735, 940), (725, 860), (730, 780), (740, 700),
+                    (748, 600), (755, 480), (758, 360), (759, 240),
+                    (759, 130)],
+        "finger_poly": [(760, 40), (759, 130), (759, 240), (758, 360),
+                        (755, 480), (748, 600), (740, 700), (730, 780),
+                        (725, 860), (735, 940), (770, 995),
+                        (700, 980), (660, 925), (650, 850), (658, 770),
+                        (668, 690), (676, 590), (682, 470), (686, 350),
+                        (687, 230), (688, 120), (688, 40)],
+    },
 }
 
 
@@ -120,12 +163,26 @@ def cut(spec):
         # find it rather than carrying a hand-tuned number per photograph.
         # Guessing 0.68 here put the shaded laces on the leather side; Otsu
         # says 0.451 for this glove.
-        cutv = spec.get("lace_v")
-        if cutv is None:
-            cutv = cv2.threshold((val[region] * 255).astype(np.uint8), 0, 255,
-                                 cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0] / 255
-            print(f"leather/lace split at V = {cutv:.3f} (Otsu)")
-        web = region & (val < cutv)
+        if "lace_hue" in spec:
+            # Brightness cannot split these two. On the Standard I and the SMK
+            # the web's leather is the same leather as the shell — Columbia
+            # blue, pink — and only the lacing differs, so the two sit at the
+            # same value and Otsu finds nothing. Hue separates them outright:
+            # 205 degrees against 45 on one glove, 340 against 205 on the other.
+            hue = np.asarray(im.convert("HSV")).astype(float)[..., 0] * 360 / 255
+            lo, hi = spec["lace_hue"]
+            islace = ((hue >= lo) & (hue <= hi) if lo <= hi
+                      else (hue >= lo) | (hue <= hi))
+            web = region & ~islace
+            cutv = None
+        else:
+            cutv = spec.get("lace_v")
+            if cutv is None:
+                cutv = cv2.threshold((val[region] * 255).astype(np.uint8), 0,
+                                     255,
+                                     cv2.THRESH_BINARY + cv2.THRESH_OTSU)[0] / 255
+                print(f"leather/lace split at V = {cutv:.3f} (Otsu)")
+            web = region & (val < cutv)
         web = ndimage.binary_closing(web, np.ones((7, 7), bool))
         web = ndimage.binary_opening(web, np.ones((3, 3), bool))
         lace = region & ~web
@@ -136,7 +193,8 @@ def cut(spec):
         for poly in spec.get("lace_polys", ()):
             extra = np.zeros(glove.shape, np.uint8)
             cv2.fillPoly(extra, [np.array(poly, np.int32)], 1)
-            lace |= glove & extra.astype(bool) & (val >= cutv)
+            bright = islace if cutv is None else (val >= cutv)
+            lace |= glove & extra.astype(bool) & bright
         finger = None
         if "finger_poly" in spec:
             fp = np.zeros(glove.shape, np.uint8)
