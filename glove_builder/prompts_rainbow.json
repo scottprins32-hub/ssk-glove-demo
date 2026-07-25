@@ -1,0 +1,12 @@
+{
+  "glove": "baseball glove",
+  "web": ["turquoise leather glove web", "teal woven leather panel", "cyan leather web"],
+  "laces": ["pink leather laces", "pink shoelace"],
+  "thumb_back1": ["red leather panel", "red leather thumb of the glove"],
+  "back_orange": ["orange leather finger panel", "orange leather strip"],
+  "back_yellow": ["yellow leather finger panel", "yellow leather strip"],
+  "back_green": ["green leather finger panel", "green leather strip"],
+  "wrist_purple": ["purple leather wrist strap", "purple leather cuff"],
+  "logo": ["brand logo on the glove", "logo patch"],
+  "stitching": "stitching"
+}

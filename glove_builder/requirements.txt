@@ -1,0 +1,11 @@
+# Known-good CPU dependency set for the SAM3 glove cutout pipeline
+# (install torch first: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu)
+numpy==1.26.4
+scipy==1.13.1
+opencv-python-headless==4.9.0.80
+matplotlib==3.9.4
+scikit-image==0.23.2
+einops
+triton
+pycocotools
+psutil

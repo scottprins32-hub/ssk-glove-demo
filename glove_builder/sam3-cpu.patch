@@ -1,0 +1,59 @@
+diff --git a/sam3/model/decoder.py b/sam3/model/decoder.py
+index b90e55f..171e6ee 100644
+--- a/sam3/model/decoder.py
++++ b/sam3/model/decoder.py
+@@ -280,7 +280,7 @@ class TransformerDecoder(nn.Module):
+             if resolution is not None and stride is not None:
+                 feat_size = resolution // stride
+                 coords_h, coords_w = self._get_coords(
+-                    feat_size, feat_size, device="cuda"
++                    feat_size, feat_size, device="cuda" if torch.cuda.is_available() else "cpu"
+                 )
+                 self.compilable_cord_cache = (coords_h, coords_w)
+                 self.compilable_stored_size = (feat_size, feat_size)
+diff --git a/sam3/model/geometry_encoders.py b/sam3/model/geometry_encoders.py
+index d60ee54..a3f9c29 100644
+--- a/sam3/model/geometry_encoders.py
++++ b/sam3/model/geometry_encoders.py
+@@ -645,7 +645,9 @@ class SequenceGeometryEncoder(nn.Module):
+             # We need to denormalize, and convert to [x, y, x, y]
+             boxes_xyxy = box_cxcywh_to_xyxy(boxes)
+             scale = torch.tensor([W, H, W, H], dtype=boxes_xyxy.dtype)
+-            scale = scale.pin_memory().to(device=boxes_xyxy.device, non_blocking=True)
++            if torch.cuda.is_available():
++                scale = scale.pin_memory()
++            scale = scale.to(device=boxes_xyxy.device, non_blocking=True)
+             scale = scale.view(1, 1, 4)
+             boxes_xyxy = boxes_xyxy * scale
+             sampled = torchvision.ops.roi_align(
+diff --git a/sam3/model/position_encoding.py b/sam3/model/position_encoding.py
+index f38c62b..9debcee 100644
+--- a/sam3/model/position_encoding.py
++++ b/sam3/model/position_encoding.py
+@@ -52,7 +52,7 @@ class PositionEmbeddingSine(nn.Module):
+                 (precompute_resolution // 32, precompute_resolution // 32),
+             ]
+             for size in precompute_sizes:
+-                tensors = torch.zeros((1, 1) + size, device="cuda")
++                tensors = torch.zeros((1, 1) + size, device="cuda" if torch.cuda.is_available() else "cpu")
+                 self.forward(tensors)
+                 # further clone and detach it in the cache (just to be safe)
+                 self.cache[size] = self.cache[size].clone().detach()
+diff --git a/sam3/model/vitdet.py b/sam3/model/vitdet.py
+index f6771a1..bc3ac5a 100644
+--- a/sam3/model/vitdet.py
++++ b/sam3/model/vitdet.py
+@@ -68,7 +68,12 @@ class Mlp(nn.Module):
+         self.drop2 = nn.Dropout(drop_probs[1])
+ 
+     def forward(self, x):
+-        x = addmm_act(type(self.act), self.fc1, x)
++        if x.is_cuda:
++            x = addmm_act(type(self.act), self.fc1, x)
++        else:
++            # the fused kernel casts to bfloat16, which mismatches the fp32
++            # weights of fc2 when CUDA autocast is unavailable
++            x = self.act(self.fc1(x))
+         x = self.drop1(x)
+         x = self.norm(x)
+         x = self.fc2(x)

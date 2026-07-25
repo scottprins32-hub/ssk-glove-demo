@@ -1,0 +1,347 @@
+[
+  {
+    "question": "Finger Pad/Hood",
+    "option": "None",
+    "file": "finger_pad/None.jpg"
+  },
+  {
+    "question": "Finger Pad/Hood",
+    "option": "Finger Pad",
+    "file": "finger_pad/Finger_Pad.jpg"
+  },
+  {
+    "question": "Finger Pad/Hood",
+    "option": "Finger Hood",
+    "file": "finger_pad/Finger_Hood.jpg"
+  },
+  {
+    "question": "Finger Pad/Hood Color",
+    "option": "",
+    "file": "zones/Finger_Pad_Hood_Color.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Spiral I-Web (only 11.5\" and 11.75\")",
+    "file": "webs/Spiral_I_Web.png"
+  },
+  {
+    "question": "Web Type",
+    "option": "Standard I-Web (only 11.5\" and 11.75\")",
+    "file": "webs/Standard_I_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "SMS-Web (only 11.75\")",
+    "file": "webs/SMS_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "SMK-Web (only 11.75)",
+    "file": "webs/SMK_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "H-Web (only 11.75\", 12\", 12.25\", 12.5\" and 12.75\")",
+    "file": "webs/H_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "SMLEE-Web (only 11.75\")",
+    "file": "webs/SMLEE_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Modified Trapeze-Web (only 12\")",
+    "file": "webs/Modified_Trapeze_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Basket-Web (only 12\" and 12.25\")",
+    "file": "webs/Basket_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Em Rocket-Web (only 12\")",
+    "file": "webs/Em_Rocket_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Sasaki 1-Web (only 12\")",
+    "file": "webs/Sasaki_1_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Sasaki 2-Web (only 12\" and 12.25\")",
+    "file": "webs/Sasaki_2_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Closed Diamond Net-Web (only 12.25\")",
+    "file": "webs/Closed_Diamond_Net_Web.jpg"
+  },
+  {
+    "question": "Web Type",
+    "option": "Trapeze-Web (only 12.75\")",
+    "file": "webs/Trapeze_Web.jpg"
+  },
+  {
+    "question": "Web Color",
+    "option": "",
+    "file": "zones/Web_Color.jpg"
+  },
+  {
+    "question": "Palm Color ",
+    "option": "",
+    "file": "zones/Palm_Color.jpg"
+  },
+  {
+    "question": "Back 1 Color (Wingtip Thumb)",
+    "option": "",
+    "file": "zones/Back_1_Color.jpg"
+  },
+  {
+    "question": "Back 2 Color (Rest of Thumb)",
+    "option": "",
+    "file": "zones/Back_2_Color.jpg"
+  },
+  {
+    "question": "Back 3 Color (First part of index finger)",
+    "option": "",
+    "file": "zones/Back_3_Color.jpg"
+  },
+  {
+    "question": "Back 4 Color (Second part of index finger)",
+    "option": "",
+    "file": "zones/Back_4_Color.jpg"
+  },
+  {
+    "question": "Back 5 Color (First part of middle finger)",
+    "option": "",
+    "file": "zones/Back_5_Color.jpg"
+  },
+  {
+    "question": "Back 6 Color (Second part of middle finger)",
+    "option": "",
+    "file": "zones/Back_6_Color.jpg"
+  },
+  {
+    "question": "Back 7 Color (Whole Ring Finger)",
+    "option": "",
+    "file": "zones/Back_7_Color.jpg"
+  },
+  {
+    "question": "Back 8 Color (Rest of Pinky)",
+    "option": "",
+    "file": "zones/Back_8_Color.jpg"
+  },
+  {
+    "question": "Back 9 Color (Wingtip Pinky)",
+    "option": "",
+    "file": "zones/Back_9_Color.jpg"
+  },
+  {
+    "question": "Thumb Loops Color",
+    "option": "",
+    "file": "zones/Thumb_Loops_Color.jpg"
+  },
+  {
+    "question": "Pinky Loops Color",
+    "option": "",
+    "file": "zones/Pinky_Loops_Color.jpg"
+  },
+  {
+    "question": "Belt Color",
+    "option": "",
+    "file": "zones/Belt_Color.jpg"
+  },
+  {
+    "question": "Lining Color",
+    "option": "",
+    "file": "zones/Lining_Color.jpg"
+  },
+  {
+    "question": "Welting Color",
+    "option": "",
+    "file": "zones/Welting_Color.jpg"
+  },
+  {
+    "question": "Lace Color",
+    "option": "",
+    "file": "zones/Lace_Color.jpg"
+  },
+  {
+    "question": "Binding Color",
+    "option": "",
+    "file": "zones/Binding_Color.jpg"
+  },
+  {
+    "question": "Stitching Color (Color of the small stitching around the whole glove)",
+    "option": "",
+    "file": "zones/Stitching_Color.jpg"
+  },
+  {
+    "question": "Ring Finger Embroidery Color (Color of the SSK Logo on the ring finger)",
+    "option": "",
+    "file": "zones/Ring_Finger_Embroidery_Color.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Edge Gold",
+    "file": "bullet_logos/Edge_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Edge Silver",
+    "file": "bullet_logos/Edge_Silver.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Edge Gun Metal",
+    "file": "bullet_logos/Edge_Gun_Metal.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Silicone Gold",
+    "file": "bullet_logos/Silicone_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Silicone Silver",
+    "file": "bullet_logos/Silicone_Silver.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Red/Green",
+    "file": "bullet_logos/Red_Green.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Rainbow",
+    "file": "bullet_logos/Rainbow.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Black/Gold",
+    "file": "bullet_logos/Black_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Black/Pink",
+    "file": "bullet_logos/Black_Pink.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Black/Purple",
+    "file": "bullet_logos/Black_Purple.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Green/Gold",
+    "file": "bullet_logos/Green_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Winered/Gold",
+    "file": "bullet_logos/Winered_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Blue/Gold",
+    "file": "bullet_logos/Blue_Gold.jpg"
+  },
+  {
+    "question": "Bullet Logo (Logo on wrist)",
+    "option": "Navy/Gold",
+    "file": "bullet_logos/Navy_Gold.jpg"
+  },
+  {
+    "question": "Thumb Embroidery (Name/Short Text)",
+    "option": "",
+    "file": "zones/Thumb_Embroidery.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Block",
+    "file": "fonts/Block.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Script",
+    "file": "fonts/Script.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Brush",
+    "file": "fonts/Brush.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Kanji",
+    "file": "fonts/Kanji.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Block with Outline",
+    "file": "fonts/Block_with_Outline.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Script with Outline",
+    "file": "fonts/Script_with_Outline.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Brush with Outline",
+    "file": "fonts/Brush_with_Outline.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Kanji with Outline",
+    "file": "fonts/Kanji_with_Outline.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Block with Shadow",
+    "file": "fonts/Block_with_Shadow.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Script with Shadow",
+    "file": "fonts/Script_with_Shadow.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Brush with Shadow",
+    "file": "fonts/Brush_with_Shadow.jpg"
+  },
+  {
+    "question": "Thumb Embroidery Font",
+    "option": "Kanji with Shadow",
+    "file": "fonts/Kanji_with_Shadow.jpg"
+  },
+  {
+    "question": "Thumb Number (If you choose not to have a number, this circle will have a small SSK logo instead)",
+    "option": "",
+    "file": "zones/Thumb_Number.jpg"
+  },
+  {
+    "question": "Flag option (Index finger)",
+    "option": "Netherlands",
+    "file": "flags/Netherlands.jpg"
+  },
+  {
+    "question": "Flag option (Index finger)",
+    "option": "Curaçao",
+    "file": "flags/Cura_ao.jpg"
+  },
+  {
+    "question": "Flag option (Index finger)",
+    "option": "Aruba",
+    "file": "flags/Aruba.jpg"
+  },
+  {
+    "question": "Flag option (Index finger)",
+    "option": "Sint Maarten",
+    "file": "flags/Sint_Maarten.jpg"
+  }
+]

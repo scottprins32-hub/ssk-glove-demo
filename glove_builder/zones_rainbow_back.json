@@ -1,0 +1,451 @@
+{
+ "_comment": "SSK zone boxes for SSK-Pro-Custom Rainbow back view (01_2222198493.jpg, 634x750). Boxes are normalized [cx, cy, w, h]. Zone names follow SSK's numbered diagram: back1=thumb wingtip ... back9=pinky wingtip. pick: 'iou' = keep single instance best overlapping the positive boxes, 'all' = keep every instance above threshold (for repeated concepts like welting).",
+ "glove": {
+  "text": "baseball glove",
+  "pick": "best",
+  "priority": 0
+ },
+ "back9": {
+  "boxes": [
+   [
+    0.065,
+    0.52,
+    0.1,
+    0.38
+   ]
+  ],
+  "text": "red leather edge strip",
+  "pick": "iou",
+  "priority": 4,
+  "hsv": [
+   [
+    165,
+    12
+   ],
+   [
+    90,
+    255
+   ],
+   [
+    30,
+    255
+   ]
+  ]
+ },
+ "back8": {
+  "boxes": [
+   [
+    0.17,
+    0.45,
+    0.16,
+    0.58
+   ]
+  ],
+  "text": "red leather panel",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    168,
+    8
+   ],
+   [
+    90,
+    255
+   ],
+   [
+    40,
+    255
+   ]
+  ]
+ },
+ "back7": {
+  "boxes": [
+   [
+    0.3,
+    0.4,
+    0.14,
+    0.68
+   ]
+  ],
+  "text": "orange leather panel",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    4,
+    17
+   ],
+   [
+    180,
+    255
+   ],
+   [
+    60,
+    255
+   ]
+  ]
+ },
+ "back56": {
+  "boxes": [
+   [
+    0.4,
+    0.38,
+    0.17,
+    0.72
+   ]
+  ],
+  "text": "yellow leather panel",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    18,
+    33
+   ],
+   [
+    160,
+    255
+   ],
+   [
+    60,
+    255
+   ]
+  ]
+ },
+ "back34": {
+  "boxes": [
+   [
+    0.535,
+    0.38,
+    0.19,
+    0.76
+   ]
+  ],
+  "text": "green leather panel",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    55,
+    86
+   ],
+   [
+    50,
+    255
+   ],
+   [
+    50,
+    255
+   ]
+  ]
+ },
+ "back2": {
+  "boxes": [
+   [
+    0.74,
+    0.62,
+    0.24,
+    0.3
+   ]
+  ],
+  "text": "turquoise leather panel",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    87,
+    104
+   ],
+   [
+    110,
+    255
+   ],
+   [
+    60,
+    255
+   ]
+  ],
+  "exclude_boxes": [
+   [
+    0.795,
+    0.585,
+    0.16,
+    0.11
+   ]
+  ],
+  "include_boxes": [
+   [
+    0.635,
+    0.55,
+    0.11,
+    0.1
+   ],
+   [
+    0.655,
+    0.575,
+    0.115,
+    0.09
+   ]
+  ]
+ },
+ "back1": {
+  "boxes": [
+   [
+    0.955,
+    0.42,
+    0.05,
+    0.28
+   ]
+  ],
+  "pick": "iou",
+  "priority": 3,
+  "hsv": [
+   [
+    87,
+    104
+   ],
+   [
+    60,
+    255
+   ],
+   [
+    40,
+    255
+   ]
+  ]
+ },
+ "web": {
+  "boxes": [
+   [
+    0.77,
+    0.28,
+    0.38,
+    0.55
+   ]
+  ],
+  "text": "turquoise leather web",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    87,
+    104
+   ],
+   [
+    110,
+    255
+   ],
+   [
+    60,
+    255
+   ]
+  ],
+  "exclude_boxes": [
+   [
+    0.6568,
+    0.5958,
+    0.1241,
+    0.055
+   ]
+  ],
+  "exclude_hsv": [
+   [
+    [
+     55,
+     86
+    ],
+    [
+     50,
+     255
+    ],
+    [
+     50,
+     255
+    ]
+   ]
+  ]
+ },
+ "belt": {
+  "boxes": [
+   [
+    0.57,
+    0.87,
+    0.55,
+    0.24
+   ]
+  ],
+  "text": "purple leather",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    104,
+    152
+   ],
+   [
+    90,
+    255
+   ],
+   [
+    70,
+    255
+   ]
+  ]
+ },
+ "lining": {
+  "boxes": [
+   [
+    0.47,
+    0.755,
+    0.36,
+    0.13
+   ]
+  ],
+  "text": "dark fabric lining",
+  "pick": "iou",
+  "priority": 2,
+  "hsv": [
+   [
+    100,
+    170
+   ],
+   [
+    0,
+    120
+   ],
+   [
+    0,
+    80
+   ]
+  ]
+ },
+ "binding": {
+  "boxes": [
+   [
+    0.47,
+    0.755,
+    0.52,
+    0.24
+   ]
+  ],
+  "text": "pink leather trim around the opening",
+  "pick": "iou",
+  "priority": 8,
+  "hsv": [
+   [
+    160,
+    179
+   ],
+   [
+    35,
+    130
+   ],
+   [
+    140,
+    255
+   ]
+  ]
+ },
+ "bullet_logo": {
+  "boxes": [
+   [
+    0.54,
+    0.89,
+    0.26,
+    0.13
+   ]
+  ],
+  "text": "logo patch",
+  "pick": "iou",
+  "priority": 6
+ },
+ "embroidery": {
+  "boxes": [
+   [
+    0.235,
+    0.38,
+    0.09,
+    0.32
+   ]
+  ],
+  "text": "embroidered letters",
+  "pick": "iou",
+  "priority": 6
+ },
+ "welting": {
+  "boxes": [
+   [
+    0.53,
+    0.35,
+    0.025,
+    0.45
+   ]
+  ],
+  "text": "pink leather piping",
+  "pick": "all",
+  "priority": 5
+ },
+ "laces": {
+  "text": "pink leather laces",
+  "pick": "all",
+  "priority": 7
+ },
+ "thumb_loops": {
+  "boxes": [
+   [
+    0.865,
+    0.655,
+    0.13,
+    0.15
+   ]
+  ],
+  "pick": "iou",
+  "priority": 9,
+  "hsv": [
+   [
+    160,
+    179
+   ],
+   [
+    35,
+    130
+   ],
+   [
+    140,
+    255
+   ]
+  ]
+ },
+ "pinky_loops": {
+  "boxes": [
+   [
+    0.16,
+    0.83,
+    0.16,
+    0.2
+   ]
+  ],
+  "pick": "iou",
+  "priority": 9,
+  "hsv": [
+   [
+    160,
+    179
+   ],
+   [
+    35,
+    130
+   ],
+   [
+    140,
+    255
+   ]
+  ]
+ },
+ "stitching": {
+  "text": "stitching",
+  "pick": "all",
+  "priority": 1
+ }
+}

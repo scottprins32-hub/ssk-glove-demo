@@ -1,0 +1,41 @@
+{
+  "glove": "baseball glove",
+  "web": [
+    "web of the baseball glove",
+    "woven leather netting of the baseball glove",
+    "glove web between thumb and index finger"
+  ],
+  "laces": [
+    "leather lace of the baseball glove",
+    "rawhide shoelace",
+    "thin leather strap"
+  ],
+  "binding": [
+    "welting trim along the edge of the baseball glove",
+    "leather piping on the seams",
+    "trim along the edge"
+  ],
+  "wrist_strap": [
+    "wrist strap of the baseball glove",
+    "wrist opening of the glove",
+    "cuff of the baseball glove"
+  ],
+  "thumb_panel": [
+    "thumb of the baseball glove",
+    "left leather finger panel"
+  ],
+  "pinky_panel": [
+    "pinky finger of the baseball glove",
+    "right leather finger panel"
+  ],
+  "logo": [
+    "logo patch",
+    "gold logo emblem",
+    "brand logo on the glove"
+  ],
+  "embroidery": [
+    "embroidered text",
+    "embroidered logo"
+  ],
+  "stitching": "stitching"
+}
