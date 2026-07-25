@@ -71,6 +71,14 @@ export class GloveRenderer {
     g.globalCompositeOperation = 'multiply';
     g.fillStyle = hx;
     g.fillRect(0, 0, c.width, c.height);
+    // A multiply can only darken, so the leather's sheen has to be added
+    // rather than tinted — that is what keeps highlights on a white glove
+    // and stops a black one flattening into a silhouette.
+    const hi = this.imgs[id + '_hi'];
+    if (hi) {
+      g.globalCompositeOperation = 'lighter';
+      g.drawImage(hi, -x0, -y0);
+    }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(this.imgs[id], -x0, -y0);
     c._ox = x0; c._oy = y0;

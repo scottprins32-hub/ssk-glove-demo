@@ -108,20 +108,53 @@ def to_data_uri(img, fmt="WEBP", **kw):
         base64.b64encode(buf.getvalue()).decode()
 
 
-def tint_base(img, target=0.74, flatten=0.0):
-    """Luminance-normalized grayscale + alpha: color x base looks the same
-    on every zone regardless of the calibration glove's original color.
-    flatten=1.0 collapses all shading to a solid tone."""
+LUMA = np.array([0.299, 0.587, 0.114], np.float32)
+
+
+def _luma(img):
+    """Luminance, alpha, and the zone's own midtone."""
     a = np.asarray(img).astype(np.float32)
-    rgb, alpha = a[..., :3], a[..., 3]
-    lum = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
+    lum, alpha = a[..., :3] @ LUMA, a[..., 3]
     vis = alpha > 40
-    med = np.median(lum[vis]) if vis.any() else 128.0
-    base = np.clip(lum * (target * 255.0 / max(med, 1)), 0, 255)
+    return lum, alpha, (np.median(lum[vis]) if vis.any() else 128.0)
+
+
+def tint_base(img, flatten=0.0):
+    """The diffuse half of the photograph: its shading, normalised so the
+    zone's midtone sits at full strength.
+
+    The browser tints by multiplying the chosen colour over this, and a
+    multiply can only ever darken. Normalising to anything below 1.0 —
+    this used to be 0.74 — therefore made every colour render that much
+    darker than the swatch beside it, which is why 10. White came out grey.
+    Putting the midtone at 1.0 makes the midtone reproduce the swatch
+    exactly; everything the leather throws back above that is carried by
+    spec_base() and added on top instead.
+
+    flatten=1.0 collapses all shading to a solid tone.
+    """
+    lum, alpha, med = _luma(img)
+    base = np.clip(lum / max(med, 1.0), 0, 1) * 255.0
     if flatten > 0:
-        solid = target * 255.0
-        base = solid + (base - solid) * (1.0 - flatten)
+        base = 255.0 + (base - 255.0) * (1.0 - flatten)
     out = np.dstack([base, base, base, alpha]).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
+def spec_base(img, gain=0.55):
+    """The specular half: how much brighter than its own midtone the leather
+    photographs, kept as a white highlight the page adds after tinting.
+
+    This is the shading a multiply cannot express. Without it the midtone
+    fix would flatten every highlight, and dark colourways would stay the
+    silhouettes they are today — multiplying by near-black leaves nothing
+    to see. Returns None when a zone has no meaningful highlight.
+    """
+    lum, alpha, med = _luma(img)
+    hi = np.clip((lum / max(med, 1.0) - 1.0) * gain, 0, 1) * 255.0
+    if hi.max() < 4:
+        return None
+    out = np.dstack([hi, hi, hi, alpha]).astype(np.uint8)
     return Image.fromarray(out, "RGBA")
 
 
@@ -294,6 +327,11 @@ def main():
         else:
             tb = tint_base(im)
         assets[name] = to_data_uri(tb, quality=85, method=4)
+        # the highlight the tint cannot reproduce, added back over the colour
+        if name not in ("embroidery", "lining"):
+            sp = spec_base(im)
+            if sp is not None:
+                assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
         idmap[alpha > 90] = i
         zones.append({"id": name, "n": i, "group": group, "label": label})
     bullet = load("bullet_logo")
