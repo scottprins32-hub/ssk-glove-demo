@@ -17,6 +17,7 @@ import pathlib
 
 import numpy as np
 from PIL import Image
+from scipy import ndimage
 
 # SSK color chart (hand-curated hex; the phone photo of the chart has a
 # screen cast, so values are tuned to the named colors)
@@ -372,6 +373,36 @@ def main():
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
         idmap[alpha > 90] = i
         zones.append({"id": name, "n": i, "group": group, "label": label})
+
+    # How the lace runs through the web is part of the web type, not a fixed
+    # feature of the glove — pick a different web and that lacing changes with
+    # it. So the lace inside the web has to come off the general laces layer,
+    # or a swapped-in web would sit under the old web's lacing.
+    #
+    # Both halves are normalised against the whole layer, not against
+    # themselves, or the split would show as a step in brightness.
+    lac = load("laces")
+    web_im = load("web")
+    if lac is not None and web_im is not None:
+        webm = np.asarray(web_im)[..., 3] > 90
+        hull = ndimage.binary_fill_holes(
+            ndimage.binary_closing(webm, np.ones((25, 25), bool)))
+        la = np.asarray(lac)[..., 3] > 40
+        inside = la & hull
+        if inside.sum() > 500:
+            def half(src, keep):
+                a = np.asarray(src).copy()
+                a[..., 3] = np.where(keep, a[..., 3], 0)
+                return Image.fromarray(a, "RGBA")
+            tb, sp = tint_base(lac), spec_base(lac)
+            assets["laces"] = to_data_uri(half(tb, ~inside), quality=85, method=4)
+            assets["laces_web"] = to_data_uri(half(tb, inside), quality=85, method=4)
+            if sp is not None:
+                assets["laces_hi"] = to_data_uri(half(sp, ~inside), quality=80, method=4)
+                assets["laces_web_hi"] = to_data_uri(half(sp, inside), quality=80,
+                                                     method=4)
+            print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
+
     # The index finger is a single piece when it carries a flag, so the welt
     # that splits back3 from back4 has to disappear. Export just that seam;
     # the page paints it in the panel colour to close it up. It also gives us

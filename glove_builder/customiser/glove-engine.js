@@ -259,6 +259,13 @@ export class GloveRenderer {
     for (const z of D.zones) {
       const c = this.tinted(z.id, this.hex(z.id, state));
       ctx.drawImage(c, c._ox, c._oy);
+      // The lace running through the web is split off the laces layer,
+      // because it belongs to the web type — a different web is laced
+      // differently. It still takes the lace colour.
+      if (z.id === 'laces' && this.imgs.laces_web && D.bbox.laces_web) {
+        const w = this.tinted('laces_web', this.hex('laces', state));
+        ctx.drawImage(w, w._ox, w._oy);
+      }
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));
