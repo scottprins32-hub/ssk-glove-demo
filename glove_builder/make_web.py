@@ -288,6 +288,87 @@ def quad(mask):
     return np.roll(box, -start, axis=0).astype(np.float32)
 
 
+def aperture(height=1100):
+    """The opening a web has to fill on the reference glove.
+
+    Everything inside the glove's outline that no other part of it occupies:
+    the stock web's leather and, just as importantly, the gaps in the stock
+    web, which are background showing through and so belong to the opening
+    rather than to the glove. Taken as the largest such region, which leaves
+    the hairline gaps between panels out of it.
+    """
+    lay = HERE / "layers/rainbow-back-4x"
+
+    def α(name):
+        im = Image.open(lay / f"{name}.png").convert("RGBA")
+        w = int(im.width * height / im.height)
+        return np.asarray(im.resize((w, height), Image.LANCZOS))[..., 3] > 40
+
+    outer = ndimage.binary_fill_holes(α("glove"))
+    other = np.zeros_like(outer)
+    for p in sorted(lay.glob("*.png")):
+        # not the lacing: it runs straight across the opening, and counting it
+        # as glove chops the opening into fragments — the largest of which is
+        # a seventh of the real thing. Where a lace crosses a panel the panel
+        # already claims that ground, so leaving it out costs nothing.
+        # `*_cutout` are the same panels again, before trimming, and web_cutout
+        # covers the whole opening — leaving them in shrinks the aperture to a
+        # twentieth of itself.
+        if p.stem.endswith("_cutout") or p.stem in ("glove", "web", "laces",
+                                                    "bullet_logo"):
+            continue
+        other |= α(p.stem)
+    free = outer & ~ndimage.binary_dilation(other, np.ones((3, 3), bool))
+    lbl, n = ndimage.label(free)
+    if not n:
+        return free
+    big = 1 + int(np.argmax(ndimage.sum(free, lbl, range(1, n + 1))))
+    return ndimage.binary_fill_holes(lbl == big)
+
+
+def complete(leather, have, ap, finger=None, min_window=1200):
+    """Fill the web out to the edges of the opening it sits in.
+
+    A cutout warped into the opening never quite reaches its corners, and what
+    it leaves behind is background: black holes between the web and the finger
+    it is stitched to. Scott, looking at all four: "there's still a lot of web
+    missing from all of the webs... the webs are way more visible than how
+    they are right now."
+
+    A web's own windows have to survive it, so the only gaps kept open are the
+    ones a web actually has: enclosed by the web on every side, big enough to
+    be a window rather than a ragged edge, and away from the index finger. A
+    gap against the finger is the cutout falling short of the seam it is sewn
+    to, never a window — no web is open where it is stitched on.
+
+    Everything else in the opening becomes leather, carried in from the
+    nearest real pixel the web has.
+    """
+    a = np.asarray(leather).copy()
+    closed = ndimage.binary_closing(have, np.ones((9, 9), bool))
+    hole = ndimage.binary_fill_holes(closed) & ~closed
+    lbl, n = ndimage.label(hole)
+    sizes = ndimage.sum(hole, lbl, range(1, n + 1)) if n else np.zeros(0)
+    keep = set(1 + np.nonzero(sizes >= min_window)[0])
+    if finger is not None and finger.any():
+        seam = ndimage.binary_dilation(finger, np.ones((3, 3), bool),
+                                       iterations=3)
+        keep -= set(np.unique(lbl[hole & seam]).tolist())
+    window = np.isin(lbl, sorted(keep))
+    add = ap & ~have & ~window
+    if not add.any():
+        return leather, 0
+    have = a[..., 3] > 90          # leather only, to copy leather in
+    iy, ix = ndimage.distance_transform_edt(~have, return_indices=True,
+                                            return_distances=False)
+    a[..., :3][add] = a[..., :3][iy[add], ix[add]]
+    a[..., 3][add] = 255
+    soft = ndimage.uniform_filter(a[..., :3].astype(np.float32), size=(5, 5, 1))
+    inner = ndimage.binary_erosion(add, np.ones((3, 3), bool))
+    a[..., :3][inner] = soft[inner].astype(np.uint8)
+    return Image.fromarray(a, "RGBA"), int(add.sum())
+
+
 def straighten(img):
     """Trim a layer's left edge back to the straight line through its ends.
 
@@ -400,6 +481,15 @@ def main():
         layer.save(out / f"{n}.png")
 
     aligned = fit(layers, web | lace, finger=finger)
+    have = np.zeros((0,), bool)
+    for layer in aligned.values():
+        a = np.asarray(layer)[..., 3] > 90
+        have = a if have.shape != a.shape else (have | a)
+    fing = (np.asarray(aligned["finger"])[..., 3] > 90
+            if "finger" in aligned else None)
+    aligned["leather"], added = complete(aligned["leather"], have, aperture(),
+                                         finger=fing)
+    print(f"web completed out to the opening: {added} px added")
     if "finger" in aligned:
         aligned["finger"] = straighten(aligned["finger"])
     # where build_assets.py picks them up, alongside the glove's own layers

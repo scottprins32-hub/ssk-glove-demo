@@ -304,13 +304,21 @@ export class GloveRenderer {
       }
       const c = this.tinted(z.id, this.hex(z.id, state));
       ctx.drawImage(c, c._ox, c._oy);
-      // The pad goes on straight after the index finger it is fitted to, so
-      // the lining and the binding still draw over its lower end — on the
-      // photograph the pad disappears under the binding rather than sitting
-      // on top of it.
-      if (z.id === 'back3' && this.pad && this.imgs.pad && D.bbox.pad) {
+      // The pad is one piece of leather laid over the finger, so the welt
+      // seam that splits the finger runs under it, not across it — Scott,
+      // looking at the seam drawn over the top: "it should always overlap
+      // the welting, always." It goes on after the welting for that. The
+      // lining and the binding then go back over its lower end, because on
+      // the photograph the pad disappears under the binding rather than
+      // sitting on top of it.
+      if (z.id === 'welting' && this.pad && this.imgs.pad && D.bbox.pad) {
         const pd = this.tinted('pad', this.padHex || '#F2F0EA');
         ctx.drawImage(pd, pd._ox, pd._oy);
+        for (const over of ['lining', 'binding']) {
+          if (!this.imgs[over] || !D.bbox[over]) continue;
+          const o = this.tinted(over, this.hex(over, state));
+          ctx.drawImage(o, o._ox, o._oy);
+        }
       }
       // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced
