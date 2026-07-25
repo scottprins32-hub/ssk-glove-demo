@@ -480,6 +480,58 @@ def main():
                     assets["laces_knot_hi"] = to_data_uri(half(sp, knot),
                                                           quality=80, method=4)
                 print(f"knotted lace: {knot.sum()} px -> laces_knot")
+
+                # Removing the knot leaves the neutral base showing through
+                # in the shape of the knot — a tan ghost that still reads as
+                # a knot. Nothing lies behind it in a flat photograph, so the
+                # panels around it have to grow into its footprint: each of
+                # its pixels goes to whichever zone is nearest, at that
+                # zone's own midtone, and those panels then paint over the
+                # ghost in their own colours. With the knot drawn it is
+                # hidden underneath, so this costs nothing.
+                zmask, zname = {}, {}
+                occupied = np.zeros(knot.shape, np.int32)
+                for zi, (zn, _g, _l) in enumerate(STACK, 1):
+                    # Leather panels only. Not the web — it is cut out when
+                    # another is swapped in, and anything grown into it goes
+                    # with it, leaving the same hole in a different colour.
+                    # Not stitching, welting or binding either: those are thin
+                    # lines, and a slab of one reads as a stripe of paint, not
+                    # as leather.
+                    if zn == "web" or _g != "leather":
+                        continue
+                    zim = load(zn)
+                    if zim is None:
+                        continue
+                    za = np.asarray(zim)[..., 3] > 90
+                    zmask[zn] = za
+                    zname[zi] = zn
+                    occupied[za & ~knot] = zi
+                iy, ix = ndimage.distance_transform_edt(
+                    occupied == 0, return_indices=True,
+                    return_distances=False)
+                owner = occupied[iy, ix]
+                grew = []
+                for zi, zn in zname.items():
+                    add = knot & (owner == zi)
+                    if add.sum() < 200:
+                        continue
+                    zim = load(zn)
+                    arr = np.asarray(zim).copy()
+                    lum, _al, med = _luma(zim)
+                    arr[..., :3][add] = np.uint8(round(med))
+                    arr[..., 3][add] = 255
+                    filled = Image.fromarray(arr, "RGBA")
+                    assets[zn] = to_data_uri(tint_base(filled), quality=85,
+                                             method=4)
+                    fsp = spec_base(filled)
+                    if fsp is not None:
+                        assets[zn + "_hi"] = to_data_uri(fsp, quality=80,
+                                                         method=4)
+                    grew.append(f"{zn}+{int(add.sum())}")
+                if grew:
+                    print("  panels grown into its footprint: "
+                          + ", ".join(grew))
             print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
 
     # The index finger is a single piece when it carries a flag, so the welt
