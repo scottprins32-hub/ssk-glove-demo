@@ -99,7 +99,7 @@ def main():
             b["thumb"] = data_uri(HERE / b["thumb"]); n += 1
 
     body = "\n".join(js)
-    # catalogue image paths (webs, finger pads, fonts, flags)
+    # catalogue and reference image paths (webs, pads, fonts, flags, photos)
     def sub_asset(m):
         nonlocal n
         p = HERE / m.group(1)
@@ -107,7 +107,7 @@ def main():
             return m.group(0)
         n += 1
         return "'" + data_uri(p) + "'"
-    body = re.sub(r"'(assets/form/[^']+)'", sub_asset, body)
+    body = re.sub(r"'(assets/(?:form|ref)/[^']+)'", sub_asset, body)
     # glove-catalog builds form paths as `F + 'webs/H_Web.jpg'`; resolve those
     def sub_concat(m):
         nonlocal n

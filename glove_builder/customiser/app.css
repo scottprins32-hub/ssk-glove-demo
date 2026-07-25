@@ -321,3 +321,11 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   .bar-count { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* real photographs of the personalisation options */
+.refs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.refshot { margin: 0; border: 1px solid var(--border-default);
+           border-radius: var(--radius-md); overflow: hidden; background: var(--white); }
+.refshot img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+.refshot figcaption { display: block; padding: 5px var(--space-2); font-size: 11px;
+                      color: var(--text-muted); text-align: center; }

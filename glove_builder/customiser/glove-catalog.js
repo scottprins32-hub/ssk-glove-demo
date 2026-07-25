@@ -13,7 +13,7 @@ export const SIZES = ['11.5"', '11.75"', '12"', '12.25"', '12.5"', '12.75"'];
 
 export const PADS = [
   { id: 'None', en: 'None', nl: 'Geen', img: F + 'finger_pad/None.jpg' },
-  { id: 'Finger Pad', en: 'Finger pad', nl: 'Vingerpad', img: F + 'finger_pad/Finger_Pad.jpg' },
+  { id: 'Finger Pad', en: 'Finger pad', nl: 'Vingerpad', img: 'assets/ref/finger_pad.webp' },
   { id: 'Finger Hood', en: 'Finger hood', nl: 'Vingerkap', img: F + 'finger_pad/Finger_Hood.jpg' }
 ];
 
@@ -39,6 +39,9 @@ export const EMB_FONTS = [
   'Block with Shadow', 'Script with Shadow', 'Brush with Shadow', 'Kanji with Shadow'
 ].map(n => ({ id: n, img: F + 'fonts/' + n.replace(/ /g, '_') + '.jpg' }));
 
+/* SSK's form calls this "Flag option (Index finger)", but on the real glove
+   the mark sits on the MIDDLE finger — see images/scott-glove-2026-07. Worth
+   confirming with Pim which the factory sheet means. */
 export const FLAGS = [
   { id: 'None', en: 'No flag', nl: 'Geen vlag', img: null },
   { id: 'Netherlands', en: 'Netherlands', nl: 'Nederland', img: F + 'flags/Netherlands.jpg' },
@@ -104,8 +107,12 @@ export const T = {
     thumbLoops: 'Thumb loops', pinkyLoops: 'Pinky loops', stitching: 'Stitching',
     ringEmb: 'SSK logo on ring finger', bullet: 'Bullet logo (wrist)',
     thumbText: 'Thumb embroidery', thumbFont: 'Embroidery font', thumbMain: 'Main thread',
-    thumbOutline: 'Outline / shadow thread', thumbNumber: 'Thumb number',
-    circle: 'Circle colour', numberColor: 'Number thread', flag: 'Index finger flag',
+    thumbOutline: 'Outline / shadow thread', thumbNumber: 'Number or initials on the thumb',
+    circle: 'Circle colour', numberColor: 'Number thread',
+    flag: 'Middle finger flag',
+    middleOnePiece: 'Back 5+6 — middle finger, one piece',
+    middleMerged: 'A flag is embroidered on one piece of leather, so the middle finger takes a single colour.',
+    circleHint: 'Two characters — a number or initials. Leave it empty and the circle gets the small SSK logo instead.',
     name: 'Your name', phone: 'Phone number',
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
     compare: 'Compare', snapshot: 'Snapshot', clear: 'Clear', basePrice: 'From',
@@ -135,8 +142,12 @@ export const T = {
     thumbLoops: 'Duimlussen', pinkyLoops: 'Pinklussen', stitching: 'Stiksel',
     ringEmb: 'SSK logo op ringvinger', bullet: 'Bullet logo (pols)',
     thumbText: 'Borduring duim', thumbFont: 'Letterstijl', thumbMain: 'Hoofdgaren',
-    thumbOutline: 'Contour / schaduwgaren', thumbNumber: 'Nummer op duim',
-    circle: 'Kleur cirkel', numberColor: 'Garen nummer', flag: 'Vlag op wijsvinger',
+    thumbOutline: 'Contour / schaduwgaren', thumbNumber: 'Nummer of initialen op de duim',
+    circle: 'Kleur cirkel', numberColor: 'Garen nummer',
+    flag: 'Vlag op middelvinger',
+    middleOnePiece: 'Back 5+6 — middelvinger, één stuk',
+    middleMerged: 'Een vlag wordt op één stuk leer geborduurd, dus de middelvinger krijgt één kleur.',
+    circleHint: 'Twee tekens — een nummer of initialen. Laat je het leeg, dan komt het kleine SSK-logo in de cirkel.',
     name: 'Je naam', phone: 'Telefoonnummer',
     left: 'nog open', done: 'klaar', undo: 'Ongedaan', redo: 'Opnieuw', reset: 'Wissen',
     compare: 'Vergelijk', snapshot: 'Vastleggen', clear: 'Wissen', basePrice: 'Vanaf',

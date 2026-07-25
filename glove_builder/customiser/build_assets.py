@@ -334,6 +334,25 @@ def main():
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
         idmap[alpha > 90] = i
         zones.append({"id": name, "n": i, "group": group, "label": label})
+    # The middle finger is a single piece when it carries a flag or a name,
+    # so the welt that splits back5 from back6 has to disappear. Export just
+    # that seam; the page paints it in the panel colour to close it up.
+    import cv2 as _cv2
+    w5, w6, wl = load("back5"), load("back6"), load("welting")
+    if w5 is not None and w6 is not None and wl is not None:
+        A = lambda im: np.asarray(im)[..., 3] > 90
+        big, small = np.ones((41, 41), np.uint8), np.ones((15, 15), np.uint8)
+        seed = (A(wl)
+                & _cv2.dilate(A(w5).astype(np.uint8), big).astype(bool)
+                & _cv2.dilate(A(w6).astype(np.uint8), big).astype(bool))
+        seam = A(wl) & _cv2.dilate(seed.astype(np.uint8), small).astype(bool)
+        if seam.sum() > 500:
+            sa = np.asarray(wl).copy()
+            sa[..., 3] = np.where(seam, sa[..., 3], 0)
+            assets["welt_mid"] = to_data_uri(
+                tint_base(Image.fromarray(sa, "RGBA")), quality=85, method=4)
+            print(f"middle-finger seam: {seam.sum()} px -> welt_mid")
+
     bullet = load("bullet_logo")
     bullets = []
     if bullet is not None:

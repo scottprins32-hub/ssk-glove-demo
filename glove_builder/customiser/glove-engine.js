@@ -144,12 +144,18 @@ export class GloveRenderer {
   }
 
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
-  draw(ctx, state, bulletSel, highlight) {
+  // mergeMiddle: the middle finger is one piece, so close the welt seam that
+  // splits back5 from back6 by painting it in the panel's own colour.
+  draw(ctx, state, bulletSel, highlight, mergeMiddle) {
     const D = this.DATA;
     ctx.clearRect(0, 0, D.w, D.h);
     ctx.drawImage(this.imgs.glove, 0, 0);
     for (const z of D.zones) {
       const c = this.tinted(z.id, this.hex(z.id, state));
+      ctx.drawImage(c, c._ox, c._oy);
+    }
+    if (mergeMiddle && this.imgs.welt_mid && D.bbox.welt_mid) {
+      const c = this.tinted('welt_mid', this.hex('back5', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
     this.drawBullet(ctx, bulletSel);

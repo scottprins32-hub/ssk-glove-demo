@@ -24,6 +24,11 @@ const FIELD_TO_LAYER = {
 const LAYER_TO_FIELD = Object.fromEntries(
   Object.entries(FIELD_TO_LAYER).map(([f, l]) => [l, f]));
 
+/* A flag (or a name) on the middle finger is embroidered on one piece of
+   leather, so back5 and back6 stop being separate choices — see Scott's
+   glove, where the signature sits on a single unsplit panel. */
+const middleIsOnePiece = () => !!S.flag && S.flag !== 'None';
+
 const PALETTE_OF = f =>
   f === 'stitching' ? 'stitching' :
   f === 'ring_emb' ? 'embroidery' :
@@ -127,7 +132,8 @@ const code = () => refCode(DATA, layerState(), S.bullet);
 function draw() {
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
-      ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null);
+      ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
+    middleIsOnePiece());
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -265,15 +271,21 @@ function renderColours(b) {
   const parts = el('div', 'parts');
   for (const f of COLOUR_ORDER) {
     if (f === 'pad_color') continue;
+    if (f === 'back6' && middleIsOnePiece()) continue;   // merged into back5
     const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
     p.type = 'button';
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
-                  fieldLabel(f, S.lang);
+                  (f === 'back5' && middleIsOnePiece()
+                    ? t('middleOnePiece') : fieldLabel(f, S.lang));
     p.onclick = () => { S.part = f; paint(); };
     parts.appendChild(p);
   }
   b.appendChild(parts);
-  b.appendChild(swatchField(S.part, OFFSTAGE[S.part] || null, true));
+  b.appendChild(swatchField(
+    S.part,
+    (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
+                                               : (OFFSTAGE[S.part] || null),
+    true));
 
   if (/^back/.test(S.part)) {
     const all = el('button', 'btn btn-ghost', t('applyAll'));
@@ -310,6 +322,11 @@ function renderLogos(b) {
 
 /* ---------------------------------------------------- 6. personalisation */
 function renderPersonal(b) {
+  b.appendChild(refStrip([
+    ['assets/ref/thumb_name.webp', t('thumbText')],
+    ['assets/ref/thumb_circle.webp', t('thumbNumber')],
+    ['assets/ref/middle_finger.webp', t('flag')]
+  ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
     v => { S.thumbText = v; paint(false); }));
   if (S.thumbText) {
@@ -320,15 +337,36 @@ function renderPersonal(b) {
     if (/Outline|Shadow/.test(S.thumbFont || ''))
       b.appendChild(threadField('thumbOutline', t('thumbOutline')));
   }
-  b.appendChild(textField(t('thumbNumber'), S.thumbNumber, 3,
-    v => { S.thumbNumber = v.replace(/\D/g, ''); paint(false); }));
+  const twoChars = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
+  const circleField = textField(t('thumbNumber'), S.thumbNumber, 2,
+    v => { S.thumbNumber = twoChars(v); paint(false); },
+    false, 'text', twoChars);
+  circleField.appendChild(el('p', 'note', t('circleHint')));
+  b.appendChild(circleField);
   b.appendChild(choiceField(t('circle'), CIRCLE_COLORS.map(([n, hx]) => ({
     id: n, label: n, swatch: hx
   })), S.circle, v => { snapshot(); S.circle = v; paint(); }, false));
   if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
     id: f.id, label: f[S.lang] || f.id, img: f.img
-  })), S.flag, v => { snapshot(); S.flag = v; paint(); }, false));
+  })), S.flag, v => {
+    snapshot(); S.flag = v;
+    // one piece of leather now, so the two halves share a colour
+    if (middleIsOnePiece()) S.colors.back6 = S.colors.back5;
+    draw(); paint();
+  }, false));
+}
+/* Photographs of the real thing, so the wording is not the only guide to
+   what these options actually look like. */
+function refStrip(items) {
+  const wrap = el('div', 'refs');
+  for (const [src, cap] of items) {
+    const f = el('figure', 'refshot');
+    f.innerHTML = `<img src="${src}" alt="" loading="lazy">` +
+                  `<figcaption>${cap}</figcaption>`;
+    wrap.appendChild(f);
+  }
+  return wrap;
 }
 function threadField(key, label) {
   const pal = DATA.palettes.embroidery;
@@ -419,16 +457,29 @@ function swatchGrid(label, pal, value, onPick, required, note) {
 }
 function swatchField(field, note, required) {
   return swatchGrid(fieldLabel(field, S.lang), DATA.palettes[PALETTE_OF(field)],
-    S.colors[field], v => { snapshot(); S.colors[field] = v; draw(); paint(); },
-    required, note);
+    S.colors[field], v => {
+      snapshot();
+      S.colors[field] = v;
+      if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) {
+        S.colors.back5 = S.colors.back6 = v;
+      }
+      draw(); paint();
+    }, required, note);
 }
-function textField(label, value, max, onInput, required, type) {
+function textField(label, value, max, onInput, required, type, clean) {
   const f = el('div', 'field');
   f.appendChild(labelRow(label, required, !!value));
   const i = el('input'); i.type = type || 'text'; i.value = value || '';
   i.maxLength = max;
   let tm;
-  i.oninput = () => { clearTimeout(tm); tm = setTimeout(() => onInput(i.value), 250); };
+  i.oninput = () => {
+    if (clean) {                       // show exactly what gets ordered
+      const c = clean(i.value);
+      if (c !== i.value) i.value = c;
+    }
+    clearTimeout(tm);
+    tm = setTimeout(() => onInput(i.value), 250);
+  };
   i.onblur = () => { snapshot(); onInput(i.value); };
   f.appendChild(i);
   return f;
@@ -449,7 +500,9 @@ function specRows() {
   rows.push(['#', t('colours')]);
   for (const f of COLOUR_ORDER) {
     if (f === 'web' || f === 'pad_color' || f === 'ring_emb') continue;
-    push(fieldLabel(f, L), colName(f));
+    if (f === 'back6' && middleIsOnePiece()) continue;
+    push(f === 'back5' && middleIsOnePiece() ? t('middleOnePiece')
+                                             : fieldLabel(f, L), colName(f));
   }
   rows.push(['#', t('logos')]);
   push(t('bullet'), DATA.bullets[S.bullet] && DATA.bullets[S.bullet].name);
