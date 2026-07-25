@@ -300,9 +300,18 @@ export class GloveRenderer {
       // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced
       // differently. It still takes the lace colour.
-      if (z.id === 'laces' && !swap && this.imgs.laces_web && D.bbox.laces_web) {
-        const w = this.tinted('laces_web', this.hex('laces', state));
-        ctx.drawImage(w, w._ox, w._oy);
+      if (z.id === 'laces') {
+        if (!swap && this.imgs.laces_web && D.bbox.laces_web) {
+          const w = this.tinted('laces_web', this.hex('laces', state));
+          ctx.drawImage(w, w._ox, w._oy);
+        }
+        // The knotted lace belongs to the web, not the glove: the Standard I
+        // has none. Any web that does not declare knot:false keeps it.
+        if (this.imgs.laces_knot && D.bbox.laces_knot
+            && !(swap && swap.knot === false)) {
+          const k = this.tinted('laces_knot', this.hex('laces', state));
+          ctx.drawImage(k, k._ox, k._oy);
+        }
       }
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {

@@ -86,6 +86,11 @@ BULLET_OPTIONS = [
     ("Navy/Gold", "", "Navy_Gold.jpg", "#1D3A8F"),
 ]
 
+# Webs photographed without the knotted lace across the lower web. Scott,
+# reading his own glove: "on the yellow pad one, that goes for the regular
+# I-web, there's not that big knot of laces."
+NO_KNOT = {"standard-i"}
+
 PRESETS = {
     "Navy & Orange": {"_panels": "70", "welting": "35", "laces": "35",
                       "binding": "35", "lining": "35", "thumb_loops": "35",
@@ -455,6 +460,26 @@ def main():
                 assets["laces_web_hi"] = to_data_uri(half(sp, inside), quality=80,
                                                      method=4)
             web_lace_mask = inside
+
+            # The knotted lace is not glove furniture either — the Standard I
+            # glove has no knot at all, so a web has to be able to decline it.
+            # It is the big piece that reaches into the web but mostly lies
+            # outside it: 10,809 px at 0.14 in, three times any other.
+            cand = np.nonzero((frac > 0.02) & (frac < 0.35) & (sizes > 5000))[0]
+            if len(cand):
+                k = cand[np.argmax(sizes[cand])] + 1
+                knot = lbl == k
+                rest = la & ~inside & ~knot
+                assets["laces"] = to_data_uri(half(tb, rest), quality=85,
+                                              method=4)
+                assets["laces_knot"] = to_data_uri(half(tb, knot), quality=85,
+                                                   method=4)
+                if sp is not None:
+                    assets["laces_hi"] = to_data_uri(half(sp, rest),
+                                                     quality=80, method=4)
+                    assets["laces_knot_hi"] = to_data_uri(half(sp, knot),
+                                                          quality=80, method=4)
+                print(f"knotted lace: {knot.sum()} px -> laces_knot")
             print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
 
     # The index finger is a single piece when it carries a flag, so the welt
@@ -541,6 +566,7 @@ def main():
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
             pair[key] = name
         if pair:
+            pair["knot"] = d.name not in NO_KNOT
             webs[d.name] = pair
             print(f"web '{d.name}': {' + '.join(pair.values())}")
 
