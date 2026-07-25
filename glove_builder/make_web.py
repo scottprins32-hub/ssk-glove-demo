@@ -44,6 +44,18 @@ WEBS = {
         # beside back 2, penned in by the welt on its left and the lace on its
         # right, which is what keeps the box off back 2's leather.
         "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
+    },
+    # The Japan glove has this web too, but its navy web is the same navy as
+    # its fingers and half of it sits in shadow against a black background —
+    # 47k px of fragments and no lace at all. The Columbia glove is the same
+    # case as the Closed Diamond Net: light shell, dark web, shot on white.
+    "spiral-i": {
+        "photo": "images/drive-2026-07/Blue1.jpg",
+        "glove_mask": "runs/spiral-i-blue/masks/glove.png",
+        "dark": 100,
+        "leather_is_dark": True,
+        "seam": [(0, 0), (790, 0), (800, 690), (850, 715), (900, 745),
+                 (950, 765), (1000, 800), (1100, 870), (1300, 950)],
         # The low loop beside back 2 is a strap running diagonally down to the
         # heel, not a blob, so a box round it takes back 2's leather with it —
         # three tries proved that. Traced as a polygon off Scott's reading of

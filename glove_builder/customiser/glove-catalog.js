@@ -23,7 +23,8 @@ export const PADS = [
 // as an H-Web until it is photographed. The web step says so.
 export const NATIVE_WEB = 'H-Web';
 export const WEBS = [
-  { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'] },
+  { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'],
+    render: 'spiral-i' },
   { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'] },
   { id: 'SMS-Web', img: F + 'webs/SMS_Web.jpg', sizes: ['11.75"'] },
   { id: 'SMK-Web', img: F + 'webs/SMK_Web.jpg', sizes: ['11.75"'] },
