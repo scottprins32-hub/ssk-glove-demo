@@ -427,12 +427,21 @@ def main():
         # too, and that one belongs to the glove and has to stay. How much of
         # a piece lies inside tells them apart cleanly: the loops around the
         # rim are a third to two thirds in, the knot is a seventh.
+        # Overlap alone still is not enough. Two loops on the outer rim sit
+        # further into the web than the ones on the finger side do, but they
+        # belong to the glove's edge, not the web — they are part of the same
+        # run as the rim lacing above and below them. Which side of the web a
+        # piece sits on settles it: the web's own loops are on the finger
+        # side, the rim's are on the outer side.
         lbl, n = ndimage.label(la)
         sizes = ndimage.sum(la, lbl, range(1, n + 1))
         within = ndimage.sum(la & hull, lbl, range(1, n + 1))
         frac = np.divide(within, sizes, out=np.zeros_like(within),
                          where=sizes > 0)
-        inside = np.isin(lbl, np.nonzero(frac >= 0.35)[0] + 1)
+        cx = np.array(ndimage.center_of_mass(la, lbl, range(1, n + 1)))[:, 1] \
+            if n else np.zeros(0)
+        web_cx = np.nonzero(webm)[1].mean()
+        inside = np.isin(lbl, np.nonzero((frac >= 0.35) & (cx < web_cx))[0] + 1)
         if inside.sum() > 500:
             def half(src, keep):
                 a = np.asarray(src).copy()

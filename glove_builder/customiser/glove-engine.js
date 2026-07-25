@@ -262,21 +262,20 @@ export class GloveRenderer {
     ctx.clearRect(0, 0, D.w, D.h);
     ctx.drawImage(this.imgs.glove, 0, 0);
     const swap = this.web && D.webs && D.webs[this.web];
-    // The neutral base has the stock web painted into it, so skipping the web
-    // zone leaves its leather behind in plain tan. Cut it out, then back the
-    // opening with solid leather in the web's own colour: a cut-out web never
-    // fills the stock opening exactly, and leather left over at the edges
-    // reads far better than a hole punched through the glove.
+    // The neutral base has the stock web and its lacing painted into it, so
+    // skipping those zones leaves them behind in plain tan. Cut them out.
+    //
+    // Nothing is put back behind the new web. Backing the opening with solid
+    // leather did hide the ragged edges, but it also filled the gaps a web is
+    // supposed to have, so the stock web's top bar showed through as a slab.
+    // An open web should show background through it, because that is what an
+    // open web does.
     if (swap && this.imgs.web) {
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.imgs.web, 0, 0);
       if (this.imgs.laces_web) ctx.drawImage(this.imgs.laces_web, 0, 0);
       ctx.restore();
-      if (this.imgs.web_fill && D.bbox.web_fill) {
-        const f = this.tinted('web_fill', this.hex('web', state));
-        ctx.drawImage(f, f._ox, f._oy);
-      }
     }
     for (const z of D.zones) {
       // A chosen web replaces the glove's own, whole: the stock web and the
