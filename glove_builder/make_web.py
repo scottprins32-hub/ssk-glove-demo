@@ -76,10 +76,10 @@ WEBS = {
                         (848, 400), (838, 480), (845, 560), (830, 640),
                         (800, 700), (762, 764), (712, 784), (686, 818),
                         (674, 862), (676, 915), (692, 975), (730, 1010),
-                        (664, 1004), (616, 968), (600, 910), (602, 856),
-                        (614, 810), (646, 778), (696, 756), (734, 694),
-                        (764, 634), (778, 556), (770, 478), (780, 398),
-                        (794, 298), (810, 198), (820, 108), (822, 45)],
+                        (652, 998), (600, 958), (582, 900), (584, 850),
+                        (598, 802), (632, 770), (686, 744), (716, 686),
+                        (742, 628), (752, 552), (742, 474), (752, 394),
+                        (764, 294), (778, 194), (786, 104), (788, 45)],
         # The lace that crosses from the index finger into the middle of the
         # web runs out past the web's own edge, so the outline cuts its end
         # off. Only the bright pixels in here are taken, which keeps the
@@ -212,14 +212,22 @@ def rgba(im, mask):
 
 
 def quad(mask):
-    """Corners of the mask's minimum-area rectangle, ordered around it."""
+    """Corners of the mask's minimum-area rectangle, top-left first, clockwise.
+
+    Ordering by angle alone is not enough: two quads of different shape can
+    start their loop at different corners, and then the homography pairs
+    top-left with bottom-left and quietly rotates everything. Anchoring the
+    start at the corner nearest the origin makes the correspondence between
+    any two quads well defined.
+    """
     import cv2
     cs, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL,
                              cv2.CHAIN_APPROX_SIMPLE)
     box = cv2.boxPoints(cv2.minAreaRect(max(cs, key=cv2.contourArea)))
     ctr = box.mean(0)
-    order = np.argsort(np.arctan2(box[:, 1] - ctr[1], box[:, 0] - ctr[0]))
-    return box[order].astype(np.float32)
+    box = box[np.argsort(np.arctan2(box[:, 1] - ctr[1], box[:, 0] - ctr[0]))]
+    start = int(np.argmin(box.sum(1)))
+    return np.roll(box, -start, axis=0).astype(np.float32)
 
 
 def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
@@ -243,23 +251,34 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
         ctr = dst.mean(0)
         low = np.argsort(dst[:, 1])[-2:]
         dst[low] += (dst[low] - ctr) * extend
-    # With a finger edge in the cutout the fit has to account for it, or the
-    # warp lands the web correctly and leaves the finger edge hanging short of
-    # the glove's own finger — a gap where the join should be. Widen the
-    # destination on the finger side by however much wider the cutout is than
-    # the web alone, and fit from the two together.
+    # With a finger edge in the cutout, the destination is not the web
+    # opening any more — it is the opening plus the strip of index finger the
+    # cutout carries. Building it that way keeps both quads' right-hand edges
+    # on the same thing, the outer rim, so the web cannot be dragged off it.
+    #
+    # Pinning the finger edge to back 3 with a solver did align that edge, but
+    # it sheared the whole quad and pulled the bottom-right 50 px in off the
+    # rim. The band's width is taken from the photograph instead: however wide
+    # the finger is relative to the web there, it is that wide here.
     src = web_mask
     if finger is not None and finger.any():
         src = web_mask | finger
-        wide = quad(src)
-        narrow = quad(web_mask)
-        span = lambda q: float(np.ptp(q[:, 0]))
-        grow = (span(wide) / max(span(narrow), 1.0)) - 1.0
-        left = np.argsort(dst[:, 0])[:2]
-        # the bottom of the two leans out further: the finger flares there
-        order = left[np.argsort(dst[left, 1])]
-        for corner, share in zip(order, (1.0 - lean, 1.0 + lean)):
-            dst[corner, 0] -= span(narrow) * grow * share
+        b3_im = Image.open(HERE / "layers/rainbow-back-4x/back3.png").convert("RGBA")
+        b3 = np.asarray(b3_im.resize((w, height), Image.LANCZOS))[..., 3] > 90
+        # how thick the finger band is in the photograph, as a fraction of
+        # the web's width there — measured row by row, because the lace runs
+        # out past both and would swamp a bounding-box measurement
+        rows = [r for r in range(finger.shape[0]) if finger[r].any()]
+        thick = float(np.median([np.count_nonzero(finger[r]) for r in rows]))
+        wrows = [r for r in range(web_mask.shape[0]) if web_mask[r].any()]
+        wwide = float(np.median([np.ptp(np.nonzero(web_mask[r])[0])
+                                 for r in wrows]))
+        span = lambda m: float(np.ptp(np.nonzero(m)[1]))
+        band = span(ref) * thick / max(wwide, 1.0)
+        edge = np.nonzero(b3)[1].max()
+        cols = np.arange(w)[None, :]
+        dst = quad(ref | (b3 & (cols > edge - band)))
+        print(f"finger band {band:.0f} px of back 3 joins the opening")
     M = cv2.getPerspectiveTransform(quad(src), dst)
     return {n: Image.fromarray(
                 cv2.warpPerspective(np.asarray(im), M, (w, height),
