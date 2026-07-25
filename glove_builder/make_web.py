@@ -39,6 +39,14 @@ WEBS = {
         "leather_is_dark": True,
         "seam": [(0, 686), (700, 700), (750, 712), (800, 740),
                  (850, 790), (900, 855), (950, 925), (1000, 1000)],
+        # the leather loops the lace passes through: web, but the seam cuts
+        # them off because they sit on the finger side of it.
+        #
+        # There is a fourth, low down beside back 2. It is left out: at this
+        # angle it and back 2's leather are one unbroken dark region — erosion
+        # will not part them — so a box round it takes panel as well, which
+        # reads worse than the missing loop does.
+        "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
     },
 }
 
@@ -69,6 +77,11 @@ def cut(spec):
     web = lbl == (int(np.argmax(sizes)) + 1)
     web = ndimage.binary_closing(web, np.ones((7, 7), bool))
 
+    for x0, y0, x1, y1 in spec.get("loops", ()):
+        box = np.zeros_like(web)
+        box[y0:y1, x0:x1] = True
+        web |= body & box
+
     # the lacing is whatever sits inside the web's outline and is not leather
     hull = ndimage.binary_fill_holes(
         ndimage.binary_closing(web, np.ones((45, 45), bool))) & keep
@@ -85,6 +98,36 @@ def rgba(im, mask):
     return Image.fromarray(a, "RGBA")
 
 
+def quad(mask):
+    """Corners of the mask's minimum-area rectangle, ordered around it."""
+    import cv2
+    cs, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL,
+                             cv2.CHAIN_APPROX_SIMPLE)
+    box = cv2.boxPoints(cv2.minAreaRect(max(cs, key=cv2.contourArea)))
+    ctr = box.mean(0)
+    order = np.argsort(np.arctan2(box[:, 1] - ctr[1], box[:, 0] - ctr[0]))
+    return box[order].astype(np.float32)
+
+
+def fit(layers, web_mask, height=1100):
+    """Warp a cutout onto the reference glove's web aperture.
+
+    Not a stretch — a perspective transform. The reference glove is
+    photographed at more of an angle than these webs are, so its web is
+    foreshortened; the same foreshortening has to be applied to anything
+    dropped into that opening or it sits there too wide.
+    """
+    import cv2
+    ref_im = Image.open(HERE / "layers/rainbow-back-4x/web.png").convert("RGBA")
+    w = int(ref_im.width * height / ref_im.height)
+    ref = np.asarray(ref_im.resize((w, height), Image.LANCZOS))[..., 3] > 90
+    M = cv2.getPerspectiveTransform(quad(web_mask), quad(ref))
+    return {n: Image.fromarray(
+                cv2.warpPerspective(np.asarray(im), M, (w, height),
+                                    flags=cv2.INTER_LANCZOS4), "RGBA")
+            for n, im in layers.items()}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--web", required=True, choices=sorted(WEBS))
@@ -94,8 +137,16 @@ def main():
 
     out = HERE / "runs" / f"web-{args.web}"
     out.mkdir(parents=True, exist_ok=True)
-    rgba(im, web).save(out / "leather.png")
-    rgba(im, lace).save(out / "lace.png")
+    layers = {"leather": rgba(im, web), "lace": rgba(im, lace)}
+    for n, layer in layers.items():
+        layer.save(out / f"{n}.png")
+
+    aligned = fit(layers, web | lace)
+    base = Image.open(HERE / "customiser/assets/glove.webp").convert("RGBA")
+    for n, layer in aligned.items():
+        layer.save(out / f"{n}_aligned.png")
+        base.alpha_composite(layer)
+    base.convert("RGB").save(out / "fit.jpg", quality=92)
 
     ov = np.asarray(im).copy()
     ov[web] = (0.35 * ov[web] + 0.65 * np.array([255, 60, 60])).astype(np.uint8)
