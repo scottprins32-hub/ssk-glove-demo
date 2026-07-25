@@ -39,9 +39,11 @@ export const EMB_FONTS = [
   'Block with Shadow', 'Script with Shadow', 'Brush with Shadow', 'Kanji with Shadow'
 ].map(n => ({ id: n, img: F + 'fonts/' + n.replace(/ /g, '_') + '.jpg' }));
 
-/* SSK's form calls this "Flag option (Index finger)", but on the real glove
-   the mark sits on the MIDDLE finger — see images/scott-glove-2026-07. Worth
-   confirming with Pim which the factory sheet means. */
+/* The flag goes on the MIDDLE finger. SSK's Google Form labels the question
+   "Flag option (Index finger)" — that label is wrong, confirmed twice against
+   the real glove (images/scott-glove-2026-07: the SSK mark is on the ring
+   finger and the flag/signature sits on the finger above it). Pim's form is
+   what wants correcting, not this. */
 export const FLAGS = [
   { id: 'None', en: 'No flag', nl: 'Geen vlag', img: null },
   { id: 'Netherlands', en: 'Netherlands', nl: 'Nederland', img: F + 'flags/Netherlands.jpg' },
