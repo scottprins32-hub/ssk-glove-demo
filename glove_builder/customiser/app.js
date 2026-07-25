@@ -4,7 +4,7 @@
 
 import { loadGlove, GloveRenderer, refCode, applyCode } from './glove-engine.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
-         OFFSTAGE, STARTERS, COLOUR_ORDER, T } from './glove-catalog.js';
+         OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, T } from './glove-catalog.js';
 
 /* SSK Europe's prices (from Pim via Scott, 2026-07-25): the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -276,6 +276,12 @@ function renderWeb(b) {
   b.appendChild(cardField(t('webType'), fit.map(w => ({
     id: w.id, label: w.id, img: w.img
   })), S.webType, v => { snapshot(); S.webType = v; draw(); paint(); }, true));
+  // Only some webs are photographed. The rest are ordered correctly but the
+  // preview still shows the standard one, and saying so beats letting someone
+  // believe the picture is their glove.
+  const w = WEBS.find(w => w.id === S.webType);
+  if (w && !w.render && w.id !== NATIVE_WEB)
+    b.appendChild(el('p', 'note', t('webNotDrawn')));
   b.appendChild(swatchField('web', null, true));
 }
 

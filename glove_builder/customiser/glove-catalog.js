@@ -18,8 +18,10 @@ export const PADS = [
 ];
 
 // `render` is the slug of a web cut from a photograph (make_web.py). Without
-// one the glove keeps its own web and the choice is recorded on the order
-// sheet only — which is honest, rather than showing the wrong web.
+// one the glove keeps its own web, which is the H-Web the calibration glove
+// was built with — so H-Web previews correctly and everything else previews
+// as an H-Web until it is photographed. The web step says so.
+export const NATIVE_WEB = 'H-Web';
 export const WEBS = [
   { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'] },
   { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'] },
@@ -148,6 +150,7 @@ export const T = {
     pickPart: 'Click any part of the glove', required: 'Still needed',
     sendTitle: 'Your SSK custom glove', sendLead: 'Send this reference to SSK Europe with your order — it holds every choice below.',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
+    webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
     stock: 'Stock colourway', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
@@ -183,6 +186,7 @@ export const T = {
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
     sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Stuur deze referentie mee met je bestelling bij SSK Europe — hij bevat elke keuze hieronder.',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
+    webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',
     stock: 'Standaard kleurstelling', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
