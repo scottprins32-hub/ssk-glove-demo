@@ -102,6 +102,21 @@ KNOT_REGION = (480, 500, 860, 820)
 # leaving the rest. Points are (x, y) in canvas pixels.
 KNOT_POLYS = []
 
+# Where the segmentation cut a lace into a leather panel. The knotted lace's
+# lower tail went to the thumb loops, so it drew in the panel's colour and
+# survived every attempt to take the knot off — Scott, third time of asking:
+# "it's just a sliver of orange right now with blue a little bit wrapped
+# around it." Whatever piece the traced quad touches moves whole, the way the
+# knot's own pieces do. Scott, looking at the two bits left over: "the little
+# green sliver on the top and the little green sliver on the bottom should be
+# added, then you have the complete lace" — so the whole of it goes, and the
+# back view is left with no thumb loops to colour, which is the truth of it.
+REASSIGN = [
+    {"polys": [[(690, 623), (828, 761), (828, 808), (690, 680)],
+               [(785, 608), (812, 608), (812, 665), (785, 665)]],
+     "from": "thumb_loops", "to": "laces"},
+]
+
 PRESETS = {
     "Navy & Orange": {"_panels": "70", "welting": "35", "laces": "35",
                       "binding": "35", "lining": "35", "thumb_loops": "35",
@@ -376,13 +391,59 @@ def main():
     args = ap.parse_args()
     layers = pathlib.Path(args.layers)
 
-    def load(name):
+    _raw = {}
+
+    def raw(name):
         p = layers / f"{name}.png"
         if not p.exists():
             return None
-        im = Image.open(p).convert("RGBA")
-        w = int(im.width * args.height / im.height)
-        return im.resize((w, args.height), Image.LANCZOS)
+        if name not in _raw:
+            im = Image.open(p).convert("RGBA")
+            w = int(im.width * args.height / im.height)
+            _raw[name] = im.resize((w, args.height), Image.LANCZOS)
+        return _raw[name]
+
+    def _moves():
+        """Pieces to hand from one zone to another: see REASSIGN."""
+        import cv2 as _c
+        out = []
+        for r in REASSIGN:
+            src = raw(r["from"])
+            if src is None:
+                continue
+            a = np.asarray(src)[..., 3] > 90
+            m = np.zeros(a.shape, np.uint8)
+            for poly in r["polys"]:
+                _c.fillPoly(m, [np.array(poly, np.int32)], 1)
+            lbl, n = ndimage.label(a)
+            hit = np.unique(lbl[a & m.astype(bool)])
+            hit = hit[hit > 0]
+            if not len(hit):
+                continue
+            take = np.isin(lbl, hit)
+            out.append((r["from"], r["to"], take))
+            print(f"reassigned: {int(take.sum())} px "
+                  f"{r['from']} -> {r['to']}")
+        return out
+
+    MOVES = _moves()
+
+    def load(name):
+        im = raw(name)
+        if im is None or not MOVES:
+            return im
+        arr = None
+        for frm, to, take in MOVES:
+            if name == frm:
+                arr = np.asarray(im).copy() if arr is None else arr
+                arr[..., 3][take] = 0
+            elif name == to:
+                donor = raw(frm)
+                if donor is None:
+                    continue
+                arr = np.asarray(im).copy() if arr is None else arr
+                arr[take] = np.asarray(donor)[take]
+        return im if arr is None else Image.fromarray(arr, "RGBA")
 
     glove = load("glove")
     W, H = glove.size
@@ -400,8 +461,12 @@ def main():
         if im is None:
             continue
         alpha = np.asarray(im)[..., 3]
-        if (alpha > 40).sum() < 50:
-            continue  # empty at this angle (back9)
+        # empty at this angle (back9), or emptied by REASSIGN (thumb_loops).
+        # Judged on solid pixels: a zone handed away leaves a fringe of soft
+        # ones behind, and a zone that is only fringe paints nothing while
+        # still offering a colour to change.
+        if (alpha > 90).sum() < 200:
+            continue
         if name == "embroidery":
             clean_mark = (ssk_logo_layer(load("back78"), im)
                           or ssk_wordmark(im, args.height))
@@ -530,18 +595,32 @@ def main():
                     _zim = load(_zn)
                     if _zim is not None:
                         zu |= np.asarray(_zim)[..., 3] > 90
-                # the glove with the knot lifted off it: closing bridges the
-                # channel the knot leaves where it crosses the rim, filling
-                # holes closes the ones it leaves crossing the middle
-                body = ndimage.binary_fill_holes(
-                    ndimage.binary_closing(zu & ~knot, np.ones((9, 9), bool)))
+                # Is there glove behind this bit of knot? Ask it the way the
+                # eye does: look along a line and see whether leather lies on
+                # both sides. A closing with a long line finds exactly that,
+                # and four directions is enough — where the knot crosses the
+                # middle of the glove it is bridged every way, and where it
+                # hangs off the rim it is bridged none. Filling holes cannot
+                # be used for this: it worked only while the knot's footprint
+                # was fully enclosed, and the tail down to the heel opens it
+                # to the background, which turned the whole knot into air.
+                L = 71
+                lines = [np.ones((1, L), bool), np.ones((L, 1), bool),
+                         np.eye(L, dtype=bool), np.fliplr(np.eye(L, dtype=bool))]
+                free = zu & ~knot
+                body = np.zeros_like(free)
+                for se in lines:
+                    body |= ndimage.binary_closing(free, se)
                 core = knot & ~body
                 # plus the soft edge the knot has in the neutral base, which
                 # belongs to no zone and would otherwise stay behind as a
                 # pencil outline of the knot that was removed
-                air = core | (ndimage.binary_dilation(
-                    core, np.ones((3, 3), bool), iterations=4) & ~zu)
                 over = knot & body
+                # ...and the collar must not reach into it: the panels are
+                # about to grow there, and cutting what they grow leaves the
+                # hole the growing was for.
+                air = core | (ndimage.binary_dilation(
+                    core, np.ones((3, 3), bool), iterations=8) & ~zu & ~over)
                 for zi, (zn, _g, _l) in enumerate(STACK, 1):
                     # Leather panels only. Not the web — it is cut out when
                     # another is swapped in, and anything grown into it goes
@@ -569,9 +648,20 @@ def main():
                         continue
                     zim = load(zn)
                     arr = np.asarray(zim).copy()
-                    lum, _al, med = _luma(zim)
-                    arr[..., :3][add] = np.uint8(round(med))
+                    # Carry the panel's own leather in rather than painting
+                    # the patch flat: every new pixel takes the nearest real
+                    # one, then the seam is softened. A slab at the zone's
+                    # median reads as paint next to grain, and the knot's
+                    # footprint is wide enough to see.
+                    jy, jx = ndimage.distance_transform_edt(
+                        ~zmask[zn], return_indices=True,
+                        return_distances=False)
+                    arr[..., :3][add] = arr[..., :3][jy[add], jx[add]]
                     arr[..., 3][add] = 255
+                    soft = ndimage.uniform_filter(
+                        arr[..., :3].astype(np.float32), size=(5, 5, 1))
+                    inner = ndimage.binary_erosion(add, np.ones((3, 3), bool))
+                    arr[..., :3][inner] = soft[inner].astype(np.uint8)
                     filled = Image.fromarray(arr, "RGBA")
                     assets[zn] = to_data_uri(tint_base(filled), quality=85,
                                              method=4)

@@ -282,12 +282,6 @@ export class GloveRenderer {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.imgs.web, 0, 0);
       if (this.imgs.laces_web) ctx.drawImage(this.imgs.laces_web, 0, 0);
-      // The stretch of knotted lace that hangs off the rim has no glove
-      // behind it. A web that declines the knot has to take that away as
-      // well, or it stays in the neutral base as a lace-shaped tab of
-      // leather floating beside the glove.
-      if (swap.knot === false && this.imgs.knot_cut)
-        ctx.drawImage(this.imgs.knot_cut, 0, 0);
       ctx.restore();
     }
     for (const z of D.zones) {
@@ -334,6 +328,17 @@ export class GloveRenderer {
           ctx.drawImage(k, k._ox, k._oy);
         }
       }
+    }
+    // The stretch of knotted lace that hangs off the rim has no glove behind
+    // it, so a web that declines the knot has to take it away or it stays as
+    // a lace-shaped tab floating beside the hand. This comes after the zones,
+    // not with the web punch-out: the segmentation cut part of that lace into
+    // back 2, which would otherwise paint it straight back in.
+    if (swap && swap.knot === false && this.imgs.knot_cut) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.drawImage(this.imgs.knot_cut, 0, 0);
+      ctx.restore();
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));

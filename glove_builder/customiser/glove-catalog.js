@@ -77,6 +77,9 @@ export const OFFSTAGE = {
   back1: 'Wingtip — hidden behind the thumb on this view',
   back9: 'Wingtip — hidden behind the pinky on this view',
   back8: 'Preview merges Back 7 + 8 into one panel',
+  // What this view showed as thumb loops turned out to be the knotted lace,
+  // mis-cut by the segmentation. The loops themselves are on the palm side.
+  thumb_loops: 'Palm side — not visible on this view',
   pad_color: 'Only visible with a pad or hood fitted'
 };
 
