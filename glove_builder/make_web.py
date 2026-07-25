@@ -57,11 +57,17 @@ WEBS = {
         # back up the edge against the index finger
         "outline": [(895, 45), (985, 35), (1065, 70), (1120, 150), (1150, 280),
                     (1150, 400), (1120, 530), (1080, 650), (1030, 760),
-                    (975, 860), (930, 940), (880, 1000), (800, 1020),
-                    (740, 1000), (700, 950), (690, 880), (700, 810),
-                    (760, 760), (800, 700), (830, 640), (845, 560),
-                    (838, 480), (848, 400), (862, 300), (878, 200),
-                    (890, 110)],
+                    (975, 860), (930, 940), (880, 1010), (800, 1025),
+                    (730, 1010), (692, 975), (676, 915), (674, 862),
+                    (686, 818), (712, 784), (762, 764), (800, 700),
+                    (830, 640), (845, 560), (838, 480), (848, 400),
+                    (862, 300), (878, 200), (890, 110)],
+        # The lace that crosses from the index finger into the middle of the
+        # web runs out past the web's own edge, so the outline cuts its end
+        # off. Only the bright pixels in here are taken, which keeps the
+        # shell it passes over out of it.
+        "lace_polys": [[(604, 726), (668, 716), (770, 762), (752, 800),
+                        (648, 772), (600, 752)]],
         # The low loop beside back 2 is a strap running diagonally down to the
         # heel, not a blob, so a box round it takes back 2's leather with it —
         # three tries proved that. Traced as a polygon off Scott's reading of
@@ -109,6 +115,10 @@ def cut(spec):
         lbl, n = ndimage.label(lace)
         sizes = ndimage.sum(lace, lbl, range(1, n + 1))
         lace = np.isin(lbl, np.nonzero(sizes > 120)[0] + 1)
+        for poly in spec.get("lace_polys", ()):
+            extra = np.zeros(glove.shape, np.uint8)
+            cv2.fillPoly(extra, [np.array(poly, np.int32)], 1)
+            lace |= glove & extra.astype(bool) & (val >= cutv)
         return im, web, lace
 
     if "leather_hue" in spec:
