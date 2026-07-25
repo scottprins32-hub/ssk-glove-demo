@@ -92,6 +92,16 @@ export const STARTERS = [
     flag: 'Netherlands',
     colors: { _panels: '35', welting: '70', laces: '70', binding: '70', lining: '70',
               thumb_loops: '70', pinky_loops: '70', embroidery: '10', stitching: '70' } },
+  // Read off SSK's own Japan build: dark navy croc shell, red thumb, belt and
+  // wingtips, yellow-tan lacing and stitching throughout, gold SSK mark,
+  // Black/Gold bullet. Croc embossing is a leather finish the back view has no
+  // layer for, so the colours carry it.
+  { id: 'jp', en: 'Japan', nl: 'Japan', group: 'national', bullet: 7,
+    flag: 'Japan',
+    colors: { _panels: '71', back1: '32', back2: '32', web: '71', belt: '32',
+              welting: '45', laces: '45', binding: '45', lining: '71',
+              thumb_loops: '45', pinky_loops: '45', embroidery: '39',
+              stitching: '45' } },
   { id: 'cw', en: 'Curaçao', nl: 'Curaçao', group: 'national', bullet: 13,
     flag: 'Curaçao',
     colors: { _panels: '60', welting: '45', laces: '45', binding: '45', lining: '60',
