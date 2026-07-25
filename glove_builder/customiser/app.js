@@ -151,6 +151,9 @@ function draw() {
   R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
   const w = WEBS.find(w => w.id === S.webType);
   R.setWeb(w && w.render);
+  // The pad is fitted or it is not; until a colour is chosen it is white,
+  // which is the order the form asks in.
+  R.setPad(S.pad === 'Finger Pad', S.colors.pad_color ? hexOf('pad_color') : null);
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
@@ -242,6 +245,9 @@ function applyStarter(st, quiet) {
   if (!quiet) snapshot();
   const pr = DATA.presets[st.id] || st.colors || DATA.presets['Navy & Orange'];
   for (const f of COLOUR_ORDER) {
+    // The pad is fitted white and stays white until someone picks a colour —
+    // a starter colourway should not answer an optional question for them.
+    if (f === 'pad_color') continue;
     const pal = DATA.palettes[PALETTE_OF(f)];
     let v = pr[FIELD_TO_LAYER[f]] !== undefined ? pr[FIELD_TO_LAYER[f]]
           : pr[f] !== undefined ? pr[f] : pr._panels;
@@ -274,11 +280,12 @@ function renderFit(b) {
 
   b.appendChild(cardField(t('pad'), PADS.map(p => ({
     id: p.id, label: p[S.lang], img: p.img
-  })), S.pad, v => { snapshot(); S.pad = v; paint(); }, true));
+  })), S.pad, v => { snapshot(); S.pad = v; draw(); paint(); }, true));
 
   const padOn = S.pad && S.pad !== 'None';
-  const f = swatchField('pad_color', !padOn ? OFFSTAGE.pad_color : null, false);
-  b.appendChild(f);
+  const note = !padOn ? OFFSTAGE.pad_color
+             : S.pad === 'Finger Hood' ? t('hoodNotDrawn') : null;
+  b.appendChild(swatchField('pad_color', note, false));
 }
 
 /* --------------------------------------------------------------- 3. web */

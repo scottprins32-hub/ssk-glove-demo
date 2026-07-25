@@ -172,6 +172,13 @@ export class GloveRenderer {
     im.src = src;
   }
 
+  // Whether the finger pad is fitted, and in what colour. White until the
+  // customer picks one — that is the order the form asks in.
+  setPad(on, hex) {
+    this.pad = !!on;
+    this.padHex = hex || '#F2F0EA';
+  }
+
   // Which web to render, by slug, or null for the glove's own.
   setWeb(slug) {
     this.web = (slug && this.DATA.webs && this.DATA.webs[slug]) ? slug : null;
@@ -316,6 +323,12 @@ export class GloveRenderer {
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));
+      ctx.drawImage(c, c._ox, c._oy);
+    }
+    // The finger pad is fitted over the index finger, so it goes on after the
+    // panels and before the flag — SSK sews the flag on the finger above it.
+    if (this.pad && this.imgs.pad && D.bbox.pad) {
+      const c = this.tinted('pad', this.padHex || '#F2F0EA');
       ctx.drawImage(c, c._ox, c._oy);
     }
     if (mergeIndex) this.drawFlag(ctx);

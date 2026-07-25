@@ -566,9 +566,22 @@ def main():
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
             pair[key] = name
         if pair:
+            print(f"web '{d.name}': {' + '.join(pair.values())}"
+                  + ("" if d.name not in NO_KNOT else "  (no knotted lace)"))
             pair["knot"] = d.name not in NO_KNOT
             webs[d.name] = pair
-            print(f"web '{d.name}': {' + '.join(pair.values())}")
+
+    # The finger pad, cut from SSK's own and fitted to the index finger by
+    # make_pad.py. It is an option on the form, so it only renders when it is
+    # ordered, and it takes the pad colour.
+    pad_f = pathlib.Path(__file__).parent.parent / "layers" / "pad" / "pad.png"
+    if pad_f.exists():
+        pim = Image.open(pad_f).convert("RGBA").resize((W, H), Image.LANCZOS)
+        assets["pad"] = to_data_uri(tint_base(pim), quality=85, method=4)
+        psp = match_sheen(spec_base(pim), sheen_for.get("webfinger"))
+        if psp is not None:
+            assets["pad_hi"] = to_data_uri(psp, quality=80, method=4)
+        print(f"finger pad: {(np.asarray(pim)[..., 3] > 90).sum()} px -> pad")
 
     bullet = load("bullet_logo")
     bullets = []
