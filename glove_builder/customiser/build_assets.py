@@ -284,6 +284,35 @@ def ssk_wordmark(embroidery_layer, height):
     return Image.fromarray(out, "RGBA")
 
 
+def sheen_p95(img):
+    """How strong a specular layer is, as its 95th percentile brightness."""
+    if img is None:
+        return None
+    a = np.asarray(img).astype(np.float32)
+    m = a[..., 3] > 0
+    if not m.any():
+        return None
+    return float(np.percentile((a[..., :3] @ LUMA)[m], 95))
+
+
+def match_sheen(sp, target):
+    """Scale a specular layer to the sheen of the layer it replaces.
+
+    The calibration glove was shot in flat light; the web photographs were
+    shot with a phone flash, so their highlights sit far above their own
+    midtone and the specular pass comes out four times as strong. Added with
+    `lighter`, that is what reads as wet-looking plastic rather than leather.
+    Matching the 95th percentile keeps whatever sheen the photograph has in
+    the right proportion to the rest of the glove.
+    """
+    have = sheen_p95(sp)
+    if sp is None or not target or not have or have <= 1:
+        return sp
+    a = np.asarray(sp).astype(np.float32)
+    a[..., :3] = np.clip(a[..., :3] * (target / have), 0, 255)
+    return Image.fromarray(a.astype(np.uint8), "RGBA")
+
+
 def mount_from_panel(mask, top=0.14, bot=0.42, fill=0.79, ratio=1.5):
     """Where the flag patch sits on a finger panel.
 
@@ -431,6 +460,8 @@ def main():
     # lace runs through a web is part of the web, so the two travel together.
     webs = {}
     web_dir = pathlib.Path(__file__).parent.parent / "layers" / "webs"
+    # the sheen a swapped-in web has to match: the one it replaces
+    web_hi_p95 = sheen_p95(spec_base(load("web")) if load("web") else None)
     # A cut-out web never covers the stock web's opening exactly. Backing it
     # with the opening filled solid means the leftover shows as leather in the
     # web's own colour rather than as a hole punched through the glove.
@@ -457,7 +488,7 @@ def main():
             im = Image.open(f).convert("RGBA").resize((W, H), Image.LANCZOS)
             name = f"{key}_{d.name}"
             assets[name] = to_data_uri(tint_base(im), quality=85, method=4)
-            sp = spec_base(im)
+            sp = match_sheen(spec_base(im), web_hi_p95)
             if sp is not None:
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
             pair[key] = name
