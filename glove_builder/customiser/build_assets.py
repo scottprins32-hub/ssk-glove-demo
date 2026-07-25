@@ -91,6 +91,10 @@ BULLET_OPTIONS = [
 # I-web, there's not that big knot of laces."
 NO_KNOT = {"standard-i"}
 
+# The corner the knotted lace occupies, in canvas pixels. Every lace piece
+# centred in here goes with it.
+KNOT_REGION = (480, 500, 860, 820)
+
 PRESETS = {
     "Navy & Orange": {"_panels": "70", "welting": "35", "laces": "35",
                       "binding": "35", "lining": "35", "thumb_loops": "35",
@@ -465,10 +469,19 @@ def main():
             # glove has no knot at all, so a web has to be able to decline it.
             # It is the big piece that reaches into the web but mostly lies
             # outside it: 10,809 px at 0.14 in, three times any other.
-            cand = np.nonzero((frac > 0.02) & (frac < 0.35) & (sizes > 5000))[0]
+            # Everything blue in that corner, not just the biggest piece of it:
+            # Scott, looking at the render, "all the blue parts of the lace that
+            # is in that area needs to be gone". So take every lace piece whose
+            # centre of mass falls in the knot's corner, which still leaves the
+            # tails hanging off the rim above it.
+            kx0, ky0, kx1, ky1 = KNOT_REGION
+            cm = (np.array(ndimage.center_of_mass(la, lbl, range(1, n + 1)))
+                  if n else np.zeros((0, 2)))
+            cand = (np.nonzero((cm[:, 1] >= kx0) & (cm[:, 1] <= kx1)
+                               & (cm[:, 0] >= ky0) & (cm[:, 0] <= ky1)
+                               & (sizes > 200))[0] if n else np.zeros(0, int))
             if len(cand):
-                k = cand[np.argmax(sizes[cand])] + 1
-                knot = lbl == k
+                knot = np.isin(lbl, cand + 1)
                 rest = la & ~inside & ~knot
                 assets["laces"] = to_data_uri(half(tb, rest), quality=85,
                                               method=4)

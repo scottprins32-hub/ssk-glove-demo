@@ -304,6 +304,14 @@ export class GloveRenderer {
       }
       const c = this.tinted(z.id, this.hex(z.id, state));
       ctx.drawImage(c, c._ox, c._oy);
+      // The pad goes on straight after the index finger it is fitted to, so
+      // the lining and the binding still draw over its lower end — on the
+      // photograph the pad disappears under the binding rather than sitting
+      // on top of it.
+      if (z.id === 'back3' && this.pad && this.imgs.pad && D.bbox.pad) {
+        const pd = this.tinted('pad', this.padHex || '#F2F0EA');
+        ctx.drawImage(pd, pd._ox, pd._oy);
+      }
       // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced
       // differently. It still takes the lace colour.
@@ -323,12 +331,6 @@ export class GloveRenderer {
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));
-      ctx.drawImage(c, c._ox, c._oy);
-    }
-    // The finger pad is fitted over the index finger, so it goes on after the
-    // panels and before the flag — SSK sews the flag on the finger above it.
-    if (this.pad && this.imgs.pad && D.bbox.pad) {
-      const c = this.tinted('pad', this.padHex || '#F2F0EA');
       ctx.drawImage(c, c._ox, c._oy);
     }
     if (mergeIndex) this.drawFlag(ctx);

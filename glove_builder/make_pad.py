@@ -35,7 +35,10 @@ SPEC = {
                 (600, 1138), (556, 1124), (532, 1074), (522, 990),
                 (521, 880), (531, 782), (556, 706), (588, 672)],
     # of the index finger's length and width, read off the same photograph
-    "top": 0.53, "bottom": 0.98, "fill": 0.79,
+    # bottom runs past the finger's own end so the pad tucks under the
+    # lining, the way it does on the photograph — there the yellow disappears
+    # under the binding rather than stopping short of it
+    "top": 0.53, "bottom": 1.06, "fill": 0.79,
 }
 
 
