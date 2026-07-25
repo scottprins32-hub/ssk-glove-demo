@@ -431,6 +431,23 @@ def main():
     # lace runs through a web is part of the web, so the two travel together.
     webs = {}
     web_dir = pathlib.Path(__file__).parent.parent / "layers" / "webs"
+    # A cut-out web never covers the stock web's opening exactly. Backing it
+    # with the opening filled solid means the leftover shows as leather in the
+    # web's own colour rather than as a hole punched through the glove.
+    web_im = load("web")
+    if web_im is not None and any(p.is_dir() for p in web_dir.glob("*")):
+        wa = np.asarray(tint_base(web_im)).copy()
+        solid = ndimage.binary_fill_holes(
+            ndimage.binary_closing(wa[..., 3] > 90, np.ones((25, 25), bool)))
+        gap = solid & (wa[..., 3] <= 90)
+        if gap.any():
+            iy, ix = ndimage.distance_transform_edt(
+                wa[..., 3] <= 90, return_indices=True, return_distances=False)
+            wa[..., :3][gap] = wa[..., :3][iy[gap], ix[gap]]   # nearest leather
+        wa[..., 3] = np.where(solid, 255, 0)
+        assets["web_fill"] = to_data_uri(Image.fromarray(wa, "RGBA"),
+                                         quality=85, method=4)
+        print(f"web backing: {solid.sum()} px -> web_fill")
     for d in sorted(p for p in web_dir.glob("*") if p.is_dir()):
         pair = {}
         for part, key in (("leather", "web"), ("lace", "laceweb")):

@@ -44,6 +44,11 @@ WEBS = {
         # beside back 2, penned in by the welt on its left and the lace on its
         # right, which is what keeps the box off back 2's leather.
         "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
+        # The low loop beside back 2 is a strap running diagonally down to the
+        # heel, not a blob, so a box round it takes back 2's leather with it —
+        # three tries proved that. Traced as a polygon off Scott's reading of
+        # the photograph instead.
+        "loop_polys": [[(760, 840), (899, 935), (780, 935), (730, 890)]],
     },
 }
 
@@ -78,6 +83,11 @@ def cut(spec):
         box = np.zeros_like(web)
         box[y0:y1, x0:x1] = True
         web |= body & box
+    for poly in spec.get("loop_polys", ()):
+        import cv2
+        region = np.zeros(web.shape, np.uint8)
+        cv2.fillPoly(region, [np.array(poly, np.int32)], 1)
+        web |= body & region.astype(bool)
 
     # The lacing is whatever sits in the web's outline and is not leather —
     # but taken as whole pieces, not clipped to the outline. The loops round
