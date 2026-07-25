@@ -306,10 +306,24 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
         dst = quad(ref | (b3 & (cols > edge - band)))
         print(f"finger band {band:.0f} px of back 3 joins the opening")
     M = cv2.getPerspectiveTransform(quad(src), dst)
-    return {n: Image.fromarray(
-                cv2.warpPerspective(np.asarray(im), M, (w, height),
-                                    flags=cv2.INTER_LANCZOS4), "RGBA")
-            for n, im in layers.items()}
+
+    # Nothing out of a cutout may render outside the glove. Warped freely, the
+    # finger strip put 4,500 px past the silhouette — a bulge down the side of
+    # the index finger where every other finger has a clean edge. Clipping to
+    # the glove's own outline tucks it under the finger instead of hanging off
+    # it, and the finger keeps the shape it always had.
+    sil_im = Image.open(HERE / "layers/rainbow-back-4x/glove.png").convert("RGBA")
+    sil = np.asarray(sil_im.resize((w, height), Image.LANCZOS))[..., 3]
+    sil = (ndimage.binary_erosion(sil > 40, np.ones((3, 3), bool))
+           * 255).astype(np.uint8)
+
+    out = {}
+    for n, im in layers.items():
+        a = cv2.warpPerspective(np.asarray(im), M, (w, height),
+                                flags=cv2.INTER_LANCZOS4)
+        a[..., 3] = np.minimum(a[..., 3], sil)
+        out[n] = Image.fromarray(a, "RGBA")
+    return out
 
 
 def main():
