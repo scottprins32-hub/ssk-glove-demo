@@ -1,0 +1,5 @@
+/* No brand font binaries were provided. Google Fonts substitutions (flagged in readme.md):
+   Display: Barlow Condensed — athletic, jersey-numeral feel
+   Body: Barlow — matching grotesque
+   Mono: IBM Plex Mono — SKUs, prices, spec tables */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');

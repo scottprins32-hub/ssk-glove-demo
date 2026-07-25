@@ -253,7 +253,8 @@ def ssk_wordmark(embroidery_layer, height):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--layers", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--out", required=True,
+                    help="asset directory to write (e.g. .../customiser/assets)")
     ap.add_argument("--height", type=int, default=1100)
     args = ap.parse_args()
     layers = pathlib.Path(args.layers)
@@ -395,18 +396,45 @@ def main():
                [list(c) for c in LEATHER if c[0] in EMB_NUMS] +
                [list(c) for c in EMB_EXTRA], key=lambda c: c[0])}
 
-    tpl = (pathlib.Path(__file__).parent / "template.html").read_text()
-    html = (tpl
-            .replace("/*__DATA__*/", json.dumps({
-                "assets": assets, "zones": zones, "palettes": pal,
-                "presets": PRESETS, "bullets": bullets,
-                "bulletBox": bullet_box if bullets else None,
-                "w": W, "h": H}))
-            )
+    # Write every asset as its own file and record where it landed. The page
+    # loads these individually so a colour change re-tints one bounding box
+    # instead of decoding an 850 KB inlined blob on every visit.
     out = pathlib.Path(args.out)
-    out.write_text(html)
-    print(f"wrote {out} ({out.stat().st_size/1e6:.1f} MB), "
-          f"{len(zones)} recolorable zones, canvas {W}x{H}")
+    (out / "thumbs").mkdir(parents=True, exist_ok=True)
+    bbox = {}
+
+    def spill(uri, rel):
+        """data URI -> file on disk; returns the path the page should use."""
+        head, b64 = uri.split(",", 1)
+        raw = base64.b64decode(b64)
+        (out / rel).write_bytes(raw)
+        return f"{out.name}/{rel}"
+
+    for key in list(assets):
+        ext = "png" if assets[key].startswith("data:image/png") else "webp"
+        rel = ("idmap.png" if key == "_idmap" else f"{key}.{ext}")
+        assets[key] = spill(assets[key], rel)
+        if key in ("_idmap", "glove"):
+            continue
+        a = np.asarray(Image.open(out / rel).convert("RGBA"))[..., 3]
+        ys, xs = np.nonzero(a > 8)
+        if len(ys):
+            bbox[key] = [int(xs.min()), int(ys.min()),
+                         int(xs.max()) + 1, int(ys.max()) + 1]
+
+    for b in bullets:
+        if b.get("thumb", "").startswith("data:"):
+            slug = b["name"].lower().replace("/", "").replace(" ", "")
+            b["thumb"] = spill(b["thumb"], f"thumbs/{slug}.webp")
+
+    data = {"w": W, "h": H, "zones": zones, "palettes": pal,
+            "presets": PRESETS, "bullets": bullets,
+            "bulletBox": bullet_box if bullets else None,
+            "assets": assets, "bbox": bbox}
+    (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
+    total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())
+    print(f"wrote {out}/ — {len(assets)} assets + glove-data.json "
+          f"({total/1e6:.1f} MB), {len(zones)} recolorable zones, canvas {W}x{H}")
 
 
 if __name__ == "__main__":
