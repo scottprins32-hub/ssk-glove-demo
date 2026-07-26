@@ -48,6 +48,11 @@ WEBS = {
         # beside back 2, penned in by the welt on its left and the lace on its
         # right, which is what keeps the box off back 2's leather.
         "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
+        # It is a closed web — the name says so, and Scott says so: "the web
+        # is fully closed so there shouldn't be any open parts left." Every
+        # gap in the opening is the cutout falling short, none of them are
+        # windows.
+        "closed": True,
     },
     # The Japan glove has this web too, but its navy web is the same navy as
     # its fingers and half of it sits in shadow against a black background —
@@ -487,8 +492,9 @@ def main():
         have = a if have.shape != a.shape else (have | a)
     fing = (np.asarray(aligned["finger"])[..., 3] > 90
             if "finger" in aligned else None)
-    aligned["leather"], added = complete(aligned["leather"], have, aperture(),
-                                         finger=fing)
+    aligned["leather"], added = complete(
+        aligned["leather"], have, aperture(), finger=fing,
+        min_window=np.inf if spec.get("closed") else 1200)
     print(f"web completed out to the opening: {added} px added")
     if "finger" in aligned:
         aligned["finger"] = straighten(aligned["finger"])

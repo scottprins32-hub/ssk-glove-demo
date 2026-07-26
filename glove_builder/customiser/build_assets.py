@@ -316,14 +316,23 @@ def ssk_wordmark(embroidery_layer, height):
 
 
 def sheen_p95(img):
-    """How strong a specular layer is, as its 95th percentile brightness."""
+    """How strong a specular layer is: its 75th and 95th percentiles.
+
+    Two numbers, not one. The peak alone does not describe a sheen — the
+    calibration glove's highlights are small and fierce (median 1, p95 49,
+    p99 158) while a flash-lit web photograph is lifted evenly all over
+    (median 3, p75 40 against the glove's 14) for the same p95. Matching the
+    peak leaves the second one looking varnished, which is the shine Scott
+    kept seeing on the Closed Diamond Net after the first fix.
+    """
     if img is None:
         return None
     a = np.asarray(img).astype(np.float32)
     m = a[..., 3] > 0
     if not m.any():
         return None
-    return float(np.percentile((a[..., :3] @ LUMA)[m], 95))
+    v = (a[..., :3] @ LUMA)[m]
+    return (float(np.percentile(v, 75)), float(np.percentile(v, 95)))
 
 
 def match_sheen(sp, target):
@@ -333,14 +342,17 @@ def match_sheen(sp, target):
     shot with a phone flash, so their highlights sit far above their own
     midtone and the specular pass comes out four times as strong. Added with
     `lighter`, that is what reads as wet-looking plastic rather than leather.
-    Matching the 95th percentile keeps whatever sheen the photograph has in
-    the right proportion to the rest of the glove.
+    Whichever of the broad level and the peak is further out sets the scale,
+    so neither ends up above the glove's own.
     """
     have = sheen_p95(sp)
-    if sp is None or not target or not have or have <= 1:
+    if sp is None or not target or not have:
+        return sp
+    ks = [t / h for t, h in zip(target, have) if h > 1]
+    if not ks:
         return sp
     a = np.asarray(sp).astype(np.float32)
-    a[..., :3] = np.clip(a[..., :3] * (target / have), 0, 255)
+    a[..., :3] = np.clip(a[..., :3] * min(ks), 0, 255)
     return Image.fromarray(a.astype(np.uint8), "RGBA")
 
 
