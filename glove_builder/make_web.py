@@ -149,6 +149,63 @@ WEBS = {
              (1080, 291), (1089, 276), (1092, 268)],
             [(1097, 305), (1107, 309), (1111, 337), (1103, 344), (1086, 334)],
         ],
+        # The web's leather, drawn by hand on the photograph rather than
+        # guessed at by brightness: the panel itself, following the lacing
+        # round every loop, and the three pieces across the bottom.
+        "web_polys": [
+            [(913, 49), (925, 44), (937, 52), (955, 73), (964, 82), (964, 91),
+             (977, 113), (995, 129), (1008, 117), (1019, 125), (1012, 140),
+             (1016, 153), (1027, 162), (1044, 147), (1060, 168), (1054, 183),
+             (1054, 192), (1062, 206), (1077, 200), (1083, 212), (1075, 233),
+             (1077, 249), (1082, 257), (1089, 253), (1092, 266), (1084, 284),
+             (1084, 302), (1095, 301), (1097, 308), (1089, 328), (1055, 303),
+             (1033, 275), (1021, 241), (1002, 242), (1008, 272), (1022, 307),
+             (1039, 331), (1057, 346), (1079, 365), (1076, 391), (1080, 414),
+             (1089, 437), (1111, 428), (1113, 451), (1115, 488), (1112, 525),
+             (1099, 522), (1091, 536), (969, 499), (888, 483), (882, 518),
+             (950, 535), (1009, 550), (1060, 566), (1049, 569), (1058, 591),
+             (1067, 595), (1069, 612), (1091, 607), (1081, 643), (1072, 662),
+             (1051, 680), (1052, 690), (1054, 696), (1052, 719), (1044, 731),
+             (1028, 711), (1014, 728), (1020, 741), (1021, 762), (1018, 761),
+             (988, 831), (981, 820), (975, 811), (984, 795), (989, 777),
+             (983, 759), (974, 748), (975, 738), (991, 701), (1008, 674),
+             (1011, 655), (1000, 639), (986, 633), (979, 639), (978, 618),
+             (971, 600), (955, 586), (930, 622), (932, 634), (936, 641),
+             (920, 670), (901, 706), (886, 737), (889, 744), (880, 748),
+             (872, 744), (856, 757), (838, 766), (830, 781), (836, 799),
+             (854, 808), (882, 793), (896, 797), (876, 845), (780, 747),
+             (780, 738), (801, 685), (813, 654), (861, 704), (904, 617),
+             (862, 571), (846, 559), (847, 535), (864, 541), (876, 533),
+             (880, 510), (869, 498), (894, 463), (890, 419), (908, 422),
+             (918, 409), (921, 389), (909, 381), (908, 373), (925, 372),
+             (968, 412), (988, 443), (1017, 495), (1029, 456), (1021, 416),
+             (1015, 377), (1002, 338), (980, 301), (954, 265), (926, 234),
+             (910, 218), (910, 207), (920, 212), (930, 209), (936, 201),
+             (936, 186), (936, 172), (917, 170), (917, 150), (922, 149),
+             (914, 133), (904, 136), (902, 98), (923, 94), (926, 77),
+             (926, 65), (922, 55)],
+            [(779, 804), (776, 840), (776, 869), (783, 897), (794, 926),
+             (809, 952), (827, 974), (856, 999), (878, 1013), (902, 1013),
+             (920, 996), (941, 944), (941, 934), (934, 928), (907, 931),
+             (903, 920), (887, 919), (875, 916), (865, 912), (861, 892),
+             (860, 881)],
+            [(890, 860), (902, 876), (911, 870), (923, 865), (937, 865),
+             (947, 873), (958, 893), (961, 884), (961, 867), (953, 849),
+             (947, 832), (947, 814), (931, 806), (924, 825), (917, 844),
+             (910, 855), (904, 859)],
+            [(959, 892), (992, 821), (991, 756), (987, 707), (975, 732),
+             (958, 764), (958, 775), (942, 804), (931, 805), (927, 829)],
+        ],
+        # The knotted lace across the bottom. It is the glove's, not the
+        # web's — the page draws its own over whichever web is fitted — so it
+        # is kept out of the cutout rather than warped in a second time.
+        "knot_polys": [
+            [(732, 753), (752, 724), (903, 883), (909, 873), (921, 869),
+             (933, 867), (944, 874), (952, 885), (958, 899), (959, 906),
+             (1029, 981), (1029, 1008), (1017, 1009), (936, 926), (909, 929),
+             (905, 918), (875, 919), (867, 912), (861, 886), (869, 889),
+             (732, 751)],
+        ],
         # The low loop beside back 2 is a strap running diagonally down to the
         # heel, not a blob, so a box round it takes back 2's leather with it —
         # three tries proved that. Traced as a polygon off Scott's reading of
@@ -262,6 +319,25 @@ def cut(spec):
             cv2.fillPoly(extra, [np.array(poly, np.int32)], 1)
             bright = islace if cutv is None else (val >= cutv)
             lace |= glove & extra.astype(bool) & bright
+        # A hand-traced web is the web. Otsu guesses at the boundary between
+        # leather and lacing from brightness, and on a glove shot with a flash
+        # it guesses raggedly; where Scott has drawn the leather himself, that
+        # is the answer and the threshold has nothing left to say about it.
+        if "web_polys" in spec:
+            drawn = np.zeros(glove.shape, np.uint8)
+            for poly in spec["web_polys"]:
+                cv2.fillPoly(drawn, [np.array(poly, np.int32)], 1)
+            web = glove & drawn.astype(bool) & ~lace
+        # The knotted lace belongs to the glove, not to the web: the page
+        # draws its own over whichever web is fitted, and a web that carries
+        # a second one in its cutout shows two knots in two places.
+        if "knot_polys" in spec:
+            tie = np.zeros(glove.shape, np.uint8)
+            for poly in spec["knot_polys"]:
+                cv2.fillPoly(tie, [np.array(poly, np.int32)], 1)
+            tie = tie.astype(bool)
+            web, lace = web & ~tie, lace & ~tie
+            print(f"knotted lace left to the glove: {int(tie.sum())} px")
         finger = None
         if "finger_poly" in spec:
             fp = np.zeros(glove.shape, np.uint8)
