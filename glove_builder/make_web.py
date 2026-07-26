@@ -48,6 +48,10 @@ WEBS = {
         # beside back 2, penned in by the welt on its left and the lace on its
         # right, which is what keeps the box off back 2's leather.
         "loops": [(655, 130, 755, 480), (630, 560, 715, 760)],
+        # The knot of lacing down the thumb side is one 22,604 px piece, over
+        # the 20,000 default, so it was being thrown out with the shell —
+        # Scott: "it's also missing some of the laces that need to be green."
+        "lace_max": 30000,
         # It is a closed web — the name says so, and Scott says so: "the web
         # is fully closed so there shouldn't be any open parts left." Every
         # gap in the opening is the cutout falling short, none of them are
