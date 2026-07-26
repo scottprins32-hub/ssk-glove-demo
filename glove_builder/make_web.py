@@ -93,8 +93,19 @@ WEBS = {
         # web runs out past the web's own edge, so the outline cuts its end
         # off. Only the bright pixels in here are taken, which keeps the
         # shell it passes over out of it.
+        # The knotted lace across the bottom of the web, traced by Scott on
+        # the photograph itself rather than read off a grid: the strap coming
+        # down from the finger, the knot where it crosses, and the tail
+        # running out to the heel.
         "lace_polys": [[(604, 726), (668, 716), (770, 762), (752, 800),
-                        (648, 772), (600, 752)]],
+                        (648, 772), (600, 752)],
+                       [(754, 725), (733, 751), (868, 887), (861, 888),
+                        (909, 882), (905, 880)],
+                       [(906, 878), (922, 867), (939, 870), (946, 879),
+                        (954, 890), (958, 897), (958, 904), (1029, 981),
+                        (1027, 1010), (1019, 1010), (935, 926), (910, 928),
+                        (906, 919), (880, 919), (870, 914), (865, 907),
+                        (862, 890)]],
         # The low loop beside back 2 is a strap running diagonally down to the
         # heel, not a blob, so a box round it takes back 2's leather with it —
         # three tries proved that. Traced as a polygon off Scott's reading of
