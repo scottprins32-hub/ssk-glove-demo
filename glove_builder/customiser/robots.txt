@@ -1,0 +1,10 @@
+# Not for indexing while this is a pitch. The pages carry SSK's product
+# photographs, their logo and their prices, and publishing those is SSK's
+# decision to make rather than ours. The X-Robots-Tag header in vercel.json
+# says the same thing for crawlers that ignore this file.
+#
+# When SSK are happy for it to be public, delete this file and drop the
+# X-Robots-Tag block.
+
+User-agent: *
+Disallow: /

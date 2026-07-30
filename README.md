@@ -115,3 +115,23 @@ The web-type picker uses SSK's own form thumbnails, which carry burned-in
 Japanese captions — they want reshooting or cropping. And nothing is wired to
 a backend yet: the flow ends with a reference code and a copyable
 specification, which is what SSK receives alongside the order.
+
+## Hosting
+
+`vercel.json` serves `glove_builder/customiser` as the site root — the hosted
+build, not `dist/index.html`. The single file is for places that can only take
+one file; on a real host the split build is smaller per visit because the
+browser keeps the 4.4 MB of assets between pages.
+
+There is no build step. Import the repository on Vercel, framework "Other",
+and the config does the rest; every push to `main` redeploys.
+
+Assets are served `must-revalidate`. Their names do not change when they are
+rebuilt — `glove.webp` is `glove.webp` whatever is in it — so a cached copy
+would go on showing yesterday's glove after a deploy. That already caught us
+once locally: a screenshot of a fix that had not actually been applied.
+
+The site is closed to crawlers, by `robots.txt` and by an `X-Robots-Tag`
+header for the crawlers that ignore it. The photographs, the logo and the
+prices on these pages are SSK's, and publishing them is their call. Delete
+both when they say yes.
