@@ -1,0 +1,336 @@
+/* =========================================================================
+   SSK Europe configurator — design tokens
+   Portable, framework-agnostic, no build step. One <link> and you have it.
+
+       <link rel="stylesheet" href="tokens.css">
+
+   Extracted from glove_builder/customiser/ (app.css, app.js, glove-engine.js,
+   ds/tokens/*.css). The reasoning, and the file:line for every value, is in
+   design-system.md next to this file.
+
+   Tokens marked [NEW] do not exist in the shipped code. Each names something
+   already in use as a literal, or fills a gap the code has no answer for.
+   Tokens marked [FIX] resolve a place the code contradicts itself — the
+   comment says which value won and why.
+
+   LAYERING RULE, and the reason this file exists:
+       components  ->  semantic tokens  ->  ramps
+   A component references a semantic name. A semantic name references a ramp
+   step. Nothing references a ramp step directly. The shipped code breaks this
+   34 times out of 107; holding the line is most of the value here.
+   ========================================================================= */
+
+:root {
+
+  /* =======================================================================
+     1. COLOUR — ramps
+     The vocabulary. Do not reference these from a component; use the
+     semantic names in section 2.
+     ===================================================================== */
+
+  /* Navy — the brand. Header ground, selection ink, dark text on light. */
+  --navy-950: #081526;
+  --navy-900: #0B1F3A;
+  --navy-800: #10294C;
+  --navy-700: #16375F;
+  --navy-600: #1F4878;
+  --navy-500: #2C5A90;
+  --navy-100: #D9E2EE;
+  --navy-50:  #EDF2F8;
+
+  /* Stitch red — action and attention. Never selection: see --state-selected. */
+  --red-700: #A00D24;
+  --red-600: #C8102E;
+  --red-500: #D6304A;
+  --red-100: #F9DCE1;
+  --red-50:  #FCEEF0;
+
+  /* Leather tan — heritage accent, sparing. In practice: advisory callouts. */
+  --tan-600: #A96E3F;
+  --tan-500: #B97E4B;
+  --tan-200: #E8D3BC;
+  --tan-100: #F2E7D8;
+
+  /* Warm grey — text, borders, grounds. Warm rather than neutral, so the
+     chrome sits with the leather instead of fighting it. */
+  --chalk:    #F6F4EE;
+  --white:    #FFFFFF;
+  --gray-900: #1C1F24;
+  --gray-700: #3E434C;
+  --gray-600: #565D68;
+  --gray-500: #737B87;
+  --gray-400: #9AA1AB;
+  --gray-300: #C4C9D0;
+  --gray-200: #DDE0E5;
+  --gray-100: #ECEEF1;
+  --gray-50:  #F5F6F8;
+
+  /* =======================================================================
+     2. COLOUR — semantic
+     What components reference.
+     ===================================================================== */
+
+  /* Surfaces */
+  --surface-page:     var(--chalk);      /* page ground; the canvas composites onto it */
+  --surface-card:     var(--white);      /* every raised band: rail, panel, footer, sheet */
+  --surface-inverse:  var(--navy-900);   /* the header, and only the header */
+  --surface-sunken:   var(--gray-50);    /* recessed wells, disabled and empty grounds */
+  --surface-accent:   var(--navy-50);    /* selected-row tint, if you need one */
+
+  /* Text */
+  --text-heading: var(--navy-900);
+  --text-body:    var(--gray-700);
+  --text-muted:   var(--gray-500);
+  --text-strong:  var(--gray-900);       /* typed input values — the only text darker than body */
+  --text-inverse: var(--chalk);
+  --text-link:    var(--navy-600);
+  --text-danger:  var(--red-600);
+
+  /* Text on the inverse header — its own small palette */
+  --text-on-inverse:        var(--white);
+  --text-on-inverse-muted:  var(--navy-100);
+
+  /* Borders. Hover darkens the border; it never recolours it. */
+  --border-default:  var(--gray-200);
+  --border-strong:   var(--gray-300);    /* hover only */
+  --border-inverse:  var(--navy-600);    /* controls on the navy header */
+  --border-dashed:   var(--navy-500);    /* provisional / machine-generated values */
+
+  /* Actions */
+  --action-primary:         var(--red-600);
+  --action-primary-hover:   var(--red-700);
+  --action-secondary:       var(--navy-900);
+  --action-secondary-hover: var(--navy-800);
+
+  /* State [NEW/FIX]
+     Selection is navy, on every control family. The shipped code rings cards
+     in --red-600 (app.css:193) and everything else in navy; navy wins,
+     because red is the action colour and a red-ringed card competes with the
+     primary button sitting under it. */
+  --state-selected:       var(--navy-900);
+  --state-selected-ink:   var(--white);   /* label on a filled selection (nav chips) */
+  --state-hover-border:   var(--border-strong);
+  --state-disabled-opacity: 0.4;          /* [FIX] .4, not .35 — majority and more legible */
+
+  /* Status */
+  --status-success:    #2E7D46;
+  --status-success-bg: #E5F2E9;
+  --status-warning:    #B26A0F;
+  --status-warning-bg: #FBF0DD;
+  --status-danger:     var(--red-600);
+  --status-danger-bg:  var(--red-50);
+  --status-info:       var(--navy-600);
+  --status-info-bg:    var(--navy-50);
+
+  /* Advisory callout — the one place tan is used */
+  --callout-bg:   var(--tan-100);
+  --callout-rule: var(--tan-500);
+
+  /* Component colours that were literals [NEW] */
+  --scrim: rgb(8 21 38 / 0.55);        /* = --navy-950 at 55%. app.css:268 hand-expanded it. */
+  --chip-border: rgb(0 0 0 / 0.25);    /* the hairline round a colour chip; 3 hard-coded copies */
+  --swatch-unset: var(--gray-300);     /* [FIX] no colour chosen. Was #cccccc / #888888 — two
+                                          different literals for the same failure, neither on
+                                          the ramp. */
+
+  /* =======================================================================
+     3. TYPOGRAPHY
+     Three faces, and the split between them is the strongest rule in the
+     system. Display = uppercase tracked chrome, never prose. Mono = anything
+     read as data, never language. Body = everything else.
+     ===================================================================== */
+
+  --font-display: 'Barlow Condensed', Impact, sans-serif;
+  --font-body:    'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Scale. Each step has one job — see design-system.md.
+     --text-3xs and --text-2xs are [NEW]: ten labels already render at 10px
+     and 11px against a scale that stopped at 12px. */
+  --text-3xs:  10px;   /* [NEW] eyebrows, kickers — uppercase, widest tracking */
+  --text-2xs:  11px;   /* [NEW] helper text, captions, sub-labels */
+  --text-xs:   12px;   /* the workhorse label size */
+  --text-sm:   13px;   /* secondary body: options, card names, buttons, spec rows */
+  --text-base: 15px;   /* body default and input text */
+  --text-md:   17px;   /* price value, reference code */
+  --text-lg:   20px;   /* wordmark */
+
+  --display-sm: 24px;  /* step title, summary heading — the largest type here */
+  --display-md: 32px;  /* marketing sizes: available, unused in the configurator */
+  --display-lg: 44px;
+  --display-xl: 64px;
+
+  --weight-body:          400;
+  --weight-medium:        500;
+  --weight-semibold:      600;   /* the selected option button */
+  --weight-bold:          700;
+  --weight-display:       700;
+  --weight-display-heavy: 800;   /* wordmark, panel title */
+
+  --leading-tight: 1.05;   /* display */
+  --leading-snug:  1.25;
+  --leading-body:  1.55;   /* everything else */
+
+  /* The smaller the caps, the wider the tracking. */
+  --tracking-display:   0.01em;
+  --tracking-caps:      0.08em;   /* 12-13px uppercase labels */
+  --tracking-wide-caps: 0.14em;   /* 10px eyebrows */
+
+  /* =======================================================================
+     4. SPACING
+     4px scale. Spacing is `gap` on the parent, never margins on children —
+     that is why this layout has no collapsed-margin bugs.
+     ===================================================================== */
+
+  --space-1:   4px;
+  --space-1-5: 6px;   /* [NEW/FIX] compact gaps and small-control vertical padding.
+                         The code uses 5px, 6px and 7px for this job, always
+                         hard-coded. 6px is the middle and the most common. */
+  --space-2:   8px;   /* the default gap */
+  --space-3:  12px;   /* horizontal control padding; gap between cards */
+  --space-4:  16px;   /* mobile panel inset */
+  --space-5:  20px;   /* THE PANEL INSET — desktop padding and field gap */
+  --space-6:  24px;   /* summary sheet padding */
+  --space-8:  32px;   /* 32px and up: available, unused. This is a dense tool. */
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Collection densities [NEW] — two, both named. */
+  --gap-dense: var(--space-1-5);  /* swatch grid, part chips */
+  --gap-cards: var(--space-3);    /* card grids */
+
+  /* Control heights */
+  --control-h-sm: 32px;   /* step chips, icon buttons, swatch rows */
+  --control-h-md: 40px;   /* option buttons, inputs, buttons */
+  --control-h-lg: 48px;
+
+  /* Shell measurements [NEW] — literals in the code, named here because a
+     second configurator has to pick its own and needs to know what they do. */
+  --header-h:     60px;    /* fixed; wraps to auto below --bp-stack */
+  --panel-w:     440px;    /* the control rail. Fixed on desktop, fluid below. */
+  --canvas-max-h-mobile: 34vh;
+  --sheet-max-w: 640px;    /* summary modal */
+  --track-max-w: 380px;    /* footer progress bar */
+  --track-h:       4px;
+
+  /* =======================================================================
+     5. SHAPE
+     Size-graded: the bigger the surface, the bigger the radius.
+     ===================================================================== */
+
+  --radius-sm:   3px;    /* controls, inputs, badges, colour chips */
+  --radius-md:   6px;    /* cards, code blocks, photographs */
+  --radius-lg:  10px;    /* dialogs */
+  --radius-pill: 999px;  /* tags, step chips, and the 4px progress track
+                            [FIX] — the track's hard-coded 2px was
+                            approximating a pill at that height */
+
+  --border-w: 1px;       /* almost everything */
+  --rule-w:   3px;       /* the advisory callout's left rule */
+
+  /* =======================================================================
+     6. ELEVATION
+     Three levels, and resting controls have none. Separation comes from a
+     1px border on a white ground — that is what makes this read as a tool
+     rather than a shop.
+     ===================================================================== */
+
+  --shadow-chip:    0 1px 2px rgb(11 31 58 / 0.06), 0 2px 8px rgb(11 31 58 / 0.06);
+                    /* a chip floating over the product. Shipped as
+                       --shadow-card, which is misleading: it is not used on
+                       cards, and cards have no resting shadow. */
+  --shadow-raised:  0 4px 16px rgb(11 31 58 / 0.12);   /* hover lift */
+  --shadow-overlay: 0 12px 40px rgb(11 31 58 / 0.22);  /* detached from the page */
+
+  --focus-ring: 0 0 0 3px rgb(31 72 120 / 0.35);
+  /* [FIX] Keep box-shadow for focus ALONE. Paint selection with
+       outline: var(--border-w) solid var(--state-selected);
+       outline-offset: calc(-1 * var(--border-w));
+     In the shipped code both use box-shadow at equal specificity with focus
+     declared later, so focusing a selected control erases its selection ring
+     — verified in a browser. Separating the two channels lets both show. */
+
+  /* Brand device: the stitched rule under the summary heading */
+  --stitch-red: repeating-linear-gradient(90deg,
+                var(--red-600) 0 10px, transparent 10px 18px);
+
+  /* =======================================================================
+     7. MOTION
+     Almost nothing moves, on purpose. Transition what the user is CAUSING
+     (hover feedback, a value moving). Never transition what the user is
+     READING — in a configurator, latency between a click and the product
+     changing reads as lag, not polish.
+     ===================================================================== */
+
+  --dur-fast: 120ms;   /* feedback on a control under the pointer */
+  --dur-med:  200ms;   /* a value moving on screen — the progress bar */
+  --ease-out: cubic-bezier(.2, .7, .3, 1);   /* the only curve. No ease-in. */
+
+  /* Behavioural timings [NEW] — magic numbers in the code, named here
+     because a second implementation has to match them to feel the same. */
+  --dur-confirm:     1600ms;  /* how long a "Copied" label persists */
+  --debounce-input:   250ms;  /* text input settle before committing */
+
+  /* =======================================================================
+     8. LAYERING [NEW]
+     The code has exactly two z-indexes — 2 and 60 — and the gap between them
+     encodes a system nobody wrote down. This is that system.
+     ===================================================================== */
+
+  --z-base:     0;
+  --z-raised:  10;   /* overlays inside the stage: the contextual label */
+  --z-sticky:  20;
+  --z-dropdown: 30;
+  --z-tooltip: 40;
+  --z-scrim:   60;   /* modal backdrop; the sheet rides on top of it */
+  --z-toast:   70;
+}
+
+/* ==========================================================================
+   BREAKPOINT
+   One. Above it side by side, below it stacked.
+
+   CSS cannot use a custom property inside a media query, so --bp-stack is
+   documentation and the literal must be repeated. Keep the two in sync by
+   hand — there is no way to make this DRY without a build step, and this
+   file is deliberately buildless.
+   ========================================================================== */
+
+:root { --bp-stack: 900px; }
+
+/* @media (max-width: 900px) { … } */
+
+/* ==========================================================================
+   REDUCED MOTION
+   The shipped rule covers `transition` only, which is sufficient today
+   because the product has no @keyframes — an accident, not a policy. This
+   version covers animation and smooth scrolling too, so it stays correct
+   when someone adds the first keyframe.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   NOT IN THIS FILE, ON PURPOSE
+
+   No dark theme. The product is single-mode and the canvas composites onto a
+   light ground; inventing a dark palette here would be guessing at decisions
+   nobody has made. When it is wanted, redefine the section 2 semantic tokens
+   — and only those — under both @media (prefers-color-scheme: dark) and
+   :root[data-theme="dark"]. The ramps in section 1 should not move.
+
+   No component CSS. Tokens declare custom properties and nothing else. The
+   shipped token layer breaks this — typography.css styles `body`, effects.css
+   styles `a` — which is how the only link styling in the product ended up in
+   a file named "effects". Base and component styles belong in their own
+   layers.
+   ========================================================================== */
