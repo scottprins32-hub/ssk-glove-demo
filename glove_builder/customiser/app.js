@@ -37,6 +37,10 @@ const TIED = { palm: 'back2', back2: 'palm' };
    on a single unsplit index-finger panel. */
 const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
 
+/* A left-handed thrower's glove is the mirror of a right-handed one. The
+   calibration glove is right-handed, so the preview flips for the other. */
+const isLefty = () => /^L/i.test(S.hand || '');
+
 const PALETTE_OF = f =>
   f === 'stitching' ? 'stitching' :
   f === 'ring_emb' ? 'embroidery' :
@@ -190,7 +194,7 @@ function draw() {
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
-    indexIsOnePiece());
+    indexIsOnePiece(), isLefty());
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -245,7 +249,7 @@ function renderStart(b) {
       const tmp = document.createElement('canvas');
       tmp.width = DATA.w; tmp.height = DATA.h;
       R.draw(tmp.getContext('2d'), layerState(), S.bullet, null,
-             indexIsOnePiece());
+             indexIsOnePiece(), isLefty());
       g.drawImage(tmp, 0, 0, 200, 237);
       S.colors = prev; S.bullet = pb; S.flag = pf;
       R.setFlag(flagArt());          // the renderer holds one flag at a time
@@ -750,7 +754,7 @@ loadGlove().then(bundle => {
   cv.addEventListener('click', ev => {
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     const f = id && LAYER_TO_FIELD[id];
     if (!f) return;
     S.step = 3; S.part = f; paint();
@@ -759,7 +763,7 @@ loadGlove().then(bundle => {
     if (S.step !== 3) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     cv.style.cursor = id ? 'pointer' : 'default';
   });
 

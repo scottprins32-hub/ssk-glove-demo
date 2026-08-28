@@ -915,6 +915,22 @@ class GloveRenderer {
     return c;
   }
 
+  /* A left-handed glove is a right-handed one mirrored — that is how they
+     are built, and how SSK's own form offers them. So the whole render is
+     flipped horizontally. Letters and logos are not symmetric, though: under
+     that flip the SSK wordmark, the bullet patch and the flag all come out
+     backwards. Flipping a mark about its OWN centre first cancels against the
+     global flip, so it lands on the mirrored side of the glove and still
+     reads the right way round. */
+  unmirror(ctx, x0, x1, on, fn) {
+    if (!on) return fn();
+    ctx.save();
+    ctx.translate(x0 + x1, 0);
+    ctx.scale(-1, 1);
+    fn();
+    ctx.restore();
+  }
+
   drawBullet(ctx, bulletSel) {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
@@ -1091,9 +1107,11 @@ class GloveRenderer {
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
   // mergeIndex: the index finger is one piece under a flag, so close the welt
   // seam that splits back3 from back4 by painting it in the panel's colour.
-  draw(ctx, state, bulletSel, highlight, mergeIndex) {
+  draw(ctx, state, bulletSel, highlight, mergeIndex, mirror = false) {
     const D = this.DATA;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, D.w, D.h);
+    if (mirror) ctx.setTransform(-1, 0, 0, 1, D.w, 0);
     ctx.drawImage(this.imgs.glove, 0, 0);
     const swap = this.web && D.webs && D.webs[this.web];
     // The neutral base has the stock web and its lacing painted into it, so
@@ -1130,7 +1148,13 @@ class GloveRenderer {
         continue;
       }
       const c = this.tinted(z.id, this.hex(z.id, state));
-      ctx.drawImage(c, c._ox, c._oy);
+      if (z.id === 'embroidery') {
+        const eb = D.bbox.embroidery;
+        this.unmirror(ctx, eb[0], eb[2], mirror,
+                      () => ctx.drawImage(c, c._ox, c._oy));
+      } else {
+        ctx.drawImage(c, c._ox, c._oy);
+      }
       // The pad is one piece of leather laid over the finger, so the welt
       // seam that splits the finger runs under it, not across it — Scott,
       // looking at the seam drawn over the top: "it should always overlap
@@ -1179,8 +1203,13 @@ class GloveRenderer {
       const c = this.tinted('welt_index', this.hex('back3', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
-    if (mergeIndex) this.drawFlag(ctx);
-    this.drawBullet(ctx, bulletSel);
+    if (mergeIndex) {
+      const M = D.flagMount, r = Math.max(M.w, M.h);
+      this.unmirror(ctx, M.cx - r, M.cx + r, mirror, () => this.drawFlag(ctx));
+    }
+    const bb = D.bulletBox;
+    this.unmirror(ctx, bb[0], bb[2], mirror,
+                  () => this.drawBullet(ctx, bulletSel));
     if (highlight && highlight.id && D.bbox[highlight.id]) {
       const c = this.tinted(highlight.id, '#ffffff');
       ctx.save();
@@ -1189,10 +1218,15 @@ class GloveRenderer {
       ctx.drawImage(c, c._ox, c._oy);
       ctx.restore();
     }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  zoneAt(x, y) {
+  // The id map is of the right-handed glove, so a click on a mirrored render
+  // has to be folded back before it is looked up, or every panel selects the
+  // one opposite it.
+  zoneAt(x, y, mirror = false) {
     const D = this.DATA;
+    if (mirror) x = D.w - 1 - x;
     if (x < 0 || y < 0 || x >= D.w || y >= D.h) return null;
     const n = this.idData[((y | 0) * D.w + (x | 0)) * 4];
     const z = D.zones.find(z => z.n === n);
@@ -1279,6 +1313,10 @@ const TIED = { palm: 'back2', back2: 'palm' };
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
 const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
+
+/* A left-handed thrower's glove is the mirror of a right-handed one. The
+   calibration glove is right-handed, so the preview flips for the other. */
+const isLefty = () => /^L/i.test(S.hand || '');
 
 const PALETTE_OF = f =>
   f === 'stitching' ? 'stitching' :
@@ -1433,7 +1471,7 @@ function draw() {
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
-    indexIsOnePiece());
+    indexIsOnePiece(), isLefty());
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -1488,7 +1526,7 @@ function renderStart(b) {
       const tmp = document.createElement('canvas');
       tmp.width = DATA.w; tmp.height = DATA.h;
       R.draw(tmp.getContext('2d'), layerState(), S.bullet, null,
-             indexIsOnePiece());
+             indexIsOnePiece(), isLefty());
       g.drawImage(tmp, 0, 0, 200, 237);
       S.colors = prev; S.bullet = pb; S.flag = pf;
       R.setFlag(flagArt());          // the renderer holds one flag at a time
@@ -1993,7 +2031,7 @@ loadGlove().then(bundle => {
   cv.addEventListener('click', ev => {
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     const f = id && LAYER_TO_FIELD[id];
     if (!f) return;
     S.step = 3; S.part = f; paint();
@@ -2002,7 +2040,7 @@ loadGlove().then(bundle => {
     if (S.step !== 3) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     cv.style.cursor = id ? 'pointer' : 'default';
   });
 

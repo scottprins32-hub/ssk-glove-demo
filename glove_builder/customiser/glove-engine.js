@@ -88,6 +88,22 @@ export class GloveRenderer {
     return c;
   }
 
+  /* A left-handed glove is a right-handed one mirrored — that is how they
+     are built, and how SSK's own form offers them. So the whole render is
+     flipped horizontally. Letters and logos are not symmetric, though: under
+     that flip the SSK wordmark, the bullet patch and the flag all come out
+     backwards. Flipping a mark about its OWN centre first cancels against the
+     global flip, so it lands on the mirrored side of the glove and still
+     reads the right way round. */
+  unmirror(ctx, x0, x1, on, fn) {
+    if (!on) return fn();
+    ctx.save();
+    ctx.translate(x0 + x1, 0);
+    ctx.scale(-1, 1);
+    fn();
+    ctx.restore();
+  }
+
   drawBullet(ctx, bulletSel) {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
@@ -264,9 +280,11 @@ export class GloveRenderer {
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
   // mergeIndex: the index finger is one piece under a flag, so close the welt
   // seam that splits back3 from back4 by painting it in the panel's colour.
-  draw(ctx, state, bulletSel, highlight, mergeIndex) {
+  draw(ctx, state, bulletSel, highlight, mergeIndex, mirror = false) {
     const D = this.DATA;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, D.w, D.h);
+    if (mirror) ctx.setTransform(-1, 0, 0, 1, D.w, 0);
     ctx.drawImage(this.imgs.glove, 0, 0);
     const swap = this.web && D.webs && D.webs[this.web];
     // The neutral base has the stock web and its lacing painted into it, so
@@ -303,7 +321,13 @@ export class GloveRenderer {
         continue;
       }
       const c = this.tinted(z.id, this.hex(z.id, state));
-      ctx.drawImage(c, c._ox, c._oy);
+      if (z.id === 'embroidery') {
+        const eb = D.bbox.embroidery;
+        this.unmirror(ctx, eb[0], eb[2], mirror,
+                      () => ctx.drawImage(c, c._ox, c._oy));
+      } else {
+        ctx.drawImage(c, c._ox, c._oy);
+      }
       // The pad is one piece of leather laid over the finger, so the welt
       // seam that splits the finger runs under it, not across it — Scott,
       // looking at the seam drawn over the top: "it should always overlap
@@ -352,8 +376,13 @@ export class GloveRenderer {
       const c = this.tinted('welt_index', this.hex('back3', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
-    if (mergeIndex) this.drawFlag(ctx);
-    this.drawBullet(ctx, bulletSel);
+    if (mergeIndex) {
+      const M = D.flagMount, r = Math.max(M.w, M.h);
+      this.unmirror(ctx, M.cx - r, M.cx + r, mirror, () => this.drawFlag(ctx));
+    }
+    const bb = D.bulletBox;
+    this.unmirror(ctx, bb[0], bb[2], mirror,
+                  () => this.drawBullet(ctx, bulletSel));
     if (highlight && highlight.id && D.bbox[highlight.id]) {
       const c = this.tinted(highlight.id, '#ffffff');
       ctx.save();
@@ -362,10 +391,15 @@ export class GloveRenderer {
       ctx.drawImage(c, c._ox, c._oy);
       ctx.restore();
     }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
-  zoneAt(x, y) {
+  // The id map is of the right-handed glove, so a click on a mirrored render
+  // has to be folded back before it is looked up, or every panel selects the
+  // one opposite it.
+  zoneAt(x, y, mirror = false) {
     const D = this.DATA;
+    if (mirror) x = D.w - 1 - x;
     if (x < 0 || y < 0 || x >= D.w || y >= D.h) return null;
     const n = this.idData[((y | 0) * D.w + (x | 0)) * 4];
     const z = D.zones.find(z => z.n === n);
