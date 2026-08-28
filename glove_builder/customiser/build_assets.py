@@ -151,7 +151,16 @@ def _luma(img):
     return lum, alpha, (np.median(lum[vis]) if vis.any() else 128.0)
 
 
-def tint_base(img, flatten=0.0):
+# Zones that are not a panel facing the light. The hand opening is a hole you
+# look through into a shadowed cavity, and normalising it to its own midtone —
+# which is what every panel wants — clips the whole thing to white and paints a
+# flat oval. Its real luminance is 0.35x the glove's; `depth` is how much of
+# that darkness to keep, traded against being able to read the colour you
+# picked. 1.0 is the photograph, 0.0 is the flat oval it used to be.
+CAVITY = {"lining": 0.62}
+
+
+def tint_base(img, flatten=0.0, ref=None, depth=1.0):
     """The diffuse half of the photograph: its shading, normalised so the
     zone's midtone sits at full strength.
 
@@ -166,6 +175,12 @@ def tint_base(img, flatten=0.0):
     flatten=1.0 collapses all shading to a solid tone.
     """
     lum, alpha, med = _luma(img)
+    if ref:
+        # Measure against the glove instead of against itself, so a cavity
+        # stays dark relative to the leather around it rather than being
+        # renormalised up to full strength.
+        k = med / max(ref, 1.0)
+        med = med / max(1.0 - depth + depth * k, 1e-3)
     base = np.clip(lum / max(med, 1.0), 0, 1) * 255.0
     if flatten > 0:
         base = 255.0 + (base - 255.0) * (1.0 - flatten)
@@ -461,6 +476,9 @@ def main():
     W, H = glove.size
     # neutral-leather base: any pixel not covered by a zone shows as plain
     # leather instead of leaking the calibration glove's rainbow colors
+    # the whole glove's midtone, so a cavity can be measured against the
+    # leather around it rather than against itself
+    glove_med = _luma(glove)[2]
     gb = np.asarray(tint_base(glove)).astype(np.float32)
     neutral = np.array([200, 160, 106], np.float32) / 255.0
     gb[..., :3] = gb[..., :3] * neutral
@@ -483,8 +501,11 @@ def main():
             clean_mark = (ssk_logo_layer(load("back78"), im)
                           or ssk_wordmark(im, args.height))
             tb = clean_mark if clean_mark is not None else tint_base(im)
-        elif name == "lining":
-            tb = tint_base(im, flatten=0.85)
+        elif name in CAVITY:
+            # Not a panel: a hole into the glove. Flattening it (which is what
+            # this used to do, at 0.85) is what made the hand opening read as
+            # a flat oval — the last of the three gaps the README listed.
+            tb = tint_base(im, ref=glove_med, depth=CAVITY[name])
         else:
             tb = tint_base(im)
         assets[name] = to_data_uri(tb, quality=85, method=4)

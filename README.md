@@ -98,10 +98,23 @@ Palm, thumb and pinky views and the 13 web types need their own photographs.
 Adding a view is new zone boxes and hue rules per angle — the machinery is the
 same.
 
-Known gaps worth fixing before this is shown as finished are tracked in the
-audit notes rather than here; the largest are that colours render darker than
-the SSK swatch they came from, that the hand opening reads as a flat oval, and
-that dark colourways lose their shading because the tint can only darken.
+Known gaps are tracked in the audit notes rather than here. Two that used to
+be listed have since been measured and do not hold up, so they are recorded
+here rather than left for someone to chase:
+
+- *"Colours render darker than the SSK swatch they came from."* Measured
+  across seven leather colours on a finger panel, the rendered mean sits
+  **1.5% below** the swatch hex — invisible, and side by side the lit part of
+  a panel matches its chip. Re-cutting the layers from the real photograph
+  did not move this number (1.46% before, 1.51% after), so it was never a
+  resolution artefact either.
+- *"Dark colourways lose their shading because the tint can only darken."*
+  The specular pass added with `lighter` is what answers this, and it works:
+  as a proportion of the colour's own brightness, black keeps **38%** of
+  p5–p95 luminance range against white's 14%. In absolute terms it is 9
+  levels against 34, which is little but is also what black leather does.
+
+The one still standing is that the hand opening reads as a flat oval.
 
 ## Still to come
 
