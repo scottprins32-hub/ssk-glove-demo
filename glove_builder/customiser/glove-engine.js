@@ -56,7 +56,7 @@ export class GloveRenderer {
     const z = this.DATA.zones.find(z => z.id === zoneId);
     const pal = this.DATA.palettes[z.group];
     const c = pal.find(c => c[0] === state[zoneId]);
-    return c ? c[2] : '#888888';
+    return c ? c[2] : '#C4C9D0';   // --gray-300, matching app.js
   }
 
   tinted(id, hx) {

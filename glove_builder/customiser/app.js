@@ -9,6 +9,7 @@ import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
 /* SSK Europe's prices (from Pim via Scott, 2026-07-25): the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
+const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
 const BASE_PRICE = '€ 374,95';
 const STOCK_PRICE = '€ 294,95';
 
@@ -473,7 +474,9 @@ function renderReview(b) {
 function hexOf(f) {
   const pal = DATA.palettes[PALETTE_OF(f)];
   const c = pal.find(c => c[0] === S.colors[f]);
-  return c ? c[2] : '#cccccc';
+  // nothing chosen yet. Was '#cccccc' here and '#888888' in the renderer —
+  // two literals for the same failure, neither of them on the grey ramp.
+  return c ? c[2] : UNSET;
 }
 /* "still needed" only while it actually is; optional fields say so once. */
 function labelRow(label, required, satisfied) {

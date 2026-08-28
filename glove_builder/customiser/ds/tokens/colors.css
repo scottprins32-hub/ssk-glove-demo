@@ -14,6 +14,12 @@
 --surface-page:var(--chalk);--surface-card:var(--white);--surface-sunken:var(--gray-50);--surface-inverse:var(--navy-900);--surface-accent-tint:var(--navy-50);
 /* Semantic — actions */
 --action-primary:var(--red-600);--action-primary-hover:var(--red-700);--action-secondary:var(--navy-900);--action-secondary-hover:var(--navy-800);
+/* Semantic — state. Selection is navy on every control family; red is the
+   action colour, and a red-ringed card competes with the primary button. */
+--state-selected:var(--navy-900);--state-disabled-opacity:.4;
+/* Component colours that were literals: the scrim is navy-950 at 55% and was
+   hand-expanded as rgba(8,21,38,.55); the chip hairline appeared three times. */
+--scrim:rgb(8 21 38 / .55);--chip-border:rgb(0 0 0 / .25);--swatch-unset:var(--gray-300);
 /* Semantic — borders */
 --border-default:var(--gray-200);--border-strong:var(--gray-300);--border-focus:var(--navy-600);
 /* Semantic — status */

@@ -244,13 +244,20 @@
   --shadow-raised:  0 4px 16px rgb(11 31 58 / 0.12);   /* hover lift */
   --shadow-overlay: 0 12px 40px rgb(11 31 58 / 0.22);  /* detached from the page */
 
-  --focus-ring: 0 0 0 3px rgb(31 72 120 / 0.35);
-  /* [FIX] Keep box-shadow for focus ALONE. Paint selection with
-       outline: var(--border-w) solid var(--state-selected);
-       outline-offset: calc(-1 * var(--border-w));
-     In the shipped code both use box-shadow at equal specificity with focus
-     declared later, so focusing a selected control erases its selection ring
-     — verified in a browser. Separating the two channels lets both show. */
+  --focus-ring-color: rgb(31 72 120 / 0.55);
+  /* [FIX] Selection and focus must live on DIFFERENT properties, or the one
+     declared later erases the other — in the shipped code both were
+     box-shadow at equal specificity, so focusing a selected control erased
+     its selection ring.
+
+     This way round, and not the other:
+         selection  box-shadow: inset 0 0 0 var(--border-w) var(--state-selected);
+         focus      outline: 3px solid var(--focus-ring-color);
+                    outline-offset: 1px;
+     Putting selection on the outline instead looks like it works and does
+     not: the shared :focus-visible rule sets `outline: none` to suppress the
+     browser default, which erases it again. Outline is what focus is for, it
+     draws outside the box, and it cannot collide with an inset shadow. */
 
   /* Brand device: the stitched rule under the summary heading */
   --stitch-red: repeating-linear-gradient(90deg,
