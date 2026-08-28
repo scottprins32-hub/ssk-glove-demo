@@ -19,7 +19,9 @@ import pathlib
 from PIL import Image
 
 HERE = pathlib.Path(__file__).parent
-SRC = HERE / "images" / "drive-2026-07"
+# Every drive drop. drive-2026-08 is Pim's "Zooi van Pim" folder, which is
+# where the palm-side calibration glove and the finger hood came from.
+SRC_DIRS = sorted((HERE / "images").glob("drive-*"))
 OUT = HERE / "customiser" / "dist" / "tracer.html"
 
 # Everything the cutting scripts read, at the size they read it. Coordinates
@@ -38,7 +40,9 @@ def data_uri(path):
 
 def main():
     photos = []
-    for p in sorted(SRC.iterdir()):
+    files = sorted((p for d in SRC_DIRS for p in d.iterdir()),
+                   key=lambda p: (p.parent.name, p.name))
+    for p in files:
         if p.suffix.lower() not in (".jpg", ".jpeg", ".png"):
             continue
         (w, h), uri = data_uri(p)

@@ -264,6 +264,14 @@ const ROLES = [
   { id: 'finger',  label: 'Finger edge', color: '#f2d024' },
   { id: 'knot',    label: 'Knotted lace', color: '#4a8cf7' },
   { id: 'exclude', label: 'Not this',    color: '#c264d8' },
+  /* Palm-side parts. On the calibration glove hue separates almost
+     everything by itself, but it cannot split two pairs that share a colour:
+     the palm and the web are both turquoise, and the lacing and the binding
+     are both pink. Those are the boundaries worth drawing. */
+  { id: 'palm',    label: 'Palm',        color: '#2ec4b6' },
+  { id: 'binding', label: 'Binding',     color: '#ff9f1c' },
+  { id: 'thumb',   label: 'Thumb side',  color: '#8e6fe0' },
+  { id: 'pinky',   label: 'Pinky side',  color: '#e05263' },
 ];
 
 const $ = s => document.querySelector(s);
