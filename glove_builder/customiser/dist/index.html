@@ -581,6 +581,7 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
     <div id="spechost"></div>
     <div class="sheet-acts">
       <button class="btn btn-primary" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
+      <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
       <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
     </div>
   </div>
@@ -741,6 +742,7 @@ const T = {
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
     compare: 'Compare', snapshot: 'Snapshot', clear: 'Clear', basePrice: 'From',
     finish: 'Review & send', reference: 'Reference', copy: 'Copy specification',
+    copyLink: 'Copy link',
     copied: 'Copied', keep: 'Keep building', open: 'Open a saved design',
     paste: 'Paste a reference code', notShown: 'Not shown on this view',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
@@ -780,6 +782,7 @@ const T = {
     compare: 'Vergelijk', snapshot: 'Vastleggen', clear: 'Wissen', basePrice: 'Vanaf',
     finish: 'Controleren & versturen', reference: 'Referentie', copy: 'Kopieer specificatie',
     copied: 'Gekopieerd', keep: 'Verder bouwen', open: 'Bewaard ontwerp openen',
+    copyLink: 'Kopieer link',
     paste: 'Plak een referentiecode', notShown: 'Niet zichtbaar op deze weergave',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
@@ -1337,8 +1340,14 @@ function restore(json) {
   suppress = true; draw(); paint(); suppress = false;
 }
 
-function encodeState() {
+/* A link describes the glove, not the person. Name and phone are answers on
+   the order form, not part of the design, and a configuration gets pasted
+   into WhatsApp — contact details should not travel with it. */
+const PRIVATE = ['name', 'phone'];
+
+function encodeState(forLink = false) {
   const o = { ...S }; delete o.step;
+  if (forLink) for (const k of PRIVATE) delete o[k];
   return btoa(unescape(encodeURIComponent(JSON.stringify(o))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
@@ -1346,6 +1355,32 @@ function decodeState(s) {
   try {
     const j = decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
     return JSON.parse(j);
+  } catch (e) { return null; }
+}
+
+/* Where work in progress lives.
+
+   The URL used to do this job: every repaint rewrote an 830-character hash,
+   which is why it never sat still. It was the wrong tool three times over —
+   unreadable to paste, no help to the back button (replaceState makes no
+   history entry), and it carried the customer's name and phone into anything
+   they shared. Local storage is better at the one job that mattered: it
+   survives a refresh AND a browser restart, and it never leaves the device.
+
+   Every read and write is wrapped — a private window or blocked site data
+   makes these throw, and losing the draft is not worth breaking the page. */
+const SAVE_KEY = 'ssk-glove-v1';
+
+function save() {
+  try {
+    const o = { ...S }; delete o.step;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(o));
+  } catch (e) { /* no storage: the session still works, it just won't persist */ }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
 }
 
@@ -1819,17 +1854,20 @@ function openSheet() {
   $('#scrim').hidden = false;
 }
 $('#sheetx').onclick = $('#keep').onclick = () => { $('#scrim').hidden = true; };
-$('#copy').onclick = async ev => {
-  const b = ev.currentTarget, old = b.textContent;   // nulled once we await
-  const txt = specText();
+async function copyToClipboard(ev, txt) {
+  const b = ev.currentTarget, was = b.textContent;   // nulled once we await
   try { await navigator.clipboard.writeText(txt); }
   catch (e) {
     const a = el('textarea'); a.value = txt; document.body.appendChild(a);
     a.select(); document.execCommand('copy'); a.remove();
   }
   b.textContent = t('copied');
-  setTimeout(() => { b.textContent = old; }, 1600);
-};
+  setTimeout(() => { b.textContent = was; }, 1600);
+}
+$('#copy').onclick = ev => copyToClipboard(ev, specText());
+/* The only place a URL is ever written. Asked for, not imposed. */
+$('#copylink').onclick = ev => copyToClipboard(ev,
+  location.origin + location.pathname + '#' + encodeState(true));
 
 /* ----------------------------------------------------------------- paint */
 function paint(rebuildBody = true) {
@@ -1886,7 +1924,7 @@ function paint(rebuildBody = true) {
   $('#undo').disabled = !undoStack.length;
   $('#redo').disabled = !redoStack.length;
 
-  history.replaceState(null, '', '#' + encodeState());
+  save();
 }
 
 /* ------------------------------------------------------------------ wire */
@@ -1916,11 +1954,15 @@ loadGlove().then(bundle => {
 
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;
+  // A link someone was sent wins over whatever this device had saved; failing
+  // that, pick the draft back up. Then clear the hash — leaving it in the bar
+  // would go stale the moment anything changed, which is how it came to look
+  // like the address was following you around.
   const h = location.hash.slice(1);
-  if (h) {
-    const o = decodeState(h);
-    if (o) Object.assign(S, o, { step: 0 });
-  }
+  const shared = h ? decodeState(h) : null;
+  const o = shared || load();
+  if (o) Object.assign(S, o, { step: 0 });
+  if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');
   cv.addEventListener('click', ev => {

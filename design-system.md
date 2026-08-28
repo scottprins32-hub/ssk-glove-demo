@@ -33,10 +33,23 @@ one.
 4. **Unavailable is explained, not greyed out.** Webs that do not exist at the
    chosen size are absent from the list, not disabled (`app.js:297`); a merged
    panel is relabelled rather than removed (`app.js:321-322`).
-5. **State is a URL.** The whole configuration is mirrored into the hash on
-   every repaint (`app.js:671`) and packed into a human-readable reference code
-   for the header (`glove-engine.js:379-389`). Sharing is not a feature bolted
-   on; it is the state model.
+5. **State is portable, and a link describes the product — not the person.**
+   The configuration is packed into a human-readable reference code
+   (`glove-engine.js:379-389`) and can be written into a link on demand.
+   Sharing is not a feature bolted on; it is the state model. Two rules go
+   with it, and both were learned the hard way:
+
+   - **The address bar is not a save file.** Work in progress belongs in
+     `localStorage`, which survives a refresh *and* a browser restart. Writing
+     it to the URL on every repaint produced an 830-character address that
+     changed on every click, helped nothing — `replaceState` makes no history
+     entry, so not even the back button — and looked broken to a customer.
+     Write a URL only when someone asks for one.
+   - **Personal data never goes in a shareable link.** Name and phone are
+     answers on the order form, not part of the design. A configuration gets
+     pasted into WhatsApp; contact details must not travel with it. The
+     exclusion list is `PRIVATE` in `app.js`, and anything added to state that
+     identifies a person belongs on it.
 
 ---
 
