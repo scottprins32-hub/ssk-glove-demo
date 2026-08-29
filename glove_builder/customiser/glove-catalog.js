@@ -182,6 +182,12 @@ export const T = {
     built: 'Built by SSK', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
     pickStart: 'Pick a starting point. You can change every part after this.',
     pickColour: 'Pick a part on the glove, then pick its colour.',
+    // SSK has no hex values for these colours -- the number is the colour, and
+    // the same number comes out a little different in each leather. The swatch
+    // is a picture of it; the code is what gets ordered.
+    swatchNote: 'SSK has no colour codes beyond these numbers, and the same '
+      + 'number comes out slightly different in each leather. The swatch is an '
+      + 'indication \u2014 the number beside it is what gets ordered.',
     applyAll: 'Same colour on all back panels',
     sigSlot: 'Signature slot — attach a real SSK player',
     allSet: 'All set', sendIt: 'Send to SSK', model2: 'SSK Pro Custom'
@@ -223,6 +229,9 @@ export const T = {
     built: 'Door SSK gebouwd', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
     pickStart: 'Kies een startpunt. Daarna pas je elk onderdeel nog aan.',
     pickColour: 'Kies een onderdeel op de handschoen en daarna de kleur.',
+    swatchNote: 'SSK heeft geen kleurcodes buiten deze nummers, en hetzelfde '
+      + 'nummer valt in elk leer net iets anders uit. Het staaltje is een '
+      + 'indicatie \u2014 het nummer ernaast is wat besteld wordt.',
     applyAll: 'Zelfde kleur op alle achterpanelen',
     sigSlot: 'Signature-plek — koppel een echte SSK-speler',
     allSet: 'Compleet', sendIt: 'Naar SSK sturen', model2: 'SSK Pro Custom'

@@ -370,6 +370,8 @@ function renderColours(b) {
                                               : (OFFSTAGE[S.part] || null),
     true));
 
+  b.appendChild(el('p', 'note swatch-note', t('swatchNote')));
+
   if (/^back/.test(S.part)) {
     const all = el('button', 'btn btn-ghost', t('applyAll'));
     all.type = 'button'; all.style.alignSelf = 'flex-start';
