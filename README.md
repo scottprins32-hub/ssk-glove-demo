@@ -154,6 +154,18 @@ Stitching and embroidery keep the chart values throughout. Those are thread,
 and no photograph here resolves a stitch line, so the leather's measurement is
 not theirs to inherit.
 
+## One assumption still standing
+
+The builder moves **Palm** and **Back 2** together, on the assumption that they
+are one piece of leather, and it is the only constraint in the tool with
+nothing behind it. It is worth settling because it takes a choice away: SSK's
+own order form asks for the two colours separately.
+
+The rainbow glove cannot answer it. It wears one turquoise across the palm, the
+web and the thumb's back panel, so the shared colour there is a colourway
+choice, not a seam. Asking is a sentence — the same kind of sentence that
+settled PEO-37C's belt on the bag side in one reply.
+
 ## Scope today
 
 Back view only, of one glove (SSK Pro Custom 12.5" outfield), photographed in
