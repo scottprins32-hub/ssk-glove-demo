@@ -324,24 +324,10 @@ export class GloveRenderer {
       // lacing through it both go, or the new one sits under the old one's
       // laces. What stays is the lacing outside the web — the knotted lace
       // sits on the outside of the glove and passes over any web.
-      if (swap && z.id === 'web') {
-        // webfinger is the index finger's own edge, carried in the same
-        // cutout so the join comes from one photograph. It is finger leather,
-        // so it takes back3's colour, not the web's.
-        // The finger strip goes on LAST, over the web, not under it. Its
-        // alpha is feathered to hide the join between two photographs, and
-        // underneath the web it had nothing but page to feather onto — a
-        // pale hairline down the whole seam. On the glove the finger's
-        // rolled edge is in front of the web anyway.
-        for (const [key, zone] of [[swap.web, 'web'],
-                                   [swap.laceweb, 'laces'],
-                                   [swap.webfinger, 'back3']]) {
-          if (!key || !this.imgs[key] || !D.bbox[key]) continue;
-          const c = this.tinted(key, this.hex(zone, state));
-          ctx.drawImage(c, c._ox, c._oy);
-        }
-        continue;
-      }
+      // A swapped web is drawn after the loop, not in it: the calibration
+      // glove's knotted lace has to be punched away first, and a web that
+      // carries its own knot would be punched with it.
+      if (swap && z.id === 'web') continue;
       const c = this.tinted(z.id, this.hex(z.id, state));
       if (z.id === 'embroidery') {
         const eb = D.bbox.embroidery;
@@ -382,8 +368,13 @@ export class GloveRenderer {
         }
         // The knotted lace belongs to the web, not the glove: the Standard I
         // has none. Any web that does not declare knot:false keeps it.
-        if (this.imgs.laces_knot && D.bbox.laces_knot
-            && !(swap && swap.knot === false)) {
+        // No knot at all under a swapped web. It used to be drawn over every
+        // one of them, because it lives on the outside of the glove and
+        // passes over whatever is fitted — but it is the CALIBRATION glove's
+        // knot. Scott: "this big ass knot on the bottom with the blue lace...
+        // that blue knot is different on other gloves." Every web now brings
+        // its own, traced off its own photograph, or has none.
+        if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
           const k = this.tinted('laces_knot', this.hex('laces', state));
           ctx.drawImage(k, k._ox, k._oy);
         }
@@ -394,11 +385,28 @@ export class GloveRenderer {
     // a lace-shaped tab floating beside the hand. This comes after the zones,
     // not with the web punch-out: the segmentation cut part of that lace into
     // back 2, which would otherwise paint it straight back in.
-    if (swap && swap.knot === false && this.imgs.knot_cut) {
+    if (swap && this.imgs.knot_cut) {
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.imgs.knot_cut, 0, 0);
       ctx.restore();
+    }
+    // And only now the web itself, on top of a glove with nothing of the
+    // calibration glove's web left anywhere on it.
+    if (swap) {
+      // webfinger is the index finger's own edge, carried in the same cutout
+      // so the join comes from one photograph. It is finger leather, so it
+      // takes back3's colour, not the web's — and it goes on last, over the
+      // web: its alpha is feathered to hide the join between two
+      // photographs, and under the web that feather had nothing but page to
+      // ramp onto, which was a pale hairline down the whole seam.
+      for (const [key, zone] of [[swap.web, 'web'],
+                                 [swap.laceweb, 'laces'],
+                                 [swap.webfinger, 'back3']]) {
+        if (!key || !this.imgs[key] || !D.bbox[key]) continue;
+        const c = this.tinted(key, this.hex(zone, state));
+        ctx.drawImage(c, c._ox, c._oy);
+      }
     }
     if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));

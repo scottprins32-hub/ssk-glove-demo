@@ -194,7 +194,7 @@ WEBS = {
              (1096, 273)],
             [(751, 64), (751, 86), (739, 95), (732, 101), (727, 71)],
         ],
-        # The knot along the bottom belongs to the glove, not to this web.
+        # The knot along the bottom, traced off this web's own photograph.
         "knot_polys": [
             [(1009, 967), (1006, 995), (914, 989), (900, 1006), (890, 1010),
              (875, 1009), (862, 1015), (839, 1017), (822, 1010), (811, 1000),
@@ -347,9 +347,9 @@ WEBS = {
             [(959, 892), (992, 821), (991, 756), (987, 707), (975, 732),
              (958, 764), (958, 775), (942, 804), (931, 805), (927, 829)],
         ],
-        # The knotted lace across the bottom. It is the glove's, not the
-        # web's — the page draws its own over whichever web is fitted — so it
-        # is kept out of the cutout rather than warped in a second time.
+        # The knotted lace across the bottom. It is this web's own — traced
+        # off this web's photograph and carried with it, because the knot
+        # differs from glove to glove.
         "knot_polys": [
             [(732, 753), (752, 724), (903, 883), (909, 873), (921, 869),
              (933, 867), (944, 874), (952, 885), (958, 899), (959, 906),
@@ -441,12 +441,18 @@ def cut(spec):
             light = lum >= spec["dark"]
             lace &= light if spec.get("leather_is_dark", True) else ~light
         if "knot_polys" in spec:
+            # Kept, not dropped. It used to be left to the glove, because the
+            # page drew the calibration glove's knot over whichever web was
+            # fitted and two knots showed. Scott: "this big ass knot on the
+            # bottom with the blue lace... that blue knot is different on
+            # other gloves." So the page draws no knot at all now, and every
+            # web brings its own or has none.
             tie = drawn(spec["knot_polys"])
-            web, lace = web & ~tie, lace & ~tie
-            print(f"knotted lace left to the glove: {int(tie.sum())} px")
+            lace, web = lace | tie, web & ~tie
+            print(f"knotted lace carried with the web: {int(tie.sum())} px")
         web &= ~lace
         print(f"traced: {int(web.sum())} px leather, {int(lace.sum())} px lacing")
-        return im, web, lace, None
+        return im, web, lace, None, glove
 
     if "outline" in spec:
         # Trace the web's boundary and take everything inside it.
@@ -508,23 +514,24 @@ def cut(spec):
             for poly in spec["web_polys"]:
                 cv2.fillPoly(drawn, [np.array(poly, np.int32)], 1)
             web = glove & drawn.astype(bool) & ~lace
-        # The knotted lace belongs to the glove, not to the web: the page
-        # draws its own over whichever web is fitted, and a web that carries
-        # a second one in its cutout shows two knots in two places.
+        # The knotted lace goes WITH the web. See the traced branch above:
+        # it used to be left to the glove and drawn from the calibration
+        # glove's own photograph over every web, and Scott's answer to that
+        # is that the knot is different on every glove.
         if "knot_polys" in spec:
             tie = np.zeros(glove.shape, np.uint8)
             for poly in spec["knot_polys"]:
                 cv2.fillPoly(tie, [np.array(poly, np.int32)], 1)
             tie = tie.astype(bool)
-            web, lace = web & ~tie, lace & ~tie
-            print(f"knotted lace left to the glove: {int(tie.sum())} px")
+            lace, web = lace | tie, web & ~tie
+            print(f"knotted lace carried with the web: {int(tie.sum())} px")
         finger = None
         if "finger_poly" in spec:
             fp = np.zeros(glove.shape, np.uint8)
             cv2.fillPoly(fp, [np.array(spec["finger_poly"], np.int32)], 1)
             finger = glove & fp.astype(bool) & ~region & ~lace
             finger = ndimage.binary_opening(finger, np.ones((5, 5), bool))
-        return im, web, lace, finger
+        return im, web, lace, finger, glove
 
 
     if "leather_hue" in spec:
@@ -584,7 +591,7 @@ def cut(spec):
     cap = spec.get("lace_max", 20000)
     take = np.nonzero((inside > 60) & (sizes > 120) & (sizes < cap))[0] + 1
     lace = np.isin(lbl, take)
-    return im, web, lace, None
+    return im, web, lace, None, glove
 
 
 def rgba(im, mask):
@@ -662,7 +669,7 @@ def aperture(height=1100):
     return ndimage.binary_fill_holes(lbl == big)
 
 
-def complete(leather, have, ap, finger=None, min_window=1200):
+def complete(leather, have, ap, finger=None, min_window=1200, window=None):
     """Fill the web out to the edges of the opening it sits in.
 
     A cutout warped into the opening never quite reaches its corners, and what
@@ -690,8 +697,13 @@ def complete(leather, have, ap, finger=None, min_window=1200):
         seam = ndimage.binary_dilation(finger, np.ones((3, 3), bool),
                                        iterations=3)
         keep -= set(np.unique(lbl[hole & seam]).tolist())
-    window = np.isin(lbl, sorted(keep))
-    add = ap & ~have & ~window
+    keep_mask = np.isin(lbl, sorted(keep))
+    # A window that was photographed as daylight through the web is a window,
+    # whatever the size and shape tests would have made of it. Those tests are
+    # a fallback for a web whose photograph gives no answer.
+    if window is not None and window.any():
+        keep_mask = keep_mask | window
+    add = ap & ~have & ~keep_mask
     if not add.any():
         return leather, 0
     have = a[..., 3] > 90          # leather only, to copy leather in
@@ -837,17 +849,42 @@ def main():
     ap.add_argument("--web", required=True, choices=sorted(WEBS))
     args = ap.parse_args()
     spec = WEBS[args.web]
-    im, web, lace, finger = cut(spec)
+    im, web, lace, finger, glove = cut(spec)
+
+    # A web's real windows are not guessed at, they are photographed. These
+    # gloves are shot on white: inside the web's own outline, anything that is
+    # not glove is daylight straight through it. Scott, on the Standard I:
+    # "there's the top part with the laces, and then the center bar that goes
+    # up and down, but there's also another bar that goes left to right —
+    # you've kinda missed it, to where the orange background is still
+    # showing." That bar is the divider between two windows, and the lower
+    # window was being filled in because `complete` would not keep a gap that
+    # touches the finger. It does not have to decide any more.
+    hull = ndimage.binary_fill_holes(
+        ndimage.binary_closing(web | lace, np.ones((25, 25), bool)))
+    window = hull & ~glove
+    window = ndimage.binary_opening(window, np.ones((5, 5), bool))
+    lbl, n = ndimage.label(window)
+    if n:
+        sizes = ndimage.sum(window, lbl, range(1, n + 1))
+        window = np.isin(lbl, np.nonzero(sizes >= 400)[0] + 1)
+    print(f"windows photographed through the web: {int(window.sum())} px "
+          f"in {int(ndimage.label(window)[1])} of them")
 
     out = HERE / "runs" / f"web-{args.web}"
     out.mkdir(parents=True, exist_ok=True)
     layers = {"leather": rgba(im, web), "lace": rgba(im, lace)}
+    if window.any():
+        layers["window"] = rgba(im, window)
     if finger is not None and finger.sum() > 500:
         layers["finger"] = rgba(im, finger)
     for n, layer in layers.items():
         layer.save(out / f"{n}.png")
 
     aligned = fit(layers, web | lace, finger=finger)
+    # The windows come back out of the warp as a mask, not as a layer to draw.
+    win = (np.asarray(aligned.pop("window"))[..., 3] > 90
+           if "window" in aligned else None)
     # Before anything measures what the web covers, not after. Straightening
     # the finger's edge only ever removes pixels, and doing it last took away
     # ground that `complete` had already counted as filled — which is where the
@@ -872,7 +909,7 @@ def main():
             if "finger" in aligned else None)
     aligned["leather"], added = complete(
         aligned["leather"], have, aperture(), finger=fing,
-        min_window=np.inf if spec.get("closed") else 1200)
+        min_window=np.inf if spec.get("closed") else 1200, window=win)
     print(f"web completed out to the opening: {added} px added")
     # And no further than the opening. A cutout warped in from another
     # photograph does not stop exactly on the seam — the Diamond Net ran 5,600
