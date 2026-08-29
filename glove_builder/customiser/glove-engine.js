@@ -74,10 +74,20 @@ export class GloveRenderer {
     // A multiply can only darken, so the leather's sheen has to be added
     // rather than tinted — that is what keeps highlights on a white glove
     // and stops a black one flattening into a silhouette.
+    //
+    // How MUCH sheen is not the layer's to decide. Every highlight was cut
+    // from one photograph and carries that glove's own lighting: unscaled,
+    // the belt adds 38 per channel where the middle finger adds 5, so a
+    // customer who picks Navy everywhere gets a grey belt. DATA.sheen holds
+    // the per-layer scale that evens them out — measured by
+    // glove_builder/sheen.py, not tuned by eye.
     const hi = this.imgs[id + '_hi'];
     if (hi) {
+      const k = (this.DATA.sheen || {})[id];
       g.globalCompositeOperation = 'lighter';
+      if (k != null) g.globalAlpha = k;
       g.drawImage(hi, -x0, -y0);
+      g.globalAlpha = 1;
     }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(this.imgs[id], -x0, -y0);

@@ -22,6 +22,10 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/customiser/dist/` | Single-file build for places that allow only one file |
 | `glove_builder/layers/rainbow-back-4x/` | The zone layers the page composites (2536×3000 RGBA) |
 | `glove_builder/refine_zones.py` | Turns raw SAM3 masks into clean, disjoint, SSK-true zone layers |
+| `glove_builder/colour_evidence.py` | Reads the leather colours off photographs of finished gloves |
+| `glove_builder/colour-evidence.json` | What those photographs said, and which colours it was enough to change |
+| `glove_builder/sheen.py` | Measures each highlight layer and evens them out |
+| `glove_builder/render_check.mjs` | Paints the glove one colour and checks every zone comes back that colour |
 | `glove_builder/runs/rainbow-back/masks_raw/` | The raw SAM3 masks, committed so the pipeline re-runs without a GPU |
 | `glove_builder/source/` | The 4× upscaled source photograph the layers are cut from |
 | `glove_builder/zones_rainbow_back.json` | Per-zone boxes and HSV rules for the back view |
@@ -44,10 +48,20 @@ python -m venv .venv && .venv/bin/pip install -r glove_builder/requirements.txt
     --zones glove_builder/zones_rainbow_back.json \
     --final glove_builder/layers/rainbow-back-4x --smooth
 
+# photographs of finished gloves -> the leather palette (optional; the
+# committed colour-evidence.json is what build_assets reads)
+.venv/bin/python glove_builder/colour_evidence.py --photos <drive folder> --apply
+
 # zone layers -> the configurator's assets (one file per layer + glove-data.json)
 .venv/bin/python glove_builder/customiser/build_assets.py \
     --layers glove_builder/layers/rainbow-back-4x \
     --out    glove_builder/customiser/assets
+
+# the checks: the palette still says what the photographs say, the highlight
+# scales still match the assets, and every zone still renders its own colour
+.venv/bin/python glove_builder/colour_evidence.py --photos <drive folder> --check
+.venv/bin/python glove_builder/sheen.py --assets glove_builder/customiser/assets --check
+node glove_builder/render_check.mjs
 
 # optional: fold the whole app into one self-contained file
 .venv/bin/python glove_builder/customiser/bundle.py
@@ -72,10 +86,12 @@ builder had no answer for — and marks the fields the back view cannot show
 (the two wingtips, the palm, and the pad colour) rather than pretending they
 are not asked. Prices: € 294,95 for the stock Pro glove, € 374,95 configured.
 
-The whole design is in the URL, so a refresh keeps it and a link restores it.
-Step 4 is the colour step: pick a part on the glove or from the chip list,
-then a colour; the picked zone lifts slightly so you can see what you are
-about to change.
+Work in progress is kept in local storage, so a refresh and even a browser
+restart keep it, and nothing about the customer leaves the device; "copy link"
+puts the design (without their name and phone) into a URL on request. Step 4
+is the colour step: pick a part on the glove or from the chip list, then a
+colour; the picked zone lifts slightly so you can see what you are about to
+change.
 
 ## How the render works
 
@@ -83,6 +99,23 @@ Each zone is exported as a luminance-normalised greyscale "tint base" plus
 alpha. The browser multiplies the chosen colour over that base, so one
 photograph drives every colourway while keeping the leather's shading. A
 parallel id-map PNG gives click-to-select on the glove itself.
+
+A multiply can only darken, so the leather's sheen is carried by a second
+`_hi` layer that is added after the tint — that is what keeps a white glove
+from going grey and a black one from going flat. How *much* sheen is not the
+layer's to decide: every highlight was cut from the same photograph and
+carries that glove's own lighting, so unscaled they disagreed by a factor of
+seven. Picking Navy everywhere produced a navy glove with a #615C60 grey belt.
+`glove_builder/sheen.py` measures each layer where a colour is read from it
+and stores the scale that brings them together, in `glove-data.json` rather
+than in new pixels: the highlight's shape is right, only its strength was
+inherited.
+
+`node glove_builder/render_check.mjs` is the check that would have caught it.
+It paints the whole glove one colour and reads every zone back off the canvas
+through the id map and the layer's own alpha; one colour in has to give one
+colour out, within the sheen the renderer adds on purpose. It needs node and a
+Playwright chromium, and nothing the shipped page depends on.
 
 The reference code packs every choice into one string (5 bits per zone for its
 index in that zone's palette, 4 bits for the bullet logo, base36). It decodes
@@ -99,9 +132,12 @@ Adding a view is new zone boxes and hue rules per angle — the machinery is the
 same.
 
 Known gaps worth fixing before this is shown as finished are tracked in the
-audit notes rather than here; the largest are that colours render darker than
-the SSK swatch they came from, that the hand opening reads as a flat oval, and
-that dark colourways lose their shading because the tint can only darken.
+audit notes rather than here; the largest now are that the hand opening reads
+as a flat oval and that the palm, both wingtips and the pad cannot be
+previewed from a back view at all. Colour fidelity was one of them and is
+measured rather than argued about: every zone renders within 25 of the hex it
+was given (`render_check.mjs`), and the leathers themselves are read off
+photographs of finished gloves rather than eyeballed (`colour_evidence.py`).
 
 ## Still to come
 

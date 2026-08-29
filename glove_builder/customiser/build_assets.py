@@ -14,13 +14,21 @@ import base64
 import io
 import json
 import pathlib
+import sys
 
 import numpy as np
 from PIL import Image
 from scipy import ndimage
 
+# The build tools live one level up, beside the layers they read.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+import sheen                                                  # noqa: E402
+
 # SSK color chart (hand-curated hex; the phone photo of the chart has a
-# screen cast, so values are tuned to the named colors)
+# screen cast, so values are tuned to the named colors). Where photographs of
+# finished gloves overrule the chart, colour-evidence.json says so and
+# leather_chart() applies it -- see glove_builder/colour_evidence.py. Without
+# that overlay a rebuild would quietly put the eyeballed values back.
 LEATHER = [
     ("10", "White", "#F2F0EA"), ("12", "Camel", "#D9B97A"),
     ("20", "Cardinal", "#A31E31"), ("25", "Pink", "#E17FC0"),
@@ -38,6 +46,18 @@ LEATHER = [
     ("90", "Black", "#17161A"), ("93", "Grey", "#7E8288"),
 ]
 GOLD_FOIL = ("GF", "Gold Foil", "#C9A227")
+
+# Only leather and lace are photographed: a lace is leather, a stitch is
+# thread and no photograph here resolves one.
+EVIDENCE = pathlib.Path(__file__).resolve().parents[1] / "colour-evidence.json"
+
+
+def leather_chart(photographed: bool):
+    """The chart, with the photographed leathers substituted in."""
+    if not photographed or not EVIDENCE.exists():
+        return [list(c) for c in LEATHER]
+    adopted = json.loads(EVIDENCE.read_text()).get("adopted", {})
+    return [[n, name, adopted.get(n, hexv)] for n, name, hexv in LEATHER]
 STITCH_NUMS = {"10", "12", "20", "25", "35", "40", "45", "51", "60", "70",
                "75", "80", "90", "93"}
 EMB_EXTRA = [("34", "Edge Gold", "#B8912F"), ("39", "Gold", "#D4AF37"),
@@ -479,18 +499,26 @@ def main():
         # still offering a colour to change.
         if (alpha > 90).sum() < 200:
             continue
+        spec_src = im
         if name == "embroidery":
             clean_mark = (ssk_logo_layer(load("back78"), im)
                           or ssk_wordmark(im, args.height))
-            tb = clean_mark if clean_mark is not None else tint_base(im)
+            # The synthesised mark carries its own thread-ridge shading, and
+            # it went out unnormalised: its midtone sat at 196, so a multiply
+            # rendered every embroidery colour 23% dark -- #1D3A8F came out
+            # #162C6D. That is the same trap tint_base() was written for, so
+            # the mark goes through it too, and the ridges it clips off come
+            # back through spec_base like every other layer's highlight.
+            spec_src = clean_mark if clean_mark is not None else im
+            tb = tint_base(spec_src)
         elif name == "lining":
             tb = tint_base(im, flatten=0.85)
         else:
             tb = tint_base(im)
         assets[name] = to_data_uri(tb, quality=85, method=4)
         # the highlight the tint cannot reproduce, added back over the colour
-        if name not in ("embroidery", "lining"):
-            sp = spec_base(im)
+        if name != "lining":
+            sp = spec_base(spec_src)
             if sp is not None:
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
         idmap[alpha > 90] = i
@@ -890,8 +918,8 @@ def main():
     idmap_img = Image.fromarray(idmap, "L")
     assets["_idmap"] = to_data_uri(idmap_img, fmt="PNG")
 
-    pal = {"leather": [list(c) for c in LEATHER],
-           "lace": [list(c) for c in LEATHER] + [list(GOLD_FOIL)],
+    pal = {"leather": leather_chart(True),
+           "lace": leather_chart(True) + [list(GOLD_FOIL)],
            "stitching": [list(c) for c in LEATHER if c[0] in STITCH_NUMS],
            "embroidery": sorted(
                [list(c) for c in LEATHER if c[0] in EMB_NUMS] +
@@ -928,10 +956,13 @@ def main():
             slug = b["name"].lower().replace("/", "").replace(" ", "")
             b["thumb"] = spill(b["thumb"], f"thumbs/{slug}.webp")
 
+    # Every highlight layer carries the source photograph's own lighting, so
+    # unscaled they disagree by a factor of seven and one chosen colour comes
+    # out as several. Measured here rather than tuned: see glove_builder/sheen.py.
     data = {"w": W, "h": H, "zones": zones, "palettes": pal,
             "presets": PRESETS, "bullets": bullets,
             "bulletBox": bullet_box if bullets else None,
-            "flagMount": flag_mount, "webs": webs,
+            "flagMount": flag_mount, "webs": webs, "sheen": sheen.scales(out),
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())
