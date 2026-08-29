@@ -556,6 +556,17 @@ def main():
             if n else np.zeros(0)
         web_cx = np.nonzero(webm)[1].mean()
         inside = np.isin(lbl, np.nonzero((frac >= 0.35) & (cx < web_cx))[0] + 1)
+        # And anything lying inside the opening itself, whatever it scored on
+        # those two tests. 6,507 px of rim lacing was being kept as the
+        # glove's, and it drew straight over every swapped web — Scott: "the
+        # other web is still showing below the new webs." Punching it was not
+        # enough, because the punch runs before the zones and `laces` simply
+        # painted it back.
+        import sys as _s
+        _s.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+        from make_web import aperture as _apf
+        _ap = _apf(height=args.height)
+        inside = inside | (la & _ap)
         if inside.sum() > 500:
             def half(src, keep):
                 a = np.asarray(src).copy()
@@ -717,6 +728,36 @@ def main():
                           "-> knot_cut")
             print(f"web lacing: {inside.sum()} px split off laces -> laces_web")
 
+    # The web's stitching belongs to the web. It is one zone with the glove's,
+    # so it was drawn after the punch and put 15,475 px of the old web's
+    # seams straight back over the new one — the most visible part of "the
+    # other web is still showing". Split on the same rule as the lacing.
+    st_im = load("stitching")
+    if st_im is not None:
+        import sys as _s2
+        _s2.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+        from make_web import aperture as _apf2
+        _ap2 = _apf2(height=args.height)
+        sa = np.asarray(st_im)[..., 3] > 90
+        in_web = sa & _ap2
+        if in_web.sum() > 500:
+            def _half(src, keep):
+                arr = np.asarray(src).copy()
+                arr[..., 3] = np.where(keep, arr[..., 3], 0)
+                return Image.fromarray(arr, "RGBA")
+            stb, stsp = tint_base(st_im), spec_base(st_im)
+            assets["stitching"] = to_data_uri(_half(stb, ~in_web), quality=85,
+                                              method=4)
+            assets["stitching_web"] = to_data_uri(_half(stb, in_web),
+                                                  quality=85, method=4)
+            if stsp is not None:
+                assets["stitching_hi"] = to_data_uri(_half(stsp, ~in_web),
+                                                     quality=80, method=4)
+                assets["stitching_web_hi"] = to_data_uri(_half(stsp, in_web),
+                                                         quality=80, method=4)
+            print(f"web stitching: {int(in_web.sum())} px split off "
+                  "stitching -> stitching_web")
+
     # The index finger is a single piece when it carries a flag, so the welt
     # that splits back3 from back4 has to disappear. Export just that seam;
     # the page paints it in the panel colour to close it up. It also gives us
@@ -781,10 +822,26 @@ def main():
         # rim round the whole opening on every swapped web. The stock H-web
         # never shows it because nothing is punched. Hardened and grown a
         # couple of pixels, the edge goes cleanly.
+        # Everything the stock web assembly occupies, not just its leather.
+        # Scott, looking at a swapped web: "the other web is still showing
+        # below the new webs... the web from the rainbow glove is absolutely
+        # 100 percent perfect so you can completely remove that part." The
+        # 6,507 px that kept showing through were the rim lacing, which had
+        # been split off as general `laces` rather than as web lacing, so the
+        # punch never saw it. Anything laced inside the opening belongs to the
+        # web that is being replaced. The knotted lace is unaffected: it draws
+        # after the punch, on top, which is where it sits on the glove.
+        import sys as _sys
+        _sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
+        from make_web import aperture as _aperture
+        _ap = _aperture(height=args.height)
+        _lace_all = np.asarray(lac)[..., 3] > 90 if lac is not None else \
+            np.zeros(wa.shape[:2], bool)
         hard = ndimage.binary_dilation(
-            np.asarray(web_im)[..., 3] > 24
+            (np.asarray(web_im)[..., 3] > 24)
             | (web_lace_mask if web_lace_mask is not None
-               else np.zeros(wa.shape[:2], bool)),
+               else np.zeros(wa.shape[:2], bool))
+            | (_lace_all & _ap),
             np.ones((3, 3), bool), iterations=2)
         cut = np.zeros(wa.shape[:2] + (4,), np.uint8)
         cut[..., 3] = np.where(hard, 255, 0)

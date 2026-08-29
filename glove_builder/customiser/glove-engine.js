@@ -354,6 +354,12 @@ export class GloveRenderer {
       // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced
       // differently. It still takes the lace colour.
+      // The web's own stitching goes with the web, exactly as its lacing does.
+      if (z.id === 'stitching' && !swap
+          && this.imgs.stitching_web && D.bbox.stitching_web) {
+        const w = this.tinted('stitching_web', this.hex('stitching', state));
+        ctx.drawImage(w, w._ox, w._oy);
+      }
       if (z.id === 'laces') {
         if (!swap && this.imgs.laces_web && D.bbox.laces_web) {
           const w = this.tinted('laces_web', this.hex('laces', state));
