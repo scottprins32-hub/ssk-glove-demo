@@ -700,6 +700,37 @@ def complete(leather, have, ap, finger=None, min_window=1200):
     return Image.fromarray(a, "RGBA"), int(add.sum())
 
 
+def emboss(img, amp=0.42, falloff=5.0, light=(-0.6, -0.8), bias=0.55):
+    """Darken a layer just inside its own edge, so it reads as a piece of
+    leather with thickness rather than a flat cutout.
+
+    A web is bars and holes. Cut from one flat material every bar is the same
+    tone edge to edge, which is what makes a swapped web look like a sticker —
+    on the glove each bar catches light on the side facing it and falls into
+    shadow on the other, and the eye reads that as depth before it reads
+    anything else.
+
+    So: an inner shadow that falls off over a few pixels, weighted by which
+    way the edge faces. `light` points at the source (up and to the left on
+    this glove); an edge facing away from it takes the full amount, one facing
+    into it takes `1 - bias` of it. Uniform on its own looks like a sticker
+    with a drop shadow; the directional term is what makes it a bar.
+    """
+    a = np.asarray(img).astype(np.float32)
+    m = a[..., 3] > 90
+    if not m.any():
+        return img
+    d = ndimage.distance_transform_edt(m)
+    # which way does the nearest edge lie? the gradient of the distance field
+    gy, gx = np.gradient(ndimage.gaussian_filter(d, 2.0))
+    n = np.hypot(gx, gy) + 1e-6
+    facing = (gx / n) * light[0] + (gy / n) * light[1]      # +1 toward the light
+    weight = 1.0 - bias * np.clip(facing, 0, 1)
+    shade = 1.0 - amp * weight * np.exp(-d / falloff)
+    a[..., :3] *= np.where(m, shade, 1.0)[..., None]
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
 def straighten(img):
     """Trim a layer's left edge back to the straight line through its ends.
 
@@ -840,7 +871,15 @@ def main():
         arr = np.asarray(aligned[n]).copy()
         arr[..., :3] = src
         aligned[n] = Image.fromarray(arr, "RGBA")
-    print("cut from the glove's own web leather")
+    # Thickness. The leather takes a soft inner shadow; the lacing takes a
+    # tighter, stronger one, because a lace is a round cord and needs to read
+    # that way against the flat bars behind it.
+    aligned["leather"] = emboss(aligned["leather"])
+    if "finger" in aligned:
+        aligned["finger"] = emboss(aligned["finger"])
+    if "lace" in aligned:
+        aligned["lace"] = emboss(aligned["lace"], amp=0.55, falloff=2.6)
+    print("cut from the glove's own web leather, with edges shaded")
 
     if "finger" in aligned:
         aligned["finger"] = straighten(aligned["finger"])
