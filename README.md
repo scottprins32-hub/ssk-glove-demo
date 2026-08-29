@@ -187,6 +187,16 @@ wingtips and the pad cannot be previewed from a back view at all, and two
 leathers — White and Camel — cannot be read from the colourway photographs
 because the camera blew them out.
 
+There is no list of hex codes to ask SSK for, and there never will be. Pim,
+asked for one: *"Hex codes hebben zij niet, die codes die ervoor staan van
+10-90 gebruiken zij, want bij elke stof is het een beetje anders."* The
+number is the colour, and the same number on a different leather is a
+slightly different colour — so a single hex per code cannot be right for all
+of them, and SSK sensibly do not publish one. Every hex in this project is
+therefore ours, inferred, and the only way to make it better is a better
+photograph: the swatch card flat, evenly lit, with a white sheet in the
+frame to key the white balance off.
+
 ## Still to come
 
 All 36 order-form questions are asked, plus pinky embroidery — not on the

@@ -328,9 +328,14 @@ export class GloveRenderer {
         // webfinger is the index finger's own edge, carried in the same
         // cutout so the join comes from one photograph. It is finger leather,
         // so it takes back3's colour, not the web's.
-        for (const [key, zone] of [[swap.webfinger, 'back3'],
-                                   [swap.web, 'web'],
-                                   [swap.laceweb, 'laces']]) {
+        // The finger strip goes on LAST, over the web, not under it. Its
+        // alpha is feathered to hide the join between two photographs, and
+        // underneath the web it had nothing but page to feather onto — a
+        // pale hairline down the whole seam. On the glove the finger's
+        // rolled edge is in front of the web anyway.
+        for (const [key, zone] of [[swap.web, 'web'],
+                                   [swap.laceweb, 'laces'],
+                                   [swap.webfinger, 'back3']]) {
           if (!key || !this.imgs[key] || !D.bbox[key]) continue;
           const c = this.tinted(key, this.hex(zone, state));
           ctx.drawImage(c, c._ox, c._oy);

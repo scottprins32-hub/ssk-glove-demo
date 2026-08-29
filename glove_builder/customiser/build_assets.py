@@ -24,11 +24,20 @@ from scipy import ndimage
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import sheen                                                  # noqa: E402
 
-# SSK color chart (hand-curated hex; the phone photo of the chart has a
-# screen cast, so values are tuned to the named colors). Where photographs of
-# finished gloves overrule the chart, colour-evidence.json says so and
-# leather_chart() applies it -- see glove_builder/colour_evidence.py. Without
-# that overlay a rebuild would quietly put the eyeballed values back.
+# SSK color chart. The hex is ours and always will be: Pim, asked for a list
+# of hex codes, says there is none -- "die codes die ervoor staan van 10-90
+# gebruiken zij, want bij elke stof is het een beetje anders." The number is
+# the colour; the same number on a different leather is a slightly different
+# colour, so no single hex can be right for all of them. That settles what
+# there is to ask for. Not a list -- a photograph, of the swatch card, flat
+# and lit, with a white sheet in the frame to key the white balance off.
+#
+# What is here now is hand-curated from a phone photo of the chart that has a
+# screen cast in it, so the values are tuned to the named colours. Where
+# photographs of finished gloves overrule the chart, colour-evidence.json
+# says so and leather_chart() applies it -- see
+# glove_builder/colour_evidence.py. Without that overlay a rebuild would
+# quietly put the eyeballed values back.
 LEATHER = [
     ("10", "White", "#F2F0EA"), ("12", "Camel", "#D9B97A"),
     ("20", "Cardinal", "#A31E31"), ("25", "Pink", "#E17FC0"),
@@ -610,7 +619,18 @@ def main():
         _s.path.insert(0, str(pathlib.Path(__file__).parent.parent))
         from make_web import aperture as _apf
         _ap = _apf(height=args.height)
-        inside = inside | (la & _ap)
+        # But a piece the web claims is only the web's WHERE IT CROSSES THE
+        # OPENING. The lace loops over the index finger's tip scored well
+        # enough on both tests to be taken whole, and they are not web lacing
+        # at all — they are the finger's, common to every web. Taken away and
+        # never put back, they left 289 px of bare page at the top of the
+        # finger on all four webs. The stretch that runs out onto the glove
+        # goes back to `laces`; both halves take the lace colour, so a piece
+        # split between them is invisible unless a web declines its lacing,
+        # which is exactly when the split is wanted.
+        _near = ndimage.binary_dilation(_ap, np.ones((3, 3), bool),
+                                        iterations=12)
+        inside = (inside & _near) | (la & _ap)
         if inside.sum() > 500:
             def half(src, keep):
                 a = np.asarray(src).copy()
@@ -881,12 +901,21 @@ def main():
         _ap = _aperture(height=args.height)
         _lace_all = np.asarray(lac)[..., 3] > 90 if lac is not None else \
             np.zeros(wa.shape[:2], bool)
-        hard = ndimage.binary_dilation(
-            (np.asarray(web_im)[..., 3] > 24)
-            | (web_lace_mask if web_lace_mask is not None
-               else np.zeros(wa.shape[:2], bool))
-            | (_lace_all & _ap),
-            np.ones((3, 3), bool), iterations=2)
+        # Grown, but only inwards. The two pixels of growth are there to take
+        # the stock web's antialiased edge with it; outside the opening there
+        # is no new web to repaint what they remove, so they left a pale
+        # hairline of page showing down the seam between the web and the index
+        # finger — 2,500 to 3,400 px of it per web, which is the "background
+        # between the pieces of leather". The stock assembly itself is punched
+        # in full wherever it lies; only the ring is held to the opening.
+        _stock = ((np.asarray(web_im)[..., 3] > 24)
+                | (web_lace_mask if web_lace_mask is not None
+                   else np.zeros(wa.shape[:2], bool))
+                | (_lace_all & _ap))
+        _ring = ndimage.binary_dilation(_stock, np.ones((3, 3), bool),
+                                        iterations=2)
+        hard = _stock | (_ring & ndimage.binary_dilation(
+            _ap, np.ones((3, 3), bool), iterations=2))
         cut = np.zeros(wa.shape[:2] + (4,), np.uint8)
         cut[..., 3] = np.where(hard, 255, 0)
         assets["web_cut"] = to_data_uri(Image.fromarray(cut, "RGBA"),

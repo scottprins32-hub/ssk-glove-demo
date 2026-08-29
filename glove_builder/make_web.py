@@ -362,10 +362,6 @@ WEBS = {
         # three tries proved that. Traced as a polygon off Scott's reading of
         # the photograph instead.
         "loop_polys": [[(760, 840), (899, 935), (780, 935), (730, 890)]],
-        # Solid panel with the spiral laced across it — the photograph shows
-        # no daylight through the middle of it. Marking it so keeps the gaps
-        # the traced lacing leaves behind from being read as windows.
-        "closed": True,
     },
     # Columbia shell with yellow lacing. The web's leather is the same leather
     # as the shell, so value cannot split it from anything — Otsu finds no
@@ -374,10 +370,6 @@ WEBS = {
         "photo": "images/drive-2026-07/YellowPad1.jpg",
         "glove_mask": "runs/standard-i/masks/glove.png",
         "lace_hue": (20, 70),
-        # A solid I, like the Spiral: the photograph shows no daylight through
-        # it. Left open, the top of the aperture stayed empty and exposed the
-        # index finger's own edge shadow, which the stock web had been covering.
-        "closed": True,
         "outline": [(800, 40), (880, 30), (980, 60), (1060, 130), (1120, 260),
                     (1145, 420), (1130, 560), (1090, 690), (1020, 820),
                     (955, 920), (890, 985), (825, 1005), (778, 985),
@@ -630,10 +622,10 @@ def aperture(height=1100):
     """
     lay = HERE / "layers/rainbow-back-4x"
 
-    def α(name):
+    def α(name, thresh=40):
         im = Image.open(lay / f"{name}.png").convert("RGBA")
         w = int(im.width * height / im.height)
-        return np.asarray(im.resize((w, height), Image.LANCZOS))[..., 3] > 40
+        return np.asarray(im.resize((w, height), Image.LANCZOS))[..., 3] > thresh
 
     outer = ndimage.binary_fill_holes(α("glove"))
     other = np.zeros_like(outer)
@@ -653,7 +645,15 @@ def aperture(height=1100):
                                                     "web_material",
                                                     "laces_material"):
             continue
-        other |= α(p.stem)
+        # A panel has to be SOLID to claim ground, not merely present. Along
+        # the finger's edge beside the web, back 3 and the base beneath it are
+        # both about half opaque for a few pixels — the segmentation's own
+        # soft edge. At the >40 threshold back 3 claimed that strip, so it
+        # stayed out of the opening and no web filled it; what rendered there
+        # was two half-transparent layers and the page through both of them,
+        # which is the pale hairline down the seam. Nothing draws solid there,
+        # so it belongs to the opening.
+        other |= α(p.stem, thresh=200)
     free = outer & ~ndimage.binary_dilation(other, np.ones((3, 3), bool))
     lbl, n = ndimage.label(free)
     if not n:
@@ -854,8 +854,18 @@ def main():
     # SMK's 4,400 px hole against the finger came from.
     if "finger" in aligned:
         aligned["finger"] = straighten(aligned["finger"])
+    # What the web itself covers — the finger strip deliberately left out of
+    # it. The strip overlaps the opening by a couple of thousand pixels along
+    # the seam, and counting that as covered stopped the leather being filled
+    # in underneath: the only thing over the opening there was the strip's
+    # own edge, which build_assets feathers to hide the join between two
+    # photographs. A feather over nothing is a pale line of page, and that is
+    # the hairline running down the seam on every web. Fill the leather right
+    # across; the strip lies on top of it either way.
     have = np.zeros((0,), bool)
-    for layer in aligned.values():
+    for n, layer in aligned.items():
+        if n == "finger":
+            continue
         a = np.asarray(layer)[..., 3] > 90
         have = a if have.shape != a.shape else (have | a)
     fing = (np.asarray(aligned["finger"])[..., 3] > 90
@@ -864,6 +874,53 @@ def main():
         aligned["leather"], have, aperture(), finger=fing,
         min_window=np.inf if spec.get("closed") else 1200)
     print(f"web completed out to the opening: {added} px added")
+    # And no further than the opening. A cutout warped in from another
+    # photograph does not stop exactly on the seam — the Diamond Net ran 5,600
+    # px of web leather straight across it and onto the index finger, the
+    # Standard I 3,800, the Spiral I's lacing 4,600. On a glove whose web is
+    # the same colour as its shell that reads as a band of the wrong tone
+    # lying between the finger and the web; on one where they differ it is the
+    # web's colour painted onto the finger. Either way it is the web sitting
+    # over a panel that is not its own.
+    #
+    # The finger strip is exempt, and only it: being outside the opening is
+    # the whole of its job. Anything below the opening is kept too — the web
+    # is deliberately run on past the bottom so it disappears under the
+    # binding rather than stopping in mid-air.
+    ap_ = ndimage.binary_dilation(aperture(), np.ones((3, 3), bool),
+                                  iterations=2)
+    below = np.zeros_like(ap_)
+    below[np.nonzero(ap_)[0].max():] = True
+    # The finger strip counts as inside. build_assets feathers its alpha to
+    # soften the join between two photographs, and a feather needs something
+    # opaque beneath it — stopping the leather dead on the seam left the
+    # feather ramping down onto bare page, which is the pale hairline that ran
+    # the whole height of the web. The strip draws last, over the top, so the
+    # leather underneath it is never seen.
+    if "finger" in aligned:
+        ap_ = ap_ | (np.asarray(aligned["finger"])[..., 3] > 40)
+    for n in ("leather", "lace"):
+        if n not in aligned:
+            continue
+        arr = np.asarray(aligned[n]).copy()
+        over = (arr[..., 3] > 0) & ~ap_ & ~below
+        if over.any():
+            arr[..., 3][over] = 0
+            print(f"  {n}: {int(over.sum())} px trimmed back to the opening")
+        aligned[n] = Image.fromarray(arr, "RGBA")
+    # And solid where the web is solid. Two layers whose alphas are each 200
+    # do not add up to an opaque pixel — they let a little page through, and a
+    # line of those is still a pale line even when no single pixel is a hole.
+    # The leather is the backing here, so inside the opening it goes to full
+    # alpha wherever the web has anything at all. Anywhere the web genuinely
+    # has a window neither layer is present, and that stays open.
+    core = aperture()
+    lea = np.asarray(aligned["leather"])[..., 3]
+    lac = (np.asarray(aligned["lace"])[..., 3] if "lace" in aligned
+           else np.zeros_like(lea))
+    arr = np.asarray(aligned["leather"]).copy()
+    arr[..., 3] = np.where(core & ((lea > 0) | (lac > 40)), 255, arr[..., 3])
+    aligned["leather"] = Image.fromarray(arr, "RGBA")
     # The shape is this web's, traced by hand. The MATERIAL is this glove's,
     # so every web is cut out of one piece of leather under one light at one
     # angle. That is the whole fix: the borrowed pixels — another glove, another
@@ -883,6 +940,45 @@ def main():
                           .resize(aligned["leather"].size, Image.LANCZOS))
 
     mrgb, lrgb = material("web_material"), material("laces_material")
+
+    def relief(layer, mat, sigma=13.0, lo=0.66, hi=1.30):
+        """Put the photograph's own surface back onto the shared material.
+
+        Replacing the colour outright is what stopped the webs reading as
+        collage, but it also flattened every web to the same blank sheet: the
+        SMK's whole identity is a flame tooled into its face, the Diamond
+        Net's panel is divided by stitched seams, and both came out as one
+        featureless field. Worse, the sheet is cut from the calibration
+        glove's own web, so what little relief showed was the H-web's
+        stitching — the wrong web's, on all four.
+
+        The fix is to keep the tone and take back the texture. Divide the
+        photograph's luminance by a blurred copy of itself and you are left
+        with what varies over a few pixels and nothing that varies over the
+        whole panel: stitching, tooling, seams, the shadow under an appliqué,
+        with the web's own colour and its own lighting divided out. Multiply
+        the sheet by that.
+
+        The clamp is the whole tuning. Wide open it also carries every
+        photograph's grain and sensor noise, and the Diamond Net came out
+        looking dirty rather than stitched. Held to a third either side of
+        the local mean, a seam still reads and noise does not.
+        """
+        a = np.asarray(layer).astype(np.float32)
+        lum = a[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
+        base = ndimage.gaussian_filter(lum, sigma)
+        r = np.clip(np.where(base > 6, lum / np.maximum(base, 1e-3), 1.0),
+                    lo, hi)
+        # Centred on the layer itself, because clamping is not symmetric in
+        # its effect: a seam is a narrow deep trough and a highlight a broad
+        # shallow rise, so the clamp bites the dark side harder and the whole
+        # web came out 5 to 8 percent darker than the glove around it. This
+        # is texture, not tone — the tone is the material's.
+        out = mat.astype(np.float32) * r[..., None]
+        m = a[..., 3] > 40
+        if m.any():
+            out *= float(mat[m].mean()) / max(float(out[m].mean()), 1e-3)
+        return np.clip(out, 0, 255)
     # The finger strip is NOT web leather — it is the index finger's own
     # rolled edge, and its whole reason for existing is that it carries the
     # shading of that edge from the same photograph as the web. Giving it the
@@ -891,7 +987,7 @@ def main():
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
-        arr[..., :3] = src
+        arr[..., :3] = relief(aligned[n], src).astype(np.uint8)
         aligned[n] = Image.fromarray(arr, "RGBA")
     # Thickness. The leather takes a soft inner shadow; the lacing takes a
     # tighter, stronger one, because a lace is a round cord and needs to read
