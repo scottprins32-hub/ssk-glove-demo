@@ -209,17 +209,28 @@ button { font: inherit; color: inherit; }
 .wordmark {
   font-family: var(--font-display); font-weight: var(--weight-display-heavy);
   font-size: var(--text-lg); letter-spacing: var(--tracking-caps); text-transform: uppercase;
+  /* The brand stays on one line and the page title gives way to it: wrapping
+     "SSK EUROPE" onto two lines to spare four characters of a title reads as
+     a broken header. */
+  white-space: nowrap;
 }
 .hdr-rule { width: 1px; height: 26px; background: var(--navy-600); }
-.hdr-title { display: flex; flex-direction: column; min-width: 0; }
+.hdr-title { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+/* nowrap keeps the two lines on one line each; the ellipsis is what stops them
+   pushing the page wider than the phone. Without it "SSK EUROPE" and
+   "Handschoen samenstellen" together are 381px, so a 360px phone scrolled
+   sideways on every one of the eight steps and shrink-to-fit zoomed the whole
+   builder out. min-width:0 alone does not do it: a nowrap line has no smaller
+   size to shrink to. */
 .hdr-title b {
   font-family: var(--font-display); font-weight: var(--weight-display);
   font-size: var(--text-sm); letter-spacing: var(--tracking-caps); text-transform: uppercase;
-  white-space: nowrap;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hdr-title i {
   font-style: normal; font-family: var(--font-mono); font-size: 11px;
   color: var(--navy-100); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .hdr-tools { display: flex; align-items: center; gap: var(--space-3); }
 
