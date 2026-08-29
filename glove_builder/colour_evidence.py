@@ -91,7 +91,6 @@ NEUTRAL_LUM = 1.65  # neutrals merge on lightness alone, conservatively
 MIN_SHARE = 0.05    # a material smaller than this of the glove is not a panel
 ORDER_PENALTY = 80.0  # cost of ignoring the filename's body-first order
 ORDER_TOL = 0.15    # ... two materials this close in size are the same size
-MIN_GLOVES = 2      # a colour needs this many GLOVES before it is adopted
 MAX_SPREAD = 45.0   # ... that do not scatter more wildly than this
 SIGMA = 3.0         # ... and must beat the chart by this many standard errors
 
@@ -405,7 +404,16 @@ def read_photos(folder: pathlib.Path, pal):
 
 
 def summarise(seen, pal):
-    """One value per glove, then one value per colour, plus its uncertainty."""
+    """One value per glove, then one value per colour, plus its uncertainty.
+
+    A colour photographed on one glove has no spread of its own, and reporting
+    zero would let a single photograph rewrite the chart. It borrows instead:
+    the median spread the colours WITH several gloves show between them, which
+    is what glove-to-glove variation actually costs here. Its own photographs
+    can still overrule that upwards -- Yellow Tan's four disagree by more than
+    any two gloves do, because the yellow on that glove is a web patch and a
+    set of laces in two different tones, and it stays unadopted for it.
+    """
     rows = {}
     for code, _, _ in pal:
         obs = seen.get(code, [])
@@ -418,21 +426,29 @@ def summarise(seen, pal):
                         for v in gloves.values()])
         med = np.median(pts, axis=0)
         spread = float(np.median(np.linalg.norm(pts - med, axis=1)))
-        # Standard error of a median, the usual 1.25 * sigma / sqrt(n).
-        stderr = 1.25 * spread / max(len(pts) ** 0.5, 1.0)
+        within = float(np.median(np.linalg.norm(
+            np.array([rgbof(o["hex"]) for o in obs]) - med, axis=1)))
         _, sat, _ = hsv(med)
         rows[code] = {"hex": hexof(med), "gloves": len(pts), "photos": len(obs),
-                      "spread": spread, "stderr": stderr, "sat": sat,
+                      "spread": spread, "within": within, "sat": sat,
                       "neutral": sat < NEUTRAL_SAT,
                       "distance": float(np.linalg.norm(med - rgbof(ANCHORS[code])))}
-    return rows
+
+    # What one glove differs from the next, over the colours that have more
+    # than one. This is the prior a single-glove colour is measured against.
+    seen_spreads = [r["spread"] for r in rows.values() if r["gloves"] >= 2]
+    pooled = float(np.median(seen_spreads)) if seen_spreads else 0.0
+    for r in rows.values():
+        if r["gloves"] >= 2:
+            r["stderr"] = 1.25 * r["spread"] / (r["gloves"] ** 0.5)
+        else:
+            r["stderr"] = 1.25 * max(r["within"], pooled)
+    return rows, pooled
 
 
 def adoptable(row) -> tuple[bool, str]:
     if row["neutral"]:
         return False, "neutral - the light decides it, not the leather"
-    if row["gloves"] < MIN_GLOVES:
-        return False, f"only {row['gloves']} glove"
     if row["spread"] > MAX_SPREAD:
         return False, f"gloves disagree ({row['spread']:.0f})"
     if row["distance"] <= SIGMA * row["stderr"]:
@@ -465,9 +481,10 @@ def main() -> int:
                     and parse(path.name, pal) and proof(path, args.proof):
                 made += 1
         print(f"wrote {made} proof strip(s) to {args.proof}\n")
-    rows = summarise(seen, pal)
+    rows, pooled = summarise(seen, pal)
 
-    print(f"{used} photograph(s) read, {len(skipped)} skipped\n")
+    print(f"{used} photograph(s) read, {len(skipped)} skipped; one glove "
+          f"differs from the next by {pooled:.0f}\n")
     print("code  name           chart     photographs  gloves  off by  +/-  "
           "verdict")
     print("-" * 84)
@@ -491,15 +508,17 @@ def main() -> int:
             "Each material is matched only against the colours ITS OWN photo",
             "names and only against the anchors frozen in that script, so the",
             "palette cannot defend or drift itself. A colour is adopted when",
-            f"{MIN_GLOVES} gloves or more disagree with the chart by more than",
-            f"{SIGMA:.0f} standard errors of their own median. '... LHT' is the",
-            "same photograph mirrored, so it does not count twice.",
+            f"the gloves disagree with the chart by more than {SIGMA:.0f}",
+            "standard errors of their own median; a colour seen on one glove",
+            "borrows the spread the others show between gloves. '... LHT' is",
+            "the same photograph mirrored, so it does not count twice.",
             "Neutrals are reported and never adopted: in a photograph nothing",
             "separates a white leather from a lit grey one but the light.",
         ],
         "photos": used,
         "skipped": skipped,
         "adopted": adopted,
+        "between_gloves": pooled,
         "measured": {c: {k: v for k, v in r.items() if k != "sat"}
                      for c, r in rows.items()},
         "observations": seen,

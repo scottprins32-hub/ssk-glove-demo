@@ -5,9 +5,10 @@
     "Each material is matched only against the colours ITS OWN photo",
     "names and only against the anchors frozen in that script, so the",
     "palette cannot defend or drift itself. A colour is adopted when",
-    "2 gloves or more disagree with the chart by more than",
-    "3 standard errors of their own median. '... LHT' is the",
-    "same photograph mirrored, so it does not count twice.",
+    "the gloves disagree with the chart by more than 3",
+    "standard errors of their own median; a colour seen on one glove",
+    "borrows the spread the others show between gloves. '... LHT' is",
+    "the same photograph mirrored, so it does not count twice.",
     "Neutrals are reported and never adopted: in a photograph nothing",
     "separates a white leather from a lit grey one but the light."
   ],
@@ -15,146 +16,164 @@
   "skipped": [],
   "adopted": {
     "25": "#B65B84",
+    "40": "#6E5248",
     "49": "#D6967C",
     "52": "#7DB2A1",
     "65": "#78A4B7",
-    "70": "#2A304A"
+    "70": "#2A304A",
+    "80": "#7F3C88"
   },
+  "between_gloves": 12.155921936035156,
   "measured": {
     "10": {
       "hex": "#C7C8B8",
       "gloves": 3,
       "photos": 8,
       "spread": 7.0,
-      "stderr": 5.0518148554092255,
+      "within": 11.147930145263672,
       "neutral": true,
-      "distance": 76.80657196044922
+      "distance": 76.80657196044922,
+      "stderr": 5.0518148554092255
     },
     "12": {
       "hex": "#D9BD82",
       "gloves": 1,
       "photos": 1,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 0.0,
       "neutral": false,
-      "distance": 8.9442720413208
+      "distance": 8.9442720413208,
+      "stderr": 15.194902420043945
     },
     "25": {
       "hex": "#B65B84",
       "gloves": 4,
       "photos": 12,
       "spread": 15.17796802520752,
-      "stderr": 9.4862300157547,
+      "within": 21.443164825439453,
       "neutral": false,
-      "distance": 82.49394226074219
+      "distance": 82.49394226074219,
+      "stderr": 9.4862300157547
     },
     "32": {
       "hex": "#AD1726",
       "gloves": 4,
       "photos": 9,
       "spread": 26.18881607055664,
-      "stderr": 16.3680100440979,
+      "within": 43.14727783203125,
       "neutral": false,
-      "distance": 29.26068115234375
+      "distance": 29.26068115234375,
+      "stderr": 16.3680100440979
     },
     "35": {
       "hex": "#DA581E",
       "gloves": 1,
       "photos": 2,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 3.240370273590088,
       "neutral": false,
-      "distance": 23.75920867919922
+      "distance": 23.75920867919922,
+      "stderr": 15.194902420043945
     },
     "40": {
       "hex": "#6E5248",
       "gloves": 1,
       "photos": 1,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 0.0,
       "neutral": false,
-      "distance": 63.190189361572266
+      "distance": 63.190189361572266,
+      "stderr": 15.194902420043945
     },
     "45": {
       "hex": "#BB9A24",
       "gloves": 1,
       "photos": 4,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 25.066190719604492,
       "neutral": false,
-      "distance": 67.19747161865234
+      "distance": 67.19747161865234,
+      "stderr": 31.332738399505615
     },
     "49": {
       "hex": "#D6967C",
       "gloves": 2,
       "photos": 5,
       "spread": 5.640256881713867,
-      "stderr": 4.985329860867457,
+      "within": 6.7314558029174805,
       "neutral": false,
-      "distance": 40.716243743896484
+      "distance": 40.716243743896484,
+      "stderr": 4.985329860867457
     },
     "52": {
       "hex": "#7DB2A1",
       "gloves": 3,
       "photos": 7,
       "spread": 15.660459518432617,
-      "stderr": 11.301963148250387,
+      "within": 15.660459518432617,
       "neutral": false,
-      "distance": 87.72257232666016
+      "distance": 87.72257232666016,
+      "stderr": 11.301963148250387
     },
     "65": {
       "hex": "#78A4B7",
       "gloves": 9,
       "photos": 25,
       "spread": 16.124515533447266,
-      "stderr": 6.71854813893636,
+      "within": 16.309507369995117,
       "neutral": false,
-      "distance": 23.430749893188477
+      "distance": 23.430749893188477,
+      "stderr": 6.71854813893636
     },
     "70": {
       "hex": "#2A304A",
       "gloves": 6,
       "photos": 16,
       "spread": 11.92538833618164,
-      "stderr": 6.085649251704809,
+      "within": 13.02322006225586,
       "neutral": false,
-      "distance": 71.39940643310547
+      "distance": 71.39940643310547,
+      "stderr": 6.085649251704809
     },
     "75": {
       "hex": "#029ABA",
       "gloves": 1,
       "photos": 2,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 7.516648292541504,
       "neutral": false,
-      "distance": 31.360803604125977
+      "distance": 31.360803604125977,
+      "stderr": 15.194902420043945
     },
     "80": {
       "hex": "#7F3C88",
       "gloves": 1,
       "photos": 2,
       "spread": 0.0,
-      "stderr": 0.0,
+      "within": 10.700467109680176,
       "neutral": false,
-      "distance": 56.64362335205078
+      "distance": 56.64362335205078,
+      "stderr": 15.194902420043945
     },
     "90": {
       "hex": "#303132",
       "gloves": 6,
       "photos": 15,
       "spread": 12.155921936035156,
-      "stderr": 6.203292936748157,
+      "within": 15.590461730957031,
       "neutral": true,
-      "distance": 44.340301513671875
+      "distance": 44.340301513671875,
+      "stderr": 6.203292936748157
     },
     "93": {
       "hex": "#8B8E8E",
       "gloves": 2,
       "photos": 8,
       "spread": 5.232112407684326,
-      "stderr": 4.624577704254826,
+      "within": 6.614080429077148,
       "neutral": true,
-      "distance": 18.937397003173828
+      "distance": 18.937397003173828,
+      "stderr": 4.624577704254826
     }
   },
   "observations": {
