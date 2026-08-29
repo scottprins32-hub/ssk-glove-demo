@@ -24,11 +24,20 @@ from scipy import ndimage
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import sheen                                                  # noqa: E402
 
-# SSK color chart (hand-curated hex; the phone photo of the chart has a
-# screen cast, so values are tuned to the named colors). Where photographs of
-# finished gloves overrule the chart, colour-evidence.json says so and
-# leather_chart() applies it -- see glove_builder/colour_evidence.py. Without
-# that overlay a rebuild would quietly put the eyeballed values back.
+# SSK color chart. The hex is ours and always will be: Pim, asked for a list
+# of hex codes, says there is none -- "die codes die ervoor staan van 10-90
+# gebruiken zij, want bij elke stof is het een beetje anders." The number is
+# the colour; the same number on a different leather is a slightly different
+# colour, so no single hex can be right for all of them. That settles what
+# there is to ask for. Not a list -- a photograph, of the swatch card, flat
+# and lit, with a white sheet in the frame to key the white balance off.
+#
+# What is here now is hand-curated from a phone photo of the chart that has a
+# screen cast in it, so the values are tuned to the named colours. Where
+# photographs of finished gloves overrule the chart, colour-evidence.json
+# says so and leather_chart() applies it -- see
+# glove_builder/colour_evidence.py. Without that overlay a rebuild would
+# quietly put the eyeballed values back.
 LEATHER = [
     ("10", "White", "#F2F0EA"), ("12", "Camel", "#D9B97A"),
     ("20", "Cardinal", "#A31E31"), ("25", "Pink", "#E17FC0"),
