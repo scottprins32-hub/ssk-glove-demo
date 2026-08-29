@@ -401,6 +401,11 @@ WEBS = {
         "photo": "images/drive-2026-07/SMK-Web-righty1.jpg",
         "glove_mask": "runs/smk/masks/glove.png",
         "lace_hue": (170, 250),
+        # Solid too, and more so than the other three: the SMK's face is one
+        # panel with a flame tooled into it, laced only round its rim. Left
+        # open it kept a 12,000 px hole at the top of the opening, which is
+        # background on a web that has none.
+        "closed": True,
         "outline": [(760, 40), (850, 25), (960, 55), (1050, 130), (1110, 250),
                     (1140, 400), (1130, 540), (1090, 670), (1030, 800),
                     (965, 910), (900, 985), (830, 1015), (770, 995),
@@ -843,6 +848,12 @@ def main():
         layer.save(out / f"{n}.png")
 
     aligned = fit(layers, web | lace, finger=finger)
+    # Before anything measures what the web covers, not after. Straightening
+    # the finger's edge only ever removes pixels, and doing it last took away
+    # ground that `complete` had already counted as filled — which is where the
+    # SMK's 4,400 px hole against the finger came from.
+    if "finger" in aligned:
+        aligned["finger"] = straighten(aligned["finger"])
     have = np.zeros((0,), bool)
     for layer in aligned.values():
         a = np.asarray(layer)[..., 3] > 90
@@ -859,13 +870,24 @@ def main():
     # flash, another camera position, then a homography and a smeared hole
     # fill — were what made the webs read as collage. Keep the alpha, replace
     # the colour.
-    mat = Image.open(HERE / "layers/rainbow-back-4x/web_material.png")
-    mat = mat.convert("RGBA").resize(aligned["leather"].size, Image.LANCZOS)
-    mrgb = np.asarray(mat)[..., :3]
-    lmat = Image.open(HERE / "layers/rainbow-back-4x/laces_material.png")
-    lmat = lmat.convert("RGBA").resize(aligned["leather"].size, Image.LANCZOS)
-    lrgb = np.asarray(lmat)[..., :3]
-    for n, src in (("leather", mrgb), ("finger", mrgb), ("lace", lrgb)):
+    #
+    # Drop the alpha BEFORE resizing. The material sheets carry good colour
+    # across the whole frame but are only opaque inside the opening, and
+    # Pillow premultiplies when it resamples RGBA — so resizing them as RGBA
+    # zeroed the colour everywhere the sheet was transparent, and every layer
+    # that reached past the opening was painted with it in pure black. That is
+    # the 32 px black band that ran down the finger side of all four webs.
+    def material(name):
+        im = Image.open(HERE / f"layers/rainbow-back-4x/{name}.png")
+        return np.asarray(im.convert("RGB")
+                          .resize(aligned["leather"].size, Image.LANCZOS))
+
+    mrgb, lrgb = material("web_material"), material("laces_material")
+    # The finger strip is NOT web leather — it is the index finger's own
+    # rolled edge, and its whole reason for existing is that it carries the
+    # shading of that edge from the same photograph as the web. Giving it the
+    # web's flat material threw that away. It keeps its own pixels.
+    for n, src in (("leather", mrgb), ("lace", lrgb)):
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
@@ -881,8 +903,6 @@ def main():
         aligned["lace"] = emboss(aligned["lace"], amp=0.55, falloff=2.6)
     print("cut from the glove's own web leather, with edges shaded")
 
-    if "finger" in aligned:
-        aligned["finger"] = straighten(aligned["finger"])
     # where build_assets.py picks them up, alongside the glove's own layers
     lay = HERE / "layers" / "webs" / args.web
     lay.mkdir(parents=True, exist_ok=True)
