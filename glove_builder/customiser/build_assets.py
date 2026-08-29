@@ -774,6 +774,23 @@ def main():
                 wa[..., 3] <= 90, return_indices=True, return_distances=False)
             wa[..., :3][gap] = wa[..., :3][iy[gap], ix[gap]]   # nearest leather
         wa[..., 3] = np.where(solid, 255, 0)
+        # The punch that removes the stock web has to be a HARD stencil. Drawing
+        # the web layer itself into destination-out removes it in proportion to
+        # its own alpha, so every antialiased edge pixel is only partly taken
+        # away — and what survives is dark web leather, which reads as a black
+        # rim round the whole opening on every swapped web. The stock H-web
+        # never shows it because nothing is punched. Hardened and grown a
+        # couple of pixels, the edge goes cleanly.
+        hard = ndimage.binary_dilation(
+            np.asarray(web_im)[..., 3] > 24
+            | (web_lace_mask if web_lace_mask is not None
+               else np.zeros(wa.shape[:2], bool)),
+            np.ones((3, 3), bool), iterations=2)
+        cut = np.zeros(wa.shape[:2] + (4,), np.uint8)
+        cut[..., 3] = np.where(hard, 255, 0)
+        assets["web_cut"] = to_data_uri(Image.fromarray(cut, "RGBA"),
+                                        lossless=True, method=4)
+        print(f"web punch stencil: {int(hard.sum())} px -> web_cut")
         assets["web_fill"] = to_data_uri(Image.fromarray(wa, "RGBA"),
                                          quality=85, method=4)
         print(f"web backing: {solid.sum()} px -> web_fill")

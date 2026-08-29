@@ -374,6 +374,10 @@ WEBS = {
         "photo": "images/drive-2026-07/YellowPad1.jpg",
         "glove_mask": "runs/standard-i/masks/glove.png",
         "lace_hue": (20, 70),
+        # A solid I, like the Spiral: the photograph shows no daylight through
+        # it. Left open, the top of the aperture stayed empty and exposed the
+        # index finger's own edge shadow, which the stock web had been covering.
+        "closed": True,
         "outline": [(800, 40), (880, 30), (980, 60), (1060, 130), (1120, 260),
                     (1145, 420), (1130, 560), (1090, 690), (1020, 820),
                     (955, 920), (890, 985), (825, 1005), (778, 985),

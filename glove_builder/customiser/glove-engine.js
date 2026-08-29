@@ -298,8 +298,15 @@ export class GloveRenderer {
     if (swap && this.imgs.web) {
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.drawImage(this.imgs.web, 0, 0);
-      if (this.imgs.laces_web) ctx.drawImage(this.imgs.laces_web, 0, 0);
+      // A hard stencil, not the layers themselves: punching with their own
+      // soft alpha only partly removes every antialiased edge pixel, and the
+      // dark web leather that survives reads as a black rim round the opening.
+      if (this.imgs.web_cut) {
+        ctx.drawImage(this.imgs.web_cut, 0, 0);
+      } else {
+        ctx.drawImage(this.imgs.web, 0, 0);
+        if (this.imgs.laces_web) ctx.drawImage(this.imgs.laces_web, 0, 0);
+      }
       ctx.restore();
     }
     for (const z of D.zones) {
