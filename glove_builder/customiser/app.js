@@ -150,6 +150,61 @@ function decodeState(s) {
   } catch (e) { return null; }
 }
 
+/* A shared link and a saved draft are both input, and neither is trustworthy:
+   one can be edited by hand, and the other was written by an older version of
+   this page. Restoring either unchecked put values into S that the catalogue
+   no longer offers, and two things went wrong with that. specRows() looks a
+   value up and reads [lang] off the result, so an unknown hand or pad threw on
+   the review step -- the one page the customer sends to SSK. And answered()
+   counts any non-empty value, so the step dot called the question done and
+   nobody was asked again.
+
+   Dropping what the catalogue cannot name fixes both at once: the field reads
+   empty, its dot goes back to todo, and the customer is asked the question
+   again. Free text is kept but bounded. Runs after DATA is loaded, because
+   the colour codes are validated against the real palettes. */
+function cleanState(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const inList = (list, v) => (list.includes(v) ? v : null);
+  const byId = (list, v) => (list.some((x) => x.id === v) ? v : null);
+  const text = (v) => (typeof v === 'string' ? v.slice(0, 120) : '');
+  const embCode = (v) =>
+    (DATA.palettes.embroidery.some((c) => c[0] === v) ? v : null);
+
+  const src = (o.colors && typeof o.colors === 'object') ? o.colors : {};
+  const colors = {};
+  for (const f of COLOUR_ORDER) {
+    const pal = DATA.palettes[PALETTE_OF(f)] || [];
+    if (pal.some((c) => c[0] === src[f])) colors[f] = src[f];
+  }
+
+  const clean = {
+    lang: o.lang === 'en' ? 'en' : 'nl',
+    part: COLOUR_ORDER.includes(o.part) ? o.part : 'web',
+    bullet: DATA.bullets[o.bullet] ? o.bullet : 7,
+    colors,
+    hand: byId(HANDS, o.hand),
+    size: inList(SIZES, o.size),
+    pad: byId(PADS, o.pad),
+    webType: byId(WEBS, o.webType),
+    thumbFont: byId(EMB_FONTS, o.thumbFont),
+    flag: byId(FLAGS, o.flag),
+    circle: CIRCLE_COLORS.some((c) => c[0] === o.circle) ? o.circle : null,
+    thumbMain: embCode(o.thumbMain),
+    thumbOutline: embCode(o.thumbOutline),
+    numberColor: embCode(o.numberColor),
+    thumbText: text(o.thumbText),
+    pinkyText: text(o.pinkyText),
+    thumbNumber: text(o.thumbNumber),
+    name: text(o.name),
+    phone: text(o.phone),
+  };
+  // Only carry a starter through if it still exists; otherwise leave whatever
+  // the page already set, rather than blanking the highlight to undefined.
+  if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
+  return clean;
+}
+
 /* Where work in progress lives.
 
    The URL used to do this job: every repaint rewrote an 830-character hash,
@@ -324,7 +379,7 @@ function renderFit(b) {
   b.appendChild(choiceField(t('size'), SIZES.map(s => ({ id: s, label: s })),
     S.size, v => {
       snapshot(); S.size = v;
-      if (S.webType && !WEBS.find(w => w.id === S.webType).sizes.includes(v)) S.webType = null;
+      if (S.webType && !WEBS.find(w => w.id === S.webType)?.sizes.includes(v)) S.webType = null;
       paint();
     }, true));
 
@@ -595,9 +650,9 @@ function specRows() {
   const L = S.lang, rows = [];
   const push = (k, v) => rows.push([k, v || '—']);
   rows.push(['#', t('fit')]);
-  push(t('hand'), S.hand && HANDS.find(h => h.id === S.hand)[L]);
+  push(t('hand'), S.hand && HANDS.find(h => h.id === S.hand)?.[L]);
   push(t('size'), S.size);
-  push(t('pad'), S.pad && PADS.find(p => p.id === S.pad)[L]);
+  push(t('pad'), S.pad && PADS.find(p => p.id === S.pad)?.[L]);
   push(t('padColor'), colName('pad_color'));
   rows.push(['#', t('web')]);
   push(t('webType'), S.webType);
@@ -770,7 +825,7 @@ loadGlove().then(bundle => {
   // like the address was following you around.
   const h = location.hash.slice(1);
   const shared = h ? decodeState(h) : null;
-  const o = shared || load();
+  const o = cleanState(shared || load());
   if (o) Object.assign(S, o, { step: 0 });
   if (h) history.replaceState(null, '', location.pathname + location.search);
 

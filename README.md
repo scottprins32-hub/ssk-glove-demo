@@ -26,6 +26,7 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/colour-evidence.json` | What those photographs said, and which colours it was enough to change |
 | `glove_builder/sheen.py` | Measures each highlight layer and evens them out |
 | `glove_builder/render_check.mjs` | Paints the glove one colour and checks every zone comes back that colour |
+| `glove_builder/state_check.mjs` | Poisons a saved draft field by field and checks the page still comes up |
 | `glove_builder/runs/rainbow-back/masks_raw/` | The raw SAM3 masks, committed so the pipeline re-runs without a GPU |
 | `glove_builder/source/` | The 4× upscaled source photograph the layers are cut from |
 | `glove_builder/zones_rainbow_back.json` | Per-zone boxes and HSV rules for the back view |
@@ -58,10 +59,12 @@ python -m venv .venv && .venv/bin/pip install -r glove_builder/requirements.txt
     --out    glove_builder/customiser/assets
 
 # the checks: the palette still says what the photographs say, the highlight
-# scales still match the assets, and every zone still renders its own colour
+# scales still match the assets, every zone still renders its own colour, and a
+# draft saved by an older version of the page still opens
 .venv/bin/python glove_builder/colour_evidence.py --photos <drive folder> --check
 .venv/bin/python glove_builder/sheen.py --assets glove_builder/customiser/assets --check
 node glove_builder/render_check.mjs
+node glove_builder/state_check.mjs
 
 # optional: fold the whole app into one self-contained file
 .venv/bin/python glove_builder/customiser/bundle.py
