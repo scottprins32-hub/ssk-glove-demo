@@ -362,10 +362,6 @@ WEBS = {
         # three tries proved that. Traced as a polygon off Scott's reading of
         # the photograph instead.
         "loop_polys": [[(760, 840), (899, 935), (780, 935), (730, 890)]],
-        # Solid panel with the spiral laced across it — the photograph shows
-        # no daylight through the middle of it. Marking it so keeps the gaps
-        # the traced lacing leaves behind from being read as windows.
-        "closed": True,
     },
     # Columbia shell with yellow lacing. The web's leather is the same leather
     # as the shell, so value cannot split it from anything — Otsu finds no
@@ -374,10 +370,6 @@ WEBS = {
         "photo": "images/drive-2026-07/YellowPad1.jpg",
         "glove_mask": "runs/standard-i/masks/glove.png",
         "lace_hue": (20, 70),
-        # A solid I, like the Spiral: the photograph shows no daylight through
-        # it. Left open, the top of the aperture stayed empty and exposed the
-        # index finger's own edge shadow, which the stock web had been covering.
-        "closed": True,
         "outline": [(800, 40), (880, 30), (980, 60), (1060, 130), (1120, 260),
                     (1145, 420), (1130, 560), (1090, 690), (1020, 820),
                     (955, 920), (890, 985), (825, 1005), (778, 985),
@@ -948,6 +940,45 @@ def main():
                           .resize(aligned["leather"].size, Image.LANCZOS))
 
     mrgb, lrgb = material("web_material"), material("laces_material")
+
+    def relief(layer, mat, sigma=13.0, lo=0.66, hi=1.30):
+        """Put the photograph's own surface back onto the shared material.
+
+        Replacing the colour outright is what stopped the webs reading as
+        collage, but it also flattened every web to the same blank sheet: the
+        SMK's whole identity is a flame tooled into its face, the Diamond
+        Net's panel is divided by stitched seams, and both came out as one
+        featureless field. Worse, the sheet is cut from the calibration
+        glove's own web, so what little relief showed was the H-web's
+        stitching — the wrong web's, on all four.
+
+        The fix is to keep the tone and take back the texture. Divide the
+        photograph's luminance by a blurred copy of itself and you are left
+        with what varies over a few pixels and nothing that varies over the
+        whole panel: stitching, tooling, seams, the shadow under an appliqué,
+        with the web's own colour and its own lighting divided out. Multiply
+        the sheet by that.
+
+        The clamp is the whole tuning. Wide open it also carries every
+        photograph's grain and sensor noise, and the Diamond Net came out
+        looking dirty rather than stitched. Held to a third either side of
+        the local mean, a seam still reads and noise does not.
+        """
+        a = np.asarray(layer).astype(np.float32)
+        lum = a[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
+        base = ndimage.gaussian_filter(lum, sigma)
+        r = np.clip(np.where(base > 6, lum / np.maximum(base, 1e-3), 1.0),
+                    lo, hi)
+        # Centred on the layer itself, because clamping is not symmetric in
+        # its effect: a seam is a narrow deep trough and a highlight a broad
+        # shallow rise, so the clamp bites the dark side harder and the whole
+        # web came out 5 to 8 percent darker than the glove around it. This
+        # is texture, not tone — the tone is the material's.
+        out = mat.astype(np.float32) * r[..., None]
+        m = a[..., 3] > 40
+        if m.any():
+            out *= float(mat[m].mean()) / max(float(out[m].mean()), 1e-3)
+        return np.clip(out, 0, 255)
     # The finger strip is NOT web leather — it is the index finger's own
     # rolled edge, and its whole reason for existing is that it carries the
     # shading of that edge from the same photograph as the web. Giving it the
@@ -956,7 +987,7 @@ def main():
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
-        arr[..., :3] = src
+        arr[..., :3] = relief(aligned[n], src).astype(np.uint8)
         aligned[n] = Image.fromarray(arr, "RGBA")
     # Thickness. The leather takes a soft inner shadow; the lacing takes a
     # tighter, stronger one, because a lace is a round cord and needs to read
