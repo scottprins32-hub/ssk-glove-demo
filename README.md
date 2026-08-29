@@ -118,7 +118,9 @@ The one still standing is that the hand opening reads as a flat oval.
 
 ## Still to come
 
-All 36 order-form questions are asked, but five of them cannot be *previewed*
+All 36 order-form questions are asked, plus pinky embroidery — not on the
+form, but Pim confirmed it is orderable and Scott's own glove carries it.
+Five of the 36 cannot be *previewed*
 from a back-view photograph: Back 1 and Back 9 (the wingtips), Back 8 (the
 preview merges it into Back 7), the palm, and the pad/hood colour. Those are
 collected and labelled as not shown rather than hidden. The other views will

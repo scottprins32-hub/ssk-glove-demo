@@ -6,7 +6,7 @@ import { loadGlove, GloveRenderer, refCode, applyCode } from './glove-engine.js'
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, T } from './glove-catalog.js';
 
-/* SSK Europe's prices (from Pim via Scott, 2026-07-25): the Pro glove is
+/* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
@@ -83,6 +83,7 @@ const QUESTIONS = [
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
+  { id: 'pinkyText', req: false },
   { id: 'numberColor', req: false }, { id: 'flag', req: false }
 ];
 
@@ -91,6 +92,7 @@ const S = {
   colors: {}, hand: null, size: null, pad: null, webType: null,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null,
+  pinkyText: '',
   name: '', phone: ''
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
@@ -215,6 +217,7 @@ const STEP_FIELDS = [
   COLOUR_ORDER.filter(f => f !== 'pad_color').map(f => 'c:' + f),
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
+   'pinkyText',
    'circle', 'numberColor', 'flag'],
   ['name', 'phone'], []
 ];
@@ -426,6 +429,14 @@ function renderPersonal(b) {
     id: n, label: n, swatch: hx
   })), S.circle, v => { snapshot(); S.circle = v; paint(); }, false));
   if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
+  // Pinky embroidery is not one of the 36 questions on SSK's form, but it is
+  // orderable — Scott's own glove reads "Modern Pitching" there, and Pim has
+  // confirmed it. Font and thread follow the thumb's; if the pinky can carry
+  // its own, it needs its own two questions rather than sharing them.
+  const pinky = textField(t('pinkyText'), S.pinkyText, 18,
+    v => { S.pinkyText = v; paint(false); });
+  if (S.pinkyText) pinky.appendChild(el('p', 'note', t('pinkyHint')));
+  b.appendChild(pinky);
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
     id: f.id, label: f[S.lang] || f.id, img: f.img
   })), S.flag, v => {
@@ -591,6 +602,7 @@ function specRows() {
   push(t('ringEmb'), colName('ring_emb'));
   rows.push(['#', t('personal')]);
   push(t('thumbText'), S.thumbText);
+  push(t('pinkyText'), S.pinkyText);
   push(t('thumbFont'), S.thumbFont);
   push(t('thumbMain'), embName(S.thumbMain));
   push(t('thumbOutline'), embName(S.thumbOutline));
