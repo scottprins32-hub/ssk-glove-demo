@@ -42,9 +42,15 @@ What counts as evidence
 One GLOVE, not one file. `... LHT.jpg` is the same photograph mirrored --
 measured, not assumed: SE-1175-PIN-COL and its LHT differ by 0.2/255 after a
 flip, and the sampler reads them to the same hex. Counting them separately
-would have doubled the apparent evidence for half the palette. Views of one
-glove are averaged first, then gloves are averaged; the spread reported is the
-spread BETWEEN gloves, which is the only one that says anything.
+would have doubled the apparent evidence for half the palette. `Inside` is the
+palm of that same glove and `Close`/`Closer` are it from nearer; all of them
+fold into one. Views are averaged first, then gloves; the spread reported is
+the spread BETWEEN gloves, which is the only one that says anything.
+
+Files the folder holds that this cannot use are skipped, not guessed at:
+SE-1250-RAINBOW is the calibration glove the renderer was built from and names
+no colourway, and the order-form reference shots (palm colour, ring logo,
+finger hood) are not gloves in a named build at all.
 
 A colour is only rewritten where the photographs disagree with the chart by
 more than three times the uncertainty of their own median. Red comes out at
@@ -153,8 +159,11 @@ def code_for(abbrev: str, pal) -> str | None:
     return hits[0] if len(hits) == 1 else None
 
 
+# The colour block has to END where the codes end: SE-1250-RAINBOW is the
+# calibration glove, not a glove in colour RAI, and without the boundary the
+# regex happily takes the first three letters of anything.
 NAME = re.compile(r"^SE-(?:(?P<style>[A-Z]{2})-)?(?P<size>\d{4})"
-                  r"(?P<colours>(?:-[A-Z]{3})+)", re.I)
+                  r"(?P<colours>(?:-[A-Z]{3})+)(?![A-Z])", re.I)
 
 
 def parse(name: str, pal):
@@ -168,11 +177,13 @@ def parse(name: str, pal):
             return None                 # an abbreviation we cannot place
         codes.append(code)
     view = "palm" if re.search(r"inside", name, re.I) else "back"
-    # The glove this file shows: LHT is the same photograph flipped, and the
-    # two views are two sides of one glove. Both fold into one piece of
-    # evidence, or four files would speak four times for one leather.
+    # The glove this file shows: LHT is the same photograph flipped, the two
+    # views are two sides of one glove, and Close/Closer are the same glove
+    # again from nearer. All of it folds into one piece of evidence, or six
+    # files would speak six times for one leather.
     stem = pathlib.Path(name).stem
-    glove = re.sub(r"\s*\b(LHT|RHT|Inside)\b", "", stem, flags=re.I).strip()
+    glove = re.sub(r"\s*\b(LHT|RHT|Inside|Closer|Close|\d)\b", "", stem,
+                   flags=re.I).strip()
     return {"model": f"SE-{m.group('style') + '-' if m.group('style') else ''}"
                      f"{m.group('size')}",
             "codes": codes, "view": view, "glove": glove}
