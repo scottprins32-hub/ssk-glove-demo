@@ -7,9 +7,10 @@ import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          T } from './glove-catalog.js';
 
-/* SSK Europe's prices (from Pim via Scott, 2026-07-25): the Pro glove is
+/* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
+const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
 const BASE_PRICE = '€ 374,95';
 const STOCK_PRICE = '€ 294,95';
 
@@ -36,6 +37,10 @@ const TIED = { palm: 'back2', back2: 'palm' };
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
 const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
+
+/* A left-handed thrower's glove is the mirror of a right-handed one. The
+   calibration glove is right-handed, so the preview flips for the other. */
+const isLefty = () => /^L/i.test(S.hand || '');
 
 /* label key in T for each colour field */
 const FIELD_LABEL = {
@@ -74,6 +79,7 @@ const QUESTIONS = [
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
+  { id: 'pinkyText', req: false },
   { id: 'numberColor', req: false }, { id: 'flag', req: false }
 ];
 
@@ -82,6 +88,7 @@ const S = {
   colors: {}, hand: null, size: null, pad: null, webType: null,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null,
+  pinkyText: '',
   name: '', phone: ''
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
@@ -185,7 +192,7 @@ function draw() {
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
-    indexIsOnePiece());
+    indexIsOnePiece(), isLefty());
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -206,6 +213,7 @@ const STEP_FIELDS = [
   COLOUR_ORDER.filter(f => f !== 'pad_color').map(f => 'c:' + f),
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
+   'pinkyText',
    'circle', 'numberColor', 'flag'],
   ['name', 'phone'], []
 ];
@@ -240,7 +248,7 @@ function renderStart(b) {
       const tmp = document.createElement('canvas');
       tmp.width = DATA.w; tmp.height = DATA.h;
       R.draw(tmp.getContext('2d'), layerState(), S.bullet, null,
-             indexIsOnePiece());
+             indexIsOnePiece(), isLefty());
       g.drawImage(tmp, 0, 0, 200, 237);
       S.colors = prev; S.bullet = pb; S.flag = pf;
       R.setFlag(flagArt());          // the renderer holds one flag at a time
@@ -421,6 +429,14 @@ function renderPersonal(b) {
     id: n, label: n, swatch: hx
   })), S.circle, v => { snapshot(); S.circle = v; paint(); }, false));
   if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
+  // Pinky embroidery is not one of the 36 questions on SSK's form, but it is
+  // orderable — Scott's own glove reads "Modern Pitching" there, and Pim has
+  // confirmed it. Font and thread follow the thumb's; if the pinky can carry
+  // its own, it needs its own two questions rather than sharing them.
+  const pinky = textField(t('pinkyText'), S.pinkyText, 18,
+    v => { S.pinkyText = v; paint(false); });
+  if (S.pinkyText) pinky.appendChild(el('p', 'note', t('pinkyHint')));
+  b.appendChild(pinky);
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
     id: f.id, label: f[S.lang] || f.id, img: f.img
   })), S.flag, v => {
@@ -473,7 +489,9 @@ function renderReview(b) {
 function hexOf(f) {
   const pal = DATA.palettes[PALETTE_OF(f)];
   const c = pal.find(c => c[0] === S.colors[f]);
-  return c ? c[2] : '#cccccc';
+  // nothing chosen yet. Was '#cccccc' here and '#888888' in the renderer —
+  // two literals for the same failure, neither of them on the grey ramp.
+  return c ? c[2] : UNSET;
 }
 /* "still needed" only while it actually is; optional fields say so once. */
 function labelRow(label, required, satisfied) {
@@ -584,6 +602,7 @@ function specRows() {
   push(t('ringEmb'), colName('ring_emb'));
   rows.push(['#', t('personal')]);
   push(t('thumbText'), S.thumbText);
+  push(t('pinkyText'), S.pinkyText);
   push(t('thumbFont'), S.thumbFont);
   push(t('thumbMain'), embName(S.thumbMain));
   push(t('thumbOutline'), embName(S.thumbOutline));
@@ -747,7 +766,7 @@ loadGlove().then(bundle => {
   cv.addEventListener('click', ev => {
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     const f = id && LAYER_TO_FIELD[id];
     if (!f) return;
     S.step = 3; S.part = f; paint();
@@ -756,7 +775,7 @@ loadGlove().then(bundle => {
     if (S.step !== 3) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height);
+                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
     cv.style.cursor = id ? 'pointer' : 'default';
   });
 

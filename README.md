@@ -152,17 +152,35 @@ Palm, thumb and pinky views and the 13 web types need their own photographs.
 Adding a view is new zone boxes and hue rules per angle — the machinery is the
 same.
 
-Known gaps worth fixing before this is shown as finished are tracked in the
-audit notes rather than here; the largest now are that the hand opening reads
-as a flat oval and that the palm, both wingtips and the pad cannot be
-previewed from a back view at all. Colour fidelity was one of them and is
-measured rather than argued about: every zone renders within 25 of the hex it
-was given (`render_check.mjs`), and the leathers themselves are read off
-photographs of finished gloves rather than eyeballed (`colour_evidence.py`).
+Known gaps are tracked in the audit notes rather than here. Three that used to
+be listed have since been measured or fixed, so they are recorded here rather
+than left for someone to chase:
+
+- *"Colours render darker than the SSK swatch they came from."* Measured
+  across seven leather colours on a finger panel, the rendered mean sits
+  **1.5% below** the swatch hex — invisible, and side by side the lit part of
+  a panel matches its chip. Re-cutting the layers from the real photograph
+  did not move this number (1.46% before, 1.51% after), so it was never a
+  resolution artefact either. Since then every zone is checked, not just a
+  panel: `render_check.mjs` paints the whole glove one colour and asserts each
+  zone reads back within 25 of the hex it was given.
+- *"Dark colourways lose their shading because the tint can only darken."*
+  The specular pass added with `lighter` is what answers this, and it works:
+  as a proportion of the colour's own brightness, black keeps **38%** of
+  p5–p95 luminance range against white's 14%. In absolute terms it is 9
+  levels against 34, which is little but is also what black leather does.
+- *"The hand opening reads as a flat oval."* It is a cavity now, lit as one.
+
+What is still missing is not a defect but a photograph. The palm, both
+wingtips and the pad cannot be previewed from a back view at all, and two
+leathers — White and Camel — cannot be read from the colourway photographs
+because the camera blew them out.
 
 ## Still to come
 
-All 36 order-form questions are asked, but five of them cannot be *previewed*
+All 36 order-form questions are asked, plus pinky embroidery — not on the
+form, but Pim confirmed it is orderable and Scott's own glove carries it.
+Five of the 36 cannot be *previewed*
 from a back-view photograph: Back 1 and Back 9 (the wingtips), Back 8 (the
 preview merges it into Back 7), the palm, and the pad/hood colour. Those are
 collected and labelled as not shown rather than hidden. The other views will

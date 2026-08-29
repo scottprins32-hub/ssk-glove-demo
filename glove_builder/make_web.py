@@ -374,6 +374,10 @@ WEBS = {
         "photo": "images/drive-2026-07/YellowPad1.jpg",
         "glove_mask": "runs/standard-i/masks/glove.png",
         "lace_hue": (20, 70),
+        # A solid I, like the Spiral: the photograph shows no daylight through
+        # it. Left open, the top of the aperture stayed empty and exposed the
+        # index finger's own edge shadow, which the stock web had been covering.
+        "closed": True,
         "outline": [(800, 40), (880, 30), (980, 60), (1060, 130), (1120, 260),
                     (1145, 420), (1130, 560), (1090, 690), (1020, 820),
                     (955, 920), (890, 985), (825, 1005), (778, 985),
@@ -636,8 +640,13 @@ def aperture(height=1100):
         # `*_cutout` are the same panels again, before trimming, and web_cutout
         # covers the whole opening — leaving them in shrinks the aperture to a
         # twentieth of itself.
+        # `web_material` is generated INTO this folder, so leaving it in
+        # counted it as another panel and collapsed the aperture to 2% of
+        # itself the moment it existed.
         if p.stem.endswith("_cutout") or p.stem in ("glove", "web", "laces",
-                                                    "bullet_logo"):
+                                                    "bullet_logo",
+                                                    "web_material",
+                                                    "laces_material"):
             continue
         other |= α(p.stem)
     free = outer & ~ndimage.binary_dilation(other, np.ones((3, 3), bool))
@@ -813,6 +822,26 @@ def main():
         aligned["leather"], have, aperture(), finger=fing,
         min_window=np.inf if spec.get("closed") else 1200)
     print(f"web completed out to the opening: {added} px added")
+    # The shape is this web's, traced by hand. The MATERIAL is this glove's,
+    # so every web is cut out of one piece of leather under one light at one
+    # angle. That is the whole fix: the borrowed pixels — another glove, another
+    # flash, another camera position, then a homography and a smeared hole
+    # fill — were what made the webs read as collage. Keep the alpha, replace
+    # the colour.
+    mat = Image.open(HERE / "layers/rainbow-back-4x/web_material.png")
+    mat = mat.convert("RGBA").resize(aligned["leather"].size, Image.LANCZOS)
+    mrgb = np.asarray(mat)[..., :3]
+    lmat = Image.open(HERE / "layers/rainbow-back-4x/laces_material.png")
+    lmat = lmat.convert("RGBA").resize(aligned["leather"].size, Image.LANCZOS)
+    lrgb = np.asarray(lmat)[..., :3]
+    for n, src in (("leather", mrgb), ("finger", mrgb), ("lace", lrgb)):
+        if n not in aligned:
+            continue
+        arr = np.asarray(aligned[n]).copy()
+        arr[..., :3] = src
+        aligned[n] = Image.fromarray(arr, "RGBA")
+    print("cut from the glove's own web leather")
+
     if "finger" in aligned:
         aligned["finger"] = straighten(aligned["finger"])
     # where build_assets.py picks them up, alongside the glove's own layers

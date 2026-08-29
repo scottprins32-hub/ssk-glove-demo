@@ -185,7 +185,16 @@ def _luma(img):
     return lum, alpha, (np.median(lum[vis]) if vis.any() else 128.0)
 
 
-def tint_base(img, flatten=0.0):
+# Zones that are not a panel facing the light. The hand opening is a hole you
+# look through into a shadowed cavity, and normalising it to its own midtone —
+# which is what every panel wants — clips the whole thing to white and paints a
+# flat oval. Its real luminance is 0.35x the glove's; `depth` is how much of
+# that darkness to keep, traded against being able to read the colour you
+# picked. 1.0 is the photograph, 0.0 is the flat oval it used to be.
+CAVITY = {"lining": 0.62}
+
+
+def tint_base(img, flatten=0.0, ref=None, depth=1.0):
     """The diffuse half of the photograph: its shading, normalised so the
     zone's midtone sits at full strength.
 
@@ -200,6 +209,12 @@ def tint_base(img, flatten=0.0):
     flatten=1.0 collapses all shading to a solid tone.
     """
     lum, alpha, med = _luma(img)
+    if ref:
+        # Measure against the glove instead of against itself, so a cavity
+        # stays dark relative to the leather around it rather than being
+        # renormalised up to full strength.
+        k = med / max(ref, 1.0)
+        med = med / max(1.0 - depth + depth * k, 1e-3)
     base = np.clip(lum / max(med, 1.0), 0, 1) * 255.0
     if flatten > 0:
         base = 255.0 + (base - 255.0) * (1.0 - flatten)
@@ -495,6 +510,9 @@ def main():
     W, H = glove.size
     # neutral-leather base: any pixel not covered by a zone shows as plain
     # leather instead of leaking the calibration glove's rainbow colors
+    # the whole glove's midtone, so a cavity can be measured against the
+    # leather around it rather than against itself
+    glove_med = _luma(glove)[2]
     gb = np.asarray(tint_base(glove)).astype(np.float32)
     neutral = np.array([200, 160, 106], np.float32) / 255.0
     gb[..., :3] = gb[..., :3] * neutral
@@ -525,13 +543,18 @@ def main():
             # back through spec_base like every other layer's highlight.
             spec_src = clean_mark if clean_mark is not None else im
             tb = tint_base(spec_src)
-        elif name == "lining":
-            tb = tint_base(im, flatten=0.85)
+        elif name in CAVITY:
+            # Not a panel: a hole into the glove. Flattening it (which is what
+            # this used to do, at 0.85) is what made the hand opening read as
+            # a flat oval — the last of the three gaps the README listed.
+            tb = tint_base(im, ref=glove_med, depth=CAVITY[name])
         else:
             tb = tint_base(im)
         assets[name] = to_data_uri(tb, quality=85, method=4)
-        # the highlight the tint cannot reproduce, added back over the colour
-        if name != "lining":
+        # the highlight the tint cannot reproduce, added back over the colour.
+        # A cavity has none to add back; the embroidery does, and getting it
+        # was the point of running the mark through tint_base above.
+        if name not in CAVITY:
             sp = spec_base(spec_src)
             if sp is not None:
                 assets[name + "_hi"] = to_data_uri(sp, quality=80, method=4)
@@ -795,6 +818,23 @@ def main():
                 wa[..., 3] <= 90, return_indices=True, return_distances=False)
             wa[..., :3][gap] = wa[..., :3][iy[gap], ix[gap]]   # nearest leather
         wa[..., 3] = np.where(solid, 255, 0)
+        # The punch that removes the stock web has to be a HARD stencil. Drawing
+        # the web layer itself into destination-out removes it in proportion to
+        # its own alpha, so every antialiased edge pixel is only partly taken
+        # away — and what survives is dark web leather, which reads as a black
+        # rim round the whole opening on every swapped web. The stock H-web
+        # never shows it because nothing is punched. Hardened and grown a
+        # couple of pixels, the edge goes cleanly.
+        hard = ndimage.binary_dilation(
+            np.asarray(web_im)[..., 3] > 24
+            | (web_lace_mask if web_lace_mask is not None
+               else np.zeros(wa.shape[:2], bool)),
+            np.ones((3, 3), bool), iterations=2)
+        cut = np.zeros(wa.shape[:2] + (4,), np.uint8)
+        cut[..., 3] = np.where(hard, 255, 0)
+        assets["web_cut"] = to_data_uri(Image.fromarray(cut, "RGBA"),
+                                        lossless=True, method=4)
+        print(f"web punch stencil: {int(hard.sum())} px -> web_cut")
         assets["web_fill"] = to_data_uri(Image.fromarray(wa, "RGBA"),
                                          quality=85, method=4)
         print(f"web backing: {solid.sum()} px -> web_fill")
@@ -977,6 +1017,10 @@ def main():
             "presets": PRESETS, "bullets": bullets,
             "bulletBox": bullet_box if bullets else None,
             "flagMount": flag_mount, "webs": webs, "sheen": sheen.scales(out),
+            # A cavity is meant to come out darker than the colour chosen for
+            # it -- it is a hole, not a panel. Recorded so the render check can
+            # hold it to that depth instead of failing it for not matching.
+            "cavity": CAVITY,
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())

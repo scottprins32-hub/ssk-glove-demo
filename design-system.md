@@ -535,13 +535,18 @@ a selected option button reads `rgb(11,31,58) 0 0 0 1px inset` unfocused and
 `rgba(31,72,120,.35) 0 0 0 3px` focused — the inset ring is gone. The
 `border-color` survives, so selection is not invisible, but the emphasis
 collapses on exactly the control a keyboard user is standing on.
-→ **Move selection onto `outline: 1px solid; outline-offset: -1px`** and leave
-`box-shadow` to the focus ring alone. Both can then show at once.
+→ **Split them across two properties — but this way round.** Selection keeps
+`box-shadow: inset 0 0 0 1px`; focus becomes a real `outline`. Moving
+selection to the outline instead looks right and fails, because the shared
+`:focus-visible` rule sets `outline: none` to suppress the browser default and
+erases it again — I made exactly that mistake and the browser check caught it.
+Outline is what focus is for, it draws outside the box, and it cannot collide
+with an inset shadow. **Fixed**: both now draw together.
 
 **2. Selected is navy on three controls and red on the fourth.**
 `.opt-btn`, `.sw` and `.part` ring in `--navy-900`; `.card` rings in
 `--red-600` (`app.css:193`).
-→ **Navy, via a new `--state-selected` alias.** Red is the action colour —
+→ **Navy, via a new `--state-selected` alias.** **Fixed.** Red is the action colour —
 using it for selection means the picked card competes with the primary button.
 Navigation (step chips, language toggle) keeps its *filled* treatment, but the
 fill should come from the same token.
@@ -549,26 +554,26 @@ fill should come from the same token.
 **3. A selected card never shows hover.**
 `.card:hover` and `.card.is-on` both write `box-shadow` at equal specificity,
 `.is-on` last (`app.css:192-193`).
-→ Same fix as #1: take selection off `box-shadow`.
+→ Resolved by #1: focus no longer writes `box-shadow`, so `.card:hover` and `.card.is-on` no longer fight. **Fixed.**
 
 **4. Disabled cards look enabled.**
 `app.js:355` sets `c.disabled = true` on the two parked silicone bullets, but
 there is no `.card:disabled` rule. The other two disableable controls do have
 one — at two different opacities and two different cursors (`.opt-btn` `.4` /
 `not-allowed`, `.icon-btn` `.35` / `default`).
-→ **`opacity: .4; cursor: not-allowed`** on all three, and add the card rule.
+→ **`opacity: .4; cursor: not-allowed`** on all three, and add the card rule. **Fixed**, via `--state-disabled-opacity`.
 `.4` is the majority and the more legible; `not-allowed` is the honest cursor.
 
 **5. A transition that animates nothing.**
 `.step` transitions `background`, but `.step:hover` changes `border-color` and
 `color` and never touches `background` (`app.css:89-91`).
-→ **`transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out)`.**
+→ **`transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out)`. Fixed.**
 
 **6. Two fallback greys for the same failure.**
 A palette lookup that misses returns `#888888` in one place
 (`glove-engine.js:59`) and `#cccccc` in another (`app.js:444`). Neither is on
 the ramp.
-→ **`--grey-300 #C4C9D0`**, as `--swatch-unset`. It is on the ramp and reads
+→ **`--gray-300 #C4C9D0`**, as `--swatch-unset`. **Fixed** in both files. It is on the ramp and reads
 as "nothing chosen" rather than as a colour.
 
 **7. Hand-expanded token values.**
@@ -576,7 +581,7 @@ as "nothing chosen" rather than as a colour.
 `rgba(8,21,38,.55)` in the scrim (`app.css:268`). `--border-focus` is never
 referenced, but its value is re-typed inside `--focus-ring`.
 → **Add `--scrim`, derived from the ramp.** Never hand-expand a token's
-channels.
+channels. **Fixed**, along with `--chip-border`.
 
 ### Inconsistent — visible if you look
 

@@ -26,6 +26,7 @@ const ROOT = new URL('./customiser/', import.meta.url).pathname;
 const EXECUTABLE = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium';
 const PORT = Number(process.env.PORT ?? 8791);
 const TOLERANCE = Number(process.env.TOLERANCE ?? 25);
+const CAVITY_TOLERANCE = Number(process.env.CAVITY_TOLERANCE ?? 0.10);
 const MIME = { '.html': 'text/html', '.js': 'text/javascript',
   '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain' };
@@ -186,9 +187,25 @@ for (const [name, colors] of SCENARIOS) {
     const entry = DATA.palettes[z.group].find(c => c[0] === code);
     if (!entry) continue;
     const want = [1, 3, 5].map(i => parseInt(entry[2].slice(i, i + 2), 16));
-    const off = Math.hypot(...want.map((v, i) => v - got[i]));
     const hex = '#' + got.slice(0, 3)
       .map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    const depth = (DATA.cavity || {})[z.id];
+
+    // A cavity is a hole into the glove, built to come out darker than the
+    // colour chosen for it. Holding it to "reads what it was given" would fail
+    // it for working; it is held to its own declared depth instead.
+    if (depth != null) {
+      const ratio = lum(got) / Math.max(lum(want), 1);
+      const ok = Math.abs(ratio - depth) <= CAVITY_TOLERANCE;
+      if (!ok) failures += 1;
+      console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${z.id.padEnd(12)} chose ${entry[2]}`
+        + ` reads ${hex}  cavity depth ${ratio.toFixed(2)} vs ${depth}`
+        + `  (${got[3]} px)`);
+      continue;
+    }
+
+    const off = Math.hypot(...want.map((v, i) => v - got[i]));
     const ok = off <= TOLERANCE;
     if (!ok) failures += 1;
     console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${z.id.padEnd(12)} chose ${entry[2]}`
