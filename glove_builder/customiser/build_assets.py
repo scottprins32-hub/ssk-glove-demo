@@ -137,19 +137,33 @@ REASSIGN = [
      "from": "thumb_loops", "to": "laces"},
 ]
 
+# Colourways SSK has actually built, read off the photographs in their Drive
+# folder rather than invented. Every one of them is the same shape: all the
+# leather including the WEB takes the first colour, and the welting, laces,
+# binding and loops take the second -- that is what SE-1175-NAV-COL,
+# SE-1275-PIN-WHI, SE-1200-BLA-GRE and SE-1250-SAL-MIN all do.
+#
+# Where the order form does not offer the colour the glove has, the nearest
+# one it does offer is used and only there: SSK stitches in 14 colours and
+# embroiders in 25, so Columbia stitching and Grey embroidery cannot be
+# ordered even though those gloves wear them.
 PRESETS = {
-    "Navy & Orange": {"_panels": "70", "welting": "35", "laces": "35",
-                      "binding": "35", "lining": "35", "thumb_loops": "35",
-                      "pinky_loops": "35", "embroidery": "35",
-                      "stitching": "35"},
-    "Classic Tan": {"_panels": "44", "welting": "10", "laces": "12",
-                    "binding": "44", "lining": "45", "thumb_loops": "44",
-                    "pinky_loops": "44", "embroidery": "90",
-                    "stitching": "90"},
-    "Black & Pink": {"_panels": "90", "welting": "25", "laces": "25",
-                     "binding": "25", "lining": "90", "thumb_loops": "25",
-                     "pinky_loops": "25", "embroidery": "25",
-                     "stitching": "25"},
+    "Navy / Columbia": {"_panels": "70", "welting": "65", "laces": "65",
+                        "binding": "65", "lining": "70", "thumb_loops": "65",
+                        "pinky_loops": "65", "embroidery": "95",
+                        "stitching": "10"},
+    "Pink / White": {"_panels": "25", "welting": "10", "laces": "10",
+                     "binding": "10", "lining": "25", "thumb_loops": "10",
+                     "pinky_loops": "10", "embroidery": "10",
+                     "stitching": "10"},
+    "Black / Grey": {"_panels": "90", "welting": "93", "laces": "93",
+                     "binding": "93", "lining": "90", "thumb_loops": "93",
+                     "pinky_loops": "93", "embroidery": "95",
+                     "stitching": "93"},
+    "Salmon / Mint": {"_panels": "49", "welting": "52", "laces": "52",
+                      "binding": "52", "lining": "49", "thumb_loops": "52",
+                      "pinky_loops": "52", "embroidery": "52",
+                      "stitching": "10"},
 }
 
 

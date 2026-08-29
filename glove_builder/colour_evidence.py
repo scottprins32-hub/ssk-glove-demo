@@ -48,19 +48,24 @@ spread BETWEEN gloves, which is the only one that says anything.
 
 A colour is only rewritten where the photographs disagree with the chart by
 more than three times the uncertainty of their own median. Red comes out at
-#B80F24 against a chart #C8102E and is LEFT ALONE: five gloves that scatter
-that widely cannot overturn a 19-unit difference. Camel lands 8 units from
-its chart value, Grey 16, Red 19 -- three colours where the chart was already
-right and the sampler agrees with it. That is what makes the big misses
-(Pink 83 units, Mint 83, Navy 70) worth acting on.
+#AD1726 against a chart #C8102E and is LEFT ALONE: four gloves that scatter
+that widely cannot overturn a 29-unit difference. Camel lands 9 units from
+its chart value, Grey 14, Orange 24 -- colours where the chart was already
+right and the sampler agrees with it, which is what makes the big misses
+(Mint 96 units, Pink 82, Navy 71) worth acting on.
 
 What it cannot fix
 ------------------
-Neutral leathers. White, Grey and Black have no hue to hold on to, so what
-separates them from each other in a photograph is exactly what the studio
-light also changes -- and a white leather runs into the blown-pixel cut at the
-top of its own band, which can only bias it dark. They are reported and NOT
-adopted; a grey card in the frame is what would settle them.
+A leather the camera blew out. These shots clip: a sixth of the white leather
+sits at a flat 255 with nothing behind it, and the band this reads a colour
+with tops out at the 90th percentile, so once more than a tenth of a material
+is clipped the band is inside the clip and what comes back is whatever was
+left in shadow. White's eight photographs scatter from #B9BFBE to #D5D1C1 for
+exactly that reason, and none of them moves the palette. Where a colour has
+even one photograph that did not clip it, it is read from that one -- which is
+how Mint is read off SE-1175-MIN-BLA rather than off the two gloves that
+clipped it. A frame that is not exposed for the paper is what would settle
+White and Camel.
 """
 
 from __future__ import annotations
@@ -82,17 +87,18 @@ WORK = 520          # long edge the sampling runs at
 SAMPLES = 60_000    # pixels fed to k-means
 ERODE = 7           # silhouette erosion, px at WORK, kills the cut-out fringe
 BLOWN = 248         # every channel at or above this carries no colour
-CLUSTERS = 8        # over-cluster, then merge back into materials
 BAND = (70, 90)     # the well-lit percentile band a material is read from
+CLIP_MAX = 1 - BAND[1] / 100   # blown past the band's own top: unreadable
+CLUSTERS = 8        # over-cluster, then merge back into materials
 MERGE_HUE = 14.0    # degrees: same hue, same leather
 MERGE_LUM = 2.2     # ... as long as the two are within this lightness ratio
-NEUTRAL_SAT = 0.14  # below this a material has no usable hue
-NEUTRAL_LUM = 1.65  # neutrals merge on lightness alone, conservatively
+NEUTRAL_SAT = 0.14  # below this a material has no usable hue to merge on
+NEUTRAL_LUM = 1.65  # ... so neutrals merge on lightness, conservatively
 MIN_SHARE = 0.05    # a material smaller than this of the glove is not a panel
 ORDER_PENALTY = 80.0  # cost of ignoring the filename's body-first order
 ORDER_TOL = 0.15    # ... two materials this close in size are the same size
-MAX_SPREAD = 45.0   # ... that do not scatter more wildly than this
-SIGMA = 3.0         # ... and must beat the chart by this many standard errors
+MAX_SPREAD = 45.0   # gloves that scatter more than this settle nothing
+SIGMA = 3.0         # ... and the chart falls only to this many standard errors
 
 LUM = np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
 
@@ -192,21 +198,58 @@ def _reachable(near: np.ndarray) -> np.ndarray:
 
 
 def glove_pixels(path: pathlib.Path):
-    """The leather, cut off the paper it was photographed on."""
+    """The leather, cut off the paper it was photographed on.
+
+    Returns the image, the silhouette, and separately the pixels the camera
+    blew out. The last is not waste: a leather whose own photographs clip is a
+    leather this cannot measure, and White is exactly that -- a sixth of it
+    sits at 255 in every shot, with nothing behind the clip to recover.
+    """
     img = Image.open(path).convert("RGB")
     img.thumbnail((WORK, WORK))
     a = np.asarray(img).astype(np.float32)
 
     near = (a.min(2) >= 246) & ((a.max(2) - a.min(2)) <= 6)
     if not near[0].any() and not near[-1].any():
-        return None                     # not a cut-out on white
+        return None, None, None       # not a cut-out on white
     inside = ~_reachable(near)
     inside = np.asarray(
         Image.fromarray((inside * 255).astype(np.uint8), "L")
         .filter(ImageFilter.MinFilter(ERODE))) > 0
-    inside &= a.min(2) < BLOWN
-    px = a[inside]
-    return px if len(px) >= 4000 else None
+    blown = inside & (a.min(2) >= BLOWN)
+    inside &= ~blown
+    if inside.sum() < 4000:
+        return None, None, None
+    return a, inside, blown
+
+
+def blown_share(a, inside, blown, reps):
+    """What fraction of each material the camera clipped.
+
+    A blown pixel is white whatever it was, so it cannot be sorted by colour
+    -- sorting it that way would hand every glove's specular streaks to its
+    palest leather. It is sorted by where it IS instead: the labels grow into
+    the clipped regions from their edges.
+    """
+    f = features(a[inside])
+    lab = np.full(a.shape[:2], -1, np.int16)
+    lab[inside] = ((f[:, None, :] - features(reps)[None, :, :]) ** 2
+                   ).sum(2).argmin(1).astype(np.int16)
+    kept = np.array([int((lab == i).sum()) for i in range(len(reps))],
+                    dtype=float)
+    todo = blown.copy()
+    for _ in range(14):
+        if not todo.any():
+            break
+        for shift in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            src = np.roll(lab, shift, axis=(0, 1) if 0 not in shift else
+                          (0 if shift[0] else 1))
+            take = todo & (src >= 0)
+            lab[take] = src[take]
+            todo &= ~take
+    lost = np.array([int(((lab == i) & blown).sum()) for i in range(len(reps))],
+                    dtype=float)
+    return lost / np.clip(kept + lost, 1, None)
 
 
 def chromaticity(px):
@@ -324,7 +367,7 @@ def assign(mats, wanted):
                     cost += ORDER_PENALTY
         if best_cost is None or cost < best_cost:
             best, best_cost = combo, cost
-    return {w: mats[c][1] for c, w in zip(best, wanted)}
+    return dict(zip(wanted, best))
 
 
 # --- the proof sheet -------------------------------------------------------
@@ -337,23 +380,14 @@ def proof(path: pathlib.Path, out_dir: pathlib.Path):
     different glove, the read is wrong -- a misassigned material or a value
     pulled out of the shadow shows up here and nowhere in the numbers.
     """
-    img = Image.open(path).convert("RGB")
-    img.thumbnail((WORK, WORK))
-    a = np.asarray(img).astype(np.float32)
-    near = (a.min(2) >= 246) & ((a.max(2) - a.min(2)) <= 6)
-    inside = ~_reachable(near)
-    inside = np.asarray(
-        Image.fromarray((inside * 255).astype(np.uint8), "L")
-        .filter(ImageFilter.MinFilter(ERODE))) > 0
-    inside &= a.min(2) < BLOWN
-    px = a[inside]
-    if len(px) < 4000:
+    a, inside, _ = glove_pixels(path)
+    if a is None:
         return None
+    px = a[inside]
     rng = np.random.default_rng(3)
     if len(px) > SAMPLES:
         px = px[rng.choice(len(px), SAMPLES, replace=False)]
-    mats, _ = materials(px, groups_too=True)
-    reps = np.array([m[1] for m in mats], np.float32)
+    reps = np.array([m[1] for m in materials(px)], np.float32)
 
     f_all = features(a.reshape(-1, 3))
     f_rep = features(reps)
@@ -383,10 +417,11 @@ def read_photos(folder: pathlib.Path, pal):
         if not meta:
             skipped.append(f"{path.name} (filename names no colourway)")
             continue
-        px = glove_pixels(path)
-        if px is None:
+        a, inside, blown = glove_pixels(path)
+        if a is None:
             skipped.append(f"{path.name} (not a cut-out on white)")
             continue
+        px = a[inside]
         rng = np.random.default_rng(3)
         if len(px) > SAMPLES:
             px = px[rng.choice(len(px), SAMPLES, replace=False)]
@@ -395,16 +430,28 @@ def read_photos(folder: pathlib.Path, pal):
         if not got:
             skipped.append(f"{path.name} (fewer materials than colours named)")
             continue
-        for code, rgb in got.items():
+        reps = np.array([m[1] for m in mats], np.float32)
+        clipped = blown_share(a, inside, blown, reps)
+        for code, i in got.items():
             seen.setdefault(code, []).append(
-                {"hex": hexof(rgb), "photo": path.name, "view": meta["view"],
-                 "model": meta["model"], "glove": meta["glove"]})
+                {"hex": hexof(mats[i][1]), "photo": path.name,
+                 "view": meta["view"], "model": meta["model"],
+                 "glove": meta["glove"],
+                 "clipped": round(float(clipped[i]), 4)})
         used += 1
     return seen, used, skipped
 
 
 def summarise(seen, pal):
     """One value per glove, then one value per colour, plus its uncertainty.
+
+    A leather is read only from the photographs that did not blow it out. The
+    band this reads a colour with tops out at the 90th percentile, so once
+    more than a tenth of a material is at 255 the band is inside the clip and
+    what comes back is whatever was left in shadow -- which is why White's
+    eight photographs, all of them clipped, scatter from #B9BFBE to #D5D1C1
+    and why none of them gets to move the palette. Mint has one glove that
+    clipped nothing, and it is read from that one alone.
 
     A colour photographed on one glove has no spread of its own, and reporting
     zero would let a single photograph rewrite the chart. It borrows instead:
@@ -419,24 +466,28 @@ def summarise(seen, pal):
         obs = seen.get(code, [])
         if not obs:
             continue
+        clean = [o for o in obs if o["clipped"] <= CLIP_MAX]
         gloves = {}
-        for o in obs:
+        for o in (clean or obs):
             gloves.setdefault(o["glove"], []).append(rgbof(o["hex"]))
         pts = np.array([np.median(np.array(v), axis=0)
                         for v in gloves.values()])
         med = np.median(pts, axis=0)
         spread = float(np.median(np.linalg.norm(pts - med, axis=1)))
         within = float(np.median(np.linalg.norm(
-            np.array([rgbof(o["hex"]) for o in obs]) - med, axis=1)))
+            np.array([rgbof(o["hex"]) for o in (clean or obs)]) - med, axis=1)))
         _, sat, _ = hsv(med)
-        rows[code] = {"hex": hexof(med), "gloves": len(pts), "photos": len(obs),
+        rows[code] = {"hex": hexof(med), "gloves": len(pts),
+                      "photos": len(clean or obs), "blown_out": not clean,
+                      "clipped": float(np.median([o["clipped"] for o in obs])),
                       "spread": spread, "within": within, "sat": sat,
                       "neutral": sat < NEUTRAL_SAT,
                       "distance": float(np.linalg.norm(med - rgbof(ANCHORS[code])))}
 
     # What one glove differs from the next, over the colours that have more
     # than one. This is the prior a single-glove colour is measured against.
-    seen_spreads = [r["spread"] for r in rows.values() if r["gloves"] >= 2]
+    seen_spreads = [r["spread"] for r in rows.values()
+                    if r["gloves"] >= 2 and not r["blown_out"]]
     pooled = float(np.median(seen_spreads)) if seen_spreads else 0.0
     for r in rows.values():
         if r["gloves"] >= 2:
@@ -447,8 +498,9 @@ def summarise(seen, pal):
 
 
 def adoptable(row) -> tuple[bool, str]:
-    if row["neutral"]:
-        return False, "neutral - the light decides it, not the leather"
+    if row["blown_out"]:
+        return False, (f"blown out in every photograph "
+                       f"({row['clipped'] * 100:.0f}%)")
     if row["spread"] > MAX_SPREAD:
         return False, f"gloves disagree ({row['spread']:.0f})"
     if row["distance"] <= SIGMA * row["stderr"]:
@@ -486,8 +538,8 @@ def main() -> int:
     print(f"{used} photograph(s) read, {len(skipped)} skipped; one glove "
           f"differs from the next by {pooled:.0f}\n")
     print("code  name           chart     photographs  gloves  off by  +/-  "
-          "verdict")
-    print("-" * 84)
+          "blown  verdict")
+    print("-" * 92)
     adopted = {}
     for code, name, _ in pal:
         row = rows.get(code)
@@ -499,7 +551,7 @@ def main() -> int:
             adopted[code] = row["hex"]
         print(f"{code:4s}  {name:13s}  {ANCHORS[code]}   {row['hex']}  "
               f"{row['gloves']:5d}   {row['distance']:6.0f}  "
-              f"{row['stderr']:4.0f}   {why}")
+              f"{row['stderr']:4.0f}  {row['clipped'] * 100:4.0f}%  {why}")
 
     OUT.write_text(json.dumps({
         "_comment": [

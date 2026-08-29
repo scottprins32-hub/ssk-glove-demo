@@ -222,8 +222,9 @@ function stepOpen(i) {
 /* ------------------------------------------------------------- 1. start */
 function renderStart(b) {
   const grid = el('div', 'cards');
-  const groups = { stock: t('stock'), national: t('national'),
-                   signature: t('signature'), blank: t('blankTag') };
+  const groups = { stock: t('stock'), built: t('built'),
+                   national: t('national'), signature: t('signature'),
+                   blank: t('blankTag') };
   for (const st of STARTERS) {
     const c = el('button', 'card' + (S.startId === st.id ? ' is-on' : ''));
     c.type = 'button';
@@ -275,7 +276,11 @@ function renderStart(b) {
 
 function applyStarter(st, quiet) {
   if (!quiet) snapshot();
-  const pr = DATA.presets[st.id] || st.colors || DATA.presets['Navy & Orange'];
+  // A starter is either a named colourway in the data or carries its own
+  // colours; the last resort is whatever colourway the data lists first,
+  // rather than a name that has to keep existing.
+  const pr = DATA.presets[st.id] || st.colors
+    || Object.values(DATA.presets)[0] || {};
   for (const f of COLOUR_ORDER) {
     // The pad is fitted white and stays white until someone picks a colour —
     // a starter colourway should not answer an optional question for them.

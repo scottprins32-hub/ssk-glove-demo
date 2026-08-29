@@ -18,17 +18,20 @@
     "25": "#B65B84",
     "40": "#6E5248",
     "49": "#D6967C",
-    "52": "#7DB2A1",
-    "65": "#78A4B7",
+    "52": "#76B49A",
+    "65": "#78A4B8",
     "70": "#2A304A",
-    "80": "#7F3C88"
+    "80": "#7F3C88",
+    "90": "#303132"
   },
-  "between_gloves": 12.155921936035156,
+  "between_gloves": 12.216357231140137,
   "measured": {
     "10": {
       "hex": "#C7C8B8",
       "gloves": 3,
       "photos": 8,
+      "blown_out": true,
+      "clipped": 0.14955000000000002,
       "spread": 7.0,
       "within": 11.147930145263672,
       "neutral": true,
@@ -39,16 +42,20 @@
       "hex": "#D9BD82",
       "gloves": 1,
       "photos": 1,
+      "blown_out": true,
+      "clipped": 0.1256,
       "spread": 0.0,
       "within": 0.0,
       "neutral": false,
       "distance": 8.9442720413208,
-      "stderr": 15.194902420043945
+      "stderr": 15.270446538925171
     },
     "25": {
       "hex": "#B65B84",
       "gloves": 4,
       "photos": 12,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 15.17796802520752,
       "within": 21.443164825439453,
       "neutral": false,
@@ -59,6 +66,8 @@
       "hex": "#AD1726",
       "gloves": 4,
       "photos": 9,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 26.18881607055664,
       "within": 43.14727783203125,
       "neutral": false,
@@ -69,26 +78,32 @@
       "hex": "#DA581E",
       "gloves": 1,
       "photos": 2,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 0.0,
       "within": 3.240370273590088,
       "neutral": false,
       "distance": 23.75920867919922,
-      "stderr": 15.194902420043945
+      "stderr": 15.270446538925171
     },
     "40": {
       "hex": "#6E5248",
       "gloves": 1,
       "photos": 1,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 0.0,
       "within": 0.0,
       "neutral": false,
       "distance": 63.190189361572266,
-      "stderr": 15.194902420043945
+      "stderr": 15.270446538925171
     },
     "45": {
       "hex": "#BB9A24",
       "gloves": 1,
       "photos": 4,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 0.0,
       "within": 25.066190719604492,
       "neutral": false,
@@ -99,6 +114,8 @@
       "hex": "#D6967C",
       "gloves": 2,
       "photos": 5,
+      "blown_out": false,
+      "clipped": 0.0005,
       "spread": 5.640256881713867,
       "within": 6.7314558029174805,
       "neutral": false,
@@ -106,29 +123,35 @@
       "stderr": 4.985329860867457
     },
     "52": {
-      "hex": "#7DB2A1",
-      "gloves": 3,
-      "photos": 7,
-      "spread": 15.660459518432617,
-      "within": 15.660459518432617,
+      "hex": "#76B49A",
+      "gloves": 2,
+      "photos": 3,
+      "blown_out": false,
+      "clipped": 0.1047,
+      "spread": 12.78182315826416,
+      "within": 12.78182315826416,
       "neutral": false,
-      "distance": 87.72257232666016,
-      "stderr": 11.301963148250387
+      "distance": 95.64714050292969,
+      "stderr": 11.297642288919802
     },
     "65": {
-      "hex": "#78A4B7",
-      "gloves": 9,
-      "photos": 25,
-      "spread": 16.124515533447266,
-      "within": 16.309507369995117,
+      "hex": "#78A4B8",
+      "gloves": 8,
+      "photos": 22,
+      "blown_out": false,
+      "clipped": 0.0262,
+      "spread": 12.216357231140137,
+      "within": 15.02639389038086,
       "neutral": false,
-      "distance": 23.430749893188477,
-      "stderr": 6.71854813893636
+      "distance": 22.024133682250977,
+      "stderr": 5.398918149710316
     },
     "70": {
       "hex": "#2A304A",
       "gloves": 6,
       "photos": 16,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 11.92538833618164,
       "within": 13.02322006225586,
       "neutral": false,
@@ -139,26 +162,32 @@
       "hex": "#029ABA",
       "gloves": 1,
       "photos": 2,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 0.0,
       "within": 7.516648292541504,
       "neutral": false,
       "distance": 31.360803604125977,
-      "stderr": 15.194902420043945
+      "stderr": 15.270446538925171
     },
     "80": {
       "hex": "#7F3C88",
       "gloves": 1,
       "photos": 2,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 0.0,
       "within": 10.700467109680176,
       "neutral": false,
       "distance": 56.64362335205078,
-      "stderr": 15.194902420043945
+      "stderr": 15.270446538925171
     },
     "90": {
       "hex": "#303132",
       "gloves": 6,
       "photos": 15,
+      "blown_out": false,
+      "clipped": 0.0,
       "spread": 12.155921936035156,
       "within": 15.590461730957031,
       "neutral": true,
@@ -166,14 +195,16 @@
       "stderr": 6.203292936748157
     },
     "93": {
-      "hex": "#8B8E8E",
-      "gloves": 2,
-      "photos": 8,
-      "spread": 5.232112407684326,
-      "within": 6.614080429077148,
+      "hex": "#878C8C",
+      "gloves": 1,
+      "photos": 4,
+      "blown_out": false,
+      "clipped": 0.07780000000000001,
+      "spread": 0.0,
+      "within": 1.8708287477493286,
       "neutral": true,
-      "distance": 18.937397003173828,
-      "stderr": 4.624577704254826
+      "distance": 13.83835220336914,
+      "stderr": 15.270446538925171
     }
   },
   "observations": {
@@ -183,175 +214,200 @@
         "photo": "SE-1150-COL-NAV Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-COL-NAV"
+        "glove": "SE-1150-COL-NAV",
+        "clipped": 0.0912
       },
       {
         "hex": "#5488A4",
         "photo": "SE-1175-COL-YEL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0262
       },
       {
         "hex": "#5488A4",
         "photo": "SE-1175-COL-YEL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0267
       },
       {
         "hex": "#6E96AE",
         "photo": "SE-1175-COL-YEL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.048
       },
       {
         "hex": "#6E97AE",
         "photo": "SE-1175-COL-YEL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0521
       },
       {
         "hex": "#80A6BB",
         "photo": "SE-1175-NAV-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0425
       },
       {
         "hex": "#789DB1",
         "photo": "SE-1175-NAV-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0407
       },
       {
         "hex": "#7CA1B9",
         "photo": "SE-1175-NAV-COL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0091
       },
       {
         "hex": "#7599B0",
         "photo": "SE-1175-NAV-COL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.003
       },
       {
         "hex": "#6F93B3",
         "photo": "SE-1175-PIN-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0419
       },
       {
         "hex": "#6E91B1",
         "photo": "SE-1175-PIN-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0277
       },
       {
         "hex": "#76A2C4",
         "photo": "SE-1175-PIN-COL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0003
       },
       {
         "hex": "#78A5C7",
         "photo": "SE-1175-PIN-COL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0347
       },
       {
         "hex": "#77A7C7",
         "photo": "SE-1225-COL-NAV Inside.jpg",
         "view": "palm",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0261
       },
       {
         "hex": "#77A7C7",
         "photo": "SE-1225-COL-NAV LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0261
       },
       {
         "hex": "#6EA2C6",
         "photo": "SE-1225-COL-NAV LHT.jpg",
         "view": "back",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0001
       },
       {
         "hex": "#6EA1C5",
         "photo": "SE-1225-COL-NAV.jpg",
         "view": "back",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0001
       },
       {
         "hex": "#8BAAB8",
         "photo": "SE-1275-NAV-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.1338
       },
       {
         "hex": "#8CACBA",
         "photo": "SE-1275-NAV-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.1402
       },
       {
         "hex": "#83ABBE",
         "photo": "SE-1275-NAV-COL LHT.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0063
       },
       {
         "hex": "#81A8BA",
         "photo": "SE-1275-NAV-COL.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0184
       },
       {
         "hex": "#7CA6AE",
         "photo": "SE-CM-3300-PIN-COL Inside.jpg",
         "view": "palm",
         "model": "SE-CM-3300",
-        "glove": "SE-CM-3300-PIN-COL"
+        "glove": "SE-CM-3300-PIN-COL",
+        "clipped": 0.0074
       },
       {
         "hex": "#72A0AB",
         "photo": "SE-CM-3300-PIN-COL.jpg",
         "view": "back",
         "model": "SE-CM-3300",
-        "glove": "SE-CM-3300-PIN-COL"
+        "glove": "SE-CM-3300-PIN-COL",
+        "clipped": 0.0001
       },
       {
         "hex": "#78ACC5",
         "photo": "SE-CM-3350-CHO-COL.jpg",
         "view": "back",
         "model": "SE-CM-3350",
-        "glove": "SE-CM-3350-CHO-COL"
+        "glove": "SE-CM-3350-CHO-COL",
+        "clipped": 0.0035
       },
       {
         "hex": "#91B5B7",
         "photo": "SE-FB-1250-NAV-COL.jpg",
         "view": "back",
         "model": "SE-FB-1250",
-        "glove": "SE-FB-1250-NAV-COL"
+        "glove": "SE-FB-1250-NAV-COL",
+        "clipped": 0.1063
       }
     ],
     "70": [
@@ -360,112 +416,128 @@
         "photo": "SE-1150-COL-NAV Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-COL-NAV"
+        "glove": "SE-1150-COL-NAV",
+        "clipped": 0.0
       },
       {
         "hex": "#2A2C3E",
         "photo": "SE-1150-NAV-ORA Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-NAV-ORA"
+        "glove": "SE-1150-NAV-ORA",
+        "clipped": 0.0001
       },
       {
         "hex": "#333A53",
         "photo": "SE-1150-NAV-ORA.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-NAV-ORA"
+        "glove": "SE-1150-NAV-ORA",
+        "clipped": 0.0
       },
       {
         "hex": "#292F46",
         "photo": "SE-1175-NAV-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#252A3F",
         "photo": "SE-1175-NAV-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#2E3750",
         "photo": "SE-1175-NAV-COL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#2C344F",
         "photo": "SE-1175-NAV-COL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-NAV-COL"
+        "glove": "SE-1175-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#1D2D52",
         "photo": "SE-1225-COL-NAV Inside.jpg",
         "view": "palm",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0
       },
       {
         "hex": "#1C2C51",
         "photo": "SE-1225-COL-NAV LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0
       },
       {
         "hex": "#273D5F",
         "photo": "SE-1225-COL-NAV LHT.jpg",
         "view": "back",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0
       },
       {
         "hex": "#1A2F53",
         "photo": "SE-1225-COL-NAV.jpg",
         "view": "back",
         "model": "SE-1225",
-        "glove": "SE-1225-COL-NAV"
+        "glove": "SE-1225-COL-NAV",
+        "clipped": 0.0
       },
       {
         "hex": "#262D42",
         "photo": "SE-1275-NAV-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#272D42",
         "photo": "SE-1275-NAV-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#333948",
         "photo": "SE-1275-NAV-COL LHT.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#2B2F42",
         "photo": "SE-1275-NAV-COL.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-NAV-COL"
+        "glove": "SE-1275-NAV-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#535259",
         "photo": "SE-FB-1250-NAV-COL.jpg",
         "view": "back",
         "model": "SE-FB-1250",
-        "glove": "SE-FB-1250-NAV-COL"
+        "glove": "SE-FB-1250-NAV-COL",
+        "clipped": 0.0005
       }
     ],
     "35": [
@@ -474,14 +546,16 @@
         "photo": "SE-1150-NAV-ORA Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-NAV-ORA"
+        "glove": "SE-1150-NAV-ORA",
+        "clipped": 0.0
       },
       {
         "hex": "#D85820",
         "photo": "SE-1150-NAV-ORA.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-NAV-ORA"
+        "glove": "SE-1150-NAV-ORA",
+        "clipped": 0.0
       }
     ],
     "25": [
@@ -490,84 +564,96 @@
         "photo": "SE-1150-PIN-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-PIN-WHI"
+        "glove": "SE-1150-PIN-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#B7738F",
         "photo": "SE-1150-PIN-WHI.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-PIN-WHI"
+        "glove": "SE-1150-PIN-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#A94F84",
         "photo": "SE-1175-PIN-COL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#A94F84",
         "photo": "SE-1175-PIN-COL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#AE6692",
         "photo": "SE-1175-PIN-COL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#AE6692",
         "photo": "SE-1175-PIN-COL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-PIN-COL"
+        "glove": "SE-1175-PIN-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#BD5170",
         "photo": "SE-1275-PIN-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#BD506F",
         "photo": "SE-1275-PIN-WHI LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#B65D76",
         "photo": "SE-1275-PIN-WHI LHT.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#B75F78",
         "photo": "SE-1275-PIN-WHI.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.0004
       },
       {
         "hex": "#D45E83",
         "photo": "SE-CM-3300-PIN-COL Inside.jpg",
         "view": "palm",
         "model": "SE-CM-3300",
-        "glove": "SE-CM-3300-PIN-COL"
+        "glove": "SE-CM-3300-PIN-COL",
+        "clipped": 0.0
       },
       {
         "hex": "#D77290",
         "photo": "SE-CM-3300-PIN-COL.jpg",
         "view": "back",
         "model": "SE-CM-3300",
-        "glove": "SE-CM-3300-PIN-COL"
+        "glove": "SE-CM-3300-PIN-COL",
+        "clipped": 0.0
       }
     ],
     "10": [
@@ -576,56 +662,64 @@
         "photo": "SE-1150-PIN-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-PIN-WHI"
+        "glove": "SE-1150-PIN-WHI",
+        "clipped": 0.1015
       },
       {
         "hex": "#BEC0BA",
         "photo": "SE-1150-PIN-WHI.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-PIN-WHI"
+        "glove": "SE-1150-PIN-WHI",
+        "clipped": 0.164
       },
       {
         "hex": "#D5D1C1",
         "photo": "SE-1150-RED-BLA-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.1994
       },
       {
         "hex": "#B9BFBE",
         "photo": "SE-1150-RED-BLA-WHI.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.2258
       },
       {
         "hex": "#CEC9B9",
         "photo": "SE-1275-PIN-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.1281
       },
       {
         "hex": "#CCC8B8",
         "photo": "SE-1275-PIN-WHI LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.1255
       },
       {
         "hex": "#D0CCBB",
         "photo": "SE-1275-PIN-WHI LHT.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.1718
       },
       {
         "hex": "#CBC6B7",
         "photo": "SE-1275-PIN-WHI.jpg",
         "view": "back",
         "model": "SE-1275",
-        "glove": "SE-1275-PIN-WHI"
+        "glove": "SE-1275-PIN-WHI",
+        "clipped": 0.1351
       }
     ],
     "32": [
@@ -634,63 +728,72 @@
         "photo": "SE-1150-RED-BLA-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#B32031",
         "photo": "SE-1150-RED-BLA-WHI.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#A51726",
         "photo": "SE-1200-ELE-RED Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-ELE-RED"
+        "glove": "SE-1200-ELE-RED",
+        "clipped": 0.0
       },
       {
         "hex": "#982430",
         "photo": "SE-1200-ELE-RED.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-ELE-RED"
+        "glove": "SE-1200-ELE-RED",
+        "clipped": 0.0
       },
       {
         "hex": "#F1011D",
         "photo": "SE-1250-RED-GRE-BLA Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#F1011D",
         "photo": "SE-1250-RED-GRE-BLA LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#D80E24",
         "photo": "SE-1250-RED-GRE-BLA LHT.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#D80F24",
         "photo": "SE-1250-RED-GRE-BLA.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#B83633",
         "photo": "SE-FB-1225-BLA-CAM-RED.jpg",
         "view": "back",
         "model": "SE-FB-1225",
-        "glove": "SE-FB-1225-BLA-CAM-RED"
+        "glove": "SE-FB-1225-BLA-CAM-RED",
+        "clipped": 0.0001
       }
     ],
     "90": [
@@ -699,105 +802,120 @@
         "photo": "SE-1150-RED-BLA-WHI Inside.jpg",
         "view": "palm",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#3B3A3D",
         "photo": "SE-1150-RED-BLA-WHI.jpg",
         "view": "back",
         "model": "SE-1150",
-        "glove": "SE-1150-RED-BLA-WHI"
+        "glove": "SE-1150-RED-BLA-WHI",
+        "clipped": 0.0
       },
       {
         "hex": "#393939",
         "photo": "SE-1175-BLA-PUR Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-BLA-PUR"
+        "glove": "SE-1175-BLA-PUR",
+        "clipped": 0.0
       },
       {
         "hex": "#575653",
         "photo": "SE-1175-BLA-PUR.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-BLA-PUR"
+        "glove": "SE-1175-BLA-PUR",
+        "clipped": 0.0008
       },
       {
         "hex": "#2A2F31",
         "photo": "SE-1175-MIN-BLA Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-MIN-BLA"
+        "glove": "SE-1175-MIN-BLA",
+        "clipped": 0.0001
       },
       {
         "hex": "#292A2E",
         "photo": "SE-1175-MIN-BLA.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-MIN-BLA"
+        "glove": "SE-1175-MIN-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#292B2C",
         "photo": "SE-1200-BLA-GRE Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0
       },
       {
         "hex": "#292B2C",
         "photo": "SE-1200-BLA-GRE LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0
       },
       {
         "hex": "#343539",
         "photo": "SE-1200-BLA-GRE LHT.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0
       },
       {
         "hex": "#3A3B3F",
         "photo": "SE-1200-BLA-GRE.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0001
       },
       {
         "hex": "#68434A",
         "photo": "SE-1250-RED-GRE-BLA Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0002
       },
       {
         "hex": "#5F4149",
         "photo": "SE-1250-RED-GRE-BLA LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#46464D",
         "photo": "SE-1250-RED-GRE-BLA LHT.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#49494F",
         "photo": "SE-1250-RED-GRE-BLA.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.0
       },
       {
         "hex": "#292828",
         "photo": "SE-FB-1225-BLA-CAM-RED.jpg",
         "view": "back",
         "model": "SE-FB-1225",
-        "glove": "SE-FB-1225-BLA-CAM-RED"
+        "glove": "SE-FB-1225-BLA-CAM-RED",
+        "clipped": 0.0
       }
     ],
     "80": [
@@ -806,14 +924,16 @@
         "photo": "SE-1175-BLA-PUR Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-BLA-PUR"
+        "glove": "SE-1175-BLA-PUR",
+        "clipped": 0.0
       },
       {
         "hex": "#814689",
         "photo": "SE-1175-BLA-PUR.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-BLA-PUR"
+        "glove": "SE-1175-BLA-PUR",
+        "clipped": 0.0
       }
     ],
     "45": [
@@ -822,28 +942,32 @@
         "photo": "SE-1175-COL-YEL Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0
       },
       {
         "hex": "#B39225",
         "photo": "SE-1175-COL-YEL LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0
       },
       {
         "hex": "#D8A10F",
         "photo": "SE-1175-COL-YEL LHT.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0
       },
       {
         "hex": "#C3A342",
         "photo": "SE-1175-COL-YEL.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-COL-YEL"
+        "glove": "SE-1175-COL-YEL",
+        "clipped": 0.0
       }
     ],
     "52": [
@@ -852,49 +976,56 @@
         "photo": "SE-1175-MIN-BLA Inside.jpg",
         "view": "palm",
         "model": "SE-1175",
-        "glove": "SE-1175-MIN-BLA"
+        "glove": "SE-1175-MIN-BLA",
+        "clipped": 0.0017
       },
       {
         "hex": "#6FBBA4",
         "photo": "SE-1175-MIN-BLA.jpg",
         "view": "back",
         "model": "SE-1175",
-        "glove": "SE-1175-MIN-BLA"
+        "glove": "SE-1175-MIN-BLA",
+        "clipped": 0.0001
       },
       {
         "hex": "#8AB6A4",
         "photo": "SE-1250-SAL-MIN Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.1449
       },
       {
         "hex": "#8EB7A7",
         "photo": "SE-1250-SAL-MIN LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.1766
       },
       {
         "hex": "#87AF9E",
         "photo": "SE-1250-SAL-MIN LHT.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.11
       },
       {
         "hex": "#82AC98",
         "photo": "SE-1250-SAL-MIN.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.1047
       },
       {
         "hex": "#7DAE92",
         "photo": "SE-FB-1300-SAL-MIN.jpg",
         "view": "back",
         "model": "SE-FB-1300",
-        "glove": "SE-FB-1300-SAL-MIN"
+        "glove": "SE-FB-1300-SAL-MIN",
+        "clipped": 0.0996
       }
     ],
     "93": [
@@ -903,56 +1034,64 @@
         "photo": "SE-1200-BLA-GRE Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0243
       },
       {
         "hex": "#888D8D",
         "photo": "SE-1200-BLA-GRE LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0243
       },
       {
         "hex": "#7F8386",
         "photo": "SE-1200-BLA-GRE LHT.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0274
       },
       {
         "hex": "#868A8C",
         "photo": "SE-1200-BLA-GRE.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-BLA-GRE"
+        "glove": "SE-1200-BLA-GRE",
+        "clipped": 0.0348
       },
       {
         "hex": "#8F908F",
         "photo": "SE-1250-RED-GRE-BLA Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.2097
       },
       {
         "hex": "#817E7E",
         "photo": "SE-1250-RED-GRE-BLA LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.1509
       },
       {
         "hex": "#909191",
         "photo": "SE-1250-RED-GRE-BLA LHT.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.1208
       },
       {
         "hex": "#919292",
         "photo": "SE-1250-RED-GRE-BLA.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-RED-GRE-BLA"
+        "glove": "SE-1250-RED-GRE-BLA",
+        "clipped": 0.125
       }
     ],
     "75": [
@@ -961,14 +1100,16 @@
         "photo": "SE-1200-ELE-RED Inside.jpg",
         "view": "palm",
         "model": "SE-1200",
-        "glove": "SE-1200-ELE-RED"
+        "glove": "SE-1200-ELE-RED",
+        "clipped": 0.0
       },
       {
         "hex": "#02A0BF",
         "photo": "SE-1200-ELE-RED.jpg",
         "view": "back",
         "model": "SE-1200",
-        "glove": "SE-1200-ELE-RED"
+        "glove": "SE-1200-ELE-RED",
+        "clipped": 0.0
       }
     ],
     "49": [
@@ -977,35 +1118,40 @@
         "photo": "SE-1250-SAL-MIN Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.0012
       },
       {
         "hex": "#D69A7F",
         "photo": "SE-1250-SAL-MIN LHT Inside.jpg",
         "view": "palm",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.0005
       },
       {
         "hex": "#C99379",
         "photo": "SE-1250-SAL-MIN LHT.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.0001
       },
       {
         "hex": "#CA947A",
         "photo": "SE-1250-SAL-MIN.jpg",
         "view": "back",
         "model": "SE-1250",
-        "glove": "SE-1250-SAL-MIN"
+        "glove": "SE-1250-SAL-MIN",
+        "clipped": 0.0001
       },
       {
         "hex": "#DB957B",
         "photo": "SE-FB-1300-SAL-MIN.jpg",
         "view": "back",
         "model": "SE-FB-1300",
-        "glove": "SE-FB-1300-SAL-MIN"
+        "glove": "SE-FB-1300-SAL-MIN",
+        "clipped": 0.0034
       }
     ],
     "40": [
@@ -1014,7 +1160,8 @@
         "photo": "SE-CM-3350-CHO-COL.jpg",
         "view": "back",
         "model": "SE-CM-3350",
-        "glove": "SE-CM-3350-CHO-COL"
+        "glove": "SE-CM-3350-CHO-COL",
+        "clipped": 0.0
       }
     ],
     "12": [
@@ -1023,7 +1170,8 @@
         "photo": "SE-FB-1225-BLA-CAM-RED.jpg",
         "view": "back",
         "model": "SE-FB-1225",
-        "glove": "SE-FB-1225-BLA-CAM-RED"
+        "glove": "SE-FB-1225-BLA-CAM-RED",
+        "clipped": 0.1256
       }
     ]
   }

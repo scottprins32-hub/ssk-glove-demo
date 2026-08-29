@@ -117,9 +117,14 @@ export const STARTERS = [
     flag: 'Curaçao',
     colors: { _panels: '60', welting: '45', laces: '45', binding: '45', lining: '60',
               thumb_loops: '45', pinky_loops: '45', embroidery: '10', stitching: '45' } },
-  { id: 'Navy & Orange', en: 'Navy & Orange', nl: 'Navy & Oranje', group: 'stock', bullet: 14 },
-  { id: 'Classic Tan', en: 'Classic Tan', nl: 'Klassiek Tan', group: 'stock', bullet: 7 },
-  { id: 'Black & Pink', en: 'Black & Pink', nl: 'Zwart & Roze', group: 'stock', bullet: 8 }
+  // Four colourways SSK has actually built, off the photographs in their
+  // Drive folder; the colours themselves live in DATA.presets, written by
+  // build_assets.py. The bullet is the badge the photograph shows: gold on
+  // the navy glove, silver on the other three.
+  { id: 'Navy / Columbia', en: 'Navy / Columbia', nl: 'Navy / Columbia', group: 'built', bullet: 14 },
+  { id: 'Pink / White', en: 'Pink / White', nl: 'Roze / Wit', group: 'built', bullet: 10 },
+  { id: 'Black / Grey', en: 'Black / Grey', nl: 'Zwart / Grijs', group: 'built', bullet: 10 },
+  { id: 'Salmon / Mint', en: 'Salmon / Mint', nl: 'Zalm / Mint', group: 'built', bullet: 10 }
 ];
 
 // The flat build order. One step, one decision — no category inside a category.
@@ -161,7 +166,7 @@ export const T = {
     tiedTo: '(one piece with %s)',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
-    stock: 'Stock colourway', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
+    stock: 'Stock colourway', built: 'Built by SSK', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
     pickStart: 'Pick a starting point. You can change every part after this.',
     pickColour: 'Pick a part on the glove, then pick its colour.',
     applyAll: 'Same colour on all back panels',
@@ -200,7 +205,7 @@ export const T = {
     tiedTo: '(één stuk met %s)',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',
-    stock: 'Standaard kleurstelling', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
+    stock: 'Standaard kleurstelling', built: 'Door SSK gebouwd', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
     pickStart: 'Kies een startpunt. Daarna pas je elk onderdeel nog aan.',
     pickColour: 'Kies een onderdeel op de handschoen en daarna de kleur.',
     applyAll: 'Zelfde kleur op alle achterpanelen',
