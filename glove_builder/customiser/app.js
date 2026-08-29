@@ -4,7 +4,8 @@
 
 import { loadGlove, GloveRenderer, refCode, applyCode } from './glove-engine.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
-         OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, T } from './glove-catalog.js';
+         OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
+         T } from './glove-catalog.js';
 
 /* SSK Europe's prices (from Pim via Scott, 2026-07-25): the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -35,11 +36,6 @@ const TIED = { palm: 'back2', back2: 'palm' };
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
 const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
-
-const PALETTE_OF = f =>
-  f === 'stitching' ? 'stitching' :
-  f === 'ring_emb' ? 'embroidery' :
-  (f === 'binding' || f === 'welting' || f === 'laces') ? 'lace' : 'leather';
 
 /* label key in T for each colour field */
 const FIELD_LABEL = {
@@ -222,9 +218,8 @@ function stepOpen(i) {
 /* ------------------------------------------------------------- 1. start */
 function renderStart(b) {
   const grid = el('div', 'cards');
-  const groups = { stock: t('stock'), built: t('built'),
-                   national: t('national'), signature: t('signature'),
-                   blank: t('blankTag') };
+  const groups = { built: t('built'), national: t('national'),
+                   signature: t('signature'), blank: t('blankTag') };
   for (const st of STARTERS) {
     const c = el('button', 'card' + (S.startId === st.id ? ' is-on' : ''));
     c.type = 'button';

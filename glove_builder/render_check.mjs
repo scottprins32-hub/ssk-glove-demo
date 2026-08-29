@@ -31,6 +31,8 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain' };
 
 const DATA = JSON.parse(readFileSync(join(ROOT, 'assets/glove-data.json')));
+const { STARTERS, COLOUR_ORDER, PALETTE_OF } =
+  await import(join(ROOT, 'glove-catalog.js'));
 const FIELD_TO_LAYER = {
   web: 'web', back2: 'back2', back3: 'back3', back4: 'back4', back5: 'back5',
   back6: 'back6', back7: 'back78', belt: 'belt', lining: 'lining',
@@ -39,6 +41,34 @@ const FIELD_TO_LAYER = {
   stitching: 'stitching', ring_emb: 'embroidery' };
 const LAYER_TO_FIELD = Object.fromEntries(
   Object.entries(FIELD_TO_LAYER).map(([f, l]) => [l, f]));
+
+/* Before rendering anything: does every colourway on offer name colours the
+   customer can actually order? applyStarter falls back to the palette's first
+   entry when it cannot find a code, silently — so a starter that names Grey
+   embroidery (SSK does not stitch that) previews as White and nobody is told.
+   The four built-by-SSK cards each had to give up a colour to this. */
+let failures = 0;
+for (const st of STARTERS) {
+  const colours = DATA.presets[st.id] || st.colors;
+  if (!colours) {
+    console.log(`FAIL  starter "${st.id}" has no colours and no preset`);
+    failures += 1;
+    continue;
+  }
+  for (const f of COLOUR_ORDER) {
+    const layer = FIELD_TO_LAYER[f];
+    const code = colours[layer] !== undefined ? colours[layer]
+               : colours[f] !== undefined ? colours[f] : colours._panels;
+    if (code === undefined) continue;          // left to the field's default
+    const group = PALETTE_OF(f);
+    if (!DATA.palettes[group].some(c => c[0] === code)) {
+      console.log(`FAIL  starter "${st.id}": ${f} asks for ${code}, which the`
+        + ` ${group} palette does not offer`);
+      failures += 1;
+    }
+  }
+}
+console.log(failures ? '' : 'every starter names colours that can be ordered');
 
 const server = createServer((req, res) => {
   const file = normalize(join(ROOT, decodeURIComponent(req.url.split('?')[0])));
@@ -70,7 +100,6 @@ const SCENARIOS = [
     thumb_loops: '65', pinky_loops: '65' })],
 ];
 
-let failures = 0;
 for (const [name, colors] of SCENARIOS) {
   const page = await ctx.newPage();
   const errs = [];

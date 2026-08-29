@@ -88,10 +88,11 @@ are not asked. Prices: € 294,95 for the stock Pro glove, € 374,95 configured
 
 Work in progress is kept in local storage, so a refresh and even a browser
 restart keep it, and nothing about the customer leaves the device; "copy link"
-puts the design (without their name and phone) into a URL on request. Step 4
-is the colour step: pick a part on the glove or from the chip list, then a
-colour; the picked zone lifts slightly so you can see what you are about to
-change.
+puts the design (without their name and phone) into a URL on request. Step 1
+opens on a blank glove and four colourways SSK has actually built, read off
+their own photographs. Step 4 is the colour step: pick a part on the glove or
+from the chip list, then a colour; the picked zone lifts slightly so you can
+see what you are about to change.
 
 ## How the render works
 
@@ -119,8 +120,28 @@ Playwright chromium, and nothing the shipped page depends on.
 
 The reference code packs every choice into one string (5 bits per zone for its
 index in that zone's palette, 4 bits for the bullet logo, base36). It decodes
-as well as encodes, so it is written into the URL hash — a refresh or a
-forwarded link reopens the exact design.
+as well as encodes, so "copy link" can put a whole design in a URL and pasting
+one back reopens it exactly.
+
+## Where the colours come from
+
+SSK's colour chart was photographed off a phone screen, so the 28 leather
+hexes started out eyeballed from the names. They are now read off photographs
+of finished custom gloves whose filenames name the colourway —
+`glove_builder/colour_evidence.py`, with what it found in
+`colour-evidence.json`. Eight leathers moved, the largest by 96 units (Mint);
+Red, Camel, Orange, Grey and Electric Blue stayed, because their photographs
+do not contradict the chart, and that agreement is what makes the eight worth
+acting on.
+
+Two are refused outright, with a measurement rather than an opinion: the shots
+are exposed for the white paper they were taken on, so a sixth of the white
+leather is a flat 255 with nothing behind it, and White and Camel cannot be
+read from them at all. A frame exposed for the glove would settle both.
+
+Stitching and embroidery keep the chart values throughout. Those are thread,
+and no photograph here resolves a stitch line, so the leather's measurement is
+not theirs to inherit.
 
 ## Scope today
 

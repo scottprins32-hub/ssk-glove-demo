@@ -72,6 +72,16 @@ export const CIRCLE_COLORS = [
   ['Red', '#C8102E'], ['Blue', '#2145D6'], ['White', '#F2F0EA']
 ];
 
+// Which palette a colour field is picked from. Binding, welting and laces are
+// lace stock, stitching is thread, the ring embroidery is its own list, and
+// everything else is leather. Lives here rather than in app.js because it is
+// catalogue knowledge: render_check.mjs uses it to prove that no starter
+// offers a colour the customer cannot actually order.
+export const PALETTE_OF = f =>
+  f === 'stitching' ? 'stitching' :
+  f === 'ring_emb' ? 'embroidery' :
+  (f === 'binding' || f === 'welting' || f === 'laces') ? 'lace' : 'leather';
+
 // Fields the order form asks for that the back-view render cannot show.
 export const OFFSTAGE = {
   back1: 'Wingtip — hidden behind the thumb on this view',
@@ -85,7 +95,8 @@ export const OFFSTAGE = {
 
 // Blank first: a visitor starts from a clean glove and builds it up, rather
 // than being handed someone else's colourway to undo. Then signature,
-// national, stock. app.js applies STARTERS[0] on load, so this is the default.
+// national, and the ones SSK has built. app.js applies STARTERS[0] on load,
+// so this is the default.
 // `slot: true` marks a signature card that still needs a real SSK athlete attached.
 // `flag` is a FLAGS id: a national build arrives with its flag already on the
 // index finger, which is the whole point of picking that card.
@@ -166,7 +177,7 @@ export const T = {
     tiedTo: '(one piece with %s)',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
-    stock: 'Stock colourway', built: 'Built by SSK', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
+    built: 'Built by SSK', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
     pickStart: 'Pick a starting point. You can change every part after this.',
     pickColour: 'Pick a part on the glove, then pick its colour.',
     applyAll: 'Same colour on all back panels',
@@ -205,7 +216,7 @@ export const T = {
     tiedTo: '(één stuk met %s)',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',
-    stock: 'Standaard kleurstelling', built: 'Door SSK gebouwd', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
+    built: 'Door SSK gebouwd', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
     pickStart: 'Kies een startpunt. Daarna pas je elk onderdeel nog aan.',
     pickColour: 'Kies een onderdeel op de handschoen en daarna de kleur.',
     applyAll: 'Zelfde kleur op alle achterpanelen',
