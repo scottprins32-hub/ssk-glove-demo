@@ -115,8 +115,19 @@ inherited.
 `node glove_builder/render_check.mjs` is the check that would have caught it.
 It paints the whole glove one colour and reads every zone back off the canvas
 through the id map and the layer's own alpha; one colour in has to give one
-colour out, within the sheen the renderer adds on purpose. It needs node and a
-Playwright chromium, and nothing the shipped page depends on.
+colour out, within the sheen the renderer adds on purpose. A cavity is held to
+its own declared depth instead, because it is built to come out darker.
+
+One scenario is left-handed, which is the only thing watching an alignment
+nothing else tests: the render is mirrored and the id map is not, so the two
+can drift apart without a pixel looking wrong, and a customer would pick the
+pinky and colour the thumb. Thirteen of fifteen zones read byte-identical
+between the two hands, and the other two — the SSK mark and the panel it sits
+on, both drawn un-mirrored so the letters stay readable — agree within four
+levels.
+
+It needs node and a Playwright chromium, and nothing the shipped page depends
+on.
 
 The reference code packs every choice into one string (5 bits per zone for its
 index in that zone's palette, 4 bits for the bullet logo, base36). It decodes

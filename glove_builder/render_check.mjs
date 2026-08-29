@@ -99,25 +99,33 @@ const SCENARIOS = [
   ['Navy body, Columbia trim', everything('70', {
     web: '65', binding: '65', welting: '65', laces: '65',
     thumb_loops: '65', pinky_loops: '65' })],
+  // A left-handed glove is the right-handed render mirrored, but the id map
+  // is not mirrored with it — the engine un-mirrors the click instead. So the
+  // zones and the picture can drift apart without anything noticing, and a
+  // customer would pick the pinky and colour the thumb. Reading a mirrored
+  // render against the un-mirrored map is exactly the alignment to check.
+  ['left-handed, Navy body, Columbia trim', everything('70', {
+    web: '65', binding: '65', welting: '65', laces: '65',
+    thumb_loops: '65', pinky_loops: '65' }), 'LHT'],
 ];
 
-for (const [name, colors] of SCENARIOS) {
+for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(String(e)));
-  await page.addInitScript(cs => {
+  await page.addInitScript(([cs, hd]) => {
     localStorage.setItem('ssk-glove-v1', JSON.stringify({
-      lang: 'nl', part: 'web', bullet: 7, colors: cs, hand: 'RHT',
+      lang: 'nl', part: 'web', bullet: 7, colors: cs, hand: hd,
       size: '11.75', pad: 'No', webType: null, thumbText: '', thumbFont: null,
       thumbMain: null, thumbOutline: null, thumbNumber: '', circle: null,
       numberColor: null, flag: null, name: '', phone: '' }));
-  }, colors);
+  }, [colors, hand]);
   await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => [...document.querySelectorAll('canvas')]
     .some(c => c.width > 500), null, { timeout: 20000 });
   await page.waitForTimeout(800);
 
-  const read = await page.evaluate(async ([w, h, zones]) => {
+  const read = await page.evaluate(async ([w, h, zones, mirror, bullet]) => {
     const stage = [...document.querySelectorAll('canvas')]
       .filter(c => c.width === w && c.height === h)
       .sort((a, b) => b.width - a.width)[0];
@@ -146,8 +154,22 @@ for (const [name, colors] of SCENARIOS) {
       const pts = [];
       for (let i = 0; i < w * h; i++) {
         if (px[i * 4 + 3] < 240) continue;
-        if (ids[i * 4] !== z.n) continue;
-        if (own && own[i * 4 + 3] < 200) continue;
+        // The map and the layers are of the right-handed glove; on a lefty
+        // render the canvas is mirrored and they are not, so the lookup
+        // mirrors back — the same thing zoneAt does for a click.
+        const x = i % w, y = (i - x) / w;
+        // The SSK bullet patch is drawn over the belt, so its pixels are not
+        // the belt's — reading them as belt cost 12 levels of apparent error.
+        // On a left-handed glove the whole canvas is mirrored, so the patch
+        // lands at the mirrored x even though the engine flips the artwork
+        // back inside it to keep the letters readable.
+        const bx0 = mirror ? w - bullet[2] : bullet[0];
+        const bx1 = mirror ? w - bullet[0] : bullet[2];
+        if (bullet && x >= bx0 && x < bx1
+            && y >= bullet[1] && y < bullet[3]) continue;
+        const j = mirror ? y * w + (w - 1 - x) : i;
+        if (ids[j * 4] !== z.n) continue;
+        if (own && own[j * 4 + 3] < 200) continue;
         pts.push([px[i * 4], px[i * 4 + 1], px[i * 4 + 2]]);
       }
       if (pts.length < 400) continue;
@@ -165,7 +187,8 @@ for (const [name, colors] of SCENARIOS) {
       out[z.n] = [mid(0), mid(1), mid(2), pts.length];
     }
     return out;
-  }, [DATA.w, DATA.h, DATA.zones.map(z => ({ id: z.id, n: z.n }))]);
+  }, [DATA.w, DATA.h, DATA.zones.map(z => ({ id: z.id, n: z.n })),
+      hand === 'LHT', DATA.bulletBox]);
 
   if (errs.length) {
     console.log(`FAIL  ${name} — page error: ${errs[0]}`);
