@@ -220,7 +220,14 @@ button { font: inherit; color: inherit; }
    the parked silicone bullets and nothing styled them. */
 .card:disabled { opacity: var(--state-disabled-opacity); cursor: not-allowed; }
 .card:disabled:hover { box-shadow: none; }
-.card img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--gray-50); }
+.card img, .card canvas {
+  display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover;
+  background: var(--gray-50);
+}
+/* The web picker only. A web is a tall narrow thing and the whole point of
+   the row is telling one from another. */
+.cards.is-portrait { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
+.cards.is-portrait .card img, .cards.is-portrait .card canvas { aspect-ratio: 3/4; }
 .card .cap { display: block; padding: var(--space-2) var(--space-3); }
 .card .kick {
   display: block; font-family: var(--font-display); font-size: 10px;
