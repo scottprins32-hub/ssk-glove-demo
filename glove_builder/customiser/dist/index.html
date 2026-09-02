@@ -1767,31 +1767,56 @@ function renderFit(b) {
 // narrow, and in a landscape card it came out too small to tell one from
 // another, which is the only thing the picker is for.
 const THUMB_BOX = [404, 10, 525, 700];
+// Cached on everything a thumbnail depends on, which is everything except
+// which web is selected — clicking down the list changes only the ring round
+// a card, and re-rendering four gloves to move it is 480 ms of nothing.
+let thumbKey = null;
+const thumbs = new Map();
 function webThumbs(field, fit) {
   const cards = field.querySelectorAll('.cards .card');
-  requestAnimationFrame(() => {
-    const tmp = document.createElement('canvas');
-    tmp.width = DATA.w; tmp.height = DATA.h;
-    const tc = tmp.getContext('2d');
-    const keep = WEBS.find(x => x.id === S.webType);
-    let [sx, sy, sw, sh] = THUMB_BOX;
-    // The render is mirrored for a left-handed glove, so the web is on the
-    // other side of it and the crop has to be mirrored too.
-    if (isLefty()) sx = DATA.w - sx - sw;
-    fit.forEach((w, i) => {
-      const card = cards[i];
-      if (!card || (!w.render && w.id !== NATIVE_WEB)) return;
-      R.setWeb(w.render || null);
-      R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
-      const cv = el('canvas');
-      cv.width = 300; cv.height = 400;
-      cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
-      const img = card.querySelector('img');
-      if (img) card.replaceChild(cv, img);
-      else card.insertBefore(cv, card.firstChild);
-    });
-    R.setWeb((keep && keep.render) || null);
+  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag]);
+  if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
+  const put = (card, cv) => {
+    const shown = el('canvas');
+    shown.width = cv.width; shown.height = cv.height;
+    shown.getContext('2d').drawImage(cv, 0, 0);
+    const old = card.querySelector('img, canvas');
+    if (old) card.replaceChild(shown, old);
+    else card.insertBefore(shown, card.firstChild);
+  };
+  const todo = [];
+  fit.forEach((w, i) => {
+    const card = cards[i];
+    if (!card || (!w.render && w.id !== NATIVE_WEB)) return;
+    const hit = thumbs.get(w.id);
+    if (hit) put(card, hit); else todo.push([w, card]);
   });
+  if (!todo.length) return;
+  const tmp = document.createElement('canvas');
+  tmp.width = DATA.w; tmp.height = DATA.h;
+  const tc = tmp.getContext('2d');
+  const keep = WEBS.find(x => x.id === S.webType);
+  let [sx, sy, sw, sh] = THUMB_BOX;
+  // The render is mirrored for a left-handed glove, so the web is on the
+  // other side of it and the crop has to be mirrored too.
+  if (isLefty()) sx = DATA.w - sx - sw;
+  // One per frame. Four full-canvas composites in a single frame is half a
+  // second of locked-up page on a laptop and worse on a phone; spread out,
+  // the cards fill in one after another and nothing blocks.
+  const step = () => {
+    const job = todo.shift();
+    if (!job) { R.setWeb((keep && keep.render) || null); return; }
+    const [w, card] = job;
+    R.setWeb(w.render || null);
+    R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    const cv = document.createElement('canvas');
+    cv.width = 300; cv.height = 400;
+    cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
+    thumbs.set(w.id, cv);
+    if (card.isConnected) put(card, cv);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 /* --------------------------------------------------------------- 3. web */
