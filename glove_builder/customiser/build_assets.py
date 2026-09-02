@@ -628,9 +628,19 @@ def main():
         # goes back to `laces`; both halves take the lace colour, so a piece
         # split between them is invisible unless a web declines its lacing,
         # which is exactly when the split is wanted.
-        _near = ndimage.binary_dilation(_ap, np.ones((3, 3), bool),
-                                        iterations=12)
-        inside = (inside & _near) | (la & _ap)
+        # Whole pieces, not fragments. A lace that only clips the edge of the
+        # opening is the glove's; one that runs through it is the web's. The
+        # two tails that hang off the rim beside the little finger clip it by
+        # a few hundred pixels each, and taking just that much of them left a
+        # lace-shaped hole in the middle of a tail on every swapped web.
+        _keep = np.zeros_like(la)
+        for _i in range(1, n + 1):
+            _piece = lbl == _i
+            _sz = _piece.sum()
+            if _sz and (_piece & _ap).sum() / _sz >= 0.5:
+                _keep |= _piece
+        inside = (inside & ndimage.binary_dilation(
+            _ap, np.ones((3, 3), bool), iterations=12)) | _keep
         if inside.sum() > 500:
             def half(src, keep):
                 a = np.asarray(src).copy()
@@ -859,26 +869,16 @@ def main():
                        ("webfinger", "back3")):
         im0 = load(zone)
         sheen_for[part] = sheen_p95(spec_base(im0)) if im0 is not None else None
-    # A cut-out web never covers the stock web's opening exactly. Backing it
-    # with the opening filled solid means the leftover shows as leather in the
-    # web's own colour rather than as a hole punched through the glove.
+    # There is no backing layer behind a swapped web, and there should not be.
+    # One was built and tried: it hid the ragged edge of a cutout, but it also
+    # filled the gaps a web is supposed to have, and an open web that shows no
+    # daylight is not an open web. The edges are not ragged any more either —
+    # every web is completed out to the opening and clipped to it, and its
+    # windows are read off its own photograph. The asset it produced was dead
+    # weight in the bundle: nothing had referenced it since.
     web_im = load("web")
     if web_im is not None and any(p.is_dir() for p in web_dir.glob("*")):
         wa = np.asarray(tint_base(web_im)).copy()
-        # The backing has to cover everything the swap removes — the web and
-        # its lacing both — or the neutral base shows through as bare tan
-        # where a lace used to be.
-        gone = wa[..., 3] > 90
-        if web_lace_mask is not None:
-            gone = gone | web_lace_mask
-        solid = ndimage.binary_fill_holes(
-            ndimage.binary_closing(gone, np.ones((25, 25), bool)))
-        gap = solid & (wa[..., 3] <= 90)
-        if gap.any():
-            iy, ix = ndimage.distance_transform_edt(
-                wa[..., 3] <= 90, return_indices=True, return_distances=False)
-            wa[..., :3][gap] = wa[..., :3][iy[gap], ix[gap]]   # nearest leather
-        wa[..., 3] = np.where(solid, 255, 0)
         # The punch that removes the stock web has to be a HARD stencil. Drawing
         # the web layer itself into destination-out removes it in proportion to
         # its own alpha, so every antialiased edge pixel is only partly taken
@@ -921,9 +921,6 @@ def main():
         assets["web_cut"] = to_data_uri(Image.fromarray(cut, "RGBA"),
                                         lossless=True, method=4)
         print(f"web punch stencil: {int(hard.sum())} px -> web_cut")
-        assets["web_fill"] = to_data_uri(Image.fromarray(wa, "RGBA"),
-                                         quality=85, method=4)
-        print(f"web backing: {solid.sum()} px -> web_fill")
     for d in sorted(p for p in web_dir.glob("*") if p.is_dir()):
         pair = {}
         for part, key in (("leather", "web"), ("lace", "laceweb"),

@@ -666,7 +666,34 @@ def aperture(height=1100):
     if not n:
         return free
     big = 1 + int(np.argmax(ndimage.sum(free, lbl, range(1, n + 1))))
-    return ndimage.binary_fill_holes(lbl == big)
+    ap = ndimage.binary_fill_holes(lbl == big)
+
+    # Minus the lacing that hangs off the glove into open air. Lacing is
+    # deliberately not counted as a panel above — where it crosses the
+    # opening the panel behind it already claims the ground — but that also
+    # hands the opening the two loose tails beside the little finger, and a
+    # web cut to fill the opening filled those too: they rendered in the
+    # web's leather colour with a thin lace-coloured fringe round them,
+    # instead of as the laces they are.
+    #
+    # A tail is a piece of lacing lying on nothing. Measured as the fraction
+    # of the piece that sits over a panel, the split is not close: the tails
+    # score 0.00, 0.00 and 0.12, the knotted lace 0.44, and every lace laced
+    # through the opening 0.44 or better.
+    panel = ndimage.binary_dilation(other, np.ones((3, 3), bool), iterations=4)
+    la = α("laces", thresh=90)
+    lbl, n = ndimage.label(la)
+    loose = np.zeros_like(ap)
+    for i in range(1, n + 1):
+        piece = lbl == i
+        if piece.sum() < 300 or (piece & ap).sum() < 100:
+            continue
+        if (piece & panel).sum() / piece.sum() < 0.30:
+            loose |= piece
+    if loose.any():
+        ap &= ~ndimage.binary_dilation(loose, np.ones((3, 3), bool),
+                                       iterations=2)
+    return ap
 
 
 def complete(leather, have, ap, finger=None, min_window=1200, window=None):
