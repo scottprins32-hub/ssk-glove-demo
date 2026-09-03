@@ -9,21 +9,38 @@ export function loadGlove() {
   _p = (async () => {
     // bundle.py inlines the same object as window.__GLOVE_DATA__, so the
     // single-file build needs no fetch
+    const decode = async (DATA) => {
+      const imgs = {};
+      await Promise.all(Object.entries(DATA.assets).map(([n, src]) =>
+        new Promise(res => {
+          const im = new Image();
+          im.onload = () => { imgs[n] = im; res(); };
+          im.onerror = () => { res(); };
+          im.src = src;
+        })));
+      const ic = document.createElement('canvas');
+      ic.width = DATA.w; ic.height = DATA.h;
+      const ictx = ic.getContext('2d', { willReadFrequently: true });
+      ictx.drawImage(imgs._idmap, 0, 0);
+      const idData = ictx.getImageData(0, 0, DATA.w, DATA.h).data;
+      return { DATA, imgs, idData };
+    };
     const DATA = window.__GLOVE_DATA__
       || await (await fetch('assets/glove-data.json')).json();
-    const imgs = {};
-    await Promise.all(Object.entries(DATA.assets).map(([n, src]) => new Promise(res => {
-      const im = new Image();
-      im.onload = () => { imgs[n] = im; res(); };
-      im.onerror = () => { res(); };
-      im.src = src;
-    })));
-    const ic = document.createElement('canvas');
-    ic.width = DATA.w; ic.height = DATA.h;
-    const ictx = ic.getContext('2d', { willReadFrequently: true });
-    ictx.drawImage(imgs._idmap, 0, 0);
-    const idData = ictx.getImageData(0, 0, DATA.w, DATA.h).data;
-    return { DATA, imgs, idData };
+    const back = await decode(DATA);
+    // The palm is a second view of the same glove, cut from the same
+    // calibration photograph's other side (build_palm.py). It shares the
+    // palettes and the colour fields — the two wingtips are only visible from
+    // here — so it is loaded alongside rather than as a separate page. It may
+    // legitimately be absent; the view switcher hides itself if it is.
+    let palm = null;
+    try {
+      const PD = window.__PALM_DATA__
+        || await (await fetch('assets/palm-data.json')).json();
+      PD.palettes = DATA.palettes;
+      palm = await decode(PD);
+    } catch { palm = null; }
+    return { ...back, views: { back, palm } };
   })();
   return _p;
 }
@@ -42,6 +59,8 @@ export function shade(hx, f) {
 // 929x1100 stack. A redraw is then ~18 drawImage calls.
 export class GloveRenderer {
   constructor(bundle) {
+    this.views = bundle.views || { back: bundle };
+    this.view = 'back';
     this.DATA = bundle.DATA;
     this.imgs = bundle.imgs;
     this.idData = bundle.idData;
@@ -51,6 +70,21 @@ export class GloveRenderer {
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
     this.octx = this.off.getContext('2d');
   }
+
+  // Which side of the glove is being drawn. The tint cache is keyed by zone
+  // id and colour, and four ids — palm, web, binding, laces — exist on both
+  // views with different pixels behind them, so it has to go.
+  setView(name) {
+    const v = this.views[name];
+    if (!v || name === this.view) return !!v;
+    this.view = name;
+    this.DATA = v.DATA; this.imgs = v.imgs; this.idData = v.idData;
+    this.cache.clear(); this.order = [];
+    this.off.width = this.DATA.w; this.off.height = this.DATA.h;
+    return true;
+  }
+
+  hasView(name) { return !!this.views[name]; }
 
   hex(zoneId, state) {
     const z = this.DATA.zones.find(z => z.id === zoneId);
@@ -355,6 +389,27 @@ export class GloveRenderer {
         }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
+        // A zone can carry lettering of its own that the global flip turns
+        // backwards — on the palm, the embossed "Sasaki PRO Custom Made",
+        // the SHOKUNIN stamp and the SSK wordmark are pressed into the palm
+        // leather rather than being pieces in their own right. build_palm.py
+        // lifts them off it into a multiply mask, so the leather here is
+        // smooth and each mark can be flipped about its own centre — landing
+        // it on the mirrored side of the glove, still reading forwards, with
+        // nothing but the letters having moved.
+        const mk = D.marks;
+        if (mk && mk.zone === z.id && this.imgs.marks) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'multiply';
+          for (const [bx0, by0, bx1, by1] of mk.boxes) {
+            const bw = bx1 - bx0, bh = by1 - by0;
+            this.unmirror(ctx, bx0, bx1, mirror,
+                          () => ctx.drawImage(this.imgs.marks,
+                                              bx0, by0, bw, bh,
+                                              bx0, by0, bw, bh));
+          }
+          ctx.restore();
+        }
       }
       // The pad is one piece of leather laid over the finger, so the welt
       // seam that splits the finger runs under it, not across it — Scott,
@@ -448,14 +503,16 @@ export class GloveRenderer {
       const c = this.tinted('welt_index', this.hex('back3', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
-    if (mergeIndex) {
+    if (mergeIndex && D.flagMount) {
       const M = D.flagMount, r = Math.max(M.w, M.h);
       this.unmirror(ctx, M.cx - r, M.cx + r, mirror,
                     () => this.drawFlag(ctx, mirror));
     }
     const bb = D.bulletBox;
-    this.unmirror(ctx, bb[0], bb[2], mirror,
-                  () => this.drawBullet(ctx, bulletSel));
+    if (bb) {
+      this.unmirror(ctx, bb[0], bb[2], mirror,
+                    () => this.drawBullet(ctx, bulletSel));
+    }
     if (highlight && highlight.id && D.bbox[highlight.id]) {
       const c = this.tinted(highlight.id, '#ffffff');
       ctx.save();

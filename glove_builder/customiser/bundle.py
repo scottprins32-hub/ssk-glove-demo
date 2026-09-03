@@ -97,6 +97,15 @@ def main():
     for b in data["bullets"]:
         if b.get("thumb"):
             b["thumb"] = data_uri(HERE / b["thumb"]); n += 1
+    # The palm is a second view with its own data file, and the engine fetches
+    # it — which a single file cannot do, so it goes in the same way the back
+    # view's does. Optional: the page hides the view switcher without it.
+    palm_f = HERE / "assets" / "palm-data.json"
+    palm = None
+    if palm_f.exists():
+        palm = json.loads(palm_f.read_text())
+        for k, v in list(palm["assets"].items()):
+            palm["assets"][k] = data_uri(HERE / v); n += 1
 
     body = "\n".join(js)
     # catalogue and reference image paths (webs, pads, fonts, flags, photos)
@@ -134,6 +143,8 @@ def main():
     n += len(font_map)
     body = ("const FONT_IMG = " + json.dumps(font_map) + ";\n"
             "window.__GLOVE_DATA__ = " + json.dumps(data, separators=(",", ":")) + ";\n"
+            + ("window.__PALM_DATA__ = "
+               + json.dumps(palm, separators=(",", ":")) + ";\n" if palm else "")
             + body)
 
     html = html.replace('<script type="module" src="app.js"></script>',

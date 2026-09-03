@@ -128,6 +128,22 @@ button { font: inherit; color: inherit; }
   font-family: var(--font-mono); font-size: var(--text-xs); color: var(--navy-900);
   box-shadow: var(--shadow-card);
 }
+/* Which side of the glove the stage is showing. Top right, opposite the
+   size tag, so the two never fight for the same corner. */
+.stage-view {
+  position: absolute; top: var(--space-5); right: var(--space-5); z-index: 2;
+  display: flex; gap: 2px; padding: 2px;
+  background: var(--surface-card); border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-card);
+}
+.stage-view button {
+  font: inherit; font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--text-muted); background: none; border: 0; cursor: pointer;
+  padding: 4px var(--space-3); border-radius: calc(var(--radius-sm) - 2px);
+}
+.stage-view button.is-on {
+  background: var(--navy-900); color: var(--white);
+}
 .stage-hint {
   position: absolute; left: var(--space-5); bottom: var(--space-4); margin: 0;
   font-size: var(--text-xs); color: var(--text-muted);

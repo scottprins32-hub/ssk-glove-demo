@@ -26,6 +26,18 @@ const FIELD_TO_LAYER = {
 const LAYER_TO_FIELD = Object.fromEntries(
   Object.entries(FIELD_TO_LAYER).map(([f, l]) => [l, f]));
 
+/* The palm view has its own zones, and three of them are fields the back
+   view collects without showing: the palm itself and the two wingtips. On
+   this side they carry their own names, so the map is the identity. */
+const PALM_FIELDS = {
+  palm: 'palm', web: 'web', back1: 'back1', back9: 'back9',
+  welting: 'welting', binding: 'binding', laces: 'laces'
+};
+const viewLayerField = () => (S.view === 'palm' ? PALM_FIELDS : LAYER_TO_FIELD);
+const viewFieldLayer = () => (S.view === 'palm'
+  ? Object.fromEntries(Object.entries(PALM_FIELDS).map(([l, f]) => [f, l]))
+  : FIELD_TO_LAYER);
+
 /* The palm and back 2 are cut from one piece of leather, so they cannot take
    different colours. SSK's own form says as much under Palm Color — "small
    part on back of glove under the web is part of the palm" — and that part is
@@ -98,6 +110,7 @@ const QUESTIONS = [
 
 const S = {
   lang: 'nl', step: 0, part: 'web', bullet: 7,
+  view: 'back',
   colors: {}, hand: null, size: null, pad: null, webType: null,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null,
@@ -201,6 +214,7 @@ function cleanState(o) {
     thumbNumber: text(o.thumbNumber),
     name: text(o.name),
     phone: text(o.phone),
+    view: o.view === 'palm' ? 'palm' : 'back',
   };
   // Only carry a starter through if it still exists; otherwise leave whatever
   // the page already set, rather than blanking the highlight to undefined.
@@ -237,8 +251,9 @@ function load() {
 /* Colours the renderer needs, keyed by layer id. */
 function layerState() {
   const out = {};
-  for (const z of DATA.zones) {
-    const f = LAYER_TO_FIELD[z.id];
+  const D = R ? R.DATA : DATA, map = viewLayerField();
+  for (const z of D.zones) {
+    const f = map[z.id];
     out[z.id] = S.colors[f] || DATA.palettes[z.group][0][0];
   }
   return out;
@@ -250,7 +265,25 @@ const flagArt = () => {
   const f = FLAGS.find(f => f.id === S.flag);
   return (f && f.art) || null;
 };
+function paintView() {
+  const vw = $('#stageview');
+  if (!vw || vw.hidden) return;
+  for (const b of vw.children) {
+    b.textContent = t(b.dataset.view === 'palm' ? 'viewPalm' : 'viewBack');
+    b.classList.toggle('is-on', b.dataset.view === S.view);
+    b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
+  }
+}
+
 function draw() {
+  // The palm is a second view of the same glove. Everything the back view
+  // hangs on the glove — a swapped web, the flag, the bullet, the pad — has
+  // no asset on this side, and the engine skips each of them on that basis.
+  if (!R.setView(S.view) && S.view !== 'back') { S.view = 'back'; R.setView('back'); }
+  const cv = ctx.canvas;
+  if (cv.width !== R.DATA.w || cv.height !== R.DATA.h) {
+    cv.width = R.DATA.w; cv.height = R.DATA.h;
+  }
   R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
   const w = WEBS.find(w => w.id === S.webType);
   R.setWeb(w && w.render);
@@ -259,8 +292,8 @@ function draw() {
   R.setPad(PAD_PART[S.pad] || null,
            S.colors.pad_color ? hexOf('pad_color') : null);
   R.draw(ctx, layerState(), S.bullet,
-    S.step === 3 && FIELD_TO_LAYER[S.part]
-      ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
+    S.step === 3 && viewFieldLayer()[S.part]
+      ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
     indexIsOnePiece(), isLefty());
 }
 
@@ -447,6 +480,11 @@ function liveThumbs(field, items, box, jobFor, restore) {
   const tmp = document.createElement('canvas');
   tmp.width = DATA.w; tmp.height = DATA.h;
   const tc = tmp.getContext('2d');
+  // Always the back of the glove, whichever view the stage is showing: the
+  // crops below are in the back view's pixels, and a web or a pad is what
+  // these cards are about.
+  const wasView = S.view;
+  S.view = 'back'; R.setView('back');
   let [sx, sy, sw, sh] = box;
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
@@ -456,7 +494,7 @@ function liveThumbs(field, items, box, jobFor, restore) {
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) { restore(); return; }
+    if (!job) { restore(); S.view = wasView; R.setView(wasView); draw(); return; }
     const [it, card, setUp] = job;
     setUp();
     R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
@@ -863,6 +901,7 @@ function paint(rebuildBody = true) {
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
   $('#lang-nl').classList.toggle('is-on', L === 'nl');
   $('#lang-en').classList.toggle('is-on', L === 'en');
+  paintView();
 
   // steps
   const nav = $('#steps'); nav.textContent = '';
@@ -967,7 +1006,7 @@ loadGlove().then(bundle => {
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
-    const f = id && LAYER_TO_FIELD[id];
+    const f = id && viewLayerField()[id];
     if (!f) return;
     S.step = 3; S.part = f; paint();
   });
@@ -978,6 +1017,19 @@ loadGlove().then(bundle => {
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
     cv.style.cursor = id ? 'pointer' : 'default';
   });
+
+  // Which side of the glove. Only offered when the palm view actually
+  // loaded — it is a separate data file, and the page has to work without it.
+  const vw = $('#stageview');
+  if (R.hasView('palm')) {
+    vw.hidden = false;
+    for (const [id, key] of [['back', 'viewBack'], ['palm', 'viewPalm']]) {
+      const b = el('button');
+      b.type = 'button'; b.dataset.view = id;
+      b.onclick = () => { S.view = id; draw(); paint(); };
+      vw.appendChild(b);
+    }
+  }
 
   draw(); paint();
 });
