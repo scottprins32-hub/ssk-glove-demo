@@ -791,7 +791,7 @@ def emboss(img, amp=0.42, falloff=5.0, light=(-0.6, -0.8), bias=0.55):
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
-def cord(img, half=6.0, floor=0.55):
+def cord(img, floor=0.42, span=21, light=(-0.6, -0.8), tilt=0.26):
     """Shade a lace as a round cord: dark at both edges, a ridge down the
     middle, whatever shape the piece was traced in.
 
@@ -800,17 +800,36 @@ def cord(img, half=6.0, floor=0.55):
     lit along its crown and falling away on both sides. Hand-traced lace
     polygons are angular and a little fat, and lit flat they read as lumps;
     lit as cord the eye takes the ridge as the lace and the rest as its
-    curvature. `half` is the half-width the profile is built for, in canvas
-    pixels; wider pieces plateau at the crown rather than over-brighten.
+    curvature.
+
+    The half-width is measured rather than assumed. It used to be one number
+    for every lace on the glove, and a lace is not one width: a strand
+    narrower than it shaded entirely in the dark end of the profile, a
+    strand wider than it went flat across its crown, and both came out as
+    painted bars. A local maximum of the distance field is that strand's own
+    half-width, so every lace gets the whole profile — which is what Scott
+    was asking for in "better quality laces".
+
+    The crown is not quite in the middle either. A cord lit from one side
+    turns its brightest line toward the light, and that asymmetry is most of
+    what separates a cord from a tube in a drawing; `tilt` is how far.
     """
     a = np.asarray(img).astype(np.float32)
     m = a[..., 3] > 90
     if not m.any():
         return img
     d = ndimage.distance_transform_edt(m)
-    t = np.clip(d / half, 0.0, 1.0)
+    half = ndimage.maximum_filter(d, size=span)
+    t = np.clip(d / np.maximum(half, 1.5), 0.0, 1.0)
     shade = floor + (1.0 - floor) * np.sqrt(t)
-    a[..., :3] *= np.where(m, shade, 1.0)[..., None]
+    # The outward normal is minus the gradient of the distance field: it
+    # points out of the lace, and where it points at the light that flank is
+    # the lit one.
+    gy, gx = np.gradient(ndimage.gaussian_filter(d, 1.5))
+    n = np.hypot(gx, gy) + 1e-6
+    face = -((gx / n) * light[0] + (gy / n) * light[1])
+    shade = shade * (1.0 + tilt * (1.0 - t) * np.clip(face, -1.0, 1.0))
+    a[..., :3] *= np.where(m, np.clip(shade, 0.0, 1.35), 1.0)[..., None]
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
@@ -1130,7 +1149,7 @@ def main():
 
     mrgb, lrgb = material("web_material"), material("laces_material")
 
-    def relief(layer, mat, sigma=13.0, lo=0.66, hi=1.30, flat=None):
+    def relief(layer, mat, sigma=13.0, lo=0.56, hi=1.40, flat=None):
         """Put the photograph's own surface back onto the shared material.
 
         Replacing the colour outright is what stopped the webs reading as
@@ -1155,6 +1174,14 @@ def main():
         """
         a = np.asarray(layer).astype(np.float32)
         lum = a[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
+        # Take the grain out before taking the ratio, and the clamp can open
+        # up. It was held to a third either side because wide open it carried
+        # the photograph's sensor noise as well as its seams — but a median
+        # of three removes what is one pixel across and leaves what is a
+        # line, so the noise is gone before the clamp has to fight it. That
+        # buys back the stitching along every piece of a web, which is most
+        # of what says one piece of leather ends here and the next begins.
+        lum = ndimage.median_filter(lum, size=3)
         base = ndimage.gaussian_filter(lum, sigma)
         r = np.clip(np.where(base > 6, lum / np.maximum(base, 1e-3), 1.0),
                     lo, hi)
