@@ -55,24 +55,26 @@ PARTS["pad"] = {
 PARTS["hood"] = {
     "photo": "images/drive-2026-08/SSK-Finger-Hood.jpg",
     "dark_floor": 40,
-    # Traced OUTSIDE the stitching, not inside it. Two rows of stitches down
-    # each side and round the tip are what say "hood" at a glance, and the
-    # first trace cut inside them and rendered a plain slab of leather.
-    "outline": [(690, 244), (800, 252), (895, 292), (955, 366), (984, 456),
-                (988, 620), (980, 800), (968, 980), (940, 1160),
-                # pulled in where a lace crosses the hood in the photograph:
-                # that lace is the photographed glove's, and this one has its
-                # own drawn over the top
-                (884, 1240), (872, 1330), (872, 1430), (886, 1510),
-                (906, 1580), (898, 1700), (876, 1880), (846, 1992),
-                (768, 2052), (656, 2066), (556, 2042), (496, 1986),
-                (474, 1880), (460, 1700), (450, 1520), (440, 1340),
-                (428, 1160), (418, 980), (414, 800), (418, 620),
-                (430, 448), (470, 348), (566, 272)],
+    # Traced OUTSIDE the stitching, not inside it: two rows of stitches round
+    # the cap are what say "hood" at a glance, and the first trace cut inside
+    # them and rendered a plain slab of leather.
+    #
+    # And it is a CAP, not a panel. The first version took the arc's two sides
+    # for the hood's and ran it the whole length of the finger — Scott: "je
+    # maakt de fingerhood enorm groot over de hele vinger, terwijl die
+    # helemaal niet zo groot is... hij loopt niet zo ver door." The long
+    # parallel seams below the arc are the finger's own welts, which are there
+    # on the no-hood photograph too. The hood is the rounded piece over the
+    # tip.
+    "outline": [(650, 244), (760, 252), (856, 288), (920, 360), (950, 452),
+                (958, 580), (952, 720), (940, 860), (926, 980), (900, 1060),
+                (840, 1108), (740, 1128), (640, 1130), (546, 1112),
+                (476, 1070), (446, 990), (432, 860), (424, 720),
+                (422, 580), (432, 448), (472, 348), (556, 276)],
     "erode": 3,
-    # The hood starts at the fingertip rather than half way down, and hangs
-    # further past the end than the pad does.
-    "top": 0.03, "bottom": 1.05, "fill": 0.87,
+    # Where it lands: the arc's top sits about a tenth of the finger below
+    # the tip on the photograph, and the cap covers roughly the top half.
+    "top": 0.06, "bottom": 0.52, "fill": 0.86,
 }
 
 
