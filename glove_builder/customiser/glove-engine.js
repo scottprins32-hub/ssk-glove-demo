@@ -330,9 +330,18 @@ export class GloveRenderer {
       if (swap && z.id === 'web') continue;
       const c = this.tinted(z.id, this.hex(z.id, state));
       if (z.id === 'embroidery') {
-        const eb = D.bbox.embroidery;
-        this.unmirror(ctx, eb[0], eb[2], mirror,
-                      () => ctx.drawImage(c, c._ox, c._oy));
+        // Letter by letter, each flipped about its own centre. See embParts
+        // in build_assets.py: flipping the wordmark as a whole keeps it
+        // readable on a lefty but leaves its arc right-handed, and puts it
+        // beside the relief of itself that the neutral base carries.
+        const parts = (D.embParts && D.embParts.length)
+          ? D.embParts : [D.bbox.embroidery];
+        for (const [px0, py0, px1, py1] of parts) {
+          const pw = px1 - px0, ph = py1 - py0;
+          this.unmirror(ctx, px0, px1, mirror,
+                        () => ctx.drawImage(c, px0 - c._ox, py0 - c._oy,
+                                            pw, ph, px0, py0, pw, ph));
+        }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
       }
@@ -346,11 +355,23 @@ export class GloveRenderer {
       if (z.id === 'welting' && this.pad && this.imgs.pad && D.bbox.pad) {
         const pd = this.tinted('pad', this.padHex || '#F2F0EA');
         ctx.drawImage(pd, pd._ox, pd._oy);
+        // Clipped to where the binding is a solid band. Drawing all of it
+        // brought back a spur of welt seam that the segmentation had put on
+        // the binding's layer, and on the pad that is a blue dot poking out
+        // of the leather with nothing attached to it.
+        const u = D.padUnder;
+        ctx.save();
+        if (u) {
+          ctx.beginPath();
+          ctx.rect(u[0], u[1], u[2] - u[0], u[3] - u[1]);
+          ctx.clip();
+        }
         for (const over of ['lining', 'binding']) {
           if (!this.imgs[over] || !D.bbox[over]) continue;
           const o = this.tinted(over, this.hex(over, state));
           ctx.drawImage(o, o._ox, o._oy);
         }
+        ctx.restore();
       }
       // The lace running through the stock web is split off the laces layer,
       // because it belongs to the web type — a different web is laced

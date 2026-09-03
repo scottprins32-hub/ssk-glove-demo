@@ -464,9 +464,10 @@ def cut(spec):
         # or swallows half the glove. Inside a traced outline the problem goes
         # away: the only bright thing in there is lace.
         import cv2
-        poly = np.zeros(glove.shape, np.uint8)
-        cv2.fillPoly(poly, [np.array(spec["outline"], np.int32)], 1)
-        region = glove & poly.astype(bool)
+        traced = np.zeros(glove.shape, np.uint8)
+        cv2.fillPoly(traced, [np.array(spec["outline"], np.int32)], 1)
+        traced = traced.astype(bool)
+        region = glove & traced
         hsv = np.asarray(im.convert("HSV")).astype(float)
         val = hsv[..., 2] / 255
         # Inside the outline the split is a clean two-way one, so let Otsu
@@ -500,9 +501,9 @@ def cut(spec):
         lbl, n = ndimage.label(lace)
         sizes = ndimage.sum(lace, lbl, range(1, n + 1))
         lace = np.isin(lbl, np.nonzero(sizes > 120)[0] + 1)
-        for poly in spec.get("lace_polys", ()):
+        for pts in spec.get("lace_polys", ()):
             extra = np.zeros(glove.shape, np.uint8)
-            cv2.fillPoly(extra, [np.array(poly, np.int32)], 1)
+            cv2.fillPoly(extra, [np.array(pts, np.int32)], 1)
             bright = islace if cutv is None else (val >= cutv)
             lace |= glove & extra.astype(bool) & bright
         # A hand-traced web is the web. Otsu guesses at the boundary between
@@ -536,10 +537,16 @@ def cut(spec):
             # web, and that edge is 30 px wide; the Spiral I's polygon took
             # 100 px, the SMK's 74, and both replaced most of the calibration
             # glove's index finger with a feathered slab of another glove's.
+            # Grown from the traced OUTLINE, not from the web's leather. The
+            # outline runs along the finger seam; the leather stops at the
+            # first bar. Grown from the leather, the band stopped short of the
+            # finger wherever a window lay between them, and the Spiral I's
+            # biggest window — the one against the finger — fell outside the
+            # source quad of the warp and was cut off.
             width = int(spec.get("finger_band", 36))
             if width > 0:
                 finger &= ndimage.binary_dilation(
-                    region, np.ones((3, 3), bool), iterations=width)
+                    traced, np.ones((3, 3), bool), iterations=width)
         return im, web, lace, finger, glove
 
 

@@ -144,6 +144,15 @@ REASSIGN = [
     {"polys": [[(690, 623), (828, 761), (828, 808), (690, 680)],
                [(785, 608), (812, 608), (812, 665), (785, 665)]],
      "from": "thumb_loops", "to": "laces"},
+    # A 365 px scrap of the welt seam, where it runs down the index finger
+    # into the binding, segmented as lacing. In the lace colour on top of the
+    # welt in the same colour it is invisible — until a finger pad is fitted.
+    # Then the pad covers the welt, the lacing draws after the pad, and it is
+    # a floating blue dot in the middle of the leather. Scott: "it's also
+    # showing like a little dot on the bottom of the finger pad... which looks
+    # goofy."
+    {"polys": [[(478, 735), (500, 735), (500, 782), (478, 782)]],
+     "from": "laces", "to": "welting"},
 ]
 
 # Colourways SSK has actually built, read off the photographs in their Drive
@@ -528,6 +537,7 @@ def main():
     glove_neutral = Image.fromarray(gb.astype(np.uint8), "RGBA")
     assets = {"glove": to_data_uri(glove_neutral, quality=88, method=4)}
     zones = []
+    emb_mark = None
     idmap = np.zeros((H, W), np.uint8)
     for i, (name, group, label) in enumerate(STACK, 1):
         im = load(name)
@@ -552,6 +562,7 @@ def main():
             # back through spec_base like every other layer's highlight.
             spec_src = clean_mark if clean_mark is not None else im
             tb = tint_base(spec_src)
+            emb_mark = tb
         elif name in CAVITY:
             # Not a panel: a hole into the glove. Flattening it (which is what
             # this used to do, at 0.85) is what made the hand opening read as
@@ -953,6 +964,7 @@ def main():
     # The finger pad, cut from SSK's own and fitted to the index finger by
     # make_pad.py. It is an option on the form, so it only renders when it is
     # ordered, and it takes the pad colour.
+    pad_under = None
     pad_f = pathlib.Path(__file__).parent.parent / "layers" / "pad" / "pad.png"
     if pad_f.exists():
         pim = Image.open(pad_f).convert("RGBA").resize((W, H), Image.LANCZOS)
@@ -961,6 +973,53 @@ def main():
         if psp is not None:
             assets["pad_hi"] = to_data_uri(psp, quality=80, method=4)
         print(f"finger pad: {(np.asarray(pim)[..., 3] > 90).sum()} px -> pad")
+        # Where the pad's lower end genuinely disappears under the binding.
+        #
+        # The engine draws the binding and the lining back over the pad for
+        # that, and drawing all of either brought a 2,158 px spur of welt seam
+        # back with it — the segmentation put the last stretch of the welt,
+        # where it runs down into the binding, on the binding's layer. On the
+        # pad that reads as a detached blue dot poking up out of the leather.
+        # Scott: "it's also showing like a little dot on the bottom of the
+        # finger pad... which looks goofy."
+        #
+        # The band itself is 130 px wide across the pad's columns and the spur
+        # is 11; taking the first row where the band is solid separates them
+        # without a hand-picked number. The redraw is clipped to that row and
+        # below.
+        _padm = np.asarray(pim)[..., 3] > 90
+        if _padm.any():
+            _py, _px = np.nonzero(_padm)
+            _band = np.zeros(_padm.shape, bool)
+            for _n in ("binding", "lining"):
+                _l = load(_n)
+                if _l is not None:
+                    _band |= np.asarray(_l)[..., 3] > 90
+            _cols = _band[:, _px.min():_px.max() + 1]
+            _solid = [int(y) for y in range(_py.min(), _py.max() + 1)
+                      if _cols[y].sum() >= 60]
+            pad_under = [int(_px.min()), _solid[0] if _solid else int(_py.max()),
+                         int(_px.max()) + 1, H]
+            print(f"pad tucks under the binding from y={pad_under[1]} "
+                  f"(the band is solid there; the welt spur above it is not)")
+
+    emb_parts = []
+    # From the mark that is actually drawn, not the raw layer. The raw
+    # segmentation has the four letters bridged into one blob; the warped
+    # glyph that replaces it has them apart, which is the whole point here.
+    _e = emb_mark if emb_mark is not None else load("embroidery")
+    if _e is not None:
+        _m = np.asarray(_e)[..., 3] > 90
+        _l, _n = ndimage.label(_m, structure=np.ones((3, 3)))
+        for _i in range(1, _n + 1):
+            _ys, _xs = np.nonzero(_l == _i)
+            if _ys.size < 200:
+                continue
+            emb_parts.append([int(_xs.min()), int(_ys.min()),
+                              int(_xs.max()) + 1, int(_ys.max()) + 1])
+        emb_parts.sort(key=lambda b: b[1])
+        print(f"SSK wordmark: {len(emb_parts)} letters, "
+              f"each mirrored about its own centre on a lefty")
 
     bullet = load("bullet_logo")
     bullets = []
@@ -1104,6 +1163,21 @@ def main():
             # it -- it is a hole, not a panel. Recorded so the render check can
             # hold it to that depth instead of failing it for not matching.
             "cavity": CAVITY,
+            # The rectangle the binding and lining are redrawn in, over the
+            # pad. See "finger pad" above.
+            "padUnder": pad_under,
+            # One box per letter of the SSK wordmark. A left-handed glove is
+            # the mirror of this one, and the mark has to do two things at
+            # once on it: sit where the mirror puts it, and still read as
+            # SSK. Flipping the mark as a whole about its own centre keeps it
+            # readable but keeps its ARC right-handed too — the letters step
+            # down the finger the wrong way, across the panel edge — and it
+            # lands on top of the mark's own relief, which is baked into the
+            # neutral base and does mirror, so a lefty showed two of them.
+            # Flipping each letter about its own centre does both: the stack
+            # follows the mirrored finger, every letter reads, and each one
+            # lands back on its own relief.
+            "embParts": emb_parts,
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())
