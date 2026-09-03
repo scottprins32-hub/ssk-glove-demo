@@ -757,7 +757,7 @@ def complete(leather, have, ap, finger=None, min_window=1200, window=None):
     soft = ndimage.uniform_filter(a[..., :3].astype(np.float32), size=(5, 5, 1))
     inner = ndimage.binary_erosion(add, np.ones((3, 3), bool))
     a[..., :3][inner] = soft[inner].astype(np.uint8)
-    return Image.fromarray(a, "RGBA"), int(add.sum())
+    return Image.fromarray(a, "RGBA"), add
 
 
 def emboss(img, amp=0.42, falloff=5.0, light=(-0.6, -0.8), bias=0.55):
@@ -854,13 +854,6 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
     w = int(ref_im.width * height / ref_im.height)
     ref = np.asarray(ref_im.resize((w, height), Image.LANCZOS))[..., 3] > 90
     dst = quad(ref)
-    # Run the bottom of the web on past the opening so it disappears under the
-    # knotted lace instead of stopping just short of it. That lace is on the
-    # outside of the glove and draws over the web, so the overshoot is hidden.
-    if extend:
-        ctr = dst.mean(0)
-        low = np.argsort(dst[:, 1])[-2:]
-        dst[low] += (dst[low] - ctr) * extend
     # With a finger edge in the cutout, the destination is not the web
     # opening any more — it is the opening plus the strip of index finger the
     # cutout carries. Building it that way keeps both quads' right-hand edges
@@ -871,6 +864,7 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
     # rim. The band's width is taken from the photograph instead: however wide
     # the finger is relative to the web there, it is that wide here.
     src = web_mask
+    band_mask = np.zeros_like(ref)
     if finger is not None and finger.any():
         src = web_mask | finger
         b3_im = Image.open(HERE / "layers/rainbow-back-4x/back3.png").convert("RGBA")
@@ -887,9 +881,61 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
         band = span(ref) * thick / max(wwide, 1.0)
         edge = np.nonzero(b3)[1].max()
         cols = np.arange(w)[None, :]
-        dst = quad(ref | (b3 & (cols > edge - band)))
+        band_mask = b3 & (cols > edge - band)
+        dst = quad(ref | band_mask)
         print(f"finger band {band:.0f} px of back 3 joins the opening")
-    M = cv2.getPerspectiveTransform(quad(src), dst)
+
+    # Four corners of a bounding box are a starting guess, not an answer. The
+    # cutout's own shape and the opening's are both known, so fit the
+    # transform to THEM: nudge the destination corners until the warped
+    # cutout overlaps the opening as closely as it can. What that buys is
+    # real photographed web instead of invented fill — every pixel the fit
+    # misses is one `complete` has to make up, and the Spiral I was making up
+    # forty-five per cent of itself.
+    #
+    # Coordinate descent from coarse steps to fine, at half resolution
+    # because the answer does not need sub-pixel corners and a full-size warp
+    # per trial is a hundred times the work. Only kept if it actually helps.
+    target = aperture(height) | band_mask
+    qs = quad(src)
+    half = lambda m: cv2.resize(m.astype(np.uint8), (w // 2, height // 2),
+                                interpolation=cv2.INTER_NEAREST) > 0
+    th, sh = half(target), src.astype(np.uint8)
+    S = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]], np.float64)
+
+    def overlap(d):
+        T = S @ cv2.getPerspectiveTransform(qs, d.astype(np.float32))
+        a = cv2.warpPerspective(sh, T, (w // 2, height // 2),
+                                flags=cv2.INTER_NEAREST) > 0
+        return float((a & th).sum()) / max(float((a | th).sum()), 1.0)
+
+    base = best = overlap(dst)
+    bd = dst.astype(np.float64).copy()
+    for step in (24.0, 12.0, 6.0, 3.0):
+        moved = True
+        while moved:
+            moved = False
+            for i in range(4):
+                for j in range(2):
+                    for sgn in (step, -step):
+                        cand = bd.copy()
+                        cand[i, j] += sgn
+                        v = overlap(cand)
+                        if v > best + 1e-5:
+                            best, bd, moved = v, cand, True
+    if best > base:
+        dst = bd.astype(np.float32)
+    print(f"cutout fitted to the opening: overlap {base:.3f} -> {best:.3f}")
+
+    # Run the bottom of the web on past the opening so it disappears under the
+    # knotted lace instead of stopping just short of it. That lace is on the
+    # outside of the glove and draws over the web, so the overshoot is hidden.
+    # After the fit, not before, or it is the thing being fitted.
+    if extend:
+        ctr = dst.mean(0)
+        low = np.argsort(dst[:, 1])[-2:]
+        dst[low] += (dst[low] - ctr) * extend
+    M = cv2.getPerspectiveTransform(qs, dst)
 
     # Nothing out of a cutout may render outside the glove. Warped freely, the
     # finger strip put 4,500 px past the silhouette — a bulge down the side of
@@ -901,10 +947,33 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
     sil = (ndimage.binary_erosion(sil > 40, np.ones((3, 3), bool))
            * 255).astype(np.uint8)
 
+    # Supersampled, because this warp is a big SHRINK — the calibration glove
+    # is seen at more of an angle than these webs are, so a web comes in about
+    # 0.43x horizontally. INTER_LANCZOS4 is an interpolating filter: on the
+    # way down it samples one source pixel in two and aliases, which is what
+    # turned the Diamond Net's lace crosses into blobs and left every lace
+    # with a chewed edge. Warp into a canvas three times the size, where the
+    # map is close to 1:1 or an upscale and Lanczos is the right filter, then
+    # area-average down, which is the right filter for the other direction.
+    #
+    # Premultiplied across both steps. Averaging RGBA straight pulls the
+    # transparent side of an edge — which is black — into the colour, and
+    # every lace comes back with a dark rim.
+    SS = 3
+    scale = np.array([[SS, 0, 0], [0, SS, 0], [0, 0, 1]], np.float64)
     out = {}
     for n, im in layers.items():
-        a = cv2.warpPerspective(np.asarray(im), M, (w, height),
-                                flags=cv2.INTER_LANCZOS4)
+        src = np.asarray(im).astype(np.float32)
+        al = src[..., 3:4] / 255.0
+        src = np.dstack([src[..., :3] * al, src[..., 3:4]])
+        big = cv2.warpPerspective(src, scale @ M, (w * SS, height * SS),
+                                  flags=cv2.INTER_LANCZOS4)
+        a = cv2.resize(big, (w, height), interpolation=cv2.INTER_AREA)
+        a = np.clip(a, 0, 255)
+        al = a[..., 3:4] / 255.0
+        a = np.dstack([np.where(al > 1e-3, a[..., :3] / np.maximum(al, 1e-3), 0),
+                       a[..., 3:4]])
+        a = np.clip(a, 0, 255).astype(np.uint8)
         a[..., 3] = np.minimum(a[..., 3], sil)
         out[n] = Image.fromarray(a, "RGBA")
     return out
@@ -985,10 +1054,10 @@ def main():
         have = a if have.shape != a.shape else (have | a)
     fing = (np.asarray(aligned["finger"])[..., 3] > 90
             if "finger" in aligned else None)
-    aligned["leather"], added = complete(
+    aligned["leather"], invented = complete(
         aligned["leather"], have, aperture(), finger=fing,
         min_window=np.inf if spec.get("closed") else 1200, window=win)
-    print(f"web completed out to the opening: {added} px added")
+    print(f"web completed out to the opening: {int(invented.sum())} px added")
     if win is not None:
         _lea = np.asarray(aligned["leather"])[..., 3] > 90
         print(f"  windows still open after the fill: "
@@ -1060,7 +1129,7 @@ def main():
 
     mrgb, lrgb = material("web_material"), material("laces_material")
 
-    def relief(layer, mat, sigma=13.0, lo=0.66, hi=1.30):
+    def relief(layer, mat, sigma=13.0, lo=0.66, hi=1.30, flat=None):
         """Put the photograph's own surface back onto the shared material.
 
         Replacing the colour outright is what stopped the webs reading as
@@ -1093,6 +1162,13 @@ def main():
         # shallow rise, so the clamp bites the dark side harder and the whole
         # web came out 5 to 8 percent darker than the glove around it. This
         # is texture, not tone — the tone is the material's.
+        # Nothing to take texture from where there were no pixels. The fill
+        # that reaches a web out to the opening copies from the nearest real
+        # leather and blurs it, and running that through the ratio turned the
+        # streaks into folds of drapery across half the web. Flat material
+        # there, which is what it is.
+        if flat is not None and flat.any():
+            r = np.where(flat, 1.0, r)
         out = mat.astype(np.float32) * r[..., None]
         m = a[..., 3] > 40
         if m.any():
@@ -1106,7 +1182,9 @@ def main():
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
-        arr[..., :3] = relief(aligned[n], src).astype(np.uint8)
+        arr[..., :3] = relief(aligned[n], src,
+                              flat=invented if n == "leather" else None
+                              ).astype(np.uint8)
         aligned[n] = Image.fromarray(arr, "RGBA")
     # Thickness. The leather takes a soft inner shadow; the lacing takes a
     # tighter, stronger one, because a lace is a round cord and needs to read
