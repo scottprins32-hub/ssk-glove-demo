@@ -574,6 +574,7 @@ function choiceField(label, opts, value, onPick, required) {
   for (const o of opts) {
     const b = el('button', 'opt-btn' + (value === o.id ? ' is-on' : ''));
     b.type = 'button';
+    b.dataset.key = `${label}|${o.id}`;
     b.innerHTML = (o.swatch
       ? `<span class="chip" style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${o.swatch};border:1px solid rgba(0,0,0,.25);vertical-align:-1px;margin-right:6px"></span>` : '') +
       o.label + (o.sub ? `<small>${o.sub}</small>` : '');
@@ -735,9 +736,23 @@ $('#copylink').onclick = ev => copyToClipboard(ev,
   location.origin + location.pathname + '#' + encodeState(true));
 
 /* ----------------------------------------------------------------- paint */
+/* Every paint rebuilds the step nav and the body from scratch, which destroys
+   whatever had focus and parks it on <body>. A mouse user never notices; a
+   keyboard user's next Tab starts from the top of the page again, on every
+   single choice. So: remember the focused control by a key that survives the
+   rebuild, and put focus back on its replacement. Opening a different step is
+   the one case where the old control is the wrong place to be -- there the
+   step's heading takes it, so the reader hears where they are. */
+const focusKey = (e) => e && e !== document.body && e.dataset
+  ? (e.dataset.key || `${e.tagName}|${e.className}|${e.textContent.trim()}`)
+  : null;
+
 function paint(rebuildBody = true) {
   const L = S.lang;
   document.documentElement.lang = L;
+  const hadKey = focusKey(document.activeElement);
+  const wasStep = paint.lastStep;
+  paint.lastStep = S.step;
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
   $('#lang-nl').classList.toggle('is-on', L === 'nl');
   $('#lang-en').classList.toggle('is-on', L === 'en');
@@ -748,6 +763,7 @@ function paint(rebuildBody = true) {
     const open = stepOpen(i);
     const b = el('button', 'step' + (i === S.step ? ' is-on' : ''));
     b.type = 'button';
+    b.dataset.key = 'step|' + i;
     b.innerHTML = `<span class="n">${i + 1}</span>${t(st.title)}` +
       (STEP_FIELDS[i].length ? `<span class="dot${open ? ' todo' : ''}"></span>` : '');
     b.onclick = () => { S.step = i; paint(); };
@@ -788,6 +804,16 @@ function paint(rebuildBody = true) {
     : `${t(STEPS[S.step + 1].title)} →`;
   $('#undo').disabled = !undoStack.length;
   $('#redo').disabled = !redoStack.length;
+
+  if (hadKey && wasStep !== undefined && wasStep !== S.step && hadKey.startsWith('step|')) {
+    const h = $('#steptitle');
+    h.tabIndex = -1;
+    h.focus({ preventScroll: true });
+  } else if (hadKey && !document.contains(document.activeElement) || document.activeElement === document.body) {
+    const again = [...document.querySelectorAll('#steps button, #body button, #body input, #body select, #body textarea')]
+      .find((e) => focusKey(e) === hadKey);
+    if (again) again.focus({ preventScroll: true });
+  }
 
   save();
 }
