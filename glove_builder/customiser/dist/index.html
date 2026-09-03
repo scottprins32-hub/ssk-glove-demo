@@ -1767,9 +1767,12 @@ function renderFit(b) {
       paint();
     }, true));
 
-  b.appendChild(cardField(t('pad'), PADS.map(p => ({
+  const padF = cardField(t('pad'), PADS.map(p => ({
     id: p.id, label: p[S.lang], img: p.img
-  })), S.pad, v => { snapshot(); S.pad = v; draw(); paint(); }, true));
+  })), S.pad, v => { snapshot(); S.pad = v; draw(); paint(); }, true,
+    'portrait');
+  b.appendChild(padF);
+  padThumbs(padF);
 
   const padOn = S.pad && S.pad !== 'None';
   const note = !padOn ? OFFSTAGE.pad_color
@@ -1787,15 +1790,22 @@ function renderFit(b) {
 // x, y, w, h in canvas pixels — 3:4 over the whole web. A web is tall and
 // narrow, and in a landscape card it came out too small to tell one from
 // another, which is the only thing the picker is for.
-const THUMB_BOX = [404, 10, 525, 700];
+// A 3/4 crop of the render, in canvas pixels: x, y, w, h.
+const WEB_BOX = [404, 10, 525, 700];      // the whole web
+const PAD_BOX = [335, 380, 330, 440];     // the index finger, pad and all
 // Cached on everything a thumbnail depends on, which is everything except
-// which web is selected — clicking down the list changes only the ring round
-// a card, and re-rendering four gloves to move it is 480 ms of nothing.
+// which option is selected — clicking down a list changes only the ring
+// round a card, and re-rendering four gloves to move it is 480 ms of nothing.
 let thumbKey = null;
 const thumbs = new Map();
-function webThumbs(field, fit) {
+
+// Replace an option card's supplied photograph with the customer's own glove,
+// rendered from the compositor. `jobs` is [id, setUp] per drawable card, where
+// setUp() puts the renderer in the state that card is offering.
+function liveThumbs(field, items, box, jobFor, restore) {
   const cards = field.querySelectorAll('.cards .card');
-  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag]);
+  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag,
+                              S.webType, box]);
   if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
   const put = (card, cv) => {
     const shown = el('canvas');
@@ -1806,38 +1816,60 @@ function webThumbs(field, fit) {
     else card.insertBefore(shown, card.firstChild);
   };
   const todo = [];
-  fit.forEach((w, i) => {
+  items.forEach((it, i) => {
     const card = cards[i];
-    if (!card || (!w.render && w.id !== NATIVE_WEB)) return;
-    const hit = thumbs.get(w.id);
-    if (hit) put(card, hit); else todo.push([w, card]);
+    const setUp = card && jobFor(it);
+    if (!setUp) return;
+    const hit = thumbs.get(box[0] + ':' + it.id);
+    if (hit) put(card, hit); else todo.push([it, card, setUp]);
   });
   if (!todo.length) return;
   const tmp = document.createElement('canvas');
   tmp.width = DATA.w; tmp.height = DATA.h;
   const tc = tmp.getContext('2d');
-  const keep = WEBS.find(x => x.id === S.webType);
-  let [sx, sy, sw, sh] = THUMB_BOX;
-  // The render is mirrored for a left-handed glove, so the web is on the
-  // other side of it and the crop has to be mirrored too.
+  let [sx, sy, sw, sh] = box;
+  // The render is mirrored for a left-handed glove, so what the crop is
+  // aimed at is on the other side of it and the crop has to mirror too.
   if (isLefty()) sx = DATA.w - sx - sw;
   // One per frame. Four full-canvas composites in a single frame is half a
   // second of locked-up page on a laptop and worse on a phone; spread out,
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) { R.setWeb((keep && keep.render) || null); return; }
-    const [w, card] = job;
-    R.setWeb(w.render || null);
+    if (!job) { restore(); return; }
+    const [it, card, setUp] = job;
+    setUp();
     R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
-    thumbs.set(w.id, cv);
+    thumbs.set(box[0] + ':' + it.id, cv);
     if (card.isConnected) put(card, cv);
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
+}
+
+function webThumbs(field, fit) {
+  const keep = WEBS.find(x => x.id === S.webType);
+  liveThumbs(field, fit, WEB_BOX,
+             w => (w.render || w.id === NATIVE_WEB)
+               ? () => R.setWeb(w.render || null) : null,
+             () => R.setWeb((keep && keep.render) || null));
+}
+
+// The finger pad, shown fitted rather than as a photograph of the part on its
+// own. Scott, on the supplied picture: "it shows only the top part of the
+// finger pad, and it doesn't really give an accurate description of what it
+// is or what it would look like." The hood has no photograph to render from,
+// so it keeps SSK's.
+function padThumbs(field) {
+  const on = S.pad === 'Finger Pad';
+  const hex = S.colors.pad_color ? hexOf('pad_color') : null;
+  liveThumbs(field, PADS, PAD_BOX,
+             p => (p.id === 'None' || p.id === 'Finger Pad')
+               ? () => R.setPad(p.id === 'Finger Pad', hex) : null,
+             () => R.setPad(on, hex));
 }
 
 /* --------------------------------------------------------------- 3. web */
