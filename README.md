@@ -27,6 +27,7 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/sheen.py` | Measures each highlight layer and evens them out |
 | `glove_builder/render_check.mjs` | Paints the glove one colour and checks every zone comes back that colour |
 | `glove_builder/state_check.mjs` | Poisons a saved draft field by field and checks the page still comes up |
+| `glove_builder/keyboard_check.mjs` | Builds the glove with Tab and Enter and checks focus survives every repaint |
 | `glove_builder/runs/rainbow-back/masks_raw/` | The raw SAM3 masks, committed so the pipeline re-runs without a GPU |
 | `glove_builder/source/` | The 4× upscaled source photograph the layers are cut from |
 | `glove_builder/zones_rainbow_back.json` | Per-zone boxes and HSV rules for the back view |
@@ -65,6 +66,7 @@ python -m venv .venv && .venv/bin/pip install -r glove_builder/requirements.txt
 .venv/bin/python glove_builder/sheen.py --assets glove_builder/customiser/assets --check
 node glove_builder/render_check.mjs
 node glove_builder/state_check.mjs
+node glove_builder/keyboard_check.mjs
 
 # optional: fold the whole app into one self-contained file
 .venv/bin/python glove_builder/customiser/bundle.py

@@ -296,6 +296,7 @@ function renderStart(b) {
   for (const st of STARTERS) {
     const c = el('button', 'card' + (S.startId === st.id ? ' is-on' : ''));
     c.type = 'button';
+    c.dataset.key = 'starter|' + st.id;
     const cv = el('canvas'); cv.width = 200; cv.height = 237;
     cv.style.width = '100%'; cv.style.aspectRatio = '200/237';
     c.appendChild(cv);
@@ -488,6 +489,7 @@ function renderColours(b) {
     if (f === 'back4' && indexIsOnePiece()) continue;   // merged into back3
     const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
     p.type = 'button';
+    p.dataset.key = 'part|' + f;
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
                   (f === 'back3' && indexIsOnePiece()
                     ? t('indexOnePiece') : fieldLabel(f, S.lang));
@@ -522,6 +524,7 @@ function renderLogos(b) {
   DATA.bullets.forEach((bl, i) => {
     const c = el('button', 'card' + (i === S.bullet ? ' is-on' : ''));
     c.type = 'button';
+    c.dataset.key = 'bullet|' + i;
     c.innerHTML = `<img src="${bl.thumb}" alt="" loading="lazy">` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
       (bl.active === false ? `<span class="sub">${t('notShown')}</span>` : '') + `</span>`;
@@ -657,6 +660,7 @@ function cardField(label, opts, value, onPick, required, shape) {
   for (const o of opts) {
     const c = el('button', 'card' + (value === o.id ? ' is-on' : ''));
     c.type = 'button';
+    c.dataset.key = `${label}|${o.id}`;
     c.innerHTML = (o.img ? `<img src="${o.img}" alt="" loading="lazy">` : '') +
       `<span class="cap"><span class="nm">${o.label}</span></span>`;
     c.onclick = () => onPick(o.id);
@@ -673,6 +677,7 @@ function swatchGrid(label, pal, value, onPick, required, note) {
   for (const [num, name, hx] of pal) {
     const s = el('button', 'sw' + (value === num ? ' is-on' : ''));
     s.type = 'button';
+    s.dataset.key = `${label}|${num}`;
     s.innerHTML = `<span class="chip" style="background:${hx}"></span>` +
                   `<span class="num">${num}.</span><span class="nm">${name}</span>`;
     s.onclick = () => onPick(num);
@@ -810,7 +815,9 @@ $('#copylink').onclick = ev => copyToClipboard(ev,
    the one case where the old control is the wrong place to be -- there the
    step's heading takes it, so the reader hears where they are. */
 const focusKey = (e) => e && e !== document.body && e.dataset
-  ? (e.dataset.key || `${e.tagName}|${e.className}|${e.textContent.trim()}`)
+  // Never className: it gains " is-on" the moment a control is chosen, so the
+  // one control whose focus matters most is the one it would fail to match.
+  ? (e.dataset.key || `${e.tagName}|${e.id}|${e.textContent.trim()}`)
   : null;
 
 function paint(rebuildBody = true) {
