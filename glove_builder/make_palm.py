@@ -28,13 +28,17 @@ PHOTO = HERE / "images/drive-2026-08/SE-1250-RAINBOW-Inside.jpg"
 WORK = 1400          # working width; the photo is 3679 square
 
 # hue window, saturation floor, and the colour to paint it in the check
+# The floors are down from where they started. A lace tail hanging off the
+# rim sits at S 0.22, the thumb panel in shadow at 0.19 and a finger channel
+# at 0.24, and at the first floors all three came out unclaimed and rendered
+# as bare tan. Hue still separates them; only the floor was wrong.
 BANDS = [
-    ("turquoise  palm + web",   (165, 205), 0.25, (60, 220, 210)),
-    ("pink       lacing + binding", (305, 355), 0.25, (240, 90, 170)),
-    ("purple     thumb side",    (262, 302), 0.22, (150, 80, 220)),
-    ("red        pinky side",    (352, 18),  0.30, (230, 60, 60)),
-    ("yellow     finger channel", (25, 55),  0.30, (240, 210, 60)),
-    ("green      finger channel", (130, 163), 0.28, (70, 200, 90)),
+    ("turquoise  palm + web",   (165, 205), 0.22, (60, 220, 210)),
+    ("pink       lacing + binding", (305, 355), 0.17, (240, 90, 170)),
+    ("purple     thumb side",    (262, 302), 0.16, (150, 80, 220)),
+    ("red        pinky side",    (352, 18),  0.24, (230, 60, 60)),
+    ("yellow     finger channel", (25, 55),  0.24, (240, 210, 60)),
+    ("green      finger channel", (130, 163), 0.20, (70, 200, 90)),
 ]
 
 
@@ -143,9 +147,13 @@ def main():
         binding = ring
     laces = pink & ~binding
 
+    # The glove layer is the LEATHER, not the filled outline. The web's
+    # openings are background you can see through on this side too, and a
+    # filled base paints them tan.
     zones = {"palm": palm, "web": web, "binding": binding, "laces": laces,
              "back1": band["purple"], "back9": band["red"],
-             "welting": band["yellow"] | band["green"], "glove": glove}
+             "welting": band["yellow"] | band["green"],
+             "glove": glove & ~holes}
     lay = HERE / "layers" / "rainbow-palm"
     lay.mkdir(parents=True, exist_ok=True)
     rgb = np.asarray(im)
