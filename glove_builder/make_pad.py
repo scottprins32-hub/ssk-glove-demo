@@ -41,7 +41,9 @@ PARTS["pad"] = {
     # bottom runs past the finger's own end so the pad tucks under the
     # lining, the way it does on the photograph — there the yellow disappears
     # under the binding rather than stopping short of it
-    "top": 0.53, "bottom": 1.06, "fill": 0.79,
+    # A little smaller than the first fit, which ran it right to the finger's
+    # own width: "de fingerpad is trouwens ook een klein stukje kleiner."
+    "top": 0.56, "bottom": 1.02, "fill": 0.72,
 }
 
 # The finger hood: a leather cap over the whole index finger, stitched down
@@ -55,26 +57,31 @@ PARTS["pad"] = {
 PARTS["hood"] = {
     "photo": "images/drive-2026-08/SSK-Finger-Hood.jpg",
     "dark_floor": 40,
-    # Traced OUTSIDE the stitching, not inside it: two rows of stitches round
-    # the cap are what say "hood" at a glance, and the first trace cut inside
-    # them and rendered a plain slab of leather.
-    #
-    # And it is a CAP, not a panel. The first version took the arc's two sides
-    # for the hood's and ran it the whole length of the finger — Scott: "je
-    # maakt de fingerhood enorm groot over de hele vinger, terwijl die
-    # helemaal niet zo groot is... hij loopt niet zo ver door." The long
-    # parallel seams below the arc are the finger's own welts, which are there
-    # on the no-hood photograph too. The hood is the rounded piece over the
-    # tip.
-    "outline": [(650, 244), (760, 252), (856, 288), (920, 360), (950, 452),
-                (958, 580), (952, 720), (940, 860), (926, 980), (900, 1060),
-                (840, 1108), (740, 1128), (640, 1130), (546, 1112),
-                (476, 1070), (446, 990), (432, 860), (424, 720),
-                (422, 580), (432, 448), (472, 348), (556, 276)],
+    # Traced OUTSIDE the stitching: two rows of stitches down each side and
+    # round the end are what say "hood" at a glance, and a trace inside them
+    # renders a plain slab of leather. Pulled in again where a lace crosses
+    # the hood in the photograph — that lace is the photographed glove's, and
+    # this one draws its own over the top.
+    "outline": [(690, 244), (800, 252), (895, 292), (955, 366), (984, 456),
+                (988, 620), (980, 800), (968, 980), (940, 1160),
+                (884, 1240), (872, 1330), (872, 1430), (886, 1510),
+                (906, 1580), (898, 1700), (876, 1880), (846, 1992),
+                (768, 2052), (656, 2066), (556, 2042), (496, 1986),
+                (474, 1880), (460, 1700), (450, 1520), (440, 1340),
+                (428, 1160), (418, 980), (414, 800), (418, 620),
+                (430, 448), (470, 348), (566, 272)],
     "erode": 3,
-    # Where it lands: the arc's top sits about a tenth of the finger below
-    # the tip on the photograph, and the cap covers roughly the top half.
-    "top": 0.06, "bottom": 0.52, "fill": 0.86,
+    # Where it lands. Not at the fingertip: the hood is the cap the index
+    # finger sits in when it is held OUTSIDE the glove, so it is on the lower
+    # half of the finger, in the same band as the pad, and its rounded end
+    # runs on past the finger over the belt. Scott: "die hoed zit gewoon net
+    # boven de belt, als de vinger uit de handschoen is."
+    #
+    # And it starts BELOW the flag. The flag is embroidered on bare finger
+    # above the hood on the photograph; put the hood at the tip and the flag
+    # lands on top of it, which is what the first two tries did. The flag
+    # mount ends 42% of the way down the finger, so the hood starts there.
+    "top": 0.43, "bottom": 1.06, "fill": 0.90,
 }
 
 
@@ -134,6 +141,15 @@ def main():
                              (ndimage.binary_erosion(sil > 40,
                                                      np.ones((3, 3), bool))
                               * 255).astype(np.uint8))
+    # Nor over the hand opening. Both of these run on past the end of the
+    # finger so they tuck under the binding rather than stopping short of it,
+    # and the hood runs far enough to reach the opening — where the binding
+    # that would hide it has no leather to hide it with, and its corner came
+    # out as a tongue hanging over the pocket.
+    lin = Image.open(HERE / "layers/rainbow-back-4x/lining.png").convert("RGBA")
+    lin = np.asarray(lin.resize((W, H), Image.LANCZOS))[..., 3] > 90
+    out[..., 3][ndimage.binary_dilation(lin, np.ones((3, 3), bool),
+                                        iterations=2)] = 0
 
     lay = HERE / "layers" / args.part
     lay.mkdir(parents=True, exist_ok=True)

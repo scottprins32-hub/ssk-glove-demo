@@ -1,11 +1,12 @@
 {
-  "pad_px_photo": 89983,
-  "pad_px_render": 46120,
+  "part": "pad",
+  "px_photo": 89969,
+  "px_render": 36300,
   "lands": [
-    430,
-    424,
-    560,
-    833
+    436,
+    447,
+    553,
+    802
   ],
   "index_finger": [
     408,

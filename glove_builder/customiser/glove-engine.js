@@ -433,7 +433,10 @@ export class GloveRenderer {
         ctx.drawImage(c, c._ox, c._oy);
       }
     }
-    if (mergeIndex && this.imgs.welt_index && D.bbox.welt_index) {
+    // ...but not over a pad or a hood. That seam runs down the index finger,
+    // and a piece of leather laid over the finger covers it — the same reason
+    // the welting itself is drawn before the pad rather than after.
+    if (mergeIndex && !this.pad && this.imgs.welt_index && D.bbox.welt_index) {
       const c = this.tinted('welt_index', this.hex('back3', state));
       ctx.drawImage(c, c._ox, c._oy);
     }
