@@ -81,7 +81,7 @@ PARTS["hood"] = {
     # above the hood on the photograph; put the hood at the tip and the flag
     # lands on top of it, which is what the first two tries did. The flag
     # mount ends 42% of the way down the finger, so the hood starts there.
-    "top": 0.43, "bottom": 1.06, "fill": 0.90,
+    "top": 0.54, "bottom": 1.10, "fill": 0.84,
 }
 
 
@@ -141,15 +141,17 @@ def main():
                              (ndimage.binary_erosion(sil > 40,
                                                      np.ones((3, 3), bool))
                               * 255).astype(np.uint8))
-    # Nor over the hand opening. Both of these run on past the end of the
-    # finger so they tuck under the binding rather than stopping short of it,
-    # and the hood runs far enough to reach the opening — where the binding
-    # that would hide it has no leather to hide it with, and its corner came
-    # out as a tongue hanging over the pocket.
+    # Over the hand opening a LITTLE, and no more. Both of these run past the
+    # end of the finger so they tuck under the binding rather than stopping
+    # short of it, and on the glove the hood laps over the belt and the lining
+    # a touch — Scott: "the hood is just overlapping it a little bit, so you
+    # can let it overlap with that stuff as well." Clipped against the opening
+    # eroded rather than the opening itself, so that lap is allowed and the
+    # tongue that used to hang out over the pocket is not.
     lin = Image.open(HERE / "layers/rainbow-back-4x/lining.png").convert("RGBA")
     lin = np.asarray(lin.resize((W, H), Image.LANCZOS))[..., 3] > 90
-    out[..., 3][ndimage.binary_dilation(lin, np.ones((3, 3), bool),
-                                        iterations=2)] = 0
+    out[..., 3][ndimage.binary_erosion(lin, np.ones((3, 3), bool),
+                                       iterations=7)] = 0
 
     lay = HERE / "layers" / args.part
     lay.mkdir(parents=True, exist_ok=True)

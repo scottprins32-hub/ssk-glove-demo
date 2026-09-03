@@ -412,7 +412,7 @@ function renderFit(b) {
 // another, which is the only thing the picker is for.
 // A 3/4 crop of the render, in canvas pixels: x, y, w, h.
 const WEB_BOX = [404, 10, 525, 700];      // the whole web
-const PAD_BOX = [205, 50, 585, 780];      // the index finger, tip to binding
+const PAD_BOX = [205, 120, 585, 780];     // the index finger, below the flag to the binding
 // Cached on everything a thumbnail depends on, which is everything except
 // which option is selected — clicking down a list changes only the ring
 // round a card, and re-rendering four gloves to move it is 480 ms of nothing.
