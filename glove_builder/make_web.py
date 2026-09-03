@@ -1162,13 +1162,18 @@ def main():
         # shallow rise, so the clamp bites the dark side harder and the whole
         # web came out 5 to 8 percent darker than the glove around it. This
         # is texture, not tone — the tone is the material's.
-        # Nothing to take texture from where there were no pixels. The fill
-        # that reaches a web out to the opening copies from the nearest real
-        # leather and blurs it, and running that through the ratio turned the
-        # streaks into folds of drapery across half the web. Flat material
-        # there, which is what it is.
+        # Less and less texture the further the pixels are from any that were
+        # photographed. The fill that reaches a web out to the opening copies
+        # from the nearest real leather and blurs it: at its edge that is a
+        # fair guess and carries the seam it was copied from, and deep inside
+        # it is a smear, which the ratio turned into folds of drapery across
+        # half the web. Switching it off outright instead left the fill as
+        # flat slabs with straight edges against textured leather — Scott:
+        # "there are just 2 blocks covering some parts of the web." So: full
+        # texture where the fill meets real pixels, none by thirty pixels in.
         if flat is not None and flat.any():
-            r = np.where(flat, 1.0, r)
+            deep = np.clip(ndimage.distance_transform_edt(flat) / 30.0, 0, 1)
+            r = 1.0 + (r - 1.0) * (1.0 - deep)
         out = mat.astype(np.float32) * r[..., None]
         m = a[..., 3] > 40
         if m.any():
