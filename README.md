@@ -212,6 +212,33 @@ therefore ours, inferred, and the only way to make it better is a better
 photograph: the swatch card flat, evenly lit, with a white sheet in the
 frame to key the white balance off.
 
+### The one photo session that unblocks most of this
+
+Every web so far is a different glove, under different light, from a
+different camera position, warped into this glove's opening. The material is
+solved — every web is cut from one sheet now, and its own surface is taken
+off its own photograph — but the *shapes* still come from photographs that do
+not line up, and each one has to be traced by hand.
+
+A repeatable rig fixes that, and it does not need to be fancy:
+
+- Camera on a tripod or propped, not moved between shots.
+- Glove flat on a white sheet, its position marked so each one lands in the
+  same place. White matters twice over: it is what tells a web's real windows
+  from its leather, because daylight through a web photographs as background.
+- Window light, or a lamp bounced off a wall. No flash — the flash is what
+  made the first webs look varnished.
+- **Shoot the rainbow calibration glove first, then every other glove without
+  touching anything.** That is the point of the whole exercise: anything shot
+  in the same frame drops into the opening with almost no warping, which is
+  the "immediately fits perfectly" property of the configurators Scott is
+  being compared to.
+
+In one session, ideally: the eight remaining webs (SMS, SMLEE, Modified
+Trapeze, Basket, Em Rocket, Sasaki 1, Sasaki 2, Trapeze), a finger hood and a
+finger pad glove, the rainbow glove's thumb and pinky sides, and the palm.
+And, separately, the leather swatch card flat with a white sheet in frame.
+
 ## Still to come
 
 All 36 order-form questions are asked, plus pinky embroidery — not on the
@@ -222,9 +249,13 @@ preview merges it into Back 7), the palm, and the pad/hood colour. Those are
 collected and labelled as not shown rather than hidden. The other views will
 fix that.
 
-The web-type picker uses SSK's own form thumbnails, which carry burned-in
-Japanese captions — they want reshooting or cropping. And nothing is wired to
-a backend yet: the flow ends with a reference code and a copyable
+The web-type picker draws its own thumbnails for the five webs that can be
+rendered — the customer's colours, the customer's hand, cropped to the web.
+The other eight still use SSK's form photographs, which are a different glove
+in a different colour each and several of which carry burned-in Japanese
+captions; the note under the picker says when the preview cannot follow. Those
+eight go away with one photo session (see the shoot rig above). And nothing is
+wired to a backend yet: the flow ends with a reference code and a copyable
 specification, which is what SSK receives alongside the order.
 
 ## Hosting

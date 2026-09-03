@@ -399,6 +399,56 @@ The colour picker. One function renders all four palettes (`swatchGrid`,
 
 ---
 
+## Pattern: the option card
+
+Anything chosen from pictures rather than from a colour chip: hand, size,
+finger pad, web type, bullet, flag. One function builds all of them
+(`cardField`, `app.js`).
+
+### Anatomy
+
+```
+.field
+├── .field-lab            label, uppercase display, + "still needed" / "optional"
+└── .cards                grid, repeat(auto-fill, minmax(120px, 1fr)), gap --space-3
+    └── .card             <button>: [picture] [.cap > .nm]
+```
+
+### Numbers
+
+- Picture: `width: 100%`, `aspect-ratio: 4/3`, `object-fit: cover`, on
+  `--gray-50` so a slow image does not shift the layout.
+- Caption padding `--space-2 --space-3`, `--text-xs`.
+- Selected: `border-color: --state-selected` plus `inset 0 0 0 1px` of the
+  same, exactly as a swatch. Hover raises the shadow; disabled drops to
+  `--state-disabled-opacity` with `cursor: not-allowed`.
+
+### The portrait variant
+
+`cardField(..., 'portrait')` puts `is-portrait` on the grid: **3/4** pictures
+at `minmax(108px, 1fr)`. One field uses it — the web picker — for a
+substantive reason rather than a decorative one. A web is a tall narrow thing
+occupying the right third of the glove, and in a landscape card the five webs
+the configurator can draw came out too small to tell apart, which is the only
+thing the picker is for.
+
+### Rules
+
+- **The picture is `<img>` or `<canvas>`, and they are styled together.** The
+  web picker replaces the `<img>` with a canvas rendered from the compositor
+  for every web that can be drawn, so the customer compares two pictures of
+  their own glove instead of two photographs of someone else's. Any rule that
+  applies to one has to apply to both or the row jumps when the canvas lands.
+- **A card is a real `<button type="button">`,** same as a swatch, with the
+  same selected/focus split: selection is the inset box-shadow, focus is a
+  real outline. See *Interaction states*.
+- **Never let the picture carry the meaning alone.** Every card has a text
+  caption under it, because several of the supplied photographs are of a
+  different glove in a different colour and one of them has a NEW badge burned
+  into the pixels.
+
+---
+
 ## Pattern: part selection
 
 How you choose *which* part you are colouring. Three surfaces kept in sync by

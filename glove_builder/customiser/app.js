@@ -393,6 +393,69 @@ function renderFit(b) {
   b.appendChild(swatchField('pad_color', note, false));
 }
 
+// The picker's pictures are SSK's own order-form thumbnails: a different
+// glove in a different colour for every row, several with Japanese captions
+// burned into them. Five of the thirteen webs can be drawn on the customer's
+// own glove now, and choosing between two pictures of your own glove is a
+// different thing from choosing between two pictures of someone else's. The
+// other eight keep the form's photograph, and the note under the picker
+// already says when the preview cannot follow.
+// x, y, w, h in canvas pixels — 3:4 over the whole web. A web is tall and
+// narrow, and in a landscape card it came out too small to tell one from
+// another, which is the only thing the picker is for.
+const THUMB_BOX = [404, 10, 525, 700];
+// Cached on everything a thumbnail depends on, which is everything except
+// which web is selected — clicking down the list changes only the ring round
+// a card, and re-rendering four gloves to move it is 480 ms of nothing.
+let thumbKey = null;
+const thumbs = new Map();
+function webThumbs(field, fit) {
+  const cards = field.querySelectorAll('.cards .card');
+  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag]);
+  if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
+  const put = (card, cv) => {
+    const shown = el('canvas');
+    shown.width = cv.width; shown.height = cv.height;
+    shown.getContext('2d').drawImage(cv, 0, 0);
+    const old = card.querySelector('img, canvas');
+    if (old) card.replaceChild(shown, old);
+    else card.insertBefore(shown, card.firstChild);
+  };
+  const todo = [];
+  fit.forEach((w, i) => {
+    const card = cards[i];
+    if (!card || (!w.render && w.id !== NATIVE_WEB)) return;
+    const hit = thumbs.get(w.id);
+    if (hit) put(card, hit); else todo.push([w, card]);
+  });
+  if (!todo.length) return;
+  const tmp = document.createElement('canvas');
+  tmp.width = DATA.w; tmp.height = DATA.h;
+  const tc = tmp.getContext('2d');
+  const keep = WEBS.find(x => x.id === S.webType);
+  let [sx, sy, sw, sh] = THUMB_BOX;
+  // The render is mirrored for a left-handed glove, so the web is on the
+  // other side of it and the crop has to be mirrored too.
+  if (isLefty()) sx = DATA.w - sx - sw;
+  // One per frame. Four full-canvas composites in a single frame is half a
+  // second of locked-up page on a laptop and worse on a phone; spread out,
+  // the cards fill in one after another and nothing blocks.
+  const step = () => {
+    const job = todo.shift();
+    if (!job) { R.setWeb((keep && keep.render) || null); return; }
+    const [w, card] = job;
+    R.setWeb(w.render || null);
+    R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    const cv = document.createElement('canvas');
+    cv.width = 300; cv.height = 400;
+    cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
+    thumbs.set(w.id, cv);
+    if (card.isConnected) put(card, cv);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 /* --------------------------------------------------------------- 3. web */
 function renderWeb(b) {
   if (!S.size) {
@@ -402,9 +465,12 @@ function renderWeb(b) {
   const fit = WEBS.filter(w => w.sizes.includes(S.size));
   b.appendChild(el('p', 'note',
     `${fit.length} ${t('filtered')} ${S.size}`));
-  b.appendChild(cardField(t('webType'), fit.map(w => ({
+  const field = cardField(t('webType'), fit.map(w => ({
     id: w.id, label: w.id, img: w.img
-  })), S.webType, v => { snapshot(); S.webType = v; draw(); paint(); }, true));
+  })), S.webType, v => { snapshot(); S.webType = v; draw(); paint(); }, true,
+    'portrait');
+  b.appendChild(field);
+  webThumbs(field, fit);
   // Only some webs are photographed. The rest are ordered correctly but the
   // preview still shows the standard one, and saying so beats letting someone
   // believe the picture is their glove.
@@ -584,10 +650,10 @@ function choiceField(label, opts, value, onPick, required) {
   f.appendChild(row);
   return f;
 }
-function cardField(label, opts, value, onPick, required) {
+function cardField(label, opts, value, onPick, required, shape) {
   const f = el('div', 'field');
   f.appendChild(labelRow(label, required, value != null));
-  const grid = el('div', 'cards');
+  const grid = el('div', 'cards' + (shape ? ' is-' + shape : ''));
   for (const o of opts) {
     const c = el('button', 'card' + (value === o.id ? ' is-on' : ''));
     c.type = 'button';
