@@ -1106,9 +1106,17 @@ class GloveRenderer {
   // A rectangular embroidered patch, laid on the index finger the way SSK
   // sews it: a quarter turn, so the stripes run along the finger, with the
   // leather's own shading multiplied back over it.
-  drawFlag(ctx) {
+  drawFlag(ctx, mirror) {
     const M = this.DATA.flagMount, im = this.flagImg;
     if (!M || !im) return;
+    // The patch is sewn along the finger, and the finger leans the other way
+    // on a left-handed glove. The patch is flipped back about its own centre
+    // so it stays readable, which leaves its LEAN right-handed — the same
+    // fault the SSK wordmark had, and Scott saw it on both: "somehow the flag
+    // also goes, which is weird... and the curvature of the SSK logo on the
+    // ring finger is still curved as a righty glove." Negating the angle
+    // leans it with the finger it is sewn to.
+    const ang = mirror ? -M.angle : M.angle;
     // The patch is as wide as the finger allows; its length follows the flag's
     // own proportions, so the Stars and Stripes (19:10) does not get squashed
     // into the 3:2 the mount was measured at.
@@ -1122,7 +1130,7 @@ class GloveRenderer {
 
     octx.save();
     octx.translate(M.cx, M.cy);
-    octx.rotate(M.angle);
+    octx.rotate(ang);
     octx.save();
     octx.rotate(Math.PI / 2);              // hoist to the fingertip
     octx.drawImage(im, -L / 2, -M.w / 2, L, M.w);
@@ -1146,7 +1154,7 @@ class GloveRenderer {
     // underneath it is safe.
     octx.save();
     octx.translate(M.cx, M.cy);
-    octx.rotate(M.angle);
+    octx.rotate(ang);
     octx.beginPath();
     octx.rect(-M.w / 2, -L / 2, M.w, L);
     octx.clip();
@@ -1318,7 +1326,8 @@ class GloveRenderer {
     }
     if (mergeIndex) {
       const M = D.flagMount, r = Math.max(M.w, M.h);
-      this.unmirror(ctx, M.cx - r, M.cx + r, mirror, () => this.drawFlag(ctx));
+      this.unmirror(ctx, M.cx - r, M.cx + r, mirror,
+                    () => this.drawFlag(ctx, mirror));
     }
     const bb = D.bulletBox;
     this.unmirror(ctx, bb[0], bb[2], mirror,
