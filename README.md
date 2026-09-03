@@ -88,8 +88,7 @@ SAM3 crashes on CPU in the fused bf16 MLP and on a pinned-memory transfer.
 Eight steps, one decision at a time, in Dutch by default with an EN/NL toggle.
 It covers all 36 questions of SSK's order form — including the nine the old
 builder had no answer for — and marks the fields the back view cannot show
-(the two wingtips, the palm, and the pad colour) rather than pretending they
-are not asked. Prices: € 294,95 for the stock Pro glove, € 374,95 configured.
+(the two wingtips and the palm) rather than pretending they are not asked. Prices: € 294,95 for the stock Pro glove, € 374,95 configured.
 
 Work in progress is kept in local storage, so a refresh and even a browser
 restart keep it, and nothing about the customer leaves the device; "copy link"
@@ -237,19 +236,26 @@ A repeatable rig fixes that, and it does not need to be fancy:
   being compared to.
 
 In one session, ideally: the eight remaining webs (SMS, SMLEE, Modified
-Trapeze, Basket, Em Rocket, Sasaki 1, Sasaki 2, Trapeze), a finger hood and a
-finger pad glove, the rainbow glove's thumb and pinky sides, and the palm.
-And, separately, the leather swatch card flat with a white sheet in frame.
+Trapeze, Basket, Em Rocket, Sasaki 1, Sasaki 2, Trapeze), the rainbow glove's
+thumb and pinky sides, and the palm. And, separately, the leather swatch card
+flat with a white sheet in frame.
+
+A hood and a pad glove would be worth adding to that list even though both are
+drawn already. They come from close-ups of two other gloves, so where they sit
+on the finger is set by fractions measured off those photographs rather than
+read off this one — which took three tries to get right, and is the sort of
+thing one frame settles for good.
 
 ## Still to come
 
 All 36 order-form questions are asked, plus pinky embroidery — not on the
 form, but Pim confirmed it is orderable and Scott's own glove carries it.
-Five of the 36 cannot be *previewed*
-from a back-view photograph: Back 1 and Back 9 (the wingtips), Back 8 (the
-preview merges it into Back 7), the palm, and the pad/hood colour. Those are
-collected and labelled as not shown rather than hidden. The other views will
-fix that.
+Four of the 36 cannot be *previewed* from a back-view photograph: Back 1 and
+Back 9 (the wingtips), Back 8 (the preview merges it into Back 7), and the
+palm. Those are collected and labelled as not shown rather than hidden. The
+other views will fix that. The pad and the hood are both drawn now, cut from
+SSK's own photographs of them, so the pad/hood colour is previewed too — the
+one thing it needs is for one of them to be fitted.
 
 The web-type picker draws its own thumbnails for the five webs that can be
 rendered — the customer's colours, the customer's hand, cropped to the web.

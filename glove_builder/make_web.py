@@ -1058,6 +1058,7 @@ def main():
         aligned["leather"], have, aperture(), finger=fing,
         min_window=np.inf if spec.get("closed") else 1200, window=win)
     print(f"web completed out to the opening: {int(invented.sum())} px added")
+    Image.fromarray((invented * 255).astype(np.uint8)).save(out / "invented.png")
     if win is not None:
         _lea = np.asarray(aligned["leather"])[..., 3] > 90
         print(f"  windows still open after the fill: "
