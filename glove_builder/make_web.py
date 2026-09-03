@@ -531,6 +531,15 @@ def cut(spec):
             cv2.fillPoly(fp, [np.array(spec["finger_poly"], np.int32)], 1)
             finger = glove & fp.astype(bool) & ~region & ~lace
             finger = ndimage.binary_opening(finger, np.ones((5, 5), bool))
+            # A band along the web, not the whole finger. The strip exists to
+            # carry the finger's rolled edge from the same photograph as the
+            # web, and that edge is 30 px wide; the Spiral I's polygon took
+            # 100 px, the SMK's 74, and both replaced most of the calibration
+            # glove's index finger with a feathered slab of another glove's.
+            width = int(spec.get("finger_band", 36))
+            if width > 0:
+                finger &= ndimage.binary_dilation(
+                    region, np.ones((3, 3), bool), iterations=width)
         return im, web, lace, finger, glove
 
 
@@ -775,6 +784,29 @@ def emboss(img, amp=0.42, falloff=5.0, light=(-0.6, -0.8), bias=0.55):
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
+def cord(img, half=6.0, floor=0.55):
+    """Shade a lace as a round cord: dark at both edges, a ridge down the
+    middle, whatever shape the piece was traced in.
+
+    emboss() gives a flat bar a shadow on its far side, which is right for a
+    bar and wrong for a lace — a lace is round, and reads as one by being
+    lit along its crown and falling away on both sides. Hand-traced lace
+    polygons are angular and a little fat, and lit flat they read as lumps;
+    lit as cord the eye takes the ridge as the lace and the rest as its
+    curvature. `half` is the half-width the profile is built for, in canvas
+    pixels; wider pieces plateau at the crown rather than over-brighten.
+    """
+    a = np.asarray(img).astype(np.float32)
+    m = a[..., 3] > 90
+    if not m.any():
+        return img
+    d = ndimage.distance_transform_edt(m)
+    t = np.clip(d / half, 0.0, 1.0)
+    shade = floor + (1.0 - floor) * np.sqrt(t)
+    a[..., :3] *= np.where(m, shade, 1.0)[..., None]
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
 def straighten(img):
     """Trim a layer's left edge back to the straight line through its ends.
 
@@ -887,8 +919,15 @@ def main():
     # showing." That bar is the divider between two windows, and the lower
     # window was being filled in because `complete` would not keep a gap that
     # touches the finger. It does not have to decide any more.
+    # The hull takes the finger strip in with it. The Spiral I's biggest
+    # window is the one between the index finger and the first bar of the
+    # web, and a hull drawn round the web alone stopped at that bar — so the
+    # window fell outside it, was never counted, and the fill closed it.
+    parts = web | lace
+    if finger is not None:
+        parts = parts | finger
     hull = ndimage.binary_fill_holes(
-        ndimage.binary_closing(web | lace, np.ones((25, 25), bool)))
+        ndimage.binary_closing(parts, np.ones((25, 25), bool)))
     window = hull & ~glove
     window = ndimage.binary_opening(window, np.ones((5, 5), bool))
     lbl, n = ndimage.label(window)
@@ -910,8 +949,13 @@ def main():
 
     aligned = fit(layers, web | lace, finger=finger)
     # The windows come back out of the warp as a mask, not as a layer to draw.
+    if "window" in aligned:
+        aligned["window"].save(out / "window_aligned.png")   # for check.jpg's sake
     win = (np.asarray(aligned.pop("window"))[..., 3] > 90
            if "window" in aligned else None)
+    if win is not None:
+        print(f"windows on the glove: {int(win.sum())} px, "
+              f"{int((win & aperture()).sum())} of them inside the opening")
     # Before anything measures what the web covers, not after. Straightening
     # the finger's edge only ever removes pixels, and doing it last took away
     # ground that `complete` had already counted as filled — which is where the
@@ -938,6 +982,10 @@ def main():
         aligned["leather"], have, aperture(), finger=fing,
         min_window=np.inf if spec.get("closed") else 1200, window=win)
     print(f"web completed out to the opening: {added} px added")
+    if win is not None:
+        _lea = np.asarray(aligned["leather"])[..., 3] > 90
+        print(f"  windows still open after the fill: "
+              f"{int((win & ~_lea).sum())} of {int(win.sum())} px")
     # And no further than the opening. A cutout warped in from another
     # photograph does not stop exactly on the seam — the Diamond Net ran 5,600
     # px of web leather straight across it and onto the index finger, the
@@ -1060,7 +1108,7 @@ def main():
     if "finger" in aligned:
         aligned["finger"] = emboss(aligned["finger"])
     if "lace" in aligned:
-        aligned["lace"] = emboss(aligned["lace"], amp=0.55, falloff=2.6)
+        aligned["lace"] = cord(aligned["lace"])
     print("cut from the glove's own web leather, with edges shaded")
 
     # where build_assets.py picks them up, alongside the glove's own layers
