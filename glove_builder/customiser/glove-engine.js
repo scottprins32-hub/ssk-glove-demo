@@ -198,10 +198,13 @@ export class GloveRenderer {
     im.src = src;
   }
 
-  // Whether the finger pad is fitted, and in what colour. White until the
-  // customer picks one — that is the order the form asks in.
-  setPad(on, hex) {
-    this.pad = !!on;
+  // Which of the two things can be fitted to the index finger — 'pad',
+  // 'hood', or nothing — and in what colour. White until the customer picks
+  // one, which is the order the form asks in. Both are one piece of leather
+  // laid over the finger, cut from SSK's own photograph of it, and both
+  // render the same way.
+  setPad(part, hex) {
+    this.pad = (part === true) ? 'pad' : (part || null);
     this.padHex = hex || '#F2F0EA';
   }
 
@@ -352,8 +355,9 @@ export class GloveRenderer {
       // lining and the binding then go back over its lower end, because on
       // the photograph the pad disappears under the binding rather than
       // sitting on top of it.
-      if (z.id === 'welting' && this.pad && this.imgs.pad && D.bbox.pad) {
-        const pd = this.tinted('pad', this.padHex || '#F2F0EA');
+      if (z.id === 'welting' && this.pad && this.imgs[this.pad]
+          && D.bbox[this.pad]) {
+        const pd = this.tinted(this.pad, this.padHex || '#F2F0EA');
         ctx.drawImage(pd, pd._ox, pd._oy);
         // Clipped to where the binding is a solid band. Drawing all of it
         // brought back a spur of welt seam that the segmentation had put on

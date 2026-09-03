@@ -965,14 +965,25 @@ def main():
     # make_pad.py. It is an option on the form, so it only renders when it is
     # ordered, and it takes the pad colour.
     pad_under = None
-    pad_f = pathlib.Path(__file__).parent.parent / "layers" / "pad" / "pad.png"
-    if pad_f.exists():
-        pim = Image.open(pad_f).convert("RGBA").resize((W, H), Image.LANCZOS)
-        assets["pad"] = to_data_uri(tint_base(pim), quality=85, method=4)
+    _pim = None
+    for _part in ("pad", "hood"):
+        _f = (pathlib.Path(__file__).parent.parent / "layers" / _part
+              / f"{_part}.png")
+        if not _f.exists():
+            continue
+        pim = Image.open(_f).convert("RGBA").resize((W, H), Image.LANCZOS)
+        assets[_part] = to_data_uri(tint_base(pim), quality=85, method=4)
         psp = match_sheen(spec_base(pim), sheen_for.get("webfinger"))
         if psp is not None:
-            assets["pad_hi"] = to_data_uri(psp, quality=80, method=4)
-        print(f"finger pad: {(np.asarray(pim)[..., 3] > 90).sum()} px -> pad")
+            assets[_part + "_hi"] = to_data_uri(psp, quality=80, method=4)
+        print(f"finger {_part}: "
+              f"{(np.asarray(pim)[..., 3] > 90).sum()} px -> {_part}")
+        # the pad is the smaller of the two and sets where the binding is
+        # redrawn; the hood reaches further down but tucks under the same band
+        if _pim is None:
+            _pim = pim
+    if _pim is not None:
+        pim = _pim
         # Where the pad's lower end genuinely disappears under the binding.
         #
         # The engine draws the binding and the lining back over the pad for

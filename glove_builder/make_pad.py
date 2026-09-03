@@ -1,4 +1,5 @@
-"""Cut the finger pad out of a photograph and fit it to the index finger.
+"""Cut the finger pad or the finger hood out of a photograph and fit it to
+the index finger.
 
 Same method as the webs (make_web.py): trace the outline, take what is inside,
 warp it on, clip to the glove's silhouette. The pad is simpler — one piece of
@@ -8,9 +9,10 @@ Where it lands is measured off the photograph rather than guessed. On SSK's
 own glove the pad covers the index finger from 53% of its length down to 98%,
 and 79% of its width there; those fractions carry to any glove.
 
-    python glove_builder/make_pad.py
+    python glove_builder/make_pad.py --part pad
+    python glove_builder/make_pad.py --part hood
 
-Writes layers/pad/pad.png and runs/pad/check.jpg.
+Writes layers/<part>/<part>.png and runs/<part>/check.jpg.
 """
 
 import json
@@ -27,7 +29,8 @@ HERE = pathlib.Path(__file__).parent
 # Two photographs of the same pad, a yellow one and a pale blue one. The
 # yellow is the cut — it is the larger and the better lit — and the SMK is
 # kept as the check that the shape is the pad's and not that glove's.
-SPEC = {
+PARTS = {}
+PARTS["pad"] = {
     "photo": "images/drive-2026-07/YellowPad1.jpg",
     "glove_mask": "runs/standard-i/masks/glove.png",
     "outline": [(630, 662), (682, 674), (716, 710), (738, 780), (747, 880),
@@ -41,18 +44,61 @@ SPEC = {
     "top": 0.53, "bottom": 1.06, "fill": 0.79,
 }
 
+# The finger hood: a leather cap over the whole index finger, stitched down
+# both sides, its rounded end hanging past the finger over the pocket. SSK's
+# own photograph of one, shot down the finger almost square-on — which is why
+# it needs the same perspective correction the pad and the webs do.
+#
+# There is no segmentation run for this photograph and it does not need one:
+# it is a close-up, so everything in it except the pocket behind the hood's
+# end is glove, and a luminance floor separates those.
+PARTS["hood"] = {
+    "photo": "images/drive-2026-08/SSK-Finger-Hood.jpg",
+    "dark_floor": 40,
+    # Traced OUTSIDE the stitching, not inside it. Two rows of stitches down
+    # each side and round the tip are what say "hood" at a glance, and the
+    # first trace cut inside them and rendered a plain slab of leather.
+    "outline": [(690, 244), (800, 252), (895, 292), (955, 366), (984, 456),
+                (988, 620), (980, 800), (968, 980), (940, 1160),
+                # pulled in where a lace crosses the hood in the photograph:
+                # that lace is the photographed glove's, and this one has its
+                # own drawn over the top
+                (884, 1240), (872, 1330), (872, 1430), (886, 1510),
+                (906, 1580), (898, 1700), (876, 1880), (846, 1992),
+                (768, 2052), (656, 2066), (556, 2042), (496, 1986),
+                (474, 1880), (460, 1700), (450, 1520), (440, 1340),
+                (428, 1160), (418, 980), (414, 800), (418, 620),
+                (430, 448), (470, 348), (566, 272)],
+    "erode": 3,
+    # The hood starts at the fingertip rather than half way down, and hangs
+    # further past the end than the pad does.
+    "top": 0.03, "bottom": 1.05, "fill": 0.87,
+}
+
 
 def main():
+    import argparse
     import cv2
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--part", default="pad", choices=sorted(PARTS))
+    args = ap.parse_args()
+    SPEC = PARTS[args.part]
     im = Image.open(HERE / SPEC["photo"]).convert("RGB")
-    glove = np.asarray(Image.open(HERE / SPEC["glove_mask"]).convert("L")) > 127
+    if "glove_mask" in SPEC:
+        glove = np.asarray(Image.open(HERE / SPEC["glove_mask"])
+                           .convert("L")) > 127
+    else:
+        lum = np.asarray(im).astype(np.float32) @ np.array(
+            [0.299, 0.587, 0.114], np.float32)
+        glove = lum > SPEC.get("dark_floor", 40)
     poly = np.zeros(glove.shape, np.uint8)
     cv2.fillPoly(poly, [np.array(SPEC["outline"], np.int32)], 1)
     pad = glove & poly.astype(bool)
     pad = ndimage.binary_opening(pad, np.ones((5, 5), bool))
     # pull in off the trace: the pad's stitched border sits against the shell,
     # and a few pixels of shell round the edge render as a blue fringe
-    pad = ndimage.binary_erosion(pad, np.ones((7, 7), bool))
+    k = int(SPEC.get("erode", 7))
+    pad = ndimage.binary_erosion(pad, np.ones((k, k), bool))
 
     # where it goes: the index finger, which on this view is back 3 and back 4
     H = 1100
@@ -87,11 +133,11 @@ def main():
                                                      np.ones((3, 3), bool))
                               * 255).astype(np.uint8))
 
-    lay = HERE / "layers" / "pad"
+    lay = HERE / "layers" / args.part
     lay.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(out, "RGBA").save(lay / "pad.png")
+    Image.fromarray(out, "RGBA").save(lay / f"{args.part}.png")
 
-    run = HERE / "runs" / "pad"
+    run = HERE / "runs" / args.part
     run.mkdir(parents=True, exist_ok=True)
     ov = np.asarray(im).copy()
     ov[pad] = (0.35 * ov[pad] + 0.65 * np.array([60, 230, 90])).astype(np.uint8)
@@ -102,7 +148,8 @@ def main():
 
     a = out[..., 3] > 90
     yy, xx = np.nonzero(a)
-    rep = {"pad_px_photo": int(pad.sum()), "pad_px_render": int(a.sum()),
+    rep = {"part": args.part,
+           "px_photo": int(pad.sum()), "px_render": int(a.sum()),
            "lands": [int(xx.min()), int(yy.min()), int(xx.max()), int(yy.max())],
            "index_finger": [int(np.nonzero(finger)[1].min()), y0,
                             int(np.nonzero(finger)[1].max()), y1]}

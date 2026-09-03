@@ -48,6 +48,9 @@ const TIED = { palm: 'back2', back2: 'palm' };
    on a single unsplit index-finger panel. */
 const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
 
+// What the form calls it, and what the renderer calls the layer.
+const PAD_PART = { 'Finger Pad': 'pad', 'Finger Hood': 'hood' };
+
 /* A left-handed thrower's glove is the mirror of a right-handed one. The
    calibration glove is right-handed, so the preview flips for the other. */
 const isLefty = () => /^L/i.test(S.hand || '');
@@ -253,7 +256,8 @@ function draw() {
   R.setWeb(w && w.render);
   // The pad is fitted or it is not; until a colour is chosen it is white,
   // which is the order the form asks in.
-  R.setPad(S.pad === 'Finger Pad', S.colors.pad_color ? hexOf('pad_color') : null);
+  R.setPad(PAD_PART[S.pad] || null,
+           S.colors.pad_color ? hexOf('pad_color') : null);
   R.draw(ctx, layerState(), S.bullet,
     S.step === 3 && FIELD_TO_LAYER[S.part]
       ? { id: FIELD_TO_LAYER[S.part], amount: 0.16 } : null,
@@ -392,8 +396,7 @@ function renderFit(b) {
   padThumbs(padF);
 
   const padOn = S.pad && S.pad !== 'None';
-  const note = !padOn ? OFFSTAGE.pad_color
-             : S.pad === 'Finger Hood' ? t('hoodNotDrawn') : null;
+  const note = padOn ? null : OFFSTAGE.pad_color;
   b.appendChild(swatchField('pad_color', note, false));
 }
 
@@ -409,7 +412,7 @@ function renderFit(b) {
 // another, which is the only thing the picker is for.
 // A 3/4 crop of the render, in canvas pixels: x, y, w, h.
 const WEB_BOX = [404, 10, 525, 700];      // the whole web
-const PAD_BOX = [335, 380, 330, 440];     // the index finger, pad and all
+const PAD_BOX = [250, 150, 510, 680];     // the index finger, tip to binding
 // Cached on everything a thumbnail depends on, which is everything except
 // which option is selected — clicking down a list changes only the ring
 // round a card, and re-rendering four gloves to move it is 480 ms of nothing.
@@ -481,12 +484,11 @@ function webThumbs(field, fit) {
 // is or what it would look like." The hood has no photograph to render from,
 // so it keeps SSK's.
 function padThumbs(field) {
-  const on = S.pad === 'Finger Pad';
   const hex = S.colors.pad_color ? hexOf('pad_color') : null;
   liveThumbs(field, PADS, PAD_BOX,
-             p => (p.id === 'None' || p.id === 'Finger Pad')
-               ? () => R.setPad(p.id === 'Finger Pad', hex) : null,
-             () => R.setPad(on, hex));
+             p => (p.id === 'None' || PAD_PART[p.id])
+               ? () => R.setPad(PAD_PART[p.id] || null, hex) : null,
+             () => R.setPad(PAD_PART[S.pad] || null, hex));
 }
 
 /* --------------------------------------------------------------- 3. web */
