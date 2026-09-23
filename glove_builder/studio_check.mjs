@@ -23,6 +23,15 @@ try {
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(state.webType, null, 'incompatible size/web must be cleared');
   assert.notEqual(state.colors.palm, state.colors.back2, 'independent palm and thumb colours survive');
+  const beforeInvalid = await page.evaluate(() => localStorage.getItem('ssk-glove-v1'));
+  await page.locator('#body input').fill('https://example.com/#e30');
+  await page.locator('#body .field button').click();
+  assert.match(await page.locator('#body [role="status"]').textContent(), /could not be opened/);
+  assert.equal(await page.evaluate(() => localStorage.getItem('ssk-glove-v1')), beforeInvalid, 'invalid import preserves draft');
+  await page.locator('#steps button').nth(5).click();
+  // Font labels differ by language/catalogue; check the known main-thread widget.
+  assert.ok(await page.locator('.field').filter({ has: page.locator('.swatches') }).first().locator('.req').count(), 'embroidery thread is visibly required');
+  await page.locator('#steps button').first().click();
   const colourCode = await page.locator('#refcode').textContent();
   await page.locator('[data-view="palm"]').click();
   assert.equal(await page.locator('#refcode').textContent(), colourCode, 'view does not change colour code');

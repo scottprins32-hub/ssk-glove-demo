@@ -149,6 +149,7 @@ function encodeState(forLink = false) {
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 function decodeState(s) {
+  if (s.length > 16000) return null;
   try {
     const j = decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
     return JSON.parse(j);
@@ -210,6 +211,15 @@ function cleanState(o) {
   // the page already set, rather than blanking the highlight to undefined.
   if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
   return clean;
+}
+
+// A syntactically valid JSON object is not necessarily an SSK design.
+// Recognize the existing link format before replacing somebody's current draft.
+function cleanSharedState(raw) {
+  if (!raw || !raw.colors || typeof raw.colors !== 'object' || Array.isArray(raw.colors)
+      || !Object.hasOwn(raw, 'bullet')) return null;
+  const clean = cleanState(raw);
+  return clean && Object.keys(clean.colors).length ? clean : null;
 }
 
 /* Where work in progress lives.
@@ -363,7 +373,7 @@ function renderStart(b) {
   go.onclick = () => {
     const raw = inp.value.trim();
     const hash = raw.includes('#') ? raw.slice(raw.indexOf('#') + 1) : '';
-    const restored = hash ? cleanState(decodeState(hash)) : null;
+    const restored = hash ? cleanSharedState(decodeState(hash)) : null;
     if (restored) {
       snapshot();
       for (const k of PRIVATE) delete restored[k];
@@ -431,7 +441,7 @@ function renderFit(b) {
 
   const padOn = S.pad && S.pad !== 'None';
   const note = padOn ? null : OFFSTAGE.pad_color;
-  b.appendChild(swatchField('pad_color', note, false));
+  b.appendChild(swatchField('pad_color', note, !!padOn));
 }
 
 // The picker's pictures are SSK's own order-form thumbnails: a different
@@ -623,7 +633,7 @@ function renderPersonal(b) {
   if (S.thumbText || S.pinkyText) {
     b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
-    })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, false));
+    })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, true));
     b.appendChild(threadField('thumbMain', t('thumbMain')));
     if (/Outline|Shadow/.test(S.thumbFont || ''))
       b.appendChild(threadField('thumbOutline', t('thumbOutline')));
@@ -636,7 +646,7 @@ function renderPersonal(b) {
   b.appendChild(circleField);
   b.appendChild(choiceField(t('circle'), CIRCLE_COLORS.map(([n, hx]) => ({
     id: n, label: n, swatch: hx
-  })), S.circle, v => { snapshot(); S.circle = v; paint(); }, false));
+  })), S.circle, v => { snapshot(); S.circle = v; paint(); }, !!S.thumbNumber));
   if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
   // Pinky embroidery is not one of the 36 questions on SSK's form, but it is
   // orderable — Scott's own glove reads "Modern Pitching" there, and Pim has
@@ -669,7 +679,7 @@ function refStrip(items) {
 }
 function threadField(key, label) {
   const pal = DATA.palettes.embroidery;
-  return swatchGrid(label, pal, S[key], v => { snapshot(); S[key] = v; paint(); }, false, null);
+  return swatchGrid(label, pal, S[key], v => { snapshot(); S[key] = v; paint(); }, requiredQuestions().some(q => q.id === key), null);
 }
 
 /* --------------------------------------------------------- 7. your details */
@@ -1030,7 +1040,7 @@ loadGlove().then(bundle => {
   // would go stale the moment anything changed, which is how it came to look
   // like the address was following you around.
   const h = location.hash.slice(1);
-  const shared = h ? decodeState(h) : null;
+  const shared = h ? cleanSharedState(decodeState(h)) : null;
   const o = cleanState(shared || load());
   if (o) Object.assign(S, o, { step: 0 });
   if (h) history.replaceState(null, '', location.pathname + location.search);
