@@ -43,11 +43,15 @@ check(amb15 === FX.cases15.length,
 let v2fixBad = 0;
 for (const { order, code } of FX.v2) {
   const d = decodeV2(code);
+  const scalars = ['hand', 'size', 'pad', 'webType', 'flag', 'circle', 'thumbFont',
+    'thumbMain', 'thumbOutline', 'numberColor'];
   if (!d || (d.bulletName ?? null) !== (order.bulletName ?? null)
+      || !same(Object.keys(d.colors).sort(), Object.keys(order.colors).sort())
       || !same(Object.keys(order.colors).sort().map((k) => d.colors[k]),
-               Object.keys(order.colors).sort().map((k) => order.colors[k]))) v2fixBad += 1;
+               Object.keys(order.colors).sort().map((k) => order.colors[k]))
+      || scalars.some((k) => (d[k] ?? null) !== (order[k] ?? null))) v2fixBad += 1;
 }
-check(v2fixBad === 0, `${FX.v2.length} issued SSK2 codes still decode as issued`);
+check(v2fixBad === 0, `${FX.v2.length} issued SSK2 codes still decode as issued, every field`);
 
 const orders = [
   { colors: {} },

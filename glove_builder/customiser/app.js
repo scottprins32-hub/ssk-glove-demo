@@ -84,7 +84,10 @@ const QUESTIONS = [
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
   { id: 'pinkyText', req: false },
-  { id: 'numberColor', req: false }, { id: 'flag', req: false }
+  { id: 'numberColor', req: false }, { id: 'flag', req: false },
+  // Not on SSK's form: set only after a reference code is opened, because a
+  // code carries no names or numbers. Answered until then, so it never shows.
+  { id: 'personalCheck', req: true }
 ];
 
 const S = {
@@ -109,6 +112,7 @@ const t = k => T[S.lang][k] || k;
 
 /* ------------------------------------------------------------------ state */
 function answered(q) {
+  if (q.id === 'personalCheck') return S.personalCheck !== true;
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
@@ -117,7 +121,8 @@ const requiredQuestions = () => QUESTIONS.filter(q => q.req
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
-const doneCount = () => requiredQuestions().filter(answered).length;
+const countedQuestions = () => requiredQuestions().filter(q => q.id !== 'personalCheck');
+const doneCount = () => countedQuestions().filter(answered).length;
 
 function snapshot() {
   if (suppress) return;
@@ -202,6 +207,7 @@ function cleanState(o) {
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 24),
     view: o.view === 'palm' ? 'palm' : 'back',
+    personalCheck: o.personalCheck === true,
   };
   if (clean.webType && !WEBS.find(w => w.id === clean.webType).sizes.includes(clean.size)) clean.webType = null;
   // Only carry a starter through if it still exists; otherwise leave whatever
@@ -282,6 +288,9 @@ function applyPasted(text) {
     // are cleared and asked again. Name and phone are the buyer's, not the
     // design's, and stay.
     next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = '';
+    // …and the order is not complete until someone has looked: without this
+    // the restored glove reads "All set" with its lettering silently gone.
+    next.personalCheck = true;
   }
   const o = cleanState(next);
   if (!o) return 'bad';
@@ -348,7 +357,7 @@ const STEP_FIELDS = [
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
-   'circle', 'numberColor', 'flag'],
+   'circle', 'numberColor', 'flag', 'personalCheck'],
   ['name', 'phone'], []
 ];
 function stepOpen(i) {
@@ -415,6 +424,8 @@ function renderStart(b) {
     }
     inp.removeAttribute('aria-invalid');
     draw(); paint();
+    const notice = $('#body [role="status"]');
+    if (notice) notice.textContent = t(isV2(raw) ? 'codeNoText' : 'legacyNotice');
   };
   row.append(inp, go);
   f.append(row, feedback);
@@ -663,6 +674,15 @@ function renderLogos(b) {
 
 /* ---------------------------------------------------- 6. personalisation */
 function renderPersonal(b) {
+  if (S.personalCheck) {
+    const box = el('div', 'field');
+    box.appendChild(el('p', 'note', t('codeNoText')));
+    const ok = el('button', 'btn btn-ghost', t('personalOk'));
+    ok.type = 'button';
+    ok.onclick = () => { snapshot(); S.personalCheck = false; paint(); };
+    box.appendChild(ok);
+    b.appendChild(box);
+  }
   b.appendChild(refStrip([
     ['assets/ref/thumb_name.webp', t('thumbText')],
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
@@ -1023,16 +1043,18 @@ function paint(rebuildBody = true) {
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
-  $('#stagehint').textContent =
-    S.step === 3 ? t('pickPart') : (wn === 'webNotOnPalm' ? t(wn) : '');
+  const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
+  $('#stagehint').textContent = S.step === 3
+    ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
+    : palmNote;
 
   // header + bar
   $('#refcode').textContent = code();
   $('#price').textContent = BASE_PRICE;
   const d = doneCount();
   $('#donecount').textContent = d;
-  $('#totalcount').textContent = requiredQuestions().length;
-  $('#barfill').style.width = (100 * d / requiredQuestions().length) + '%';
+  $('#totalcount').textContent = countedQuestions().length;
+  $('#barfill').style.width = (100 * d / countedQuestions().length) + '%';
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
