@@ -1063,7 +1063,11 @@ def main():
                        "Black/Pink": "blackpink", "Black/Purple": "blackpurple",
                        "Black/Silver": "blacksilver", "Red/Green": "redgreen",
                        "Green/Gold": "greengold", "Winered/Gold": "wineredgold",
-                       "Blue/Gold": "bluegold", "Navy/Gold": "navygold"}
+                       "Blue/Gold": "bluegold", "Navy/Gold": "navygold",
+                       # Photographed at the store, not recoloured: the rainbow
+                       # patch is four threads and a blue border, and no tint
+                       # of the black/gold patch could say that.
+                       "Rainbow": "rainbow"}
         badge_files = {"edge_gold": "edge_gold_badge.png",
                        "edge_silver": "edge_silver_badge.png",
                        "edge_gunmetal": "edge_gunmetal_badge.png"}

@@ -152,8 +152,10 @@ export class GloveRenderer {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
     if (!imgs.bullet_logo) return;
+    // A photographed patch wins over everything: the rainbow one has no tint
+    // (it is four threads and a blue border) but does have its own asset.
+    if (opt && opt.asset && imgs[opt.asset]) { ctx.drawImage(imgs[opt.asset], 0, 0); return; }
     if (!opt || opt.tint === null) { ctx.drawImage(imgs.bullet_logo, 0, 0); return; }
-    if (opt.asset && imgs[opt.asset]) { ctx.drawImage(imgs[opt.asset], 0, 0); return; }
     const bb = this.DATA.bulletBox;
     const octx = this.octx, off = this.off;
     octx.clearRect(0, 0, off.width, off.height);
