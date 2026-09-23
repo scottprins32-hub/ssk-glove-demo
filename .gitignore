@@ -10,3 +10,7 @@ venv/
 # secrets — never commit tokens
 .env*
 *.pem
+
+# cross-review working files
+HANDOFF.md
+REVIEW.md
