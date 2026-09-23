@@ -257,6 +257,112 @@ def spec_base(img, gain=0.55):
     return Image.fromarray(out, "RGBA")
 
 
+def wrist_patch(belt, logo):
+    """The wrist patch's real footprint, read off the belt photograph.
+
+    The bullet_logo layer that came out of the cut is clipped along its
+    bottom edge: it holds the upper arm of the S and loses the lower one.
+    Fitting every badge to that footprint put it 8 degrees too steep and a
+    quarter too short, and the part of the photographed patch it did not
+    cover stayed behind in the belt as a pale shape beside every colourway.
+    The patch on the master glove has a blue border, and the belt's leather
+    is nowhere near that hue, so the border closed and filled is the whole
+    patch. Returns None when there is no such border to read.
+    """
+    if belt is None or logo is None:
+        return None
+    import cv2 as _cv
+    a = np.asarray(belt)
+    vis = a[..., 3] > 40
+    hsv = _cv.cvtColor(np.ascontiguousarray(a[..., :3]), _cv.COLOR_RGB2HSV)
+    h, sat, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+    blue = (h >= 95) & (h <= 125) & (sat > 80) & (v > 50) & vis
+    if blue.sum() < 300:
+        return None
+    k = _cv.getStructuringElement(_cv.MORPH_ELLIPSE, (9, 9))
+    closed = _cv.morphologyEx(blue.astype(np.uint8), _cv.MORPH_CLOSE, k) > 0
+    filled = ndimage.binary_fill_holes(closed)
+    la = np.asarray(logo)[..., 3] > 40
+    lab, n = ndimage.label(filled)
+    if n == 0:
+        return None
+    best = max(range(1, n + 1), key=lambda i: int((lab == i)[la].sum()))
+    mask = lab == best
+    if (la & mask).sum() < 0.5 * la.sum():
+        return None
+    # the patch as a layer of its own: the belt's pixels under a feathered
+    # copy of the outline, standing in for the clipped cut
+    out = a.copy()
+    soft = ndimage.gaussian_filter(mask.astype(np.float32), 0.8)
+    out[..., 3] = (np.clip(soft, 0, 1) * 255).astype(np.uint8)
+    # and the leather healed under it, so a badge that does not cover the
+    # photographed patch to the pixel has plain leather beside it
+    hole = ndimage.binary_dilation(mask, iterations=5) & vis
+    healed = a.copy()
+    healed[..., :3] = _cv.inpaint(np.ascontiguousarray(a[..., :3]),
+                                  hole.astype(np.uint8) * 255, 6,
+                                  _cv.INPAINT_TELEA)
+    print(f"wrist patch: {int(la.sum())} px in the cut -> "
+          f"{int(mask.sum())} px read off the belt; leather healed under it")
+    return {"mask": mask, "logo": Image.fromarray(out, "RGBA"),
+            "belt": Image.fromarray(healed, "RGBA")}
+
+
+def fit_badge(badge, mask):
+    """Rotation, uniform scale and position that lay a photographed badge
+    over the patch footprint. Each badge was shot at its own tilt, and the
+    footprint's min-area rectangle is not the badge's bounding box, so
+    resizing one into the other stretched every badge and turned it too
+    far. This searches the angle and the scale for the best overlap and
+    keeps the badge's own aspect.
+    """
+    ys, xs = np.nonzero(mask)
+    tcy, tcx = ys.mean(), xs.mean()
+    area = float(mask.size and mask.sum())
+    H, W = mask.shape
+    small = badge.resize((max(badge.width // 4, 1), max(badge.height // 4, 1)),
+                         Image.LANCZOS).split()[3]
+
+    def place(theta, s, dx=0, dy=0, src=small):
+        rot = src.rotate(theta, expand=True, resample=Image.BILINEAR)
+        ra = np.asarray(rot) > 127
+        if not ra.any():
+            return None, 0.0
+        k = np.sqrt(area / ra.sum()) * s
+        sz = (max(int(round(rot.width * k)), 1), max(int(round(rot.height * k)), 1))
+        sc = np.asarray(rot.resize(sz, Image.BILINEAR)) > 127
+        cy, cx = [c.mean() for c in np.nonzero(sc)]
+        x0, y0 = int(round(tcx + dx - cx)), int(round(tcy + dy - cy))
+        canvas = np.zeros((H, W), bool)
+        sy0, sx0 = max(-y0, 0), max(-x0, 0)
+        ey, ex = min(sz[1], H - y0), min(sz[0], W - x0)
+        if ey <= sy0 or ex <= sx0:
+            return None, 0.0
+        canvas[y0 + sy0:y0 + ey, x0 + sx0:x0 + ex] = sc[sy0:ey, sx0:ex]
+        iou = (canvas & mask).sum() / max((canvas | mask).sum(), 1)
+        return (theta, s, dx, dy), iou
+
+    best, biou = None, -1.0
+    for theta in np.arange(-60, 31, 2.0):
+        for s in (0.94, 0.97, 1.0, 1.03, 1.06):
+            cand, iou = place(theta, s)
+            if iou > biou:
+                best, biou = cand, iou
+    th0, s0 = best[0], best[1]
+    for theta in np.arange(th0 - 3, th0 + 3.01, 0.5):
+        for s in np.arange(s0 - 0.03, s0 + 0.031, 0.01):
+            cand, iou = place(theta, s)
+            if iou > biou:
+                best, biou = cand, iou
+    th0, s0 = best[0], best[1]
+    for dx in range(-3, 4):
+        for dy in range(-3, 4):
+            cand, iou = place(th0, s0, dx, dy)
+            if iou > biou:
+                best, biou = cand, iou
+    return best, biou
+
+
 def ssk_logo_layer(back78_layer, embroidery_layer):
     """Warp the real SSK logo glyph onto the ring finger: the baseline bends
     with the finger's lengthwise curve (centerline fit) and the glyph
@@ -526,6 +632,7 @@ def main():
 
     glove = load("glove")
     W, H = glove.size
+    patch = wrist_patch(load("belt"), raw("bullet_logo"))
     # neutral-leather base: any pixel not covered by a zone shows as plain
     # leather instead of leaking the calibration glove's rainbow colors
     # the whole glove's midtone, so a cavity can be measured against the
@@ -541,6 +648,8 @@ def main():
     idmap = np.zeros((H, W), np.uint8)
     for i, (name, group, label) in enumerate(STACK, 1):
         im = load(name)
+        if name == "belt" and patch:
+            im = patch["belt"]
         if im is None:
             continue
         alpha = np.asarray(im)[..., 3]
@@ -1032,7 +1141,7 @@ def main():
         print(f"SSK wordmark: {len(emb_parts)} letters, "
               f"each mirrored about its own centre on a lefty")
 
-    bullet = load("bullet_logo")
+    bullet = patch["logo"] if patch else load("bullet_logo")
     bullets = []
     if bullet is not None:
         assets["bullet_logo"] = to_data_uri(bullet, quality=88, method=4)
@@ -1044,21 +1153,7 @@ def main():
         bys, bxs = np.nonzero(ba > 60)
         bullet_box = [int(bxs.min()), int(bys.min()),
                       int(bxs.max()), int(bys.max())]
-        # Edge badges: the real photo-derived patch, rotated to the wrist
-        # logo's angle, scaled to its footprint, with a soft drop shadow
-        import cv2 as _cv
-        cnts, _ = _cv.findContours((ba > 60).astype(np.uint8),
-                                   _cv.RETR_EXTERNAL, _cv.CHAIN_APPROX_SIMPLE)
-        rect = _cv.minAreaRect(np.vstack([c.reshape(-1, 2) for c in cnts]))
-        (rcx, rcy), (rw, rh), rtheta = rect
-        if rw < rh:  # normalize so rw = long side, rtheta = long-axis angle
-            rw, rh = rh, rw
-            rtheta += 90
-        while rtheta > 90:
-            rtheta -= 180
-        while rtheta < -90:
-            rtheta += 180
-        bw_px = rw
+        footprint = patch["mask"] if patch else ba > 60
         COMBO_SLUGS = {"Black/Gold": "blackgold",
                        "Black/Pink": "blackpink", "Black/Purple": "blackpurple",
                        "Black/Silver": "blacksilver", "Red/Green": "redgreen",
@@ -1073,31 +1168,49 @@ def main():
                        "edge_gunmetal": "edge_gunmetal_badge.png"}
         for slug in COMBO_SLUGS.values():
             badge_files[f"bullet_{slug}"] = f"bullet_{slug}_badge.png"
+        # Every embroidered badge is the same patch shape photographed once
+        # (the others are recolours of it), so it is fitted once and the
+        # fit is shared; the rubber Edge patch is its own shape.
+        fits = {}
+        import cv2 as _cv2
         for akey, fname in badge_files.items():
             bp = pathlib.Path(__file__).parent / fname
             if not bp.exists():
                 continue
             badge = Image.open(bp).convert("RGBA")
-            # same size, shape and angle as the embroidered logo footprint
-            badge = badge.resize((max(int(rw), 1), max(int(rh), 1)),
-                                 Image.LANCZOS)
-            badge = badge.rotate(-rtheta, expand=True, resample=Image.BICUBIC)
+            key = ("edge" if akey.startswith("edge_") else "rainbow"
+                   if akey == "bullet_rainbow" else "bullet")
+            if key not in fits:
+                fits[key] = fit_badge(badge, footprint)
+                (th, sc, dx, dy), iou = fits[key]
+                print(f"  {key} badge fitted: {th:+.1f} deg, scale {sc:.2f}, "
+                      f"overlap {iou:.2f}")
+            (th, sc, dx, dy), _ = fits[key]
+            rot = badge.rotate(th, expand=True, resample=Image.BICUBIC)
+            ra = np.asarray(rot)[..., 3] > 127
+            k = np.sqrt(footprint.sum() / max(ra.sum(), 1)) * sc
+            rot = rot.resize((max(int(round(rot.width * k)), 1),
+                              max(int(round(rot.height * k)), 1)),
+                             Image.LANCZOS)
+            ra = np.asarray(rot)[..., 3] > 127
+            cy, cx = [c.mean() for c in np.nonzero(ra)]
+            tys, txs = np.nonzero(footprint)
+            cxp = int(round(txs.mean() + dx - cx))
+            cyp = int(round(tys.mean() + dy - cy))
             canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-            cxp = int(rcx) - badge.width // 2
-            cyp = int(rcy) - badge.height // 2
-            import cv2 as _cv2
             sh = np.zeros((H, W), np.float32)
-            am = np.asarray(badge)[..., 3] / 255.0
+            am = np.asarray(rot)[..., 3] / 255.0
             y0s, x0s = cyp + 4, cxp + 3
-            sh[max(y0s, 0):y0s + badge.height,
-               max(x0s, 0):x0s + badge.width] = am[:min(badge.height, H - y0s),
-                                                   :min(badge.width, W - x0s)]
+            sy0, sx0 = max(-y0s, 0), max(-x0s, 0)
+            ey, ex = min(rot.height, H - y0s), min(rot.width, W - x0s)
+            if ey > sy0 and ex > sx0:
+                sh[y0s + sy0:y0s + ey, x0s + sx0:x0s + ex] = am[sy0:ey, sx0:ex]
             sh = _cv2.GaussianBlur(sh, (0, 0), 4) * 0.45
             shadow = np.zeros((H, W, 4), np.uint8)
             shadow[..., 3] = (sh * 255).astype(np.uint8)
             canvas = Image.alpha_composite(canvas,
                                            Image.fromarray(shadow, "RGBA"))
-            canvas.paste(badge, (cxp, cyp), badge)
+            canvas.paste(rot, (cxp, cyp), rot)
             assets[akey] = to_data_uri(canvas, quality=85, method=4)
         for name, art, thumb, tint in BULLET_OPTIONS:
             material = ("rubber" if name.startswith("Edge")
