@@ -30,10 +30,12 @@ class ReviewRunnerTests(unittest.TestCase):
         self.stub = self.root / '.cross-review' / 'fake-claude'
         self.stub.parent.mkdir()
         self.stub.write_text('''#!/usr/bin/env python3
-import json, os, sys
+import json, os, sys, time
 from pathlib import Path
 Path(os.environ['ARGS_OUT']).write_text(json.dumps(sys.argv[1:]))
 sys.stdin.read()
+if os.environ.get('FAKE_SLEEP'):
+    time.sleep(float(os.environ['FAKE_SLEEP']))
 if os.environ.get('FAKE_MUTATE'):
     Path('example.txt').write_text('concurrent edit')
 print(os.environ['FAKE_RESPONSE'])
@@ -42,17 +44,17 @@ sys.exit(int(os.environ.get('FAKE_EXIT', '0')))
         self.stub.chmod(0o755)
         self.good = {'is_error': False, 'terminal_reason': 'completed',
                      'modelUsage': {'claude-opus-5-5': {}}, 'permission_denials': [],
-                     'result': 'High: none\nMedium: none\nLow: none'}
+                     'result': '## High\nnone\n## Medium\nnone\n## Low\nnone'}
 
     def git(self, *args):
         return subprocess.run(['git', *args], cwd=self.root, check=True, capture_output=True)
 
-    def run_review(self, response=None, code=0, mutate=False):
+    def run_review(self, response=None, code=0, mutate=False, timeout=600, delay=0):
         env = dict(os.environ, CLAUDE_BIN=str(self.stub),
                    ARGS_OUT=str(self.stub.parent / 'args.json'),
                    FAKE_RESPONSE=json.dumps(self.good if response is None else response),
-                   FAKE_EXIT=str(code), FAKE_MUTATE='yes' if mutate else '')
-        return subprocess.run(['python3', str(RUNNER), '--base', 'main'],
+                   FAKE_SLEEP=str(delay), FAKE_EXIT=str(code), FAKE_MUTATE='yes' if mutate else '')
+        return subprocess.run(['python3', str(RUNNER), '--base', 'main', '--timeout', str(timeout)],
                               cwd=self.root, env=env, capture_output=True, text=True)
 
     def test_success_preserves_backups_and_limits_tools(self):
@@ -116,6 +118,19 @@ sys.exit(int(os.environ.get('FAKE_EXIT', '0')))
         spec.loader.exec_module(module)
         fixture = json.loads((RUNNER.parent / 'fixtures/opus-review-response.json').read_text())
         self.assertEqual(module.review_text(fixture), fixture['result'].strip() + '\n')
+
+    def test_timeout_preserves_previous_review(self):
+        (self.root / 'REVIEW.md').write_text('previous')
+        result = self.run_review(timeout=0.1, delay=1)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('timed out', result.stderr)
+        self.assertEqual((self.root / 'REVIEW.md').read_text(), 'previous')
+
+    def test_non_object_json_fails_cleanly(self):
+        result = self.run_review(response=[])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('JSON object', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
 
     def test_empty_diff_never_invokes_reviewer(self):
         self.git('switch', 'main')
