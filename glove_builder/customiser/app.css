@@ -383,3 +383,28 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .refshot img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
 .refshot figcaption { display: block; padding: 5px var(--space-2); font-size: 11px;
                       color: var(--text-muted); text-align: center; }
+
+/* Studio refinements: readable starter cards and an always visible price. */
+.starter-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sheet-acts { flex-wrap: wrap; }
+.spec dl { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.spec dd { overflow-wrap: anywhere; }
+.lang-btn, .icon-btn, .sheet-x, .stage-view button { min-height: 44px; }
+.icon-btn, .sheet-x { min-width: 44px; }
+@media (max-width: 1200px) { .hdr-tools .ref { display: none; } }
+@media (max-width: 900px) {
+  .hdr { gap: 8px; }
+  .hdr-tools { width: 100%; justify-content: flex-start; flex-wrap: nowrap; gap: 8px; }
+  .price { display: block; margin-left: auto; white-space: nowrap; }
+  .price-val { font-size: 14px; }
+  #share { padding-inline: 10px; font-size: 12px; }
+  #glove { max-height: 27vh; }
+  .sheet { padding: 24px 16px; }
+  .sheet h2 { padding-right: 36px; }
+}
+@media (max-height: 650px) and (max-width: 900px) {
+  body { height: auto; min-height: 100%; overflow: auto; }
+  .wrap { overflow: visible; flex: none; }
+  .panel, .panel-body { overflow: visible; }
+  .bar { position: sticky; bottom: 0; }
+}

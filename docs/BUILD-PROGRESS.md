@@ -1,11 +1,11 @@
 # SSK configurator build progress
 
-Updated: 2026-09-23, Europe/Amsterdam. Scott explicitly authorized autonomous overnight research/build/refinement with Claude, prioritizing working product over integration perfection. No merges: Scott merges. Do not publish live CCV changes without approval.
+Updated: 2026-09-24, Europe/Amsterdam. Scott explicitly authorized autonomous overnight research/build/refinement with Claude, prioritizing working product over integration perfection. No merges: Scott merges. Do not publish live CCV changes without approval.
 
 ## Workspace
 - Current glove repo: /Users/scottprins/Projects/ssk-glove-demo (fresh clone, origin scottprins32-hub/ssk-glove-demo).
 - Old /Users/scottprins/dev/ssk-glove-demo is untouched July scaffold. Do not use it.
-- Current branch setup/astra-claude-cross-review contains completed review runner. Test branch removed; no test comment in branch.
+- Current glove branch feature/ssk-custom-studio includes the completed setup branch plus product refinements.
 - Claude CLI /Users/scottprins/.local/bin/claude version 2.1.281; exact claude-opus-5-5 login verified. Older /usr/local/bin/claude exists; do not use it.
 - Claude desktop composer set to Local, current repo, Opus 5.5, High effort. No new build task sent there.
 - Original Claude cloud Glove configurator finished reverse workflow, pushed 5e2494e main. Do not restart it concurrently.
@@ -35,9 +35,16 @@ Updated: 2026-09-23, Europe/Amsterdam. Scott explicitly authorized autonomous ov
 ## Constraints / unknowns
 - Glove README is partly stale: claims back-only but palm assets and code are present. Verify rendered behavior.
 - Palm/back2 tied color is explicitly unsupported in current code comments/README; form asks separately. Verify source before changing.
-- Historic bag E = loops only, white top panel assignment unresolved; verify latest catalogue/docs before implementation.
+- Historical bag notes must not override current CLAUDE.md/schema: letters differ per chart (backpack E piping/F zip, shoulder F piping/H zip).
 - Shop admin/API and live checkout provisioning not verified. Publish not authorized.
 - No current clothing custom schema discovered yet.
 
 ## Usage / continuation
 Heartbeat automation ssk-configurator-overnight-build runs hourly in this task. Check live Codex limits before large blocks and Claude app usage/reset time before reviews. Latest Codex check used 3% of weekly window, no reset credits. Claude app earlier showed 23% of five-hour window with ~4h remaining; refresh rather than assume. On limit, save progress and wait for normal reset; no repeated calls, paid resets, purchases or bypasses. Continue useful work with available provider. Notify only meaningful milestones/failures/input needs. Stop refining when concrete quality criteria are met; no pointless endless churn.
+
+## Product checkpoint, September 24
+- Glove changes implemented: independent palm/back2 order choices, hostile summary text escaped, restored size/web compatibility, bounded restored text, stable back palette code explicitly labelled as partial, full design links plus specification download, private contact data excluded from sharing, honest draft/order status, conditional personalisation readiness, accessible labels/modal focus/Escape, readable starter cards and persistent mobile price.
+- Deterministic browser assertions: state_check.mjs 9 cases passed; keyboard_check.mjs 7 checks passed; studio_check.mjs passed hostile text, colour independence, size/web, sharing/roundtrip/privacy, downloads, modal keyboard and eight steps at 360/390/768/1440. New conditional text UI changes also covered by final studio rerun. Visual quality still requires independent evaluation. Rendering engine/assets/catalogue values unchanged.
+- Scott explicitly requested Claude build concurrently. Claude Opus 5.5 launched via /Users/scottprins/.local/bin/claude with builder prompt saved in this task's work/claude-bag-build.txt; live JSONL work/claude-bag-build.jsonl. It owns ONLY bag repo, feature/bag-studio-refinement, no push/deploy/merge. Astra owns glove. Read the bag BUILDER-HANDOFF.md when it finishes before reviewing; do not edit bag concurrently.
+- Active glove local preview http://127.0.0.1:8765. Saved-state test ports 8793, keyboard8794. Claude told to use other ports for bag.
+- No live shop changes. No clothing implementation yet. CCV research needs concrete integration deliverable.

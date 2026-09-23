@@ -38,23 +38,8 @@ const viewFieldLayer = () => (S.view === 'palm'
   ? Object.fromEntries(Object.entries(PALM_FIELDS).map(([l, f]) => [f, l]))
   : FIELD_TO_LAYER);
 
-/* The palm and back 2 are cut from one piece of leather, so they cannot take
-   different colours. SSK's own form says as much under Palm Color — "small
-   part on back of glove under the web is part of the palm" — and that part is
-   exactly what this view calls back 2. The form still asks twice, so both are
-   still answered; picking either one answers the other. */
-/* Palm and Back 2 (the rest of the thumb) move together, on the assumption
-   that they are one piece of leather. This is the one constraint here with no
-   evidence behind it, and it takes a choice away from the customer if it is
-   wrong -- SSK's order form asks for the two colours separately, which is a
-   reason to doubt it.
-
-   The rainbow calibration glove cannot settle it: it wears one turquoise
-   across the palm, the web AND the thumb's back panel, so a shared colour
-   there says nothing about construction. A question for SSK, in the same
-   breath as the one that fixed PEO-37C's belt. */
-const TIED = { palm: 'back2', back2: 'palm' };
-
+/* SSK's order form asks separately for Palm Color and Back 2 (rest of
+   thumb). Keep those choices independent until construction evidence says otherwise. */
 /* A flag is embroidered on one piece of leather, so back3 and back4 stop
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
@@ -86,7 +71,6 @@ const fieldLabel = (f, lang) => {
   const m = /^back([1-9])$/.exec(f);
   let s = m ? `Back ${m[1]} — ${BACK_NAMES[lang][+m[1] - 1]}`
             : (T[lang][FIELD_LABEL[f]] || f);
-  if (TIED[f]) s += ` ${T[lang].tiedTo.replace('%s', fieldName(TIED[f], lang))}`;
   return s;
 };
 /* the other half of a tied pair, named without recursing back into the suffix */
@@ -132,9 +116,14 @@ const t = k => T[S.lang][k] || k;
 function answered(q) {
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
-  return v !== null && v !== undefined && v !== '';
+  return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
 }
-const doneCount = () => QUESTIONS.filter(answered).length;
+const requiredQuestions = () => QUESTIONS.filter(q => q.req
+  || (q.id === 'c:pad_color' && S.pad && S.pad !== 'None')
+  || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
+  || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
+  || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
+const doneCount = () => requiredQuestions().filter(answered).length;
 
 function snapshot() {
   if (suppress) return;
@@ -209,13 +198,14 @@ function cleanState(o) {
     thumbMain: embCode(o.thumbMain),
     thumbOutline: embCode(o.thumbOutline),
     numberColor: embCode(o.numberColor),
-    thumbText: text(o.thumbText),
-    pinkyText: text(o.pinkyText),
-    thumbNumber: text(o.thumbNumber),
-    name: text(o.name),
-    phone: text(o.phone),
+    thumbText: text(o.thumbText).slice(0, 18),
+    pinkyText: text(o.pinkyText).slice(0, 18),
+    thumbNumber: text(o.thumbNumber).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2),
+    name: text(o.name).slice(0, 60),
+    phone: text(o.phone).slice(0, 24),
     view: o.view === 'palm' ? 'palm' : 'back',
   };
+  if (clean.webType && !WEBS.find(w => w.id === clean.webType).sizes.includes(clean.size)) clean.webType = null;
   // Only carry a starter through if it still exists; otherwise leave whatever
   // the page already set, rather than blanking the highlight to undefined.
   if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
@@ -258,7 +248,11 @@ function layerState() {
   }
   return out;
 }
-const code = () => refCode(DATA, layerState(), S.bullet);
+// Legacy codes describe back-view colours only, regardless of the visible side.
+// Full designs travel in the share link and downloaded specification.
+const code = () => refCode(DATA, Object.fromEntries(DATA.zones.map(z =>
+  [z.id, S.colors[LAYER_TO_FIELD[z.id]] ?? DATA.palettes[z.group][0][0]])), S.bullet);
+const shareLink = () => location.origin + location.pathname + '#' + encodeState(true);
 
 /* ----------------------------------------------------------------- canvas */
 const flagArt = () => {
@@ -321,13 +315,13 @@ const STEP_FIELDS = [
 ];
 function stepOpen(i) {
   return STEP_FIELDS[i]
-    .map(id => QUESTIONS.find(q => q.id === id))
-    .filter(q => q && q.req && !answered(q)).length;
+    .map(id => requiredQuestions().find(q => q.id === id))
+    .filter(q => q && !answered(q)).length;
 }
 
 /* ------------------------------------------------------------- 1. start */
 function renderStart(b) {
-  const grid = el('div', 'cards');
+  const grid = el('div', 'cards starter-cards');
   const groups = { built: t('built'), national: t('national'),
                    signature: t('signature'), blank: t('blankTag') };
   for (const st of STARTERS) {
@@ -338,8 +332,7 @@ function renderStart(b) {
     cv.style.width = '100%'; cv.style.aspectRatio = '200/237';
     c.appendChild(cv);
     c.appendChild(el('span', 'cap',
-      `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>` +
-      (st.slot ? `<span class="sub">${t('sigSlot')}</span>` : '')));
+      `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
     c.onclick = () => { applyStarter(st); paint(); };
     grid.appendChild(c);
     // thumbnail rendered from the real compositor, flag and all
@@ -364,10 +357,21 @@ function renderStart(b) {
   const row = el('div', 'opts');
   const inp = el('input'); inp.type = 'text'; inp.placeholder = t('paste');
   inp.style.flex = '1 1 200px';
+  inp.setAttribute('aria-label', t('paste'));
+  const feedback = el('p', 'note'); feedback.setAttribute('role', 'status');
   const go = el('button', 'btn btn-ghost', t('open')); go.type = 'button';
   go.onclick = () => {
-    const r = applyCode(DATA, inp.value.trim());
-    if (!r) { inp.style.borderColor = 'var(--red-600)'; return; }
+    const raw = inp.value.trim();
+    const hash = raw.includes('#') ? raw.slice(raw.indexOf('#') + 1) : '';
+    const restored = hash ? cleanState(decodeState(hash)) : null;
+    if (restored) {
+      snapshot();
+      for (const k of PRIVATE) delete restored[k];
+      Object.assign(S, restored); draw(); paint(); return;
+    }
+    const r = !hash && applyCode(DATA, raw);
+    if (!r) { inp.setAttribute('aria-invalid', 'true'); feedback.textContent = t('invalidDesign'); return; }
+    inp.removeAttribute('aria-invalid');
     snapshot();
     for (const [layer, num] of Object.entries(r.state)) {
       const fld = LAYER_TO_FIELD[layer];
@@ -376,7 +380,7 @@ function renderStart(b) {
     S.bullet = r.bulletSel; draw(); paint();
   };
   row.append(inp, go);
-  f.appendChild(row);
+  f.append(row, feedback);
   b.appendChild(f);
 }
 
@@ -398,9 +402,6 @@ function applyStarter(st, quiet) {
     if (!pal.some(c => c[0] === v)) v = pal[0][0];
     S.colors[f] = v;
   }
-  for (const [a, b] of Object.entries(TIED))   // one piece, one colour
-    if (S.colors[a] === undefined) S.colors[a] = S.colors[b];
-  S.colors.palm = S.colors.back2;
   if (st.bullet != null) S.bullet = st.bullet;
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
@@ -412,13 +413,13 @@ function applyStarter(st, quiet) {
 function renderFit(b) {
   b.appendChild(choiceField(t('hand'), HANDS.map(h => ({
     id: h.id, label: h[S.lang], sub: h.sub
-  })), S.hand, v => { snapshot(); S.hand = v; paint(); }, true));
+  })), S.hand, v => { snapshot(); S.hand = v; draw(); paint(); }, true));
 
   b.appendChild(choiceField(t('size'), SIZES.map(s => ({ id: s, label: s })),
     S.size, v => {
       snapshot(); S.size = v;
       if (S.webType && !WEBS.find(w => w.id === S.webType)?.sizes.includes(v)) S.webType = null;
-      paint();
+      draw(); paint();
     }, true));
 
   const padF = cardField(t('pad'), PADS.map(p => ({
@@ -618,8 +619,8 @@ function renderPersonal(b) {
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
   ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
-    v => { S.thumbText = v; paint(false); }));
-  if (S.thumbText) {
+    v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); }));
+  if (S.thumbText || S.pinkyText) {
     b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
     })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, false));
@@ -629,7 +630,7 @@ function renderPersonal(b) {
   }
   const twoChars = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
   const circleField = textField(t('thumbNumber'), S.thumbNumber, 2,
-    v => { S.thumbNumber = twoChars(v); paint(false); },
+    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); paint(changed); },
     false, 'text', twoChars);
   circleField.appendChild(el('p', 'note', t('circleHint')));
   b.appendChild(circleField);
@@ -642,7 +643,7 @@ function renderPersonal(b) {
   // confirmed it. Font and thread follow the thumb's; if the pinky can carry
   // its own, it needs its own two questions rather than sharing them.
   const pinky = textField(t('pinkyText'), S.pinkyText, 18,
-    v => { S.pinkyText = v; paint(false); });
+    v => { const changed = !!S.pinkyText !== !!v; S.pinkyText = v; paint(changed); });
   if (S.pinkyText) pinky.appendChild(el('p', 'note', t('pinkyHint')));
   b.appendChild(pinky);
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
@@ -679,7 +680,7 @@ function renderYou(b) {
 
 /* -------------------------------------------------------------- 8. review */
 function renderReview(b) {
-  const open = QUESTIONS.filter(q => q.req && !answered(q));
+  const open = requiredQuestions().filter(q => !answered(q));
   if (open.length) {
     b.appendChild(el('p', 'note',
       `${t('required')}: ${open.length}`));
@@ -763,7 +764,6 @@ function swatchField(field, note, required) {
     S.colors[field], v => {
       snapshot();
       S.colors[field] = v;
-      if (TIED[field]) S.colors[TIED[field]] = v;
       if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
         S.colors.back3 = S.colors.back4 = v;
       }
@@ -775,6 +775,9 @@ function textField(label, value, max, onInput, required, type, clean) {
   f.appendChild(labelRow(label, required, !!value));
   const i = el('input'); i.type = type || 'text'; i.value = value || '';
   i.maxLength = max;
+  i.setAttribute('aria-label', label);
+  i.dataset.key = 'text|' + label;
+  i.required = !!required;
   let tm;
   i.oninput = () => {
     if (clean) {                       // show exactly what gets ordered
@@ -839,36 +842,61 @@ function buildSpec() {
   const wrap = el('div', 'spec'), dl = el('dl');
   for (const [k, v] of specRows()) {
     if (k === '#') { dl.appendChild(el('h3', null, v)); continue; }
-    dl.appendChild(el('dt', null, k));
-    dl.appendChild(el('dd', null, v));
+    const term = el('dt'), value = el('dd');
+    term.textContent = k; value.textContent = v;
+    dl.append(term, value);
   }
   wrap.appendChild(dl);
   return wrap;
 }
 function specText() {
-  const lines = [`SSK custom glove — ${t('reference')}: ${code()}`, ''];
+  const lines = [`SSK custom glove — ${t('reference')}: ${code()}`,
+    requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice'), ''];
   for (const [k, v] of specRows())
     lines.push(k === '#' ? `\n[${v}]` : `${k}: ${v}`);
   if (BASE_PRICE) lines.push('', `${t('basePrice')} ${BASE_PRICE}`);
+  lines.push('', t('copyLink') + ': ' + shareLink(), '', t('sendLead'));
   return lines.join('\n');
 }
 
 /* ---------------------------------------------------------------- sheet */
+let sheetReturnFocus;
 function openSheet() {
+  sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
   $('#shot').src = $('#glove').toDataURL('image/png');
   const host = $('#spechost');
   host.textContent = '';
   host.appendChild(buildSpec());
+  $('#sheetstatus').textContent = requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice');
   $('#scrim').hidden = false;
+  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
+  $('#sheetx').focus();
 }
-$('#sheetx').onclick = $('#keep').onclick = () => { $('#scrim').hidden = true; };
+function closeSheet() {
+  $('#scrim').hidden = true;
+  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
+  if (sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
+}
+$('#sheetx').onclick = $('#keep').onclick = closeSheet;
+$('#scrim').addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
+  if (ev.key !== 'Tab') return;
+  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
+  const first = buttons[0], last = buttons.at(-1);
+  if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+  else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+});
 async function copyToClipboard(ev, txt) {
   const b = ev.currentTarget, was = b.textContent;   // nulled once we await
   try { await navigator.clipboard.writeText(txt); }
   catch (e) {
     const a = el('textarea'); a.value = txt; document.body.appendChild(a);
-    a.select(); document.execCommand('copy'); a.remove();
+    a.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch {}
+    a.remove();
+    if (!copied) { b.textContent = t('copyFailed'); setTimeout(() => { b.textContent = was; }, 2500); return; }
   }
   b.textContent = t('copied');
   setTimeout(() => { b.textContent = was; }, 1600);
@@ -876,7 +904,13 @@ async function copyToClipboard(ev, txt) {
 $('#copy').onclick = ev => copyToClipboard(ev, specText());
 /* The only place a URL is ever written. Asked for, not imposed. */
 $('#copylink').onclick = ev => copyToClipboard(ev,
-  location.origin + location.pathname + '#' + encodeState(true));
+  shareLink());
+$('#share').onclick = ev => copyToClipboard(ev, shareLink());
+$('#download').onclick = () => {
+  const url = URL.createObjectURL(new Blob([specText()], { type: 'text/plain;charset=utf-8' }));
+  const a = el('a'); a.href = url; a.download = 'SSK-glove-design.txt';
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 /* ----------------------------------------------------------------- paint */
 /* Every paint rebuilds the step nav and the body from scratch, which destroys
@@ -943,8 +977,8 @@ function paint(rebuildBody = true) {
   $('#price').textContent = BASE_PRICE;
   const d = doneCount();
   $('#donecount').textContent = d;
-  $('#totalcount').textContent = QUESTIONS.length;
-  $('#barfill').style.width = (100 * d / QUESTIONS.length) + '%';
+  $('#totalcount').textContent = requiredQuestions().length;
+  $('#barfill').style.width = (100 * d / requiredQuestions().length) + '%';
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
@@ -1032,4 +1066,8 @@ loadGlove().then(bundle => {
   }
 
   draw(); paint();
+}).catch(() => {
+  $('#steptitle').textContent = t('loadError');
+  $('#steplead').textContent = t('loadRetry');
+  $('#next').disabled = true;
 });
