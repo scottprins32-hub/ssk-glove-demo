@@ -33,7 +33,8 @@ export const WEBS = [
   { id: 'H-Web', img: F + 'webs/H_Web.jpg', sizes: ['11.75"', '12"', '12.25"', '12.5"', '12.75"'] },
   { id: 'SMLEE-Web', img: F + 'webs/SMLEE_Web.jpg', sizes: ['11.75"'],
     render: 'smlee' },
-  { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'] },
+  { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'],
+    render: 'modified-trapeze' },
   { id: 'Basket-Web', img: F + 'webs/Basket_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Em Rocket-Web', img: F + 'webs/Em_Rocket_Web.jpg', sizes: ['12"'],
     render: 'em-rocket' },
@@ -41,7 +42,8 @@ export const WEBS = [
   { id: 'Sasaki 2-Web', img: F + 'webs/Sasaki_2_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Closed Diamond Net-Web', img: F + 'webs/Closed_Diamond_Net_Web.jpg', sizes: ['12.25"'],
     render: 'closed-diamond-net' },
-  { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'] }
+  { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'],
+    render: 'trapeze' }
 ];
 
 export const EMB_FONTS = [
