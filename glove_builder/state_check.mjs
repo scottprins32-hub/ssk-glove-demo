@@ -217,6 +217,9 @@ for (const [what, poison, step] of [
   });
   check(leftover === '', "a pasted code does not keep the previous glove's names or number",
     leftover);
+  const openAfterPaste = await second.page.evaluate(() =>
+    !!document.querySelectorAll('#steps .step')[5]?.querySelector('.dot.todo'));
+  check(openAfterPaste, 'after a pasted code the personalisation step asks to be checked');
 
   await box.fill('SSK2-' + back.slice(5, -1) + (back.endsWith('0') ? '1' : '0'));
   await box.locator('xpath=following-sibling::button').first().click();

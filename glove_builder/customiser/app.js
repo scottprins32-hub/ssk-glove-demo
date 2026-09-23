@@ -106,7 +106,10 @@ const QUESTIONS = [
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
   { id: 'pinkyText', req: false },
-  { id: 'numberColor', req: false }, { id: 'flag', req: false }
+  { id: 'numberColor', req: false }, { id: 'flag', req: false },
+  // Not on SSK's form: set only after a reference code is opened, because a
+  // code carries no names or numbers. Answered until then, so it never shows.
+  { id: 'personalCheck', req: true }
 ];
 
 const S = {
@@ -131,11 +134,14 @@ const t = k => T[S.lang][k] || k;
 
 /* ------------------------------------------------------------------ state */
 function answered(q) {
+  if (q.id === 'personalCheck') return S.personalCheck !== true;
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
   return v !== null && v !== undefined && v !== '';
 }
-const doneCount = () => QUESTIONS.filter(answered).length;
+// SSK's form has 36 questions; personalCheck is ours, so it is not counted.
+const FORM_QUESTIONS = QUESTIONS.filter(q => q.id !== 'personalCheck');
+const doneCount = () => FORM_QUESTIONS.filter(answered).length;
 
 function snapshot() {
   if (suppress) return;
@@ -219,6 +225,7 @@ function cleanState(o) {
     name: text(o.name),
     phone: text(o.phone),
     view: o.view === 'palm' ? 'palm' : 'back',
+    personalCheck: o.personalCheck === true,
   };
   // Size and web are checked together, as the size picker does: a Trapeze
   // is 12.75" only, and a link or an old draft carrying it at 11.5" would
@@ -297,6 +304,9 @@ function applyPasted(text) {
     // are cleared and asked again. Name and phone are the buyer's, not the
     // design's, and stay.
     next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = '';
+    // …and the order is not complete until someone has looked: without this
+    // the restored glove reads "All set" with its lettering silently gone.
+    next.personalCheck = true;
   }
   const o = cleanState(next);
   if (!o) return 'bad';
@@ -362,7 +372,7 @@ const STEP_FIELDS = [
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
-   'circle', 'numberColor', 'flag'],
+   'circle', 'numberColor', 'flag', 'personalCheck'],
   ['name', 'phone'], []
 ];
 function stepOpen(i) {
@@ -419,7 +429,8 @@ function renderStart(b) {
       msg.textContent = inp.title;
       return;
     }
-    inp.style.borderColor = ''; inp.title = ''; msg.textContent = '';
+    inp.style.borderColor = ''; inp.title = '';
+    msg.textContent = isV2(inp.value) ? t('codeNoText') : '';
     draw(); paint();
   };
   row.append(inp, go);
@@ -675,6 +686,15 @@ function renderLogos(b) {
 
 /* ---------------------------------------------------- 6. personalisation */
 function renderPersonal(b) {
+  if (S.personalCheck) {
+    const box = el('div', 'field');
+    box.appendChild(el('p', 'note', t('codeNoText')));
+    const ok = el('button', 'btn btn-ghost', t('personalOk'));
+    ok.type = 'button';
+    ok.onclick = () => { snapshot(); S.personalCheck = false; paint(); };
+    box.appendChild(ok);
+    b.appendChild(box);
+  }
   b.appendChild(refStrip([
     ['assets/ref/thumb_name.webp', t('thumbText')],
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
@@ -1000,16 +1020,18 @@ function paint(rebuildBody = true) {
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
-  $('#stagehint').textContent =
-    S.step === 3 ? t('pickPart') : (wn === 'webNotOnPalm' ? t(wn) : '');
+  const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
+  $('#stagehint').textContent = S.step === 3
+    ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
+    : palmNote;
 
   // header + bar
   $('#refcode').textContent = code();
   $('#price').textContent = BASE_PRICE;
   const d = doneCount();
   $('#donecount').textContent = d;
-  $('#totalcount').textContent = QUESTIONS.length;
-  $('#barfill').style.width = (100 * d / QUESTIONS.length) + '%';
+  $('#totalcount').textContent = FORM_QUESTIONS.length;
+  $('#barfill').style.width = (100 * d / FORM_QUESTIONS.length) + '%';
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
