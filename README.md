@@ -2,7 +2,7 @@
 
 A 2.5D glove configurator for **SSK Europe** (sskeurope.ccvshop.nl). A customer
 picks a colour for each part of the glove, sees it on a photoreal render, and
-finishes with a reference code that identifies the exact build.
+finishes with a reference code that identifies the colours visible on the back view; use the full design link and specification for an exact build.
 
 It exists to replace the Google Form SSK currently uses to take custom glove
 orders. It is meant to live at its own URL and be linked from the shop, with

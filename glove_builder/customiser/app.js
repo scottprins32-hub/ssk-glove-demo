@@ -73,12 +73,6 @@ const fieldLabel = (f, lang) => {
             : (T[lang][FIELD_LABEL[f]] || f);
   return s;
 };
-/* the other half of a tied pair, named without recursing back into the suffix */
-const fieldName = (f, lang) => {
-  const m = /^back([1-9])$/.exec(f);
-  return m ? `Back ${m[1]}` : (T[lang][FIELD_LABEL[f]] || f);
-};
-
 /* 36 order-form questions. `req` mirrors the form's required flag. */
 const QUESTIONS = [
   ...COLOUR_ORDER.map(f => ({ id: 'c:' + f, req: f !== 'pad_color' })),
@@ -119,7 +113,6 @@ function answered(q) {
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
 }
 const requiredQuestions = () => QUESTIONS.filter(q => q.req
-  || (q.id === 'c:pad_color' && S.pad && S.pad !== 'None')
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
@@ -173,7 +166,7 @@ function cleanState(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
   const inList = (list, v) => (list.includes(v) ? v : null);
   const byId = (list, v) => (list.some((x) => x.id === v) ? v : null);
-  const text = (v) => (typeof v === 'string' ? v.slice(0, 120) : '');
+  const text = (v) => (typeof v === 'string' ? v.trim().slice(0, 120) : '');
   const embCode = (v) =>
     (DATA.palettes.embroidery.some((c) => c[0] === v) ? v : null);
 
@@ -388,6 +381,7 @@ function renderStart(b) {
       if (fld) S.colors[fld] = num;
     }
     S.bullet = r.bulletSel; draw(); paint();
+    const note = $('#body [role="status"]'); if (note) note.textContent = t('legacyNotice');
   };
   row.append(inp, go);
   f.append(row, feedback);
@@ -441,7 +435,7 @@ function renderFit(b) {
 
   const padOn = S.pad && S.pad !== 'None';
   const note = padOn ? null : OFFSTAGE.pad_color;
-  b.appendChild(swatchField('pad_color', note, !!padOn));
+  b.appendChild(swatchField('pad_color', note, false));
 }
 
 // The picker's pictures are SSK's own order-form thumbnails: a different
@@ -630,7 +624,7 @@ function renderPersonal(b) {
   ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
     v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); }));
-  if (S.thumbText || S.pinkyText) {
+  if (S.thumbText.trim() || S.pinkyText.trim()) {
     b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
     })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, true));
@@ -805,12 +799,13 @@ function textField(label, value, max, onInput, required, type, clean) {
 /* ----------------------------------------------------------------- spec */
 function specRows() {
   const L = S.lang, rows = [];
-  const push = (k, v) => rows.push([k, v || '—']);
+  const push = (k, v) => rows.push([k, typeof v === 'string' ? v.trim() || '—' : v || '—']);
+  const active = key => requiredQuestions().some(q => q.id === key);
   rows.push(['#', t('fit')]);
   push(t('hand'), S.hand && HANDS.find(h => h.id === S.hand)?.[L]);
   push(t('size'), S.size);
   push(t('pad'), S.pad && PADS.find(p => p.id === S.pad)?.[L]);
-  push(t('padColor'), colName('pad_color'));
+  push(t('padColor'), S.pad && S.pad !== 'None' ? colName('pad_color') || '10. White' : null);
   rows.push(['#', t('web')]);
   push(t('webType'), S.webType);
   push(t('webColor'), colName('web'));
@@ -827,12 +822,12 @@ function specRows() {
   rows.push(['#', t('personal')]);
   push(t('thumbText'), S.thumbText);
   push(t('pinkyText'), S.pinkyText);
-  push(t('thumbFont'), S.thumbFont);
-  push(t('thumbMain'), embName(S.thumbMain));
-  push(t('thumbOutline'), embName(S.thumbOutline));
+  push(t('thumbFont'), active('thumbFont') ? S.thumbFont : null);
+  push(t('thumbMain'), active('thumbMain') ? embName(S.thumbMain) : null);
+  push(t('thumbOutline'), active('thumbOutline') ? embName(S.thumbOutline) : null);
   push(t('thumbNumber'), S.thumbNumber);
-  push(t('circle'), S.circle);
-  push(t('numberColor'), embName(S.numberColor));
+  push(t('circle'), active('circle') ? S.circle : null);
+  push(t('numberColor'), active('numberColor') ? embName(S.numberColor) : null);
   push(t('flag'), S.flag);
   rows.push(['#', t('you')]);
   push(t('name'), S.name);
@@ -865,7 +860,7 @@ function specText() {
   for (const [k, v] of specRows())
     lines.push(k === '#' ? `\n[${v}]` : `${k}: ${v}`);
   if (BASE_PRICE) lines.push('', `${t('basePrice')} ${BASE_PRICE}`);
-  lines.push('', t('copyLink') + ': ' + shareLink(), '', t('sendLead'));
+  lines.push('', t('designLink') + ': ' + shareLink(), '', t('sendLead'));
   return lines.join('\n');
 }
 
@@ -889,7 +884,8 @@ function closeSheet() {
   if (sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
 }
 $('#sheetx').onclick = $('#keep').onclick = closeSheet;
-$('#scrim').addEventListener('keydown', ev => {
+document.addEventListener('keydown', ev => {
+  if ($('#scrim').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
   if (ev.key !== 'Tab') return;
   const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
@@ -1076,7 +1072,8 @@ loadGlove().then(bundle => {
   }
 
   draw(); paint();
-}).catch(() => {
+}).catch(error => {
+  console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
   $('#steplead').textContent = t('loadRetry');
   $('#next').disabled = true;

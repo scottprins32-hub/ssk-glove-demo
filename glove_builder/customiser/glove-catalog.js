@@ -122,7 +122,8 @@ export const STARTERS = [
   // layer for, so the colours carry it.
   { id: 'jp', en: 'Japan', nl: 'Japan', group: 'national', bullet: 7,
     flag: 'Japan',
-    colors: { _panels: '71', back1: '32', back2: '32', web: '71', belt: '32',
+    // Navy palm is visible on the navy/red, yellow-laced glove in shoot frame DSC05725.
+    colors: { _panels: '71', palm: '71', back1: '32', back2: '32', web: '71', belt: '32',
               welting: '45', laces: '45', binding: '45', lining: '71',
               thumb_loops: '45', pinky_loops: '45', embroidery: '39',
               stitching: '45' } },
@@ -174,7 +175,7 @@ export const T = {
     paste: 'Paste a design link or legacy colour code', notShown: 'Not shown on this view',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
     pickPart: 'Click any part of the glove', required: 'Still needed',
-    sendTitle: 'Your SSK custom glove', sendLead: 'Share the full specification with SSK Europe to confirm availability and your order. The colour code covers back colours only; the design link holds all design choices. Saving does not place an order.',
+    sendTitle: 'Your SSK custom glove', sendLead: 'Share the full specification with SSK Europe to confirm availability and your order. The colour code covers only colours visible on the back view; the design link holds all design choices. Saving does not place an order.',
     viewBack: 'Back', viewPalm: 'Palm',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
     webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
@@ -191,6 +192,7 @@ export const T = {
       + 'number comes out slightly different in each leather. The swatch is an '
       + 'indication \u2014 the number beside it is what gets ordered.',
     applyAll: 'Same colour on all back panels',
+    designLink: 'Design link', legacyNotice: 'Back-view colours restored. Other colours, fit and personalisation are unchanged; review them before saving.',
     share: 'Share design', download: 'Download specification',
     draftNotice: 'Draft: required choices are still missing. You can save and continue later.',
     readyNotice: 'Required choices completed. SSK Europe still needs to confirm the order.',
@@ -226,7 +228,7 @@ export const T = {
     paste: 'Plak een ontwerplink of oude kleurcode', notShown: 'Niet zichtbaar op deze weergave',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
-    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Deel de volledige specificatie met SSK Europe om beschikbaarheid en je bestelling te bevestigen. De kleurcode bevat alleen rugkleuren; de ontwerplink bewaart alle ontwerpkeuzes. Opslaan plaatst geen bestelling.',
+    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Deel de volledige specificatie met SSK Europe om beschikbaarheid en je bestelling te bevestigen. De kleurcode bevat alleen kleuren die zichtbaar zijn op de rugweergave; de ontwerplink bewaart alle ontwerpkeuzes. Opslaan plaatst geen bestelling.',
     viewBack: 'Achterkant', viewPalm: 'Palm',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
     webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
@@ -240,6 +242,7 @@ export const T = {
       + 'nummer valt in elk leer net iets anders uit. Het staaltje is een '
       + 'indicatie \u2014 het nummer ernaast is wat besteld wordt.',
     applyAll: 'Zelfde kleur op alle achterpanelen',
+    designLink: 'Ontwerplink', legacyNotice: 'Kleuren van de rugweergave hersteld. Andere kleuren, pasvorm en personalisatie zijn ongewijzigd; controleer ze voor het opslaan.',
     share: 'Ontwerp delen', download: 'Specificatie downloaden',
     draftNotice: 'Concept: er ontbreken nog verplichte keuzes. Je kunt opslaan en later verdergaan.',
     readyNotice: 'Verplichte keuzes ingevuld. SSK Europe moet de bestelling nog bevestigen.',

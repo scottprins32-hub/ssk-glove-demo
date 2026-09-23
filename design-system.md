@@ -378,11 +378,10 @@ The colour picker. One function renders all four palettes (`swatchGrid`,
   `value === num` (`app.js:490`). There is no live toggle — the grid is
   rebuilt.
 - **Snapshot before mutating.** `onPick` calls `snapshot()` *first*
-  (`app.js:503`), then writes, then propagates to tied fields. Get the order
+  (`app.js:503`), then writes, then propagates supported linked fields. Get the order
   wrong and undo skips a step.
-- **Tied fields are written together.** Palm and Back 2 are one piece of
-  leather, so choosing either writes both (`TIED`, `app.js:32`). Under a flag,
-  Back 3 and Back 4 likewise.
+- **Palm and Back 2 remain independent**, matching the separate questions on
+  the order form. Under a flag, Back 3 and Back 4 still move together.
 - **The offstage note goes between the label and the grid**, never below.
 
 ### Known weaknesses — fix these when you copy it
