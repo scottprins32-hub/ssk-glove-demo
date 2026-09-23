@@ -101,18 +101,23 @@ BULLET_OPTIONS = [
     ("Edge Gold", "", "Edge_Gold.jpg", "#C9A227"),
     ("Edge Silver", "", "Edge_Silver.jpg", "#C0C4CC"),
     ("Edge Gun Metal", "", "Edge_Gun_Metal.jpg", "#5A6068"),
-    ("Silicone Gold", "", "Silicone_Gold.jpg", "#D4AF37"),
-    ("Silicone Silver", "", "Silicone_Silver.jpg", "#C8CCD2"),
-    ("Red/Green", "", "Red_Green.jpg", "#B01E2E"),
+    # The reference code packs this index into four bits, so the list holds
+    # sixteen. The two silicone patches that used to sit here were never
+    # selectable ("not shown"); their slots now carry two patches SSK had on
+    # the shelf at the store shoot, so every code issued so far still reads
+    # the same. Tints are the median thread colour of the catalogue photos.
+    ("White/Gold", "", None, "#E9E5DC"),
+    ("Red/Gold", "", None, "#BC2628"),
+    ("Red/Green", "", "Red_Green.jpg", "#BC2628"),
     ("Rainbow", "", "Rainbow.jpg", None),
-    ("Black/Gold", "", "Black_Gold.jpg", "#A8862A"),
-    ("Black/Pink", "", "Black_Pink.jpg", "#E17FC0"),
-    ("Black/Purple", "", "Black_Purple.jpg", "#8A3FBF"),
+    ("Black/Gold", "", "Black_Gold.jpg", "#A38350"),
+    ("Black/Pink", "", "Black_Pink.jpg", "#E45F8E"),
+    ("Black/Purple", "", "Black_Purple.jpg", "#533283"),
     ("Black/Silver", "", None, "#9AA0A8"),
-    ("Green/Gold", "", "Green_Gold.jpg", "#1F7A47"),
-    ("Winered/Gold", "", "Winered_Gold.jpg", "#7B2A2F"),
-    ("Blue/Gold", "", "Blue_Gold.jpg", "#2145D6"),
-    ("Navy/Gold", "", "Navy_Gold.jpg", "#1D3A8F"),
+    ("Green/Gold", "", "Green_Gold.jpg", "#14703F"),
+    ("Winered/Gold", "", "Winered_Gold.jpg", "#86303A"),
+    ("Blue/Gold", "", "Blue_Gold.jpg", "#1857A6"),
+    ("Navy/Gold", "", "Navy_Gold.jpg", "#1B2545"),
 ]
 
 # Webs photographed without the knotted lace across the lower web. Scott,
@@ -1159,6 +1164,7 @@ def main():
                        "Black/Silver": "blacksilver", "Red/Green": "redgreen",
                        "Green/Gold": "greengold", "Winered/Gold": "wineredgold",
                        "Blue/Gold": "bluegold", "Navy/Gold": "navygold",
+                       "White/Gold": "whitegold", "Red/Gold": "redgold",
                        # Photographed at the store, not recoloured: the rainbow
                        # patch is four threads and a blue border, and no tint
                        # of the black/gold patch could say that.

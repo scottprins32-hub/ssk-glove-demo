@@ -22,17 +22,28 @@ from PIL import Image
 
 # slug -> (display name, border hex or None=keep black, inner hex or
 # None=keep gold, inner mode)
+#
+# The hexes are the median thread colour read off SSK's catalogue photos in
+# form_assets/bullet_logos/ (recolor_region maps a region's median to its
+# target, so the median is the number to give it), checked against the
+# macros from the store shoot for hue. The one gold is used for every gold
+# border so the family matches the photographed Black/Gold patch.
+GOLD = "#B8975A"
 COMBOS = {
-    "blackred":    ("Black/Red",    None,      "#C8102E", "color"),
-    "blackpink":   ("Black/Pink",   None,      "#E17FC0", "color"),
-    "blackpurple": ("Black/Purple", None,      "#8A3FBF", "color"),
+    "blackred":    ("Black/Red",    None,      "#BC2628", "color"),
+    "blackpink":   ("Black/Pink",   None,      "#E45F8E", "color"),
+    "blackpurple": ("Black/Purple", None,      "#533283", "color"),
     "blacksilver": ("Black/Silver", None,      None,      "silver"),
     # body-first names: the gold is the BORDER on these, per SSK's photos
-    "redgreen":    ("Red/Green",    "#279B48", "#C8102E", "color"),
-    "greengold":   ("Green/Gold",   "#C9A227", "#279B48", "color"),
-    "wineredgold": ("Winered/Gold", "#C9A227", "#7B2A2F", "color"),
-    "bluegold":    ("Blue/Gold",    "#C9A227", "#2145D6", "color"),
-    "navygold":    ("Navy/Gold",    "#C9A227", "#1D3A8F", "color"),
+    "redgreen":    ("Red/Green",    "#2B8158", "#BC2628", "color"),
+    "greengold":   ("Green/Gold",   GOLD,      "#14703F", "color"),
+    "wineredgold": ("Winered/Gold", GOLD,      "#86303A", "color"),
+    "bluegold":    ("Blue/Gold",    GOLD,      "#1857A6", "color"),
+    "navygold":    ("Navy/Gold",    GOLD,      "#1B2545", "color"),
+    # seen at the store, not in the catalogue photos: white satin and true
+    # red, both inside a gold border
+    "whitegold":   ("White/Gold",   GOLD,      None,      "white"),
+    "redgold":     ("Red/Gold",     GOLD,      "#BC2628", "color"),
 }
 
 
@@ -57,6 +68,16 @@ def silver_region(rgb, sel):
     lum = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
     v = np.clip(lum[sel] * 1.08 + 16, 0, 255)
     rgb[sel] = np.stack([v * 0.98, v * 1.0, v * 1.04], 1).clip(0, 255)
+    return rgb
+
+
+def white_region(rgb, sel):
+    """White satin: the thread's shading lifted so its midtone sits near
+    white, with the faint warm cast the store macro shows."""
+    lum = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
+    med = max(np.median(lum[sel]), 1.0)
+    v = np.clip(lum[sel] / med * 225.0, 0, 255)
+    rgb[sel] = np.stack([v * 1.0, v * 0.99, v * 0.96], 1).clip(0, 255)
     return rgb
 
 
@@ -104,6 +125,8 @@ def main():
             rgb = recolor_region(rgb, inner, inner_hex)
         elif mode == "silver":
             rgb = silver_region(rgb, inner)
+        elif mode == "white":
+            rgb = white_region(rgb, inner)
         # mode "keep": inner gold stays as photographed
         if border_hex is not None:
             rgb = recolor_region(rgb, border, border_hex)
