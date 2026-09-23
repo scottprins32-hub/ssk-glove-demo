@@ -16,6 +16,10 @@ These apply only when you are invoked as the reviewer. When building, ignore thi
 
 Only one agent works on this repo at a time.
 
+The following trigger applies only when running as Codex/Astra. In Claude Code,
+plain `cross-review` and `/cross-review` both use `.claude/commands/cross-review.md`
+(Claude builds, Astra reviews); Claude must not run the Astra-builder loop.
+
 When my entire message is `cross-review`, run the Cross-review loop in this file.
 
 ## Cross-review loop (Astra builds, Claude reviews)
