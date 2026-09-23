@@ -1,13 +1,13 @@
 {
   "web": "em-rocket",
   "photo": "images/store-2026-09/em-rocket.jpg",
-  "leather_px": 202782,
-  "lace_px": 63164,
+  "leather_px": 201052,
+  "lace_px": 64607,
   "finger_px": 0,
   "bbox": [
     1010,
     174,
-    1396,
+    1398,
     1050
   ]
 }
