@@ -281,7 +281,8 @@ const code = () => encodeV2(S, S.bullet == null ? null
    badge that is gone, or not orderable, comes back unanswered. */
 function applyPasted(text) {
   const d = isV2(text) ? decodeV2(text) : decodeV1(text);
-  if (!d) return false;
+  if (!d) return 'bad';
+  if (d.ambiguous) return 'ambiguous';
   const bi = d.bulletName == null ? -1
     : DATA.bullets.findIndex((b) => b.name === d.bulletName);
   const next = { ...S, colors: isV2(text) ? d.colors : { ...S.colors, ...d.colors },
@@ -290,13 +291,19 @@ function applyPasted(text) {
     for (const k of ['hand', 'size', 'pad', 'webType', 'flag', 'circle',
                      'thumbFont', 'thumbMain', 'thumbOutline', 'numberColor'])
       next[k] = d[k];
+    // The code carries no free text, so the thumb and pinky wording and the
+    // number belong to whoever had the page before: keeping them would put
+    // another player's name on this order under this code's styling. They
+    // are cleared and asked again. Name and phone are the buyer's, not the
+    // design's, and stay.
+    next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = '';
   }
   const o = cleanState(next);
-  if (!o) return false;
+  if (!o) return 'bad';
   const { lang, part, view, ...order } = o;
   snapshot();                     // only once the code is known to be good
   Object.assign(S, order);
-  return true;
+  return 'ok';
 }
 
 /* ----------------------------------------------------------------- canvas */
@@ -405,13 +412,21 @@ function renderStart(b) {
   inp.style.flex = '1 1 200px';
   const go = el('button', 'btn btn-ghost', t('open')); go.type = 'button';
   go.onclick = () => {
-    if (!applyPasted(inp.value.trim())) {
-      inp.style.borderColor = 'var(--red-600)'; return;
+    const r = applyPasted(inp.value.trim());
+    if (r !== 'ok') {
+      inp.style.borderColor = 'var(--red-600)';
+      inp.title = t(r === 'ambiguous' ? 'codeAmbiguous' : 'codeBad');
+      msg.textContent = inp.title;
+      return;
     }
+    inp.style.borderColor = ''; inp.title = ''; msg.textContent = '';
     draw(); paint();
   };
   row.append(inp, go);
   f.appendChild(row);
+  const msg = el('p', 'note');
+  msg.setAttribute('role', 'status');
+  f.appendChild(msg);
   b.appendChild(f);
 }
 
