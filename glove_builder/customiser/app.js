@@ -142,7 +142,7 @@ function restore(json) {
 const PRIVATE = ['name', 'phone'];
 
 function encodeState(forLink = false) {
-  const o = { ...S }; delete o.step;
+  const o = { ...S, schemaVersion: 1 }; delete o.step;
   if (forLink) for (const k of PRIVATE) delete o[k];
   return btoa(unescape(encodeURIComponent(JSON.stringify(o))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -222,7 +222,9 @@ function cleanSharedState(raw) {
   if (!raw || !raw.colors || typeof raw.colors !== 'object' || Array.isArray(raw.colors)
       || !Object.hasOwn(raw, 'bullet')) return null;
   const clean = cleanState(raw);
-  return clean && Object.keys(clean.colors).length ? clean : null;
+  // Versioned links may intentionally contain an unanswered/blank design.
+  // Legacy unversioned links still need a recognizable palette selection.
+  return clean && (raw.schemaVersion === 1 || Object.keys(clean.colors).length) ? clean : null;
 }
 
 /* Where work in progress lives.
@@ -240,7 +242,7 @@ const SAVE_KEY = 'ssk-glove-v1';
 
 function save() {
   try {
-    const o = { ...S }; delete o.step;
+    const o = { ...S, schemaVersion: 1 }; delete o.step;
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }

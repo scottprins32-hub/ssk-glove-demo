@@ -76,3 +76,5 @@ Scott explicitly redirected work to the September 23 photos in Google Drive SSK 
 - Palm revisions remain unshipped. Current scripts masks source assets and work/palm-candidate are candidate-only, not approved.
 
 - Integration verification finished: extended state suite passed all cases, keyboard7passed, studioallpassed, refcode fixtures/typospassed, standalonebundle smoke passed eightsteps/SSK2/review/noerrors. Independent integration evaluation requested from evaluate_glove_studio, pending. Candidate photo changes intentionally remain uncommitted and unshipped; web-matrix diagnostic fails currentliveSMLEE and passes candidate-v2, which still has visualjoin defects.
+
+- Independent integration reviewer found oneMedium: valid empty SSK2-00 design rejected by legacy full-link validator, falling back to default/prior draft. Fixed by versioning freshly generated design links (schemaVersion1) while retaining legacy nonempty-palette recognition. Added browser regression: importSSK2-00, share, clearstorage, openlink, assert blankcode and pendingpersonalisation UI survive. Full studio suite passed after fix; bundle being rebuilt. NoHigh.
