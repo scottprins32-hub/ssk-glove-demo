@@ -3,7 +3,7 @@
      node glove_builder/refcode_check.mjs
 
    No browser needed. Two things are checked:
-   - every old "SSK-" code in refcode_v1_fixtures.json (made by the retired
+   - every old "SSK-" code in refcode_fixtures.json (made by the retired
      encoder, against the layout those codes were issued with) decodes to
      exactly the colours and badge it was made from;
    - a new "SSK2-" code round-trips every answer it covers, at the edges of
@@ -19,17 +19,35 @@ const check = (ok, what, detail = '') => {
 };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-const { cases } = JSON.parse(readFileSync(
-  new URL('./refcode_v1_fixtures.json', import.meta.url)));
-let v1bad = 0;
-for (const c of cases) {
+const FX = JSON.parse(readFileSync(
+  new URL('./refcode_fixtures.json', import.meta.url)));
+let v1bad = 0, v1amb = 0;
+for (const c of FX.cases) {
   const d = decodeV1(c.code);
+  // Back 2 White puts a 16-zone code below 2^79, where a 15-zone code could
+  // also be: that one must be refused as ambiguous, never guessed.
+  if (c.colors.back2 === '10') {
+    if (!d || !d.ambiguous) v1bad += 1; else v1amb += 1;
+    continue;
+  }
   const keys = Object.keys(c.colors).sort();
-  if (!d || !same(keys.map((k) => d.colors[k]), keys.map((k) => c.colors[k]))
+  if (!d || d.ambiguous || !same(keys.map((k) => d.colors[k]), keys.map((k) => c.colors[k]))
       || d.bulletName !== c.bulletName) v1bad += 1;
 }
-check(v1bad === 0, `${cases.length} issued SSK- codes decode as they were made`,
-  v1bad ? `${v1bad} differ` : '');
+check(v1bad === 0, `${FX.cases.length} issued 16-zone SSK- codes decode as made, or are refused`,
+  v1bad ? `${v1bad} wrong` : `${v1amb} refused as ambiguous`);
+const amb15 = FX.cases15.filter((c) => (decodeV1(c) || {}).ambiguous === true).length;
+check(amb15 === FX.cases15.length,
+  `${FX.cases15.length} SSK- codes from the 15-zone layout are refused, never guessed`,
+  `${amb15} refused`);
+let v2fixBad = 0;
+for (const { order, code } of FX.v2) {
+  const d = decodeV2(code);
+  if (!d || (d.bulletName ?? null) !== (order.bulletName ?? null)
+      || !same(Object.keys(order.colors).sort().map((k) => d.colors[k]),
+               Object.keys(order.colors).sort().map((k) => order.colors[k]))) v2fixBad += 1;
+}
+check(v2fixBad === 0, `${FX.v2.length} issued SSK2 codes still decode as issued`);
 
 const orders = [
   { colors: {} },

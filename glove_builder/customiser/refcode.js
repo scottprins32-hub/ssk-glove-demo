@@ -61,13 +61,23 @@ const RC_SCALARS = ['hand', 'size', 'pad', 'webType', 'bullet', 'flag', 'circle'
   'thumbFont'];
 const RC_EMB_FIELDS = ['thumbMain', 'thumbOutline', 'numberColor'];
 
-/* Every slot in writing order: [key, table]. Value 0 = unanswered, n = the
-   table's entry n-1, so a slot holds table.length + 1 values. */
+/* Every slot in writing order: [key, table, kind, capacity]. Value 0 =
+   unanswered, n = the table's entry n-1. Each slot's capacity is FIXED, not
+   the table's length: with length + 1 as the radix, appending one flag
+   changed what every issued code decoded to. A table may grow up to its
+   capacity - 1 entries; past that it needs a new code version. */
+const RC_CAP = { leather: 32, lace: 32, stitching: 32, embroidery: 32,
+  hand: 4, size: 16, pad: 8, webType: 64, bullet: 32, flag: 32, circle: 16,
+  thumbFont: 32 };
 const RC_SLOTS = [
-  ...RC_V2.colours.map((f) => [f, RC_V2.palettes[RC_PALETTE_OF(f)], 'colour']),
-  ...RC_SCALARS.map((k) => [k, RC_V2[k], 'scalar']),
-  ...RC_EMB_FIELDS.map((k) => [k, RC_V2.palettes.embroidery, 'scalar']),
+  ...RC_V2.colours.map((f) => [f, RC_V2.palettes[RC_PALETTE_OF(f)], 'colour',
+    RC_CAP[RC_PALETTE_OF(f)]]),
+  ...RC_SCALARS.map((k) => [k, RC_V2[k], 'scalar', RC_CAP[k]]),
+  ...RC_EMB_FIELDS.map((k) => [k, RC_V2.palettes.embroidery, 'scalar', RC_CAP.embroidery]),
 ];
+for (const [key, table, , cap] of RC_SLOTS) {
+  if (table.length >= cap) throw new Error(`refcode: ${key} outgrew its slot`);
+}
 const RC_ALPHA = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I or O: read aloud
 const RC_B = BigInt(RC_ALPHA.length);
 
@@ -88,11 +98,11 @@ function rcCheck(body) {
 /** The order as a code. `bulletName` is the chosen badge's name, or null. */
 export function encodeV2(S, bulletName) {
   let n = 0n;
-  for (const [key, table, kind] of RC_SLOTS) {
+  for (const [key, table, kind, cap] of RC_SLOTS) {
     const v = kind === 'colour' ? (S.colors || {})[key]
       : key === 'bullet' ? bulletName : S[key];
     const i = v == null ? -1 : table.indexOf(v);
-    n = n * BigInt(table.length + 1) + BigInt(i + 1);
+    n = n * BigInt(cap) + BigInt(i + 1);
   }
   let body = '';
   do { body = RC_ALPHA[Number(n % RC_B)] + body; n /= RC_B; } while (n > 0n);
@@ -111,9 +121,10 @@ export function decodeV2(code) {
   let n = 0n;
   for (const ch of body) n = n * RC_B + BigInt(RC_ALPHA.indexOf(ch));
   const out = { colors: {} };
-  for (const [key, table, kind] of [...RC_SLOTS].reverse()) {
-    const r = BigInt(table.length + 1);
+  for (const [key, table, kind, cap] of [...RC_SLOTS].reverse()) {
+    const r = BigInt(cap);
     const i = Number(n % r); n /= r;
+    if (i > table.length) return null;      // a slot value no table holds
     const v = i === 0 ? null : table[i - 1];
     if (kind === 'colour') { if (v) out.colors[key] = v; }
     else if (key === 'bullet') out.bulletName = v;
@@ -128,9 +139,8 @@ export const isV2 = (code) => /^\s*#?SSK2-?/i.test(String(code));
 /* Version 1, decode only. Every "SSK-…" code issued before 23 Sep 2026 was
    packed against this zone list (read off the build of that time: the only
    layout the assets had from 25 Jul to 23 Sep). The palettes above are
-   byte-for-byte the ones it used. A handful of codes minted in the preview on
-   23 Sep used a 15-zone list without thumb_loops; they cannot be told apart
-   and will decode one zone out, which the paste field cannot detect. */
+   byte-for-byte the ones it used. Codes from the later 15-zone layout are
+   recognised as ambiguous and refused; see decodeV1. */
 const RC_V1_ZONES = [['back2', 'leather'], ['back78', 'leather'],
   ['back6', 'leather'], ['back5', 'leather'], ['back4', 'leather'],
   ['back3', 'leather'], ['web', 'leather'], ['belt', 'leather'],
@@ -144,13 +154,24 @@ const RC_V1_BULLETS = ['Edge Gold', 'Edge Silver', 'Edge Gun Metal',
 // render zone -> order field, as the back view mapped them
 const RC_V1_FIELD = { back78: 'back7', embroidery: 'ring_emb' };
 
-/** An old "SSK-…" code: colours by field, and the badge by name. */
+/** An old "SSK-…" code: colours by field, and the badge by name; null when
+    it is not one, and {ambiguous: true} when it cannot be read with
+    certainty.
+
+    Two layouts issued SSK- codes: 16 zones until 23 Sep 2026, then 15 (no
+    thumb_loops) on main from commit e10d382. Neither carries a version. A
+    16-zone code holds 84 bits and a 15-zone one 79, so a value of 2^79 or
+    more can only be 16-zone. Below that the code reads two ways: a 16-zone
+    code whose first zone (Back 2) is White, or any 15-zone code. Guessing
+    would restore the wrong colours without saying so, so it is refused. */
 export function decodeV1(code) {
   const s = String(code).toUpperCase().trim().replace(/^#?SSK-?/, '')
     .replace(/[\s-]/g, '');
   if (!/^[0-9A-Z]{1,20}$/.test(s)) return null;
   let bits = 0n;
   for (const ch of s) bits = bits * 36n + BigInt(parseInt(ch, 36));
+  if (bits >= (1n << 84n)) return null;        // longer than any v1 code
+  if (bits < (1n << 79n)) return { ambiguous: true };
   const bullet = Number(bits & 15n);
   bits >>= 4n;
   const colors = {};

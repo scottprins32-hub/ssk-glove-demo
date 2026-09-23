@@ -881,5 +881,84 @@
    },
    "bulletName": "Black/Pink"
   }
- ]
+ ],
+ "cases15": [
+  "SSK-0000-0LXD-PZAI-882L-FIKN",
+  "SSK-0000-1AJV-WL8Q-Z6A6-Z8LU",
+  "SSK-0000-04TF-JUS5-UGJW-7UZA",
+  "SSK-0000-0SNW-U005-RETP-8LM6",
+  "SSK-0000-0ZA6-YXSI-YAP0-6996",
+  "SSK-0000-284D-8AR6-GBFG-21W7",
+  "SSK-0000-0G5I-VFUO-MG8Z-F16T",
+  "SSK-0000-1Y1V-9A7U-EFYJ-JOYL",
+  "SSK-0000-15K7-ATM6-S7PZ-S9KR",
+  "SSK-0000-1MKR-VEHS-MCIQ-4LXN",
+  "SSK-0000-0VH9-VZJ1-HVLB-NK0Y",
+  "SSK-0000-01I2-XY7S-HL3E-OF0U",
+  "SSK-0000-24AN-RUBQ-PJWV-7861",
+  "SSK-0000-0U3E-RG9T-MMDD-OAKE",
+  "SSK-0000-0Y88-RTOI-0LX6-ELZ2",
+  "SSK-0000-1OHJ-TDLM-SCJL-CW1W",
+  "SSK-0000-0BNR-VF3X-YL38-V2KM",
+  "SSK-0000-21DX-6722-NGWH-9X02",
+  "SSK-0000-0YTE-PNWC-PEQM-SW8L",
+  "SSK-0000-0LYV-EIG9-WEF6-4A5F",
+  "SSK-0000-2AJZ-ZYW3-8R3H-WUDJ"
+ ],
+ "_comment15": "SSK- codes made against the 15-zone layout main served from e10d382 on 23 Sep 2026. They cannot be told from 16-zone codes whose Back 2 is White, so every one must come back ambiguous.",
+ "v2": [
+  {
+   "order": {
+    "colors": {},
+    "name": "empty"
+   },
+   "code": "SSK2-00"
+  },
+  {
+   "order": {
+    "colors": {
+     "web": "10",
+     "back1": "10",
+     "laces": "GF",
+     "stitching": "93",
+     "ring_emb": "95",
+     "pad_color": "93"
+    },
+    "hand": "LHT",
+    "size": "12.75\"",
+    "pad": "Finger Hood",
+    "webType": "Trapeze-Web",
+    "flag": "Other Flag",
+    "circle": "White",
+    "thumbFont": "Kanji with Shadow",
+    "thumbMain": "95",
+    "thumbOutline": "10",
+    "numberColor": "90",
+    "bulletName": "Red/Gold"
+   },
+   "code": "SSK2-2UPS-FZEB-VUY3-SYNT-3KSW-ACXN-PUBG-SCV"
+  },
+  {
+   "order": {
+    "colors": {
+     "web": "35",
+     "belt": "90",
+     "binding": "10"
+    },
+    "hand": "RHT",
+    "size": "11.5\"",
+    "pad": "None",
+    "webType": "Spiral I-Web",
+    "flag": "None",
+    "circle": "Black",
+    "thumbFont": "Block",
+    "thumbMain": "10",
+    "thumbOutline": null,
+    "numberColor": null,
+    "bulletName": "Edge Gold"
+   },
+   "code": "SSK2-KAD1-EQXF-QD6W-PLLR-CZXC-SFND-V6HE-SCC"
+  }
+ ],
+ "_commentV2": "SSK2 codes as issued by refcode.js with fixed slot capacities. They must decode to the same order for as long as the tables only grow within capacity."
 }

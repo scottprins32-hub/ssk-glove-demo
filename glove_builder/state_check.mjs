@@ -198,6 +198,12 @@ for (const [what, poison, step] of [
 
   const second = await freshPage();
   await second.page.goto(BASE, { waitUntil: 'load' });
+  await second.page.waitForTimeout(400);
+  // Someone else's glove is open when the code is pasted.
+  await second.page.evaluate(([k, v]) => localStorage.setItem(k, v),
+    ['ssk-glove-v1', JSON.stringify({ ...full(draft), thumbText: 'ALICE',
+      pinkyText: 'TEAM A', thumbNumber: '23' })]);
+  await second.page.reload({ waitUntil: 'load' });
   await second.page.waitForTimeout(1500);
   const box = second.page.locator('input[type="text"]').first();
   await box.fill(back);
@@ -205,6 +211,12 @@ for (const [what, poison, step] of [
   await second.page.waitForTimeout(800);
   const again = await second.page.evaluate(() => document.querySelector('#refcode').textContent);
   check(again === back, 'a pasted code gives back the same order', `${back} -> ${again}`);
+  const leftover = await second.page.evaluate(() => {
+    const o = JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}');
+    return [o.thumbText, o.pinkyText, o.thumbNumber].filter(Boolean).join(' / ');
+  });
+  check(leftover === '', "a pasted code does not keep the previous glove's names or number",
+    leftover);
 
   await box.fill('SSK2-' + back.slice(5, -1) + (back.endsWith('0') ? '1' : '0'));
   await box.locator('xpath=following-sibling::button').first().click();
