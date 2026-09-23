@@ -22,12 +22,14 @@ try {
   await page.locator('#share').click();
   const blankLink = await page.evaluate(() => navigator.clipboard.readText());
   await page.evaluate(() => localStorage.clear());
+  await page.goto('about:blank'); // force startup restoration, not a hash-only navigation
   await page.goto(blankLink);
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   assert.equal(await page.locator('#refcode').textContent(), 'SSK2-00', 'blank design survives shared link');
   await page.locator('#steps button').nth(5).click();
   assert.ok(await page.getByRole('button', { name: 'Personalisation is correct' }).isVisible(), 'blank shared design retains required personalisation check');
   await page.evaluate(() => localStorage.clear());
+  await page.goto('about:blank');
   await page.goto(base);
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   await page.locator('#lang-en').click();
