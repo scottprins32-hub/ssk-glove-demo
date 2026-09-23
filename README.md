@@ -301,3 +301,22 @@ The site is closed to crawlers, by `robots.txt` and by an `X-Robots-Tag`
 header for the crawlers that ignore it. The photographs, the logo and the
 prices on these pages are SSK's, and publishing them is their call. Delete
 both when they say yes.
+
+## September 23 palm photograph
+
+The shipped palm now uses the source-pixel DSC05706 crop in
+`glove_builder/images/store-2026-09/rainbow-palm.png` (1534 × 1400 rendered canvas).
+`make_store_palm.py` traces separate palm, web, wingtips, welting, binding and
+laces. It preserves photographed openings and the foreground lace crossings.
+`build_store_palm.py --out work/palm-candidate/assets` creates an isolated
+candidate from those layers; it deliberately refuses the live assets directory.
+Run `make_store_palm.py` first. After mask changes, inspect source overlays and
+contrasting renders before promoting the referenced files and palm-data.json.
+The older build_palm.py is a shared helper and legacy pipeline, not the command
+for regenerating this source-photo version.
+
+Validation: `palm_material_check.mjs` checks seven independent material controls,
+stable alpha, both-hand hit targets and mirrored geometry outside readable stamp
+boxes. Set PALM_ASSETS to test an isolated candidate. The September 24 visual
+review found no blocking source/mask regressions; small dark marks inside the
+thumb panel remain a minor refinement.
