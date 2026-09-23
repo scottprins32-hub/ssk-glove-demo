@@ -2,7 +2,9 @@
 
 A 2.5D glove configurator for **SSK Europe** (sskeurope.ccvshop.nl). A customer
 picks a colour for each part of the glove, sees it on a photoreal render, and
-finishes with a reference code that identifies the colours visible on the back view; use the full design link and specification for an exact build.
+finishes with an SSK2 design code for the selected options. The full design link
+also carries embroidery text and numbers; the downloadable specification is
+the complete review document. Saving a design does not place an order.
 
 It exists to replace the Google Form SSK currently uses to take custom glove
 orders. It is meant to live at its own URL and be linked from the shop, with
@@ -136,10 +138,13 @@ levels.
 It needs node and a Playwright chromium, and nothing the shipped page depends
 on.
 
-The reference code packs every choice into one string (5 bits per zone for its
-index in that zone's palette, 4 bits for the bullet logo, base36). It decodes
-as well as encodes, so "copy link" can put a whole design in a URL and pasting
-one back reopens it exactly.
+SSK2 codes use frozen option tables, fixed field capacities and a typo check.
+Their meaning does not depend on render-layer order or the displayed view.
+They preserve selectable design options but exclude free text: opening one
+clears prior embroidery names/numbers and requires personalisation confirmation.
+Full design links preserve that text while excluding the customer's name and
+phone. Older SSK codes are decoded against their original layout; ambiguous
+codes are refused rather than silently changing colours.
 
 ## Where the colours come from
 
