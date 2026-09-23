@@ -235,9 +235,12 @@ A repeatable rig fixes that, and it does not need to be fancy:
   the "immediately fits perfectly" property of the configurators Scott is
   being compared to.
 
-In one session, ideally: the eight remaining webs (SMS, SMLEE, Modified
-Trapeze, Basket, Em Rocket, Sasaki 1, Sasaki 2, Trapeze), the rainbow glove's
-thumb and pinky sides, and the palm. And, separately, the leather swatch card
+In one session, ideally: the remaining webs (SMS, Basket, Sasaki 1, Sasaki 2,
+and the Trapeze and Modified Trapeze again, flat and open this time), the
+rainbow glove's thumb and pinky sides, and the palm. The store shoot of
+23 September 2026 did most of this on a stand under window light, and its
+frames of the rainbow glove's palm, thumb side, pinky side and heel
+(DSC05706–05713, RAW only) are waiting to be cut. And, separately, the leather swatch card
 flat with a white sheet in frame.
 
 A hood and a pad glove would be worth adding to that list even though both are
@@ -257,9 +260,14 @@ other views will fix that. The pad and the hood are both drawn now, cut from
 SSK's own photographs of them, so the pad/hood colour is previewed too — the
 one thing it needs is for one of them to be fitted.
 
-The web-type picker draws its own thumbnails for the five webs that can be
+The web-type picker draws its own thumbnails for the seven webs that can be
 rendered — the customer's colours, the customer's hand, cropped to the web.
-The other eight still use SSK's form photographs, which are a different glove
+Two of those, SMLEE and Em Rocket, came out of the store shoot of 23 September
+2026 (`images/store-2026-09/`): closed webs, so an outline read off a gridded
+crop was enough and no tracing was needed. The Trapeze and Modified Trapeze
+from the same shoot are lattices of lace and are not shipped: their specs are
+in `make_web.py`, their photographs are in the tracer, and they wait for a
+hand trace of each lace. The other six still use SSK's form photographs, which are a different glove
 in a different colour each and several of which carry burned-in Japanese
 captions; the note under the picker says when the preview cannot follow. Those
 eight go away with one photo session (see the shoot rig above). And nothing is

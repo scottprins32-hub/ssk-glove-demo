@@ -21,7 +21,7 @@ from PIL import Image
 HERE = pathlib.Path(__file__).parent
 # Every drive drop. drive-2026-08 is Pim's "Zooi van Pim" folder, which is
 # where the palm-side calibration glove and the finger hood came from.
-SRC_DIRS = sorted((HERE / "images").glob("drive-*"))
+SRC_DIRS = sorted((HERE / "images").glob("drive-*")) + sorted((HERE / "images").glob("store-*"))
 OUT = HERE / "customiser" / "dist" / "tracer.html"
 
 # Everything the cutting scripts read, at the size they read it. Coordinates

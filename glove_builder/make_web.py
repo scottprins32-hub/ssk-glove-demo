@@ -411,6 +411,64 @@ WEBS = {
                         (668, 690), (676, 590), (682, 470), (686, 350),
                         (687, 230), (688, 120), (688, 40)],
     },
+    # --- Store shoot, 23 Sep 2026. Eight gloves on the same stand in the same
+    # frame as the rainbow master (DSC05705), Scott naming each web by voice.
+    # The photographs are the camera JPEGs cropped to the stand and halved
+    # (images/store-2026-09/), so a coordinate here is a pixel of that file.
+    # Outlines were read off a gridded crop, not traced by hand in the tracer,
+    # so they are a first cut: fit() and complete() take up the slack, and the
+    # tracer can replace any of them.
+    "trapeze": {
+        "photo": "images/store-2026-09/trapeze.jpg",
+        "glove_mask": "runs/store-trapeze/masks/glove.png",
+        # white leather, purple lacing: the T-bar of leather down the finger
+        # side and a lattice of lace between it and the thumb
+        "outline": [(950, 130), (1000, 110), (1100, 140), (1180, 200),
+                    (1260, 300), (1300, 400), (1330, 500), (1350, 650),
+                    (1350, 800), (1330, 950), (1300, 1080), (1230, 1160),
+                    (1150, 1190), (1050, 1170), (1010, 1150), (1000, 1000),
+                    (985, 700), (975, 450), (965, 300)],
+        "lace_hue": (240, 360), "lace_s": (40, 255), "lace_v_min": 5,
+        "lace_v_max": 95,
+    },
+    "modified-trapeze": {
+        "photo": "images/store-2026-09/modified-trapeze.jpg",
+        "glove_mask": "runs/store-modified-trapeze/masks/glove.png",
+        # black leather, gold lacing: the hue holds where a lace falls into
+        # shadow and Otsu on brightness did not
+        "lace_hue": (30, 58), "lace_s": (80, 255), "lace_v_min": 40,
+        "outline": [(1110, 250), (1160, 200), (1220, 190), (1300, 220),
+                    (1370, 280), (1420, 360), (1460, 470), (1480, 600),
+                    (1470, 720), (1420, 860), (1330, 940), (1250, 1000),
+                    (1150, 1010), (1080, 950), (1070, 800), (1085, 600),
+                    (1100, 400)],
+    },
+    "smlee": {
+        "photo": "images/store-2026-09/smlee.jpg",
+        "glove_mask": "runs/store-smlee/masks/glove.png",
+        # closed web, same orange as the shell, tooled pattern; cream lacing
+        # only round the rim
+        "outline": [(1095, 300), (1150, 250), (1230, 235), (1300, 260),
+                    (1360, 320), (1400, 420), (1410, 560), (1400, 700),
+                    (1380, 820), (1330, 900), (1250, 940), (1160, 950),
+                    (1100, 900), (1090, 750), (1090, 600), (1090, 450)],
+        "lace_hue": (25, 60), "lace_s": (30, 150), "lace_v_min": 120,
+        "closed": True,
+    },
+    "em-rocket": {
+        "photo": "images/store-2026-09/em-rocket.jpg",
+        "glove_mask": "runs/store-em-rocket/masks/glove.png",
+        # closed web on the Columbia/red glove (DSC05715, developed from the
+        # RAW): two stitched bars, red lacing along the rim and two lace
+        # tails crossing the face
+        "outline": [(1056, 175), (1120, 150), (1200, 160), (1280, 200),
+                    (1340, 270), (1390, 370), (1410, 500), (1415, 650),
+                    (1400, 800), (1370, 920), (1300, 1010), (1200, 1050),
+                    (1100, 1050), (1030, 1000), (1010, 850), (1015, 650),
+                    (1025, 450), (1040, 300)],
+        "lace_hue": (335, 30), "lace_s": (90, 255), "lace_v_min": 25,
+        "closed": True,
+    },
 }
 
 
@@ -480,10 +538,25 @@ def cut(spec):
             # blue, pink — and only the lacing differs, so the two sit at the
             # same value and Otsu finds nothing. Hue separates them outright:
             # 205 degrees against 45 on one glove, 340 against 205 on the other.
-            hue = np.asarray(im.convert("HSV")).astype(float)[..., 0] * 360 / 255
+            hsv_ = np.asarray(im.convert("HSV")).astype(float)
+            hue = hsv_[..., 0] * 360 / 255
             lo, hi = spec["lace_hue"]
             islace = ((hue >= lo) & (hue <= hi) if lo <= hi
                       else (hue >= lo) | (hue <= hi))
+            # Hue alone is not enough on the store photographs: white leather
+            # and black leather both carry random hues at low saturation, and
+            # some of those land inside the lace's range. A saturation window
+            # and a floor on brightness keep the lace rule to the lace.
+            if "lace_s" in spec:
+                s_lo, s_hi = spec["lace_s"]
+                islace &= (hsv_[..., 1] >= s_lo) & (hsv_[..., 1] <= s_hi)
+            if "lace_v_min" in spec:
+                islace &= hsv_[..., 2] >= spec["lace_v_min"]
+            if "lace_v_max" in spec:
+                # dark lacing on pale leather: the hue of a lace in shadow is
+                # noisy, but its darkness is not, and nothing else inside the
+                # outline is dark
+                islace &= hsv_[..., 2] <= spec["lace_v_max"]
             web = region & ~islace
             cutv = None
         else:
