@@ -55,21 +55,22 @@ PARTS["pad"] = {
 # it is a close-up, so everything in it except the pocket behind the hood's
 # end is glove, and a luminance floor separates those.
 PARTS["hood"] = {
-    "photo": "images/drive-2026-08/SSK-Finger-Hood.jpg",
-    "dark_floor": 40,
-    # Traced OUTSIDE the stitching: two rows of stitches down each side and
-    # round the end are what say "hood" at a glance, and a trace inside them
-    # renders a plain slab of leather. Pulled in again where a lace crosses
-    # the hood in the photograph — that lace is the photographed glove's, and
-    # this one draws its own over the top.
-    "outline": [(690, 244), (800, 252), (895, 292), (955, 366), (984, 456),
-                (988, 620), (980, 800), (968, 980), (940, 1160),
-                (884, 1240), (872, 1330), (872, 1430), (886, 1510),
-                (906, 1580), (898, 1700), (876, 1880), (846, 1992),
-                (768, 2052), (656, 2066), (556, 2042), (496, 1986),
-                (474, 1880), (460, 1700), (450, 1520), (440, 1340),
-                (428, 1160), (418, 980), (414, 800), (418, 620),
-                (430, 448), (470, 348), (566, 272)],
+    # Scott's store shoot, 23 September 2026: the orange SMLEE glove's hood,
+    # close up, square-on, window light (DSC05724 at half size). "DSC05724
+    # use this pic for the finger hood." It replaces SSK's catalogue close-up.
+    "photo": "images/store-2026-09/hood.jpg",
+    # the pocket behind the hood is near black; the hood's shaded side is not
+    "dark_floor": 12,
+    # Traced OUTSIDE the two rows of stitching, as before; the lace tails
+    # that cross the hood's right edge in the photograph are left out, this
+    # glove draws its own.
+    "outline": [(1520, 300), (1640, 270), (1800, 262), (1950, 275),
+                (2090, 320), (2140, 420), (2160, 560), (2170, 800),
+                (2180, 1000), (2200, 1200), (2210, 1400), (2200, 1560),
+                (2150, 1700), (2050, 1800), (1900, 1850), (1750, 1855),
+                (1620, 1810), (1520, 1720), (1480, 1560), (1470, 1400),
+                (1470, 1200), (1475, 1000), (1480, 800), (1490, 600),
+                (1500, 450)],
     "erode": 3,
     # Where it lands. Not at the fingertip: the hood is the cap the index
     # finger sits in when it is held OUTSIDE the glove, so it is on the lower
