@@ -2,10 +2,11 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import { loadGlove, GloveRenderer, refCode, applyCode } from './glove-engine.js';
+import { loadGlove, GloveRenderer } from './glove-engine.js';
+import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
-         T } from './glove-catalog.js';
+         UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -197,7 +198,10 @@ function cleanState(o) {
   const clean = {
     lang: o.lang === 'en' ? 'en' : 'nl',
     part: COLOUR_ORDER.includes(o.part) ? o.part : 'web',
-    bullet: DATA.bullets[o.bullet] ? o.bullet : 7,
+    // A badge that no longer exists, or is switched off, becomes unanswered:
+    // substituting another one would change the order without saying so.
+    bullet: (Number.isInteger(o.bullet) && DATA.bullets[o.bullet] &&
+             DATA.bullets[o.bullet].active !== false) ? o.bullet : null,
     colors,
     hand: byId(HANDS, o.hand),
     size: inList(SIZES, o.size),
@@ -216,6 +220,14 @@ function cleanState(o) {
     phone: text(o.phone),
     view: o.view === 'palm' ? 'palm' : 'back',
   };
+  // Size and web are checked together, as the size picker does: a Trapeze
+  // is 12.75" only, and a link or an old draft carrying it at 11.5" would
+  // otherwise restore an order the form itself cannot produce. The web goes
+  // back to unanswered; the size stays, since it is the more basic choice.
+  if (clean.webType && clean.size &&
+      !WEBS.find((w) => w.id === clean.webType).sizes.includes(clean.size)) {
+    clean.webType = null;
+  }
   // Only carry a starter through if it still exists; otherwise leave whatever
   // the page already set, rather than blanking the highlight to undefined.
   if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
@@ -258,7 +270,34 @@ function layerState() {
   }
   return out;
 }
-const code = () => refCode(DATA, layerState(), S.bullet);
+// The order's reference: the form's answers, whatever view is on screen.
+const code = () => encodeV2(S, S.bullet == null ? null
+  : (DATA.bullets[S.bullet] || {}).name ?? null);
+
+/* A pasted code, applied through the same validation as a restored draft, so
+   it cannot produce an order the form itself would refuse. A version-2 code
+   is a whole order and replaces every choice it covers; an old one carries
+   only colours and the badge, so it leaves everything else as it was. A
+   badge that is gone, or not orderable, comes back unanswered. */
+function applyPasted(text) {
+  const d = isV2(text) ? decodeV2(text) : decodeV1(text);
+  if (!d) return false;
+  const bi = d.bulletName == null ? -1
+    : DATA.bullets.findIndex((b) => b.name === d.bulletName);
+  const next = { ...S, colors: isV2(text) ? d.colors : { ...S.colors, ...d.colors },
+                 bullet: bi < 0 ? null : bi };
+  if (isV2(text)) {
+    for (const k of ['hand', 'size', 'pad', 'webType', 'flag', 'circle',
+                     'thumbFont', 'thumbMain', 'thumbOutline', 'numberColor'])
+      next[k] = d[k];
+  }
+  const o = cleanState(next);
+  if (!o) return false;
+  const { lang, part, view, ...order } = o;
+  snapshot();                     // only once the code is known to be good
+  Object.assign(S, order);
+  return true;
+}
 
 /* ----------------------------------------------------------------- canvas */
 const flagArt = () => {
@@ -366,14 +405,10 @@ function renderStart(b) {
   inp.style.flex = '1 1 200px';
   const go = el('button', 'btn btn-ghost', t('open')); go.type = 'button';
   go.onclick = () => {
-    const r = applyCode(DATA, inp.value.trim());
-    if (!r) { inp.style.borderColor = 'var(--red-600)'; return; }
-    snapshot();
-    for (const [layer, num] of Object.entries(r.state)) {
-      const fld = LAYER_TO_FIELD[layer];
-      if (fld) S.colors[fld] = num;
+    if (!applyPasted(inp.value.trim())) {
+      inp.style.borderColor = 'var(--red-600)'; return;
     }
-    S.bullet = r.bulletSel; draw(); paint();
+    draw(); paint();
   };
   row.append(inp, go);
   f.appendChild(row);
@@ -547,10 +582,21 @@ function renderWeb(b) {
   // Only some webs are photographed. The rest are ordered correctly but the
   // preview still shows the standard one, and saying so beats letting someone
   // believe the picture is their glove.
-  const w = WEBS.find(w => w.id === S.webType);
-  if (w && !w.render && w.id !== NATIVE_WEB)
-    b.appendChild(el('p', 'note', t('webNotDrawn')));
+  const note = webPreviewNote();
+  if (note) b.appendChild(el('p', 'note', t(note)));
   b.appendChild(swatchField('web', null, true));
+}
+
+/* Whether the picture shows the web that will be ordered, per view. Only
+   some webs are photographed at all, and those are cut for the back view
+   only: the palm view has no asset for a swapped web and draws the stock one
+   (see draw()). Saying so beats letting someone believe the picture is their
+   glove. */
+function webPreviewNote() {
+  const w = WEBS.find(w => w.id === S.webType);
+  if (!w || w.id === NATIVE_WEB) return null;
+  if (!w.render) return 'webNotDrawn';
+  return S.view === 'palm' ? 'webNotOnPalm' : null;
 }
 
 /* ----------------------------------------------------------- 4. colours */
@@ -599,7 +645,8 @@ function renderLogos(b) {
     c.dataset.key = 'bullet|' + i;
     c.innerHTML = `<img src="${bl.thumb}" alt="" loading="lazy">` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
-      (bl.active === false ? `<span class="sub">${t('notShown')}</span>` : '') + `</span>`;
+      (bl.active === false
+        ? `<span class="sub">${t(bl.pending ? 'askPim' : 'notShown')}</span>` : '') + `</span>`;
     if (bl.active === false) c.disabled = true;
     c.onclick = () => { snapshot(); S.bullet = i; draw(); paint(); };
     grid.appendChild(c);
@@ -936,7 +983,10 @@ function paint(rebuildBody = true) {
     tag.hidden = false;
     tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
-  $('#stagehint').textContent = S.step === 3 ? t('pickPart') : '';
+  // On any step, the stage says when it is not showing the chosen web.
+  const wn = webPreviewNote();
+  $('#stagehint').textContent =
+    S.step === 3 ? t('pickPart') : (wn === 'webNotOnPalm' ? t(wn) : '');
 
   // header + bar
   $('#refcode').textContent = code();
@@ -985,6 +1035,10 @@ $('#redo').onclick = () => {
 
 loadGlove().then(bundle => {
   DATA = bundle.DATA;
+  // The catalogue decides what can be ordered; the asset data only draws it.
+  for (const b of DATA.bullets) {
+    if (UNCONFIRMED_BULLETS.includes(b.name)) { b.active = false; b.pending = true; }
+  }
   R = new GloveRenderer(bundle);
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });

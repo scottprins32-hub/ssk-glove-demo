@@ -36,7 +36,8 @@ try {
 } catch (err) {
   console.error('SKIP: playwright not resolvable globally (npm i -g playwright).');
   console.error(String(err.message).split('\n')[0]);
-  process.exit(0);
+  // 3, not 0: a check that did not run must not read as one that passed.
+  process.exit(3);
 }
 
 const ROOT = normalize(new URL('./customiser/', import.meta.url).pathname);
@@ -133,6 +134,84 @@ for (const [what, poison, step] of CASES) {
      !asked ? `step ${step + 1} still counts its question as answered` : '',
     ].filter(Boolean).join(' — '));
   await ctx.close();
+}
+
+/* Choices that are each valid alone but not together, and badges that
+   cannot be ordered. Each must come back unanswered, and a valid draft must
+   not: step 2 is the web, step 4 the logos. */
+async function todoAfter(poison) {
+  const { ctx, page } = await freshPage();
+  await page.goto(BASE, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  await page.evaluate(([k, v]) => localStorage.setItem(k, v),
+    ['ssk-glove-v1', JSON.stringify(poison(draft))]);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  const todo = await page.evaluate(() =>
+    [...document.querySelectorAll('#steps .step')]
+      .map((b) => !!b.querySelector('.dot.todo')));
+  await ctx.close();
+  return todo;
+}
+const answered = { ...draft.colors };
+const full = (o) => ({ ...o, colors: { ...answered, ring_emb: '10' }, bullet: 7 });
+const base = await todoAfter(full);
+check(base[2] === false && base[4] === false,
+  'control: a complete draft counts web and logos as answered',
+  `web todo=${base[2]}, logos todo=${base[4]}`);
+for (const [what, poison, step] of [
+  ['a web the chosen size cannot have is dropped',
+    (o) => ({ ...full(o), size: '11.5"', webType: 'Trapeze-Web' }), 2],
+  ['an unconfirmed badge comes back unanswered',
+    (o) => ({ ...full(o), bullet: 3 }), 4],
+  ['a badge that was never orderable comes back unanswered',
+    (o) => ({ ...full(o), bullet: 99 }), 4],
+]) {
+  const todo = await todoAfter(poison);
+  check(todo[step] === true, what, todo[step] ? '' : `step ${step + 1} still answered`);
+}
+
+/* The reference code describes the order, so it cannot depend on the view,
+   and pasting it into a fresh page must give back the same order. */
+{
+  const { ctx, page } = await freshPage();
+  await page.goto(BASE, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  await page.evaluate(([k, v]) => localStorage.setItem(k, v),
+    ['ssk-glove-v1', JSON.stringify({ ...full(draft), hand: 'LHT', size: '12.75"',
+      webType: 'Trapeze-Web', pad: 'Finger Hood', flag: 'Curaçao' })]);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  const read = () => page.evaluate(() => document.querySelector('#refcode').textContent);
+  const back = await read();
+  const views = await page.$$('#stageview button');
+  let palm = back;
+  if (views.length > 1) {
+    await page.click('#stageview button[data-view="palm"]');
+    await page.waitForTimeout(600);
+    palm = await read();
+  }
+  check(/^SSK2-/.test(back) && back === palm,
+    'the reference code is the same on the back and the palm view',
+    `back ${back} / palm ${palm}${views.length > 1 ? '' : ' (no palm view)'}`);
+  await ctx.close();
+
+  const second = await freshPage();
+  await second.page.goto(BASE, { waitUntil: 'load' });
+  await second.page.waitForTimeout(1500);
+  const box = second.page.locator('input[type="text"]').first();
+  await box.fill(back);
+  await box.locator('xpath=following-sibling::button').first().click();
+  await second.page.waitForTimeout(800);
+  const again = await second.page.evaluate(() => document.querySelector('#refcode').textContent);
+  check(again === back, 'a pasted code gives back the same order', `${back} -> ${again}`);
+
+  await box.fill('SSK2-' + back.slice(5, -1) + (back.endsWith('0') ? '1' : '0'));
+  await box.locator('xpath=following-sibling::button').first().click();
+  await second.page.waitForTimeout(400);
+  const after = await second.page.evaluate(() => document.querySelector('#refcode').textContent);
+  check(after === back, 'a code with a typo is refused and changes nothing', after);
+  await second.ctx.close();
 }
 
 await browser.close();
