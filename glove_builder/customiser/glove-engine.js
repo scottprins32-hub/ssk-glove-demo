@@ -539,37 +539,8 @@ export class GloveRenderer {
   }
 }
 
-// The reference code packs every zone choice (5 bits: index in that zone's
-// palette) plus the bullet logo (4 bits) into one base36 string, and decodes
-// again, so it doubles as a shareable link.
-export function refCode(DATA, state, bulletSel) {
-  let bits = 0n;
-  for (const z of DATA.zones) {
-    const pal = DATA.palettes[z.group];
-    const i = Math.max(0, pal.findIndex(c => c[0] === state[z.id]));
-    bits = (bits << 5n) | BigInt(i & 31);
-  }
-  bits = (bits << 4n) | BigInt(bulletSel & 15);
-  const s = bits.toString(36).toUpperCase().padStart(20, '0');
-  return 'SSK-' + s.match(/.{4}/g).join('-');
-}
-
-export function applyCode(DATA, code) {
-  const s = String(code).toUpperCase().replace(/^#?SSK-?/, '').replace(/-/g, '');
-  if (!/^[0-9A-Z]{1,20}$/.test(s)) return null;
-  let bits = 0n;
-  for (const ch of s) bits = bits * 36n + BigInt(parseInt(ch, 36));
-  const bullet = Number(bits & 15n);
-  bits >>= 4n;
-  const state = {};
-  for (const z of [...DATA.zones].reverse()) {
-    const pal = DATA.palettes[z.group];
-    const c = pal[Number(bits & 31n)];
-    bits >>= 5n;
-    if (c) state[z.id] = c[0];
-  }
-  return { state, bulletSel: DATA.bullets[bullet] ? bullet : 0 };
-}
+// Reference codes live in refcode.js: they encode the order form's answers,
+// not this renderer's zones, so no view or rebuild can change what one means.
 
 export function applyPreset(DATA, name) {
   const pr = DATA.presets[name];

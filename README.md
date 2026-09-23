@@ -61,12 +61,15 @@ python -m venv .venv && .venv/bin/pip install -r glove_builder/requirements.txt
 
 # the checks: the palette still says what the photographs say, the highlight
 # scales still match the assets, every zone still renders its own colour, and a
-# draft saved by an older version of the page still opens
+# draft saved by an older version of the page still opens (the browser checks
+# exit 3 when Playwright is missing: not run, never read as passed)
 .venv/bin/python glove_builder/colour_evidence.py --photos <drive folder> --check
 .venv/bin/python glove_builder/sheen.py --assets glove_builder/customiser/assets --check
 node glove_builder/render_check.mjs
 node glove_builder/state_check.mjs
 node glove_builder/keyboard_check.mjs
+# reference codes: old SSK- codes still decode as issued, SSK2- round-trips
+node glove_builder/refcode_check.mjs
 
 # optional: fold the whole app into one self-contained file
 .venv/bin/python glove_builder/customiser/bundle.py
