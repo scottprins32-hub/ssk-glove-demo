@@ -16,6 +16,7 @@ import base64
 import functools
 import http.server
 import io
+import json
 import os
 import pathlib
 import threading
@@ -86,6 +87,11 @@ async def shoot(port, jobs):
     return out
 
 
+def mirror_box(box, w):
+    x0, y0, x1, y1 = box
+    return (w - x1, y0, w - x0, y1)
+
+
 def on(im):
     bg = Image.new("RGBA", im.size, PAGE + (255,))
     bg.alpha_composite(im)
@@ -104,6 +110,75 @@ def row(tiles, height=None):
         s.paste(t, (x, 0))
         x += t.width + 12
     return s
+
+
+# The embroidered text, rendered by the configurator itself (the standalone
+# preview has no order form). Cases: text, font, main and outline thread,
+# and the leather under it.
+EMB_CASES = [
+    ("script_yellow_on_navy", "Scott Prins", "Script", "45", "10", "70"),
+    ("block_outline_white_on_navy", "Scott Prins", "Block with Outline", "10", "20", "70"),
+    ("brush_shadow_navy_on_tan", "Modern Pitching", "Brush with Shadow", "70", "90", "44"),
+    ("script_white_on_black", "Modern Pitching", "Script", "10", "10", "90"),
+]
+
+
+async def shoot_app(port, cases):
+    from playwright.async_api import async_playwright
+    out = {}
+    async with async_playwright() as p:
+        try:
+            b = await p.chromium.launch(args=["--no-sandbox"])
+        except Exception:
+            b = await p.chromium.launch(args=["--no-sandbox"],
+                                        executable_path=CHROMIUM)
+        pg = await b.new_page(viewport={"width": 1440, "height": 1000})
+        await pg.goto(f"http://127.0.0.1:{port}/index.html")
+        await pg.wait_for_function("() => document.querySelectorAll('#stageview button').length > 0")
+        for key, (view, hand, text, font, main, outline, leather) in cases.items():
+            st = await pg.evaluate("() => JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}')")
+            st.update({"view": view, "hand": hand, "webType": "H-Web", "size": '12"',
+                       "lang": "en", "step": 5, "thumbText": text, "pinkyText": text,
+                       "thumbFont": font, "thumbMain": main, "thumbOutline": outline,
+                       "colors": order(leather, "10", "10", "10")})
+            await pg.evaluate("([k, v]) => localStorage.setItem(k, v)",
+                              ["ssk-glove-v1", json.dumps(st)])
+            await pg.reload()
+            await pg.wait_for_function(
+                "() => document.fonts.check('400 40px \"Yellowtail\"')")
+            await pg.wait_for_timeout(600)
+            u = await pg.evaluate(
+                "() => document.getElementById('glove').toDataURL('image/png')")
+            out[key] = Image.open(io.BytesIO(base64.b64decode(u.split(",", 1)[1]))).convert("RGBA")
+        await b.close()
+    return out
+
+
+# where each text sits, for the 200% crops (right hand; mirrored for left)
+EMB_ZOOM = {"thumb": (330, 330, 780, 860), "pinky": (30, 320, 420, 980)}
+
+
+def embroidery_sheets(out):
+    cases = {}
+    for name, text, font, main, outline, leather in EMB_CASES:
+        for view in ("thumb", "pinky"):
+            for hand in ("RHT", "LHT"):
+                cases[(name, view, hand)] = (view, hand, text, font, main, outline, leather)
+    srv = serve(HERE / "customiser")
+    try:
+        shots = asyncio.run(shoot_app(srv.server_address[1], cases))
+    finally:
+        srv.shutdown()
+    for name, *_ in EMB_CASES:
+        tiles = []
+        for view in ("thumb", "pinky"):
+            for hand in ("RHT", "LHT"):
+                im = shots[(name, view, hand)]
+                box = EMB_ZOOM[view] if hand == "RHT" else mirror_box(EMB_ZOOM[view], im.width)
+                t = on(im).crop(box)
+                tiles.append(t.resize((t.width * 2, t.height * 2), Image.LANCZOS))
+        row(tiles, height=1000).save(out / f"embroidery_{name}.jpg", quality=88)
+    print(f"embroidery sheets in {out}")
 
 
 def main():
@@ -141,6 +216,7 @@ def main():
         src += [photo, on(shots[("contrast", v, "RHT")])]
     row(src, height=1100).save(args.out / "source_vs_contrast.jpg", quality=85)
     print(f"review sheets in {args.out}")
+    embroidery_sheets(args.out)
 
 
 if __name__ == "__main__":

@@ -160,6 +160,46 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
   unphotographed web in both views and both hands. All other checks still
   pass.
 
+## Embroidered text
+
+The form's thumb text and pinky text are drawn on the side that carries
+them (`glove-engine.js` drawText, from each view's `textMount`):
+
+- **Where.** Along the panel's long axis through its centroid: the pinky text
+  on Back 9, the thumb text on Back 1, shifted toward the fingertip to clear
+  the thumb circle. The cap height is a share of the panel's width and the
+  text shrinks to fit the panel's length. The mounts are computed by
+  `build_side_views.py` from the panel masks, not drawn by hand.
+- **Which way.** Embroidery reads the right way up when the back of the hand
+  is up. That is what the photographed SSK mark on the pinky side does: it
+  reads along the finger with the tops of its letters toward the back of the
+  hand. Both texts follow that rule, so the pinky text reads down the finger
+  with its tops to the right, and the thumb text reads up the thumb with its
+  tops to the left. A left-handed glove re-lays the text rather than
+  mirroring it, so it reads correctly there too.
+- **Fonts.** Open web fonts stand in for SSK's: Block by Barlow Condensed,
+  Script by Yellowtail, Brush by Kaushan Script (`assets/fonts`, SIL OFL,
+  inlined by `bundle.py`). "with Outline" strokes the outline thread round
+  the letters, "with Shadow" sets an offset copy in it. Kanji draws nothing:
+  SSK stitches it in Japanese characters, and the stage and the form say so.
+- **Look.** The thread colour is multiplied by the panel's own light and
+  carries a fine stitch ridge and a darker edge, and never leaves its panel.
+  Before a font is chosen the text shows in Block; an unchosen thread shows
+  in the unanswered grey, like a panel without a colour.
+- **Reaching it.** Under each text field a button switches the stage to the
+  side that shows it.
+- **Check.** `embroidery_check.mjs` drives the configurator: the text changes
+  pixels only on its panel, carries the main thread and the outline thread,
+  sits at the mirrored place on the left hand without being a mirror image,
+  and Kanji draws nothing. Both texts, both hands.
+- **Review sheets.** `runs/side-views/review/embroidery_*.jpg`.
+
+Open: the thumb-text orientation is the pinky mark's rule applied to the
+thumb, whose back-of-hand side in the photograph is the web side (the
+bullet patch's edge shows there). Scott's own glove reads the other way if
+it is right-handed; a photograph of an SSK thumb embroidery on a glove of
+known hand would settle it.
+
 ## Remaining limitations
 
 1. **Other frames.** These are different frames from the back view's master
@@ -197,6 +237,8 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
 | `glove_builder/customiser/assets/side/`, `customiser/assets/{thumb,pinky}-data.json` | the built views |
 | `glove_builder/customiser/glove-engine.js`, `app.js`, `glove-catalog.js`, `bundle.py` | the wiring (see "In the configurator") |
 | `glove_builder/side_views_app_check.mjs` | the configurator check |
+| `glove_builder/embroidery_check.mjs` | the embroidered-text check |
+| `glove_builder/customiser/assets/fonts/` | the three embroidery faces and their licence note |
 | `glove_builder/side_views_check.mjs` | the check |
 | `glove_builder/side_views_review.py` | review sheets |
 | `glove_builder/images/store-2026-09/rainbow-{thumb,pinky}.png` | committed source crops |

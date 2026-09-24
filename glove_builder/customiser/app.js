@@ -2,7 +2,7 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import { loadGlove, GloveRenderer } from './glove-engine.js';
+import { loadGlove, GloveRenderer, loadEmbroideryFonts } from './glove-engine.js';
 import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
@@ -361,6 +361,33 @@ function draw() {
     S.step === 3 && viewFieldLayer()[S.part]
       ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
     indexIsOnePiece(), isLefty());
+  drawEmbroidery();
+}
+
+/* The form's embroidered text, on the side that carries it: the thumb's on
+   the thumb side, the pinky's on the pinky side. Font and threads are the
+   thumb's for both (see renderPersonal). Before a font is chosen the text
+   is shown in Block, and an unchosen thread in the unanswered grey, the
+   same as a panel with no colour yet. */
+const embroideryHex = f => {
+  const c = DATA.palettes.embroidery.find(c => c[0] === S[f]);
+  return c ? c[2] : UNSET;
+};
+function drawEmbroidery() {
+  const M = R.DATA.textMount;
+  if (!M) return;
+  const text = (S[M.field] || '').trim();
+  if (!text) return;
+  R.drawText(ctx, text, S.thumbFont || 'Block', embroideryHex('thumbMain'),
+             embroideryHex('thumbOutline'), isLefty());
+}
+/* Kanji lettering is stitched by SSK in Japanese characters, which no
+   preview can make from a Latin name: the stage says so instead of drawing
+   something invented. */
+function textPreviewNote() {
+  const M = R && R.DATA.textMount;
+  if (!M || !(S[M.field] || '').trim()) return null;
+  return /^Kanji/.test(S.thumbFont || '') ? 'kanjiNotDrawn' : null;
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -702,6 +729,16 @@ function renderLogos(b) {
   b.appendChild(swatchField('ring_emb', null, true));
 }
 
+/* A way from a text field to the side of the glove that shows it, when
+   that side loaded. */
+function viewLink(field, view) {
+  if (!R || !R.hasView(view) || S.view === view) return;
+  const b = el('button', 'btn btn-ghost', t(view === 'thumb' ? 'seeOnThumb' : 'seeOnPinky'));
+  b.type = 'button'; b.style.alignSelf = 'flex-start';
+  b.onclick = () => { S.view = view; draw(); paint(); };
+  field.appendChild(b);
+}
+
 /* ---------------------------------------------------- 6. personalisation */
 function renderPersonal(b) {
   if (S.personalCheck) {
@@ -717,12 +754,16 @@ function renderPersonal(b) {
     ['assets/ref/thumb_name.webp', t('thumbText')],
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
   ]));
-  b.appendChild(textField(t('thumbText'), S.thumbText, 18,
-    v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); }));
+  const thumbField = textField(t('thumbText'), S.thumbText, 18,
+    v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); });
+  if (S.thumbText.trim()) viewLink(thumbField, 'thumb');
+  b.appendChild(thumbField);
   if (S.thumbText.trim() || S.pinkyText.trim()) {
-    b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
+    const fonts = cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
-    })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, true));
+    })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, true);
+    if (/^Kanji/.test(S.thumbFont || '')) fonts.appendChild(el('p', 'note', t('kanjiNotDrawn')));
+    b.appendChild(fonts);
     b.appendChild(threadField('thumbMain', t('thumbMain')));
     if (/Outline|Shadow/.test(S.thumbFont || ''))
       b.appendChild(threadField('thumbOutline', t('thumbOutline')));
@@ -744,6 +785,7 @@ function renderPersonal(b) {
   const pinky = textField(t('pinkyText'), S.pinkyText, 18,
     v => { const changed = !!S.pinkyText !== !!v; S.pinkyText = v; paint(changed); });
   if (S.pinkyText) pinky.appendChild(el('p', 'note', t('pinkyHint')));
+  if (S.pinkyText.trim()) viewLink(pinky, 'pinky');
   b.appendChild(pinky);
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
     id: f.id, label: f[S.lang] || f.id, img: f.img
@@ -1072,8 +1114,9 @@ function paint(rebuildBody = true) {
     tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
-  const wn = webPreviewNote();
-  const palmNote = STAGE_NOTES.includes(wn) ? t(wn) : '';
+  const wn = webPreviewNote(), tn = textPreviewNote();
+  const palmNote = [STAGE_NOTES.includes(wn) ? t(wn) : '', tn ? t(tn) : '']
+    .filter(Boolean).join(' ');
   $('#stagehint').textContent = S.step === 3
     ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
     : palmNote;
@@ -1130,6 +1173,8 @@ loadGlove().then(bundle => {
     if (UNCONFIRMED_BULLETS.includes(b.name)) { b.active = false; b.pending = true; }
   }
   R = new GloveRenderer(bundle);
+  // the embroidery faces arrive after the page; redraw once they have
+  loadEmbroideryFonts().then(() => { if (R) draw(); });
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });
 

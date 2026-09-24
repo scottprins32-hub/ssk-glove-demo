@@ -68,6 +68,56 @@ ORDER_COLOUR_FIELDS = order_colour_fields()
 # The web the thumb view was photographed with: the calibration glove's own.
 PHOTOGRAPHED_WEB = "H-Web"
 
+# Where the form's embroidered text goes on each side: the panel it is
+# stitched on, the order field, and which way the back of the hand lies
+# (+1 to the right of the panel on the canvas, -1 to the left). Embroidery
+# reads the right way up when the back of the hand is up, which is what the
+# photographed SSK mark on the pinky side does: it reads along the finger
+# with the tops of its letters toward the back of the hand.
+# Then how far the text's centre sits from the panel's centroid toward the
+# fingertip (as a share of the panel's length), how much of that length the
+# text may use, and the cap height as a share of the panel's width. The thumb
+# carries its circle at the heel end, so its text sits higher and shorter.
+TEXT_PANELS = {"pinky": ("back9", "pinkyText", +1, 0.00, 0.82, 0.30),
+               "thumb": ("back1", "thumbText", -1, 0.10, 0.64, 0.24)}
+
+
+def text_mount(view, layer):
+    """The line the text is laid along, from the panel's own shape.
+
+    The panel's long axis is its first principal direction. The text runs
+    along it through the centroid, `length` is most of the panel's extent
+    along the axis, and `height` (cap height) is a share of the panel's width
+    where the text sits, so a name fills the panel the way an embroidered
+    one does without touching its seams.
+    """
+    zone, field, back_side, shift, use, share = TEXT_PANELS[view]
+    a = np.asarray(layer)[..., 3] > 127
+    ys, xs = np.nonzero(a)
+    c = np.array([xs.mean(), ys.mean()])
+    pts = np.c_[xs, ys] - c
+    _, _, vt = np.linalg.svd(pts[::5], full_matrices=False)
+    axis = vt[0] / np.linalg.norm(vt[0])
+    if axis[1] < 0:
+        axis = -axis                       # tip to heel, down the canvas
+    up = np.array([-axis[1], axis[0]])     # across the finger
+    if np.sign(up[0]) != back_side:
+        up = -up                           # toward the back of the hand
+    along = pts @ axis
+    across = pts @ up
+    lo, hi = np.percentile(along, [6, 94])
+    band = np.abs(along) < 0.1 * (hi - lo)
+    w_lo, w_hi = np.percentile(across[band], [3, 97])
+    width = float(w_hi - w_lo)
+    height = float(min(share * width, 60.0))
+    # centred across the panel where the text sits, toward the tip if asked
+    mid = c + up * float((w_lo + w_hi) / 2.0) - axis * float(shift * (hi - lo))
+    return {"field": field, "zone": zone,
+            "cx": round(float(mid[0]), 1), "cy": round(float(mid[1]), 1),
+            "ux": round(float(up[0]), 4), "uy": round(float(up[1]), 4),
+            "length": round(float(use * (hi - lo)), 1),
+            "height": round(height, 1)}
+
 
 THREAD = {"stitching", "embroidery"}   # matte: no sheen, a narrow range
 
@@ -247,6 +297,10 @@ def build(view):
     }
     if "embroidery" in layers:
         data["embroideryLHT"] = "embroidery_lht"
+    if view in TEXT_PANELS and TEXT_PANELS[view][0] in layers:
+        data["textMount"] = text_mount(view, layers[TEXT_PANELS[view][0]])
+        print(f"  {data['textMount']['field']} on {data['textMount']['zone']}: "
+              f"{data['textMount']}")
     if "web" in layers:
         # What a different web would replace: the web and the lacing that
         # runs through and round it (the rim loops, the knot that holds it),

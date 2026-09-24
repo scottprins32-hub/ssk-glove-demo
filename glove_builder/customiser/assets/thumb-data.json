@@ -241,6 +241,16 @@
   "ring_emb",
   "pad_color"
  ],
+ "textMount": {
+  "field": "thumbText",
+  "zone": "back1",
+  "cx": 532.0,
+  "cy": 594.9,
+  "ux": -0.9225,
+  "uy": -0.386,
+  "length": 403.1,
+  "height": 60.0
+ },
  "webMarker": "web_marker",
  "webZone": "web",
  "photographedWeb": "H-Web"

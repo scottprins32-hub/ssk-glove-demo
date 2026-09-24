@@ -69,15 +69,25 @@ def main():
     html = (HERE / "index.html").read_text()
 
     # ---- CSS: token files then app.css, with the @import swapped for real fonts
-    css_parts = []
+    css_parts, local_fonts = [], []
     for m in re.finditer(r'<link rel="stylesheet" href="([^"]+)">', html):
         f = HERE / m.group(1)
         text = f.read_text()
         if "fonts.googleapis.com" in text:
             text = re.sub(r"@import url\([^)]*\);", "", text)
             text = embedded_fonts() + "\n" + text
+        # the embroidery faces are files of our own (assets/fonts)
+        def sub_font(m):
+            p = HERE / m.group(1)
+            if not p.is_file():
+                return m.group(0)
+            local_fonts.append(p.name)
+            return "url(" + data_uri(p) + ")"
+        text = re.sub(r"url\((assets/fonts/[^)]+)\)", sub_font, text)
         css_parts.append(text)
     html = re.sub(r'<link rel="stylesheet" href="[^"]+">\s*', "", html)
+    if local_fonts:
+        print(f"  embedded {len(local_fonts)} embroidery faces")
     html = html.replace('<link rel="icon" href="favicon.svg" type="image/svg+xml">',
                         f'<link rel="icon" href="{data_uri(HERE / "favicon.svg")}">')
 

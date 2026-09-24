@@ -57,6 +57,26 @@ export function loadGlove() {
   return _p;
 }
 
+/* Embroidered text. SSK's fonts are matched by open web fonts shipped in
+   assets/fonts (SIL Open Font License): Block by Barlow Condensed, Script by
+   Yellowtail, Brush by Kaushan Script. Kanji is stitched by SSK in Japanese
+   characters and is not previewed. */
+const EMB_FACES = {
+  Block: { family: 'Barlow Condensed', weight: 700 },
+  Script: { family: 'Yellowtail', weight: 400 },
+  Brush: { family: 'Kaushan Script', weight: 400 },
+};
+export function embroideryFace(style) {
+  return EMB_FACES[String(style || '').split(' with ')[0]] || null;
+}
+// Resolves once the faces are usable, so a first draw can be repeated with
+// the real letterforms instead of the fallback the browser drew meanwhile.
+export function loadEmbroideryFonts() {
+  if (typeof document === 'undefined' || !document.fonts) return Promise.resolve();
+  return Promise.all(Object.values(EMB_FACES).map(f =>
+    document.fonts.load(`${f.weight} 40px "${f.family}"`).catch(() => null)));
+}
+
 export function shade(hx, f) {
   const n = parseInt(hx.slice(1), 16);
   let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
@@ -601,6 +621,93 @@ export class GloveRenderer {
       ctx.restore();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  /* The form's embroidered text on a side view, along the line the view's
+     data gives (textMount, build_side_views.py). Drawn in device space
+     after the mirror, because lettering is not mirrored: on a left-handed
+     glove it still reads the right way, laid along the same panel with the
+     tops of its letters toward the back of the hand, which is now the other
+     side. Returns whether anything was drawn. */
+  drawText(ctx, text, style, mainHex, outlineHex, mirror = false) {
+    const D = this.DATA, M = D.textMount, face = embroideryFace(style);
+    if (!M || !face || !text || !this.imgs[M.zone]) return false;
+    const w = D.w, h = D.h;
+    const cx = mirror ? w - 1 - M.cx : M.cx, cy = M.cy;
+    const ux = mirror ? -M.ux : M.ux, uy = M.uy;
+    const ang = Math.atan2(ux, -uy);   // the baseline: "up" turned a quarter clockwise
+    if (!this.off2) {
+      this.off2 = document.createElement('canvas');
+    }
+    const T = this.off, g = this.octx, S = this.off2, gs = S.getContext('2d');
+    S.width = w; S.height = h;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, w, h);
+    // Size: the cap height the mount asks for, shrunk if the text would run
+    // past the panel's usable length.
+    const fontOf = px => `${face.weight} ${px}px "${face.family}"`;
+    let px = 100;
+    g.font = fontOf(px);
+    let cap = g.measureText('H').actualBoundingBoxAscent || px * 0.7;
+    px = px * M.height / cap;
+    g.font = fontOf(px);
+    const adv = g.measureText(text).width;
+    if (adv > M.length) { px *= M.length / adv; g.font = fontOf(px); }
+    cap = g.measureText('H').actualBoundingBoxAscent || px * 0.7;
+    const variant = /Outline/.test(style) ? 'outline' : /Shadow/.test(style) ? 'shadow' : 'plain';
+    g.save();
+    g.translate(cx, cy);
+    g.rotate(ang);
+    g.textAlign = 'center';
+    g.textBaseline = 'alphabetic';
+    const baseY = cap / 2;                  // caps centred on the panel's line
+    if (variant === 'shadow') {
+      g.fillStyle = outlineHex;
+      g.fillText(text, px * 0.07, baseY + px * 0.07);
+    }
+    if (variant === 'outline') {
+      g.lineJoin = 'round';
+      g.lineWidth = px * 0.16;
+      g.strokeStyle = outlineHex;
+      g.strokeText(text, 0, baseY);
+    }
+    g.fillStyle = mainHex;
+    g.fillText(text, 0, baseY);
+    // A stitched letter is not flat: a fine ridge of thread every few pixels
+    // and a slightly darker edge, both only where thread is.
+    g.globalCompositeOperation = 'source-atop';
+    g.lineWidth = 1;
+    g.strokeStyle = 'rgba(0,0,0,0.28)';
+    g.strokeText(text, 0, baseY);
+    g.strokeStyle = 'rgba(0,0,0,0.20)';
+    g.beginPath();
+    const R = M.length / 2 + M.height;
+    for (let y = -R; y < R; y += 3) { g.moveTo(-R, y); g.lineTo(R, y + R * 0.35); }
+    g.stroke();
+    g.restore();
+    // Then the panel's own light over the thread, and nothing outside the
+    // panel. A multiply onto transparent pixels paints the source, so the
+    // text's own alpha is used to take that away again.
+    gs.setTransform(1, 0, 0, 1, 0, 0);
+    gs.globalCompositeOperation = 'source-over';
+    gs.clearRect(0, 0, w, h);
+    gs.drawImage(T, 0, 0);
+    const panel = this.imgs[M.zone];
+    const flip = () => gs.setTransform(mirror ? -1 : 1, 0, 0, 1, mirror ? w : 0, 0);
+    gs.globalCompositeOperation = 'multiply';
+    flip(); gs.drawImage(panel, 0, 0);
+    gs.setTransform(1, 0, 0, 1, 0, 0);
+    gs.globalCompositeOperation = 'destination-in';
+    gs.drawImage(T, 0, 0);
+    flip(); gs.drawImage(panel, 0, 0);
+    gs.setTransform(1, 0, 0, 1, 0, 0);
+    gs.globalCompositeOperation = 'source-over';
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(S, 0, 0);
+    ctx.restore();
+    return true;
   }
 
   // The id map is of the right-handed glove, so a click on a mirrored render

@@ -299,5 +299,15 @@
   "pinky_loops",
   "pad_color"
  ],
- "embroideryLHT": "embroidery_lht"
+ "embroideryLHT": "embroidery_lht",
+ "textMount": {
+  "field": "pinkyText",
+  "zone": "back9",
+  "cx": 181.1,
+  "cy": 644.9,
+  "ux": 0.971,
+  "uy": -0.2389,
+  "length": 571.3,
+  "height": 37.6
+ }
 }

@@ -1,3 +1,12 @@
+/* Embroidery faces for the side views (glove-engine.js drawText). Open
+   fonts, SIL OFL, latin subsets: see assets/fonts/README.md. */
+@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 700;
+  font-display: swap; src: url(assets/fonts/barlow-condensed-700-latin.woff2) format('woff2'); }
+@font-face { font-family: 'Yellowtail'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url(assets/fonts/yellowtail-latin.woff2) format('woff2'); }
+@font-face { font-family: 'Kaushan Script'; font-style: normal; font-weight: 400;
+  font-display: swap; src: url(assets/fonts/kaushan-script-latin.woff2) format('woff2'); }
+
 /* SSK glove configurator — "Straight Line": one decision per step.
    Everything visual comes from the SSK Europe design system tokens in ds/. */
 
