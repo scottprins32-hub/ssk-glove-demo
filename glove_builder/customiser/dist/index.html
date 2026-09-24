@@ -1055,6 +1055,21 @@ class GloveRenderer {
     return c ? c[2] : '#C4C9D0';   // --gray-300, matching app.js
   }
 
+  // The photographed hood covers web lacing at the index finger. Mask in
+  // layer coordinates so the same construction holds for either hand.
+  underPad(c) {
+    const pad = this.pad && this.imgs[this.pad];
+    if (!pad) return c;
+    const masked = document.createElement('canvas');
+    masked.width = c.width; masked.height = c.height;
+    const g = masked.getContext('2d');
+    g.drawImage(c, 0, 0);
+    g.globalCompositeOperation = 'destination-out';
+    g.drawImage(pad, -c._ox, -c._oy);
+    masked._ox = c._ox; masked._oy = c._oy;
+    return masked;
+  }
+
   tinted(id, hx, sheenOf = id) {
     const key = id + '|' + hx;
     const hit = this.cache.get(key);
@@ -1426,7 +1441,7 @@ class GloveRenderer {
       }
       if (z.id === 'laces') {
         if (!swap && this.imgs.laces_web && D.bbox.laces_web) {
-          const w = this.tinted('laces_web', this.hex('laces', state));
+          const w = this.underPad(this.tinted('laces_web', this.hex('laces', state)));
           ctx.drawImage(w, w._ox, w._oy);
         }
         // The knotted lace belongs to the web, not the glove: the Standard I
@@ -1438,7 +1453,7 @@ class GloveRenderer {
         // that blue knot is different on other gloves." Every web now brings
         // its own, traced off its own photograph, or has none.
         if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
-          const k = this.tinted('laces_knot', this.hex('laces', state));
+          const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state)));
           ctx.drawImage(k, k._ox, k._oy);
         }
       }
@@ -1467,7 +1482,8 @@ class GloveRenderer {
                                  [swap.laceweb, 'laces'],
                                  [swap.webfinger, 'back3']]) {
         if (!key || !this.imgs[key] || !D.bbox[key]) continue;
-        const c = this.tinted(key, this.hex(zone, state));
+        const tinted = this.tinted(key, this.hex(zone, state));
+        const c = key === swap.laceweb ? this.underPad(tinted) : tinted;
         ctx.drawImage(c, c._ox, c._oy);
       }
     }
