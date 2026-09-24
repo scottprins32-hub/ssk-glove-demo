@@ -1,0 +1,52 @@
+{
+  "source": "images/store-2026-09/modified-trapeze-web-camera.jpg",
+  "transform_store_to_canvas": [
+    [
+      0.75468764,
+      -0.02566927,
+      -226.94867078
+    ],
+    [
+      0.02566927,
+      0.75468764,
+      -152.00307152
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "scale": 0.7551,
+  "rotation_deg": 1.948,
+  "anisotropy": 1.0,
+  "fit": {
+    "uncovered_opening_px": 6462,
+    "over_other_panels_px": 7009,
+    "over_open_air_px": 8072,
+    "iou": 0.8286
+  },
+  "heel_wedge_store_px": 5900,
+  "leather_tone": {
+    "own_p95_p5": 33.91,
+    "stock_p95_p5": 1.93,
+    "k": 0.187,
+    "grain": 0.35
+  },
+  "heel_wedge_gain": 1.245,
+  "lace_tone": {
+    "own_p95_p5": 5.21,
+    "stock_p95_p5": 2.08,
+    "k": 0.442,
+    "grain": 0.6
+  },
+  "finger_tone": {
+    "own_p95_p5": 10.36,
+    "stock_p95_p5": 1.4,
+    "k": 0.145,
+    "grain": 0.35
+  },
+  "leather_trimmed_off_other_panels_px": 2055,
+  "opening_uncovered_px": 13742,
+  "photographed_window_px_on_canvas": 12985
+}
