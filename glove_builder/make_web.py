@@ -26,7 +26,7 @@ import json
 import pathlib
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage
 
 HERE = pathlib.Path(__file__).parent
@@ -576,7 +576,9 @@ def cut(spec):
             print(f"knotted lace carried with the web: {int(tie.sum())} px")
         web &= ~lace
         print(f"traced: {int(web.sum())} px leather, {int(lace.sum())} px lacing")
-        return im, web, lace, None, glove
+        finger = (glove & drawn(spec["finger_polys"]) & ~web & ~lace
+                  if "finger_polys" in spec else None)
+        return im, web, lace, finger, glove
 
     if "outline" in spec:
         # Trace the web's boundary and take everything inside it.
@@ -999,7 +1001,7 @@ def straighten(img):
 
 
 def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
-        lean=0.55, outline_only=False):
+        lean=0.55, outline_only=False, search=True):
     """Warp a cutout onto the reference glove's web aperture.
 
     Not a stretch — a perspective transform. The reference glove is
@@ -1069,7 +1071,7 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
 
     base = best = overlap(dst)
     bd = dst.astype(np.float64).copy()
-    for step in (24.0, 12.0, 6.0, 3.0):
+    for step in ((24.0, 12.0, 6.0, 3.0) if search else ()):
         moved = True
         while moved:
             moved = False
@@ -1319,12 +1321,20 @@ def main():
     # run right up to the index finger, and fitted by its leather and lace
     # alone the warp would stretch the lace across them to reach the seam.
     # Its strap is left out: that lies over the next panel, not in the web.
-    extent = traced_masks(spec)["extent"] if lattice else (web | lace)
+    rigid = spec.get("rigid_fit", False)
+    extent = traced_masks(spec)["extent"] if lattice else (web if rigid else (web | lace))
+    if rigid and spec.get("fit_polys"):
+        # Source ownership corrections must not silently move a reviewed map.
+        fit_shape = Image.new("1", im.size)
+        painter = ImageDraw.Draw(fit_shape)
+        for polygon in spec["fit_polys"]:
+            painter.polygon(polygon, fill=1)
+        extent = np.asarray(fit_shape) & glove & ~lace
     if lattice:
         layers["extent"] = rgba(im, extent)
         layers["strap"] = rgba(im, traced_masks(spec)["strap"])
-    aligned = fit(layers, extent, finger=finger, outline_only=lattice,
-                  extend=0.0 if lattice else 0.06)
+    aligned = fit(layers, extent, finger=None if rigid else finger, outline_only=lattice or rigid,
+                  extend=0.0 if lattice or rigid else 0.06, search=not rigid)
     strap_on = None
     if lattice:
         aligned, LAST_FIT["conform_max_px"] = conform(
@@ -1345,9 +1355,9 @@ def main():
     # the finger's edge only ever removes pixels, and doing it last took away
     # ground that `complete` had already counted as filled — which is where the
     # SMK's 4,400 px hole against the finger came from.
-    if "finger" in aligned:
+    if "finger" in aligned and not rigid:
         aligned["finger"] = straighten(aligned["finger"])
-    if lattice and "finger" in aligned:
+    if (lattice or rigid) and "finger" in aligned:
         aligned["finger"] = settle(aligned["finger"])
     # What the web itself covers — the finger strip deliberately left out of
     # it. The strip overlaps the opening by a couple of thousand pixels along
@@ -1430,6 +1440,17 @@ def main():
                                         iterations=2)
         knot &= ~ndimage.binary_dilation(alpha("knot_cut") > 40,
                                          np.ones((3, 3), bool), iterations=2)
+    if rigid:
+        # These source laces lie over the finger and heel, outside the web
+        # opening. Keep them only over those photographed attachment panels;
+        # fit() already clipped loose tails at the glove silhouette.
+        def attachment_alpha(name):
+            pic = Image.open(HERE / f"customiser/assets/{name}.webp").convert("RGBA")
+            return np.asarray(pic.resize(ap_.shape[::-1], Image.LANCZOS))[..., 3] > 40
+        knot = attachment_alpha("back3") | ndimage.binary_dilation(
+            attachment_alpha("laces_knot"), np.ones((3, 3), bool), iterations=4)
+        knot &= ~attachment_alpha("knot_cut")
+        below[:] = False
     for n in ("leather", "lace"):
         if n not in aligned:
             continue
@@ -1437,6 +1458,11 @@ def main():
         over = (arr[..., 3] > 0) & ~ap_ & ~below
         if n == "lace":
             over &= ~knot
+        if rigid:
+            # The rigid source retains its own physical attachments on the
+            # glove. fit() has already clipped them at the silhouette; the
+            # stock H-web aperture is not their material boundary.
+            over[:] = False
         if over.any():
             arr[..., 3][over] = 0
             print(f"  {n}: {int(over.sum())} px trimmed back to the opening")
@@ -1588,7 +1614,7 @@ def main():
     # inner shadow round the leather doubled the one the laces really cast.
     if not lattice:
         aligned["leather"] = emboss(aligned["leather"])
-        if "finger" in aligned:
+        if "finger" in aligned and not rigid:
             aligned["finger"] = emboss(aligned["finger"])
         if "lace" in aligned:
             aligned["lace"] = cord(aligned["lace"])
@@ -1617,7 +1643,7 @@ def main():
               "leather_px": int(web.sum()), "lace_px": int(lace.sum()),
               "finger_px": int(finger.sum()) if finger is not None else 0,
               "bbox": [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())]}
-    if lattice:
+    if lattice or rigid:
         report.update(LAST_FIT)
     (out / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))

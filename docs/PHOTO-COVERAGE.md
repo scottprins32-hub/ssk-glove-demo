@@ -7,7 +7,7 @@ Source: Google Drive / SSK Europe / Pictures of gloves / SSK fotoshoot. Original
 | Palm | DSC05706; source crop and independently reviewed seven-material masks integrated locally in 4eedfae. |
 | Trapeze | DSC05716; independently reviewed source masks and both-hand renders integrated locally in 8965012. |
 | Modified Trapeze | DSC05720; manual source-boundary correction independently approved and integrated locally in 8965012. |
-| SMLEE | DSC05723; independent lace mask candidate passes colour/mirror assertions, but lower join remains visually defective. Candidate not approved. |
+| SMLEE | DSC05723; reviewed source leather/lace/finger masks integrated locally. Fixed mapping preserves the strap and loops; independent visual review passed. Small top-loop silhouette clipping remains a documented Low limitation. |
 | SMS | No confirmed association in the inspected September 23 photographs. Retain catalogue reference only. |
 | Basket | No confirmed checkerboard woven panel matching the catalogue reference. Retain catalogue reference only. |
 | Sasaki 1 | No confirmed match to the reference's converging diagonal members and lower crosspiece. Retain catalogue reference only. |

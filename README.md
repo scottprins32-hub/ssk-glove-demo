@@ -273,8 +273,10 @@ hand. Trapeze and Modified Trapeze now use the September 23 source photographs,
 with traced lace/leather/window masks and independently reviewed contrasting
 renders. Four options (SMS, Basket, Sasaki 1 and Sasaki 2) retain reference photos;
 no confirmed photograph-to-catalogue mapping supports registering them yet.
-See docs/PHOTO-COVERAGE.md. SMLEE's existing renderer still has a known lace-mask
-and attachment defect; its replacement remains an unapproved candidate. The
+See docs/PHOTO-COVERAGE.md. SMLEE now uses independently reviewed September 23
+source masks, a fixed panel mapping and separate lace/leather colours. Regenerate
+its source layers with `python glove_builder/trace_smlee.py`, then build and review
+assets in a scratch directory before selective installation. The
 flow ends with a design code and downloadable specification; no live checkout
 or backend order submission is connected.
 
