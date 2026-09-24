@@ -21,6 +21,15 @@ display; see "Round 3: reflection on the post" below. The Trapeze labels were
 re-inspected at 3× on every post tile and match the frame, so its assets are
 unchanged.
 
+**Round 4 (this commit), after Astra's Medium finding.** On the Modified
+Trapeze, the lower right of the right ladder (render x 760–811, y 425–595,
+both hands) still rendered the continuous brown lace bands as green
+fragments cut into by red leather. Colour and brightness can't separate that
+lace's shaded faces from the gold light it throws on the post. So ownership
+there is now traced by hand off the full-resolution frame; see "Round 4:
+hand-traced lower right ladder" below. The round-3 scallop fix and the
+earlier joins are unchanged.
+
 ## Source identity
 
 | web | glove on the stand | original frame (Drive, read-only) | SHA-256 |
@@ -127,10 +136,63 @@ The full hashes are in `glove_builder/trace_trapeze.py` (`SOURCES`) and in each
   `trace_trapeze.py.bak`, `make_web.py.bak.2`, `runs/store-*/masks.bak/`,
   `trace.json.bak`, `WEB-ASSET-HANDOFF.md.bak`, all gitignored.
 
+### Round 4: hand-traced lower right ladder (Modified Trapeze)
+
+- **Source.** DSC05720.jpeg, SHA-256 re-verified on the run. I read the full
+  frame crop (2× the committed photo) with non-local-means denoising, a
+  gamma of 0.5 and 1.5× chroma. I traced the outlines on a 5 px grid in
+  photo coordinates, then checked each outline against the relit committed
+  crop at 3–6×.
+- **What is drawn** (`SOURCES["modified-trapeze"]["hand_traced"]` in
+  `trace_trapeze.py`; the polygons are also recorded in `trace.json`):
+  - `zone`: photo (1370–1425, 792–1055), narrowing to x 1352 below y 965.
+    Only here does hand tracing override the automatic labels.
+  - Positive lace outlines, which are the visible physical strands:
+    - the trunk lace;
+    - the lace round the rim, ending at x 1419–1421, where a strip of lit
+      grey rim leather begins;
+    - the upper strand down the rim to its tip at (1400, 906);
+    - the lower strand (1366–1382, y 932–1000);
+    - the lit tab of the next hook down (1352–1361, y 997–1024).
+  - Negative outlines, which are leather inside those lace outlines: the
+    maroon shadow pocket between trunk and strand at (1377–1389, 879–906),
+    and a small dark gap at (1404–1413, 809–819).
+  - Everything else in the zone that isn't backdrop is leather: the grey
+    rim, its bulge down to y 1055, and the maroon shadow between the strands.
+- **How it is applied.** After every automatic step (tidy, smoothing, island
+  removal), so nothing smooths or reassigns it. Backdrop windows inside the
+  zone stay windows; there are 0 in it. Hand ownership covers 6,176 px of
+  lace and 4,937 px of leather, and differs from the automatic labels on
+  1,510 px.
+- **What is not done:**
+  - No hidden continuation is invented. Each strand ends where the frame
+    shows it end, and nothing behind the rim or the heel is drawn.
+  - No threshold changed anywhere. `lit_floor` still governs the rest of the
+    post, so the round-3 scallop fix stands.
+  - Shading isn't touched. The layers take their pixels, and `relief()`
+    their texture, from the photo exactly as before. The trace only decides
+    which layer a pixel belongs to.
+- **Proofs** (committed):
+  - `runs/store-modified-trapeze/proof_source.jpg`: the relit source, the
+    88be384 labels and the hand-traced labels, side by side at 3×, with the
+    zone outlined.
+  - `runs/store-modified-trapeze/proof_render.jpg`: before (88be384) and
+    after, on the white web / black lace / navy body and red web / yellow
+    lace / white body renders, RHT and LHT (the LHT is un-mirrored so it
+    lines up), render x 735–830, y 400–620, at 3×.
+  - The "before" renders came from 88be384's assets, served from a /tmp
+    copy of the customiser.
+- **Result on the page.** The trunk and both strands read as continuous
+  bands with smooth edges. The fragments and red incursions are gone. The
+  maroon shadow reads as a leather gap between strands, as in the frame, and
+  the grey rim reads as smooth leather.
+
 ### `glove_builder/make_web.py`
 
 Backups: `make_web.py.bak`, `make_web.py.bak.1`, `make_web.py.bak.2`, all
-gitignored. (Round 3 made no change here.)
+gitignored. (Rounds 3 and 4 made no change here.) Round-4 backups:
+`trace_trapeze.py.bak.1`, `runs/store-modified-trapeze/{masks,trace.json}.bak.1`,
+`WEB-ASSET-HANDOFF.md.bak.1`.
 
 - **Specs:** the unshipped outline/hue specs are replaced by
   `"traced": runs/store-<slug>/masks`, plus a `finger_poly`.
@@ -232,9 +294,12 @@ NODE_PATH=/Users/scottprins/.cache/codex-runtimes/codex-primary-runtime/dependen
     (of 5,378 px).
   - Modified Trapeze: leather off by 13.9, lace off by 13.9, windows 99.6%
     open (of 7,951 px).
-  - Colour independence: 0 of 86,999 (Trapeze) and 62,076 (Modified
-    Trapeze) lace pixels moved, and 0 of 21,904 and 42,140 leather pixels
-    moved.
+  - Colour independence (round 4): 0 of 86,999 (Trapeze) and 62,754
+    (Modified Trapeze) lace pixels moved, and 0 of 21,904 and 41,885 leather
+    pixels moved. Windows are 98.7% / 99.6% open, and LHT mirrors RHT with a
+    worst difference of 0.
+  - Round 4 also re-ran `render_check`, `state_check`, `keyboard_check`,
+    `studio_check` and `sheen.py --check`: all pass.
   - These passing is necessary but not sufficient. They passed on the
     previous commit too, while the labels were wrong.
   - Mirroring: LHT = RHT with a worst difference of 0.
@@ -313,7 +378,20 @@ installs.
    of the web's strap at canvas about (545–580, 540–600), and it is in back 2
    and the glove base. It is glove-level (`build_assets.py`'s knot heal) and
    shows under every swapped web. I did not touch it.
-3. **Modified Trapeze right ladder, shaded ends (the least certain part).**
+3. **Round 4 update to this item.** The lower right (photo y 792–1055) is
+   now hand-traced and no longer fragmented. The rest of the right ladder,
+   above y 792 (render above about y 425), still uses the `lit_floor` rule.
+   On the white-web render some hooks there still have slightly ragged
+   shaded ends. They are much less broken than the region Astra flagged,
+   but they are the same kind of defect. If Astra wants them traced too, the
+   `hand_traced` mechanism takes more zones with no code change.
+   - One judgement call inside the traced zone: the upper strand (render
+     about x 790–800, y 470–540) is drawn to its visible tip. A darker face
+     of it lies along the rim between y 880 and 905 in the photo. I traced
+     that face as lace, because in the frame the gold edge continues along
+     it. It's the one boundary in the zone I am least sure of.
+   - Previous text, kept for the record:
+   **Modified Trapeze right ladder, shaded ends (the least certain part).**
    `lit_floor` removes the reflection, but it also ends each hook where the
    hook itself passes into shadow.
    - On a white web the right-ladder hooks show slightly ragged, frayed ends

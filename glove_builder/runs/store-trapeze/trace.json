@@ -237,6 +237,12 @@
       ]
     ]
   ],
+  "hand_traced": [],
+  "hand_traced_px": {
+    "lace": 0,
+    "leather": 0,
+    "changed": 0
+  },
   "px": {
     "lace": 189742,
     "strap": 6290,
