@@ -80,7 +80,7 @@ def main():
   shapes=polygons(web,'web','Webleer',400)+polygons(lace,'laces','Webveter',100)+polygons(windows,'opening','Opening',250)+palmshape
   for s in shapes:
    s['materialKey']='palm' if s['role']=='palm' else s['role']
-  items.append(dict(id=slug,label=label,source=str(source) if native_store else spec['photo'],sourceHash=hashlib.sha256((d/'source.jpg').read_bytes()).hexdigest(),width=im.width,height=im.height,photo=f'assets/{slug}/source.jpg',preview=f'assets/{slug}/preview.png',layers=layers,shapes=shapes,status='draft',notes=('Originele camera-opname; body en achtergrond behouden. Webkleur is een voorstel.' if native_store else 'Voorlopige indeling; bronvorm behouden. Kleurgrenzen nog controleren.')))
+  items.append(dict(id=slug,label=label,source=str(shoot/(frame+'.ARW')) if native_store and source.suffix=='.tiff' else (str(source) if native_store else spec['photo']),sourceHash=hashlib.sha256((d/'source.jpg').read_bytes()).hexdigest(),width=im.width,height=im.height,photo=f'assets/{slug}/source.jpg',preview=f'assets/{slug}/preview.png',layers=layers,shapes=shapes,status='draft',notes=('Originele camera-opname; body en achtergrond behouden. Webkleur is een voorstel.' if native_store else 'Voorlopige indeling; bronvorm behouden. Kleurgrenzen nog controleren.')))
   print(slug,im.size,'shapes',len(shapes),flush=True)
  manifest=dict(version=1,items=items,materialLinks={'palm':'palm'},notes='Draft source-native review only. H-web unchanged; no production integration.')
  (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
