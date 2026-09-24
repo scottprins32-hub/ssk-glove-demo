@@ -164,3 +164,23 @@ Scott explicitly redirected work to the September 23 photos in Google Drive SSK 
 - Independent overall evaluator PASS after opening all18combinedrenders, results andsourcecoverage. No blockingfindings. Lowheelcompositingboundary onTrapeze/ModifiedTrapeze andsmallSMLEEtop-loopclip remain. Fourunconfirmedwebreferences explicitlyexcludedfromrenderapproval. Priorapprovedpalm unchanged.
 - Deterministic combined18matrix/36pad/fullstudiofourwidths/standaloneTrapezesmoke allPASS. Finalstandalone180assets4.74MB copiedchecksum-identicallytotaskoutputs/SSK-Glove-Preview.html. Thisislocalphoto-glovephasecompletion, notlivecheckout/publishingorproof ofsuperiorityto44Pro.
 - Automationssk-configurator-overnight-build PAUSED throughapptool afteroverallPASS, asrequested. NoactiveClaudejob. Originalphotos/userworkpreserved; no mainmerge/publish. Bags/clothing/CCV remainfuturework.
+
+## September24 user rejected overnight visual quality; new architecture study
+
+
+Scott heeft het nachtresultaat visueel afgekeurd. De oude PASS was te beperkt en is geen productgoedkeuring.
+
+## Uitgevoerd
+- Actuele 44 Pro Signature PRO44-infieldcustomizer geopend en visuele nulmeting vastgelegd. De beelden tonen consistente lace-dikte, duidelijke overlapping en doorlopende body-aansluitingen; er is nog geen gelijkwaardige kleur/schaalbenchmark.
+- Drie onafhankelijke proeven gebouwd: vaste rechthoekpassing, behoud van bronverticalen en handmatig gekozen hoekpunten. Alle drie renderen technisch, maar zijn onafhankelijk afgekeurd: dichtgetrokken opening, losstaande aansluiting of uitgerekte onderste kruisveter. Geen ervan geïnstalleerd.
+- Een vierde werkende proef gebruikt de complete eigen bronvorm van Standard I, zonder vervorming of opvullen. De kleurknoppen werken; wit/zwart en navy/tan zijn daadwerkelijk in de browser bekeken.
+- Onafhankelijke beoordeling: deze architectuur is duidelijk kansrijker. Bronopeningen, verhoudingen en duimaansluiting blijven intact. Alleen de richting is goedgekeurd, niet het eindproduct.
+
+## Volgende bouwstap
+Splits de bronvorm in echte bestelonderdelen: pad apart van veters, piping apart, badge/embroidery beschermd, webgrens langs de echte constructienaad. Gebruik één consistente lichtnormalisatie voor de aaneengesloten leerdelen. Daarna beide handen, de drie afgesproken kleurcombinaties en mobiel vergelijken. Pas na beoordeling dezelfde methode voor andere webs inzetten.
+
+Claude bezit Modified Trapeze in zijn eigen checkout; Astra blijft eigenaar van Standard I en integratie. De hoofdconfigurator en eerdere assets zijn in deze proefronde niet gewijzigd. Geen publicatie.
+
+Open standard-i-study/index.html voor de werkende proef. De blauw/witte overgang en slechts drie grove kleurgebieden zijn expliciete resterende gebreken.
+
+Reproduction: glove_builder/experiments/standard_source_study.py --out <directory>; diagnostic only. Failed3warp experiments inwork/standard-{source,landmark,corner}-matrix. Live44reference taskwork/44pro-infield-baseline.png; fourthproof screenshots taskwork/standard-native-study.png andstandard-native-white-black.png. No providerjobdispatched: user sentClaude prompt himself. Oldovernightautomation remains paused.
