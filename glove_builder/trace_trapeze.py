@@ -109,6 +109,10 @@ SOURCES = {
         "raw_sha256": "b4ae9967c20c8894f4e9c8d3108dd0018bc7892c001cc76a1edd82da9fb40314",
         "photo": "images/store-2026-09/modified-trapeze.jpg",
         "rule": "gold",
+        # the relit brightness a gold lace is lit to and the gold reflected
+        # on the post is not: 45 took the reflection patches, 60 follows the
+        # hooks' own edges (compared side by side on the lifted frame)
+        "lit_floor": 60,
         # Out to the rim's loops, which stand 15-20 px proud of its leather.
         # The rim lace's end pointing off to (1500, 720) and the tail hanging
         # from (1460, 770) to (1460, 1020) are in air, and stay out.
@@ -146,7 +150,24 @@ def sha256(path):
     return h.hexdigest()
 
 
-def classify(rgb, rule):
+def lighting(full, photo):
+    """How much flatten_light.py brightened each pixel of the frame.
+
+    The committed photograph is these pixels halved and relit; the ratio of
+    the two, smoothed well past a lace's width, is the relight's gain. It
+    lets a brightness threshold mean the same thing on the lit left of the
+    glove and on its shaded right, which the raw frame does not.
+    """
+    ph, pw = photo.shape[:2]
+    lum = lambda a: a.astype(np.float32) @ np.array([0.299, 0.587, 0.114], np.float32)
+    half = cv2.resize(full, (pw, ph), interpolation=cv2.INTER_AREA)
+    g = (cv2.GaussianBlur(lum(photo), (0, 0), 8)
+         / np.maximum(cv2.GaussianBlur(lum(half), (0, 0), 8), 2.0))
+    return cv2.resize(np.clip(g, 0.5, 6.0), (full.shape[1], full.shape[0]),
+                      interpolation=cv2.INTER_CUBIC)
+
+
+def classify(rgb, rule, gain=None, lit_floor=None, open_reach=24):
     """Lace, leather or window for every pixel of the full-resolution crop."""
     s = cv2.GaussianBlur(rgb.astype(np.float32), (0, 0), 1.2 if rule == "purple" else 1.6)
     lab = cv2.cvtColor(np.clip(s, 0, 255).astype(np.uint8),
@@ -170,6 +191,25 @@ def classify(rgb, rule):
         warm = (R - B) / (R + G + B + 6)
         lace = (warm >= 0.22) & ((R - B) >= 8)
         window = ~lace & (L > 42) & (np.abs(b) < 9) & (np.abs(a) < 6)
+        if lit_floor is not None and gain is not None:
+            # Warmth alone was wrong over the post. Between the right
+            # ladder's hooks the black post lies in the laces' shadow and
+            # takes their gold as reflected light: warm, dark, and as warm
+            # in proportion as a lace in shadow, so it came out as broad
+            # scalloped patches of "lace" on the post (Astra, reviewing the
+            # overlay against the frame). Hue, value and G/R of the two
+            # overlap in the raw frame — measured, not assumed — so colour
+            # cannot part them there; brightness under even light can. Lit
+            # gold lace stays above `lit_floor` on the relit scale, the
+            # reflection on leather stays below it, and the patch between
+            # is what the frame itself cannot decide, left as the leather it
+            # lies on. Where the ground behind a lace is open backdrop there
+            # is no leather to reflect anything and warmth is enough, so
+            # within `open_reach` px of backdrop the rule is unchanged.
+            V = np.maximum(np.maximum(R, G), B) * gain
+            near_open = ndimage.distance_transform_edt(~window) <= open_reach
+            lace &= near_open | (V >= lit_floor)
+            window = ~lace & window
     cls = np.full(L.shape, LEATHER, np.uint8)
     cls[lace] = LACE
     cls[window] = WINDOW
@@ -291,7 +331,8 @@ def trace(slug, shoot):
     if ncc < 0.9:
         raise SystemExit("the frame does not line up with the committed photograph")
 
-    cls = classify(full, src["rule"])
+    cls = classify(full, src["rule"], gain=lighting(full, photo),
+                   lit_floor=src.get("lit_floor"))
     cls, moved = tidy(cls, src["rule"])
     cls = smooth(cls)
     grid = to_grid(cls, (ph, pw))
@@ -372,7 +413,7 @@ def trace(slug, shoot):
                                        "raw_sha256", "photo")},
         "crop_in_frame": list(CROP), "scale": 0.5,
         "photo_highpass_correlation": round(ncc, 4),
-        "rule": src["rule"], "roi": src["roi"],
+        "rule": src["rule"], "lit_floor": src.get("lit_floor"), "roi": src["roi"],
         "lace_only": src.get("lace_only", []),
         "px": {"lace": int(lace.sum()), "strap": int(strap.sum()),
                "leather": int(leather.sum()),

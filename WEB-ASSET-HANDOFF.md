@@ -6,9 +6,20 @@ Both webs are now traced from the store shoot's own camera frames, fitted to the
 calibration glove and registered in the catalogue. Nothing is pushed, merged or
 deployed. Astra reviews independently; I did not run a reciprocal review.
 
-This round answers Astra's four visual blockers (see "Blockers" below). The
-automated checks pass, but I only call it ready because of the renders I
-looked at, and the last section lists what is still visible in them.
+**Status: not approved.** Astra's four visual blockers are not signed off, and
+I don't claim they are fully fixed; that is for Astra's independent visual
+review. The automated checks pass, but they only prove that the current labels
+recolour correctly, not that the labels describe the photograph. The last
+section lists what is still visible.
+
+**Round 3 (this commit), after Astra's HIGH finding.** The Modified Trapeze
+overlay labelled brown light reflected off the lacing, inside the continuous
+black post, as gold lace. Those were the broad scalloped patches right of the
+stitching, and they rendered as torn white islands and hook-shaped black
+masses on a white web. The fix is to the source labels, not to smoothing or
+display; see "Round 3: reflection on the post" below. The Trapeze labels were
+re-inspected at 3× on every post tile and match the frame, so its assets are
+unchanged.
 
 ## Source identity
 
@@ -49,8 +60,10 @@ The full hashes are in `glove_builder/trace_trapeze.py` (`SOURCES`) and in each
   (twice the committed photo's resolution) is classified on its own:
   - **Trapeze:** lace where a* ≥ 4 and a*−b* ≥ 7, or near-black and not warm.
     Window where neutral or cool and bright.
-  - **Modified Trapeze:** lace where (R−B)/(R+G+B) ≥ 0.22, which stays true
-    for a gold lace in shadow. Window where neutral grey.
+  - **Modified Trapeze:** lace where (R−B)/(R+G+B) ≥ 0.22 **and** the
+    relit brightness is ≥ `lit_floor` (60). Within 24 full-res px of a
+    backdrop window, warmth alone is enough. Window where neutral grey. See
+    round 3.
 - **Clean-up** before bringing the labels down to the photo grid:
   - Specks are handed to the nearest real piece.
   - A 1.5 px Gaussian majority vote smooths each class. This removed the
@@ -78,9 +91,46 @@ The full hashes are in `glove_builder/trace_trapeze.py` (`SOURCES`) and in each
   environment would have re-encoded unrelated assets: `idmap.png`,
   `web_spiral-i_hi.webp`, and every asset path.
 
+### Round 3: reflection on the post (Modified Trapeze source labels)
+
+- **What I found.** I opened DSC05720 at full resolution, gamma-lifted and
+  chroma-boosted, beside the label overlay, in tiles along the whole post
+  (photo x 1230–1470, y 250–1100).
+  - Between the right ladder's hooks the black post sits in the laces'
+    shadow and picks up their gold as reflected light.
+  - I measured it against real lace in shadow. Hue (27–38°) and value (V
+    8–40) overlap, and G/R (0.58–0.69) nearly does. So no colour rule can
+    separate them in the raw frame.
+- **What separates them.** Brightness under even light does. `lighting()`
+  recovers `flatten_light.py`'s gain as the ratio of the committed relit
+  photo to the halved frame, smoothed well past a lace's width. On that scale
+  lit gold lace sits above 60 and the reflection below it. I compared floors
+  of 45 and 60 side by side on the lifted frame: 45 still took the reflection
+  patches, and 60 follows the hooks' own edges.
+- **What it doesn't touch.** Next to backdrop windows there's no leather to
+  reflect anything, so warmth alone still decides there. That keeps the left
+  ladder and the loops round the rim exactly as before.
+- **Result:**
+  - 18,939 px of the post, which the photo shows as black leather, go back
+    from lace to leather: lace 143,462 → 124,523 px, leather 66,339 → 84,671
+    px. Windows are unchanged at 22,746 px.
+  - The post is one continuous piece of leather in every render. The laces
+    cross it only where a lit hook actually lies over it.
+  - I added no loops and grew nothing. The whole post is not made leather:
+    every lit crossing stays lace.
+- **Shading is kept separately from the labels.** The reflected light stays
+  in the leather layer's own relief, as a lighter patch in the web colour
+  where the frame has one. It is no longer a lace.
+- **Unchanged:** the joins, the conform, the finger strip and the strap work
+  from the previous commit. The `--install` changed only the Modified
+  Trapeze's bbox and sheen entries in `glove-data.json`. Backups:
+  `trace_trapeze.py.bak`, `make_web.py.bak.2`, `runs/store-*/masks.bak/`,
+  `trace.json.bak`, `WEB-ASSET-HANDOFF.md.bak`, all gitignored.
+
 ### `glove_builder/make_web.py`
 
-Backups: `make_web.py.bak`, `make_web.py.bak.1`, both gitignored.
+Backups: `make_web.py.bak`, `make_web.py.bak.1`, `make_web.py.bak.2`, all
+gitignored. (Round 3 made no change here.)
 
 - **Specs:** the unshipped outline/hue specs are replaced by
   `"traced": runs/store-<slug>/masks`, plus a `finger_poly`.
@@ -180,10 +230,13 @@ NODE_PATH=/Users/scottprins/.cache/codex-runtimes/codex-primary-runtime/dependen
   passed.**
   - Trapeze: leather off by 13.9, lace off by 12.1–13.9, windows 98.7% open
     (of 5,378 px).
-  - Modified Trapeze: leather off by 13.9, lace off by 13.9–14.5, windows
-    99.4% open (of 7,626 px).
-  - Colour independence: 0 of 73,304 / 86,999 lace pixels moved, and 0 of
-    21,904 / 33,096 leather pixels moved.
+  - Modified Trapeze: leather off by 13.9, lace off by 13.9, windows 99.6%
+    open (of 7,951 px).
+  - Colour independence: 0 of 86,999 (Trapeze) and 62,076 (Modified
+    Trapeze) lace pixels moved, and 0 of 21,904 and 42,140 leather pixels
+    moved.
+  - These passing is necessary but not sufficient. They passed on the
+    previous commit too, while the labels were wrong.
   - Mirroring: LHT = RHT with a worst difference of 0.
 - **`PORT=8802 node glove_builder/render_check.mjs`: "all zones render the
   colour they were given".**
@@ -203,6 +256,22 @@ installs.
 
 ## What I visually inspected
 
+**Round 3.**
+- **Source against labels.** DSC05720 at full resolution, lifted, beside the
+  labels in six tiles down the post: before the fix, then with floors of 45
+  and 60, then after.
+- **Trapeze labels.** DSC05716 at 3× beside its labels in four tiles down the
+  post (photo x 1170–1350, y 380–1100), plus relit-L and a*−b* maps. The cream
+  post is continuous leather and the dark laces cross it, so no change was
+  needed.
+- **Source beside overlay beside render** (white web / black lace / navy
+  body): the scalloped patches are gone.
+- **Contact sheets of all eight renders per web** (photographed colours,
+  red/yellow/white, royal/white/black, white/black/navy, RHT and LHT), plus a
+  2× crop of the Modified Trapeze's right ladder on the white-web render.
+
+**Earlier rounds:**
+
 - **Source against class overlay.** I compared the source frames with the
   class overlays at 2–4× on:
   - both posts (Trapeze photo x 1180–1330, y 420–1080; Modified Trapeze
@@ -221,8 +290,10 @@ installs.
   - The flat red triangle and the horizontal cut are gone.
   - The Trapeze post is one continuous piece of leather with laces crossing
     it, and there are no lace islands in it.
-  - The Modified Trapeze post shows the black leather between crossings
-    wherever the photograph does.
+  - ~~The Modified Trapeze post shows the black leather between crossings
+    wherever the photograph does.~~ Wrong, as Astra showed: the post's
+    reflected light was labelled lace. That claim came from looking at an
+    overlay at page scale, not at the frame. Corrected in round 3.
   - The H-web half-loops at the finger edge are gone. The laces end at the
     finger's edge, as photographed.
 
@@ -242,11 +313,20 @@ installs.
    of the web's strap at canvas about (545–580, 540–600), and it is in back 2
    and the glove base. It is glove-level (`build_assets.py`'s knot heal) and
    shows under every swapped web. I did not touch it.
-3. **Modified Trapeze laces in deep shadow.** Where the right ladder falls in
-   deep shadow over the black post, a lace segment that is nearly black in the
-   frame stays leather. It is not recoverable by colour, and I did not paint
-   it in. The ladder therefore reads as hooks rather than full loops there,
-   which matches what is visible in the frame. It is the least certain part.
+3. **Modified Trapeze right ladder, shaded ends (the least certain part).**
+   `lit_floor` removes the reflection, but it also ends each hook where the
+   hook itself passes into shadow.
+   - On a white web the right-ladder hooks show slightly ragged, frayed ends
+     and a few small detached fragments. The worst is the lower right,
+     render about x 760–820, y 420–640.
+   - The frame cannot separate the lace's shaded end from the gold light it
+     casts on the post; both measure the same. Pulling the ends back by a
+     connectivity rule would bring the scallops back, so I didn't. A proper
+     fix would need a hand trace of each right-ladder hook's outline off the
+     full-resolution frame. That is feasible, and it is the next step if
+     Astra judges this still unacceptable.
+   - Faint lighter patches remain in the leather where the reflection was.
+     That is the photographed light kept as shading, not a label.
 4. **The spline moves the rim.** `conform()` moves the web's outer 35–49 px by
    up to 41.7 px (Trapeze) and 48.6 px (Modified Trapeze), because a 12" and
    a 12.75" web are being dropped into a 12.5" opening. The inner lattice
@@ -258,10 +338,14 @@ installs.
    heel, and I did not invent one. `knot: true` is set only because that is
    the key `build_assets.py` writes for every web not in `NO_KNOT`. The page
    draws no stock knot under any swapped web either way.
-6. **White web colour.** Picking White for the web (10) on the light page
+6. **Trapeze right ladder.** Its loops over the post's right edge give that
+   edge an irregular outline on the page. At 3× the frame shows the same
+   thing, because the loops really do overlap the post there. I'm keeping
+   this listed for Astra's eye rather than asserting it is fine.
+7. **White web colour.** Picking White for the web (10) on the light page
    makes the windows low-contrast (page #EBEBEB against white leather). That
    is inherent to the page background, not the asset.
-7. **Not updated:** `README.md` (still says these two are unshipped) and
+8. **Not updated:** `README.md` (still says these two are unshipped) and
    `customiser/dist/index.html` (the single-file bundle, which needs
    `bundle.py`). I left both for Astra's integration to avoid conflicts. I
    did not edit `app.js`, `app.css`, `index.html` or `glove-engine.js`, or

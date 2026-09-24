@@ -18,6 +18,7 @@
   "scale": 0.5,
   "photo_highpass_correlation": 0.9333,
   "rule": "purple",
+  "lit_floor": null,
   "roi": [
     [
       1060,
