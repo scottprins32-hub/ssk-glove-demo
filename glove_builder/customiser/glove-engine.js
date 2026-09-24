@@ -93,7 +93,7 @@ export class GloveRenderer {
     return c ? c[2] : '#C4C9D0';   // --gray-300, matching app.js
   }
 
-  tinted(id, hx) {
+  tinted(id, hx, sheenOf = id) {
     const key = id + '|' + hx;
     const hit = this.cache.get(key);
     if (hit) return hit;
@@ -117,7 +117,7 @@ export class GloveRenderer {
     // glove_builder/sheen.py, not tuned by eye.
     const hi = this.imgs[id + '_hi'];
     if (hi) {
-      const k = (this.DATA.sheen || {})[id];
+      const k = (this.DATA.sheen || {})[sheenOf];
       g.globalCompositeOperation = 'lighter';
       if (k != null) g.globalAlpha = k;
       g.drawImage(hi, -x0, -y0);
@@ -391,6 +391,17 @@ export class GloveRenderer {
         }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
+        // Under a swapped web the calibration glove's knot is not drawn, and
+        // the panels it lay on have to be whole without it. knotHeal names a
+        // patch over the knot's footprint on this panel, filled from the
+        // panel's own leather (build_assets.py); it takes the panel's colour
+        // and the panel's sheen, so it is the same leather. The native H-web
+        // never draws it.
+        const kh = swap && D.knotHeal && D.knotHeal[z.id];
+        if (kh && this.imgs[kh] && D.bbox[kh]) {
+          const p = this.tinted(kh, this.hex(z.id, state), z.id);
+          ctx.drawImage(p, p._ox, p._oy);
+        }
         // A zone can carry lettering of its own that the global flip turns
         // backwards — on the palm, the embossed "Sasaki PRO Custom Made",
         // the SHOKUNIN stamp and the SSK wordmark are pressed into the palm
