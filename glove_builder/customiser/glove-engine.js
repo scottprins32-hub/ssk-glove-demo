@@ -108,6 +108,19 @@ export class GloveRenderer {
     return masked;
   }
 
+  // Remove the stock web stitching's soft rim only when replacing its web.
+  outsideWeb(c) {
+    if (!this.imgs.web_cut) return c;
+    const masked = document.createElement('canvas');
+    masked.width = c.width; masked.height = c.height;
+    const g = masked.getContext('2d');
+    g.drawImage(c, 0, 0);
+    g.globalCompositeOperation = 'destination-out';
+    g.drawImage(this.imgs.web_cut, -c._ox, -c._oy);
+    masked._ox = c._ox; masked._oy = c._oy;
+    return masked;
+  }
+
   tinted(id, hx, sheenOf = id) {
     const key = id + '|' + hx;
     const hit = this.cache.get(key);
@@ -390,7 +403,8 @@ export class GloveRenderer {
       // glove's knotted lace has to be punched away first, and a web that
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
-      const c = this.tinted(z.id, this.hex(z.id, state));
+      const tinted = this.tinted(z.id, this.hex(z.id, state));
+      const c = swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted;
       if (z.id === 'embroidery') {
         // Letter by letter, each flipped about its own centre. See embParts
         // in build_assets.py: flipping the wordmark as a whole keeps it
