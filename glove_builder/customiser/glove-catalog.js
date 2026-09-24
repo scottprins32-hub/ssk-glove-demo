@@ -142,6 +142,13 @@ export const STARTERS = [
 
 // The flat build order. One step, one decision — no category inside a category.
 // Colours are all handled in a single step by picking the part on the glove.
+/* Badges seen on gloves at the store (23 Sep 2026) but in neither SSK
+   Europe's order form nor the 2026 Japan logo list (catalogue p.29). They are
+   shown so the picker matches the shelf, and they cannot be ordered until Pim
+   confirms SSK will make them. Kept here, not in the generated asset data, so
+   the rule lives with the rest of the catalogue. */
+export const UNCONFIRMED_BULLETS = ['White/Gold', 'Red/Gold'];
+
 export const COLOUR_ORDER = ['web', 'back1', 'back2', 'back3', 'back4', 'back5', 'back6',
   'back7', 'back8', 'back9', 'palm', 'belt', 'lining', 'binding', 'welting', 'laces',
   'thumb_loops', 'pinky_loops', 'stitching', 'ring_emb', 'pad_color'];
@@ -172,12 +179,19 @@ export const T = {
     copyLink: 'Copy link',
     copied: 'Copied', keep: 'Keep building', open: 'Open a saved design',
     paste: 'Paste a reference code', notShown: 'Not shown on this view',
+    askPim: 'Ask SSK Europe — not yet confirmed',
+    codeBad: 'That is not a reference code, or it has a typo.',
+    codeNoText: 'Reference codes carry no names or numbers. Add the thumb and pinky embroidery and the thumb number again, or confirm there are none.',
+    personalOk: 'Personalisation is correct',
+    personalCheck: 'Personalisation checked',
+    codeAmbiguous: 'This older code can be read two ways, so it cannot be opened safely. Ask SSK Europe for the order.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
     pickPart: 'Click any part of the glove', required: 'Still needed',
     sendTitle: 'Your SSK custom glove', sendLead: 'Send this reference to SSK Europe with your order — it holds every choice below.',
     viewBack: 'Back', viewPalm: 'Palm',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
     webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
+    webNotOnPalm: 'Your web is ordered as chosen, but the palm view shows the standard web. Switch to the back view to see it.',
     tiedTo: '(one piece with %s)',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
@@ -219,12 +233,19 @@ export const T = {
     copied: 'Gekopieerd', keep: 'Verder bouwen', open: 'Bewaard ontwerp openen',
     copyLink: 'Kopieer link',
     paste: 'Plak een referentiecode', notShown: 'Niet zichtbaar op deze weergave',
+    askPim: 'Vraag SSK Europe — nog niet bevestigd',
+    codeBad: 'Dit is geen referentiecode, of er zit een typfout in.',
+    codeNoText: 'Referentiecodes bevatten geen namen of nummers. Vul het borduurwerk op duim en pink en het duimnummer opnieuw in, of bevestig dat er geen is.',
+    personalOk: 'Personalisatie klopt',
+    personalCheck: 'Personalisatie gecontroleerd',
+    codeAmbiguous: 'Deze oudere code is op twee manieren te lezen en kan daarom niet veilig worden geopend. Vraag SSK Europe om de bestelling.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
     sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Stuur deze referentie mee met je bestelling bij SSK Europe — hij bevat elke keuze hieronder.',
     viewBack: 'Achterkant', viewPalm: 'Palm',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
     webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
+    webNotOnPalm: 'Je web wordt besteld zoals gekozen, maar de binnenkant toont het standaardweb. Kijk op de buitenkant om het te zien.',
     tiedTo: '(één stuk met %s)',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',

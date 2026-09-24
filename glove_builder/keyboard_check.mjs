@@ -33,7 +33,8 @@ try {
 } catch (err) {
   console.error('SKIP: playwright not resolvable globally (npm i -g playwright).');
   console.error(String(err.message).split('\n')[0]);
-  process.exit(0);
+  // 3, not 0: a check that did not run must not read as one that passed.
+  process.exit(3);
 }
 
 const ROOT = normalize(new URL('./customiser/', import.meta.url).pathname);
