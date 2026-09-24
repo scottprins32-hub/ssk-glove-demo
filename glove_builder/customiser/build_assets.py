@@ -649,6 +649,7 @@ def main():
     glove_neutral = Image.fromarray(gb.astype(np.uint8), "RGBA")
     assets = {"glove": to_data_uri(glove_neutral, quality=88, method=4)}
     zones = []
+    swap_zones = {}     # zone -> its knot-footprint heal, for swapped webs
     emb_mark = None
     idmap = np.zeros((H, W), np.uint8)
     for i, (name, group, label) in enumerate(STACK, 1):
@@ -885,6 +886,7 @@ def main():
                     return_distances=False)
                 owner = occupied[iy, ix]
                 grew = []
+                native_med = {}     # the midtone each shipped panel was cut at
                 for zi, zn in zname.items():
                     add = over & (owner == zi)
                     if add.sum() < 200:
@@ -906,6 +908,7 @@ def main():
                     inner = ndimage.binary_erosion(add, np.ones((3, 3), bool))
                     arr[..., :3][inner] = soft[inner].astype(np.uint8)
                     filled = Image.fromarray(arr, "RGBA")
+                    native_med[zn] = _luma(filled)[2]
                     assets[zn] = to_data_uri(tint_base(filled), quality=85,
                                              method=4)
                     fsp = spec_base(filled)
@@ -916,6 +919,107 @@ def main():
                 if grew:
                     print("  panels grown into its footprint: "
                           + ", ".join(grew))
+
+                # The heal above copies each footprint pixel from the nearest
+                # pixel the panel owns — and where the segmentation had
+                # already given the panel the lace's own pixels, that is the
+                # pixel itself. Back 3 claims the strap where it crosses the
+                # index finger and back 2 the tail below the knot, so under a
+                # swapped web, with the knot no longer drawn over them, both
+                # showed the calibration glove's strap in the body colour: a
+                # diagonal bar on the finger and a strap-shaped piece by the
+                # heel. On the native H-web the knot covers it, which is why
+                # it went unseen.
+                #
+                # So each panel the footprint touches gets a patch, laid over
+                # it only when a web is swapped: every footprint pixel the
+                # panel owns — and the strap's soft edge two pixels round it —
+                # filled from the panel's own leather outside the footprint.
+                # Nothing outside the panel's outline, and the native layers
+                # are left byte for byte as they were.
+                #
+                # The strap also casts a shadow on the leather below it, a few
+                # pixels wide and outside the lace's own outline; left in, the
+                # fill copied it into half the footprint and a grey bar stayed
+                # where the strap had been. A cast shadow is leather darker
+                # than the panel round it, with the panel's own hue, joined to
+                # the lace and within a few pixels of it — which a stitched
+                # seam, farther off and its own colour, is not.
+                import cv2 as _cv2
+                ring = ndimage.binary_dilation(knot, np.ones((3, 3), bool),
+                                               iterations=2)
+                near = ndimage.binary_dilation(knot, np.ones((3, 3), bool),
+                                               iterations=8)
+                far = ndimage.binary_dilation(knot, np.ones((3, 3), bool),
+                                              iterations=12)
+                for zi, zn in zname.items():
+                    za = zmask[zn]
+                    zim = load(zn)
+                    arr = np.asarray(zim).copy()
+                    rgb = arr[..., :3].astype(np.float32)
+                    ref = (za & ~far).astype(np.float32)
+
+                    def local(v, s=10.0):
+                        return (_cv2.GaussianBlur(v * ref, (0, 0), s)
+                                / np.maximum(_cv2.GaussianBlur(ref, (0, 0), s),
+                                             1e-3))
+                    lum = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
+                    chroma = rgb / np.maximum(rgb.sum(-1, keepdims=True), 1.0)
+                    same_hue = np.linalg.norm(
+                        chroma - np.dstack([local(chroma[..., c])
+                                            for c in range(3)]), axis=-1) < 0.06
+                    edge = za & ring & ~knot
+                    dark = za & near & ~knot & (lum < 0.75 * local(lum)) & same_hue
+                    lbl, _n = ndimage.label(dark | edge)
+                    shadow = dark & np.isin(
+                        lbl, np.setdiff1d(np.unique(lbl[edge]), [0]))
+                    # and its fainter outer edge, only where it continues
+                    # that shadow: a 1-2 px line of it otherwise stayed
+                    # behind along the strap's old lower edge
+                    dim = za & near & ~knot & (lum < 0.90 * local(lum)) & same_hue
+                    lbl, _n = ndimage.label(dim | shadow | edge)
+                    shadow |= dim & np.isin(
+                        lbl, np.setdiff1d(np.unique(lbl[shadow | edge]), [0]))
+                    fix = (over & (owner == zi)) | ((edge | shadow) & body)
+                    fix |= ndimage.binary_dilation(fix, np.ones((3, 3), bool)) \
+                        & za & body & near
+                    if fix.sum() < 200:
+                        continue
+                    # Filled from both sides at once, from the panel's own
+                    # leather only: everything that is not real leather is
+                    # first given its nearest real pixel, so the fill cannot
+                    # pull in the black of a transparent edge, then the
+                    # footprint is inpainted from what surrounds it.
+                    real = za & ~fix & ~knot
+                    jy, jx = ndimage.distance_transform_edt(
+                        ~real, return_indices=True, return_distances=False)
+                    ext = np.ascontiguousarray(arr[..., :3][jy, jx])
+                    hole = ndimage.binary_dilation(fix, np.ones((3, 3), bool))
+                    filled_rgb = _cv2.inpaint(ext, hole.astype(np.uint8) * 255, 7,
+                                              _cv2.INPAINT_TELEA)
+                    arr[..., :3][hole & (za | fix)] = filled_rgb[hole & (za | fix)]
+                    arr[..., 3][fix] = 255
+                    # Only the footprint, over the shipped panel: everywhere
+                    # else the panel is drawn exactly as it always was. Its
+                    # tone is cut at the shipped panel's own midtone, so the
+                    # patch and the leather round it are one tint, and its
+                    # highlight is scaled with the panel's (glove-engine.js).
+                    lum_h, _a, _m = _luma(Image.fromarray(arr, "RGBA"))
+                    med = native_med.get(zn, _luma(zim)[2])
+                    pa = np.where(fix, 255, 0).astype(np.uint8)
+                    tb_h = (np.clip(lum_h / max(med, 1.0), 0, 1) * 255.0)
+                    key = f"{zn}_knotheal"
+                    assets[key] = to_data_uri(Image.fromarray(np.dstack(
+                        [tb_h, tb_h, tb_h, pa]).astype(np.uint8), "RGBA"),
+                        quality=85, method=4)
+                    hi_h = np.clip((lum_h / max(med, 1.0) - 1.0) * 0.55, 0, 1) * 255.0
+                    if hi_h[fix].max() >= 4:
+                        assets[key + "_hi"] = to_data_uri(Image.fromarray(
+                            np.dstack([hi_h, hi_h, hi_h, pa]).astype(np.uint8),
+                            "RGBA"), quality=80, method=4)
+                    swap_zones[zn] = key
+                    print(f"  {zn}: {int(fix.sum())} px of the knot's "
+                          f"footprint healed -> {key} (swapped webs only)")
                 if air.any():
                     cut = np.zeros(knot.shape + (4,), np.uint8)
                     cut[..., 3] = np.where(air, 255, 0)
@@ -1312,6 +1416,10 @@ def main():
             # follows the mirrored finger, every letter reads, and each one
             # lands back on its own relief.
             "embParts": emb_parts,
+            # zone -> a patch healing the calibration knot's footprint on
+            # that panel; the engine lays it over the panel only when a web
+            # is swapped, with the panel's colour and sheen
+            "knotHeal": swap_zones,
             "assets": assets, "bbox": bbox}
     (out / "glove-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())

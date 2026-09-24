@@ -30,6 +30,94 @@ there is now traced by hand off the full-resolution frame; see "Round 4:
 hand-traced lower right ladder" below. The round-3 scallop fix and the
 earlier joins are unchanged.
 
+**Round 5 (this commit), a shared join fix under swapped webs.** Independent
+review passed 961c2eb, and Root integrated it. Root then asked for this fix,
+bounded to `build_assets.py`'s knot heal and the engine's swap compositing,
+covering:
+
+- a body-coloured diagonal (render about x 515–580, y 553–618);
+- a light piece at the heel (about x 724–787, y 650–764).
+
+Both showed under every swapped web. See "Round 5: calibration knot remnants"
+below.
+
+## Round 5: calibration knot remnants under swapped webs
+
+- **Identification, from the source.** The calibration glove's own knot
+  strap runs diagonally over the index finger (back 3) and back 2 to the
+  knot, and its tail runs down over back 2 and off the rim.
+  - I checked the photo (`layers/rainbow-back-4x/glove.png`) against
+    `laces_knot`, `knot_cut` and the raw zone layers, and sampled every
+    layer's alpha at points along the strap and the tail.
+  - SAM3 gave the strap's pixels to `back3` as well as to the lace, and the
+    lower tail's to `back2`.
+  - `build_assets.py`'s knot heal copies each footprint pixel from "the
+    nearest pixel the panel owns". For pixels the panel had already claimed,
+    that is the pixel itself, so the strap's photographed luminance stayed
+    in the panel. Only 10,521 px of back 2 and 2,752 of back 3 were really
+    healed.
+  - Under the native H-Web the knot is drawn on top, so this never showed.
+    Under a swapped web the knot isn't drawn, and the strap appeared as
+    leather in the body colour.
+  - The strap also casts a shadow a few pixels wide on the finger, outside
+    its own outline, and that stayed behind as a grey bar.
+- **What changed:**
+  - `build_assets.py`: after the existing heal, which is unchanged, each
+    panel the footprint touches gets a patch.
+    - The patch covers: the footprint pixels the panel owns; a 2 px soft edge
+      round the lace; and the strap's cast shadow. The shadow is taken as
+      pixels darker than 0.75× the surrounding real leather, with the
+      panel's hue, joined to the lace and within 8 px, extended by hysteresis
+      at 0.9× plus 1 px.
+    - The fill is inpainted (Telea) from the panel's own real leather
+      outside the footprint. Non-leather pixels are pre-filled from the
+      nearest real pixel, so no black is pulled in.
+    - Tone is cut at the shipped panel's own midtone.
+    - The patches are written as `back2_knotheal` (12,161 px) and
+      `back3_knotheal` (3,704 px), each with `_hi`, and
+      `glove-data.json` gets `knotHeal: {back2, back3}`.
+    - Nothing outside the panel's existing outline is added, and `knot_cut`
+      and the knot extraction are untouched.
+  - `glove-engine.js`: under a swapped web only, after drawing a zone, it
+    lays that zone's `knotHeal` patch over it. The patch is tinted with the
+    zone's colour and uses the zone's sheen scale: `tinted()` gains an
+    optional `sheenOf` argument that defaults to the old behaviour.
+  - `install_assets.py` (new): copies named layers, their bbox and sheen, and
+    whole top-level keys from a scratch build, and refuses to overwrite
+    anything. That is how the four new webp files and the additive
+    `glove-data.json` keys were installed. No existing asset was re-encoded.
+- **Verified:**
+  - Every existing asset is byte-identical: `back2`, `back3`, `glove`,
+    `idmap`, `laces_knot`, `knot_cut`, `web_cut`, all web layers. The
+    `glove-data.json` diff is additions only (4 assets, 4 bboxes,
+    `knotHeal`), and all 8 photographed-web registrations are intact.
+  - Page renders (white and navy body, RHT and LHT), pixel-diffed against
+    961c2eb. Native H-Web: 0 pixels changed in all four. Standard I,
+    Trapeze, Modified Trapeze, Spiral I and SMLEE (this branch's SMLEE, not
+    Root's unreviewed one): 5,900–7,548 px changed each, 0 of them outside
+    the knot footprint dilated by 12 px, and identical counts for both hands.
+    I also looked at Closed Diamond Net, Em Rocket and SMK in both hands.
+  - Checks: `trapeze_check`, `render_check`, `state_check`, `keyboard_check`,
+    `studio_check` and `sheen.py --check` all pass.
+  - Proofs: `runs/knot-heal/proof_before.jpg` and `proof_after.jpg`.
+- **Remaining limits:**
+  - The healed band on the finger is smoother (less grain) than the leather
+    round it. On a white body a few faint specks remain at the old strap's
+    upper tip. On navy it is not visible.
+  - At the heel the tail's strap shape is gone, but the patch reads as a soft
+    grey area with a point towards the rim on a white body. It takes the
+    photographed shade of the back 2 leather beside it, and the real leather
+    to its lower right renders the same grey.
+  - The fill is inferred. What lies under the strap was never photographed,
+    so it is inpainted from the surrounding leather. No seam or stitch is
+    invented, but a real seam under the strap would not be continued either.
+  - Not addressed, out of scope and already visible in the before renders: a
+    thin horizontal band at the bottom of some older webs (Diamond Net, Em
+    Rocket, SMK, SMLEE) comes from those webs' own layers. And
+    `customiser/dist/index.html` isn't rebuilt.
+  - Backups (gitignored): `build_assets.py.bak`, `glove-engine.js.bak`,
+    `assets/glove-data.json.bak.1`, `WEB-ASSET-HANDOFF.md.bak.2`.
+
 ## Source identity
 
 | web | glove on the stand | original frame (Drive, read-only) | SHA-256 |
