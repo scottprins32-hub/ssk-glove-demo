@@ -18,6 +18,7 @@
   "scale": 0.5,
   "photo_highpass_correlation": 0.9159,
   "rule": "gold",
+  "lit_floor": 60,
   "roi": [
     [
       1140,
@@ -205,13 +206,13 @@
     ]
   ],
   "px": {
-    "lace": 143462,
-    "strap": 7311,
-    "leather": 66339,
+    "lace": 124523,
+    "strap": 6704,
+    "leather": 84671,
     "window": 22746,
     "roi": 233559
   },
-  "full_res_px_reassigned_as_noise": 403487,
-  "px_in_islands_too_small_to_draw": 1144,
+  "full_res_px_reassigned_as_noise": 373816,
+  "px_in_islands_too_small_to_draw": 926,
   "windows": 14
 }
