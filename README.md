@@ -268,19 +268,15 @@ other views will fix that. The pad and the hood are both drawn now, cut from
 SSK's own photographs of them, so the pad/hood colour is previewed too — the
 one thing it needs is for one of them to be fitted.
 
-The web-type picker draws its own thumbnails for the seven webs that can be
-rendered — the customer's colours, the customer's hand, cropped to the web.
-Two of those, SMLEE and Em Rocket, came out of the store shoot of 23 September
-2026 (`images/store-2026-09/`): closed webs, so an outline read off a gridded
-crop was enough and no tracing was needed. The Trapeze and Modified Trapeze
-from the same shoot are lattices of lace and are not shipped: their specs are
-in `make_web.py`, their photographs are in the tracer, and they wait for a
-hand trace of each lace. The other six still use SSK's form photographs, which are a different glove
-in a different colour each and several of which carry burned-in Japanese
-captions; the note under the picker says when the preview cannot follow. Those
-eight go away with one photo session (see the shoot rig above). And nothing is
-wired to a backend yet: the flow ends with a reference code and a copyable
-specification, which is what SSK receives alongside the order.
+The web-type picker renders nine catalogue webs in the customer's colours and
+hand. Trapeze and Modified Trapeze now use the September 23 source photographs,
+with traced lace/leather/window masks and independently reviewed contrasting
+renders. Four options (SMS, Basket, Sasaki 1 and Sasaki 2) retain reference photos;
+no confirmed photograph-to-catalogue mapping supports registering them yet.
+See docs/PHOTO-COVERAGE.md. SMLEE's existing renderer still has a known lace-mask
+and attachment defect; its replacement remains an unapproved candidate. The
+flow ends with a design code and downloadable specification; no live checkout
+or backend order submission is connected.
 
 ## Hosting
 

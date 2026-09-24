@@ -5,8 +5,8 @@ Source: Google Drive / SSK Europe / Pictures of gloves / SSK fotoshoot. Original
 | Material / web | Evidence and current disposition |
 | --- | --- |
 | Palm | DSC05706; source crop and independently reviewed seven-material masks integrated locally in 4eedfae. |
-| Trapeze | DSC05716; Claude working on source masks and alignment. Candidate not approved. |
-| Modified Trapeze | DSC05720; Claude working on source masks and alignment. Candidate not approved. |
+| Trapeze | DSC05716; independently reviewed source masks and both-hand renders integrated locally in 8965012. |
+| Modified Trapeze | DSC05720; manual source-boundary correction independently approved and integrated locally in 8965012. |
 | SMLEE | DSC05723; independent lace mask candidate passes colour/mirror assertions, but lower join remains visually defective. Candidate not approved. |
 | SMS | No confirmed association in the inspected September 23 photographs. Retain catalogue reference only. |
 | Basket | No confirmed checkerboard woven panel matching the catalogue reference. Retain catalogue reference only. |
