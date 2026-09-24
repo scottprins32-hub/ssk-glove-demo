@@ -130,6 +130,49 @@ SOURCES = {
         # its strap, from the heel of the web up to the cut end at (1060, 815)
         "lace_only": [[(1042, 824), (1082, 798), (1196, 960), (1252, 1040),
                        (1250, 1092), (1196, 1062)]],
+        # The lower right of the right ladder, where the laces wrap the rim.
+        # No rule separates their shaded faces from the gold light they throw
+        # on the black leather beside them — both measure the same, and the
+        # lit_floor above cut every visible strand into fragments (Astra: "x
+        # 1345-1400, y 893-1008 ... continuous visible bands partitioned into
+        # green fragments"). So inside `zone` ownership is traced by hand,
+        # off DSC05720 at full resolution, denoised and lifted: `lace` is
+        # every visible piece of lace, `leather` the shadow pockets that lie
+        # inside those outlines, and everything else in the zone that is not
+        # backdrop is leather — the grey rim and the maroon shadow between the
+        # strands. Nothing hidden is continued: each strand ends where the
+        # frame shows it end. Shading is untouched; it comes from the pixels.
+        "hand_traced": [{
+            # down to 1055 right of x 1365, taking in the grey rim's bulge
+            "zone": [(1370, 792), (1425, 792), (1425, 1055), (1365, 1055),
+                     (1365, 1030), (1352, 1030), (1352, 965), (1370, 915)],
+            "lace": [
+                # the trunk lace and the lace round the rim (ending at x 1419-
+                # 1421, where a grey strip of lit rim leather begins), the
+                # upper strand down the rim to its tip at
+                # (1400, 906), the lit tab below it, and the lower strand
+                # (1366-1382, 932-1000), one lace further down the ladder
+                [(1370, 792), (1419, 792), (1419, 805), (1421, 820),
+                 (1419, 832), (1415, 842), (1410, 849), (1401, 852), (1399, 860), (1398, 868),
+                 (1397, 877), (1397, 893), (1399, 901), (1400, 906),
+                 (1394, 909), (1388, 910), (1386, 915), (1384, 925),
+                 (1382, 932), (1381, 945), (1379, 960), (1376, 975),
+                 (1375, 990), (1374, 1000), (1367, 1000), (1366, 985),
+                 (1366, 972), (1362, 967), (1356, 971), (1352, 975),
+                 (1352, 965), (1370, 915)],
+                # the lit tab at the end of the next hook down
+                [(1352, 998), (1358, 997), (1361, 1003), (1361, 1015),
+                 (1358, 1022), (1352, 1024)],
+            ],
+            "leather": [
+                # the maroon shadow between the trunk and the upper strand
+                [(1385, 879), (1389, 888), (1388, 906), (1380, 905),
+                 (1377, 900), (1380, 890)],
+                # a gap between the top tab and the lace round the rim
+                [(1404, 809), (1409, 809), (1413, 812), (1412, 817),
+                 (1408, 819), (1405, 815)],
+            ],
+        }],
     },
 }
 
@@ -342,6 +385,27 @@ def trace(slug, shoot):
     roi = roi.astype(bool)
     grid, dropped = islands(grid, roi, {LEATHER: 60, LACE: 30, WINDOW: 12})
     print(f"{dropped} px in pieces too small to draw handed to their neighbours")
+    # Hand-traced ownership, after every automatic step so nothing smooths
+    # or reassigns it. Backdrop stays backdrop: the zone decides lace against
+    # leather, never whether there is glove there at all.
+    traced_px = {"lace": 0, "leather": 0, "changed": 0}
+    for h in src.get("hand_traced", ()):
+        def fill(polys):
+            m = np.zeros((ph, pw), np.uint8)
+            for p in polys:
+                cv2.fillPoly(m, [np.array(p, np.int32)], 1)
+            return m.astype(bool)
+        zone = fill([h["zone"]]) & roi & (grid != WINDOW)
+        want = np.where(fill(h["lace"]) & ~fill(h.get("leather", ())),
+                        LACE, LEATHER).astype(np.uint8)
+        traced_px["changed"] += int((zone & (grid != want)).sum())
+        grid[zone] = want[zone]
+        traced_px["lace"] += int((zone & (want == LACE)).sum())
+        traced_px["leather"] += int((zone & (want == LEATHER)).sum())
+    if src.get("hand_traced"):
+        print(f"hand-traced ownership: {traced_px['lace']} px lace, "
+              f"{traced_px['leather']} px leather, {traced_px['changed']} px "
+              f"differ from the automatic labels")
     lace = roi & (grid == LACE)
     leather = roi & (grid == LEATHER)
     # A window is daylight seen THROUGH the web, so it is enclosed by the
@@ -415,6 +479,8 @@ def trace(slug, shoot):
         "photo_highpass_correlation": round(ncc, 4),
         "rule": src["rule"], "lit_floor": src.get("lit_floor"), "roi": src["roi"],
         "lace_only": src.get("lace_only", []),
+        "hand_traced": src.get("hand_traced", []),
+        "hand_traced_px": traced_px,
         "px": {"lace": int(lace.sum()), "strap": int(strap.sum()),
                "leather": int(leather.sum()),
                "window": int(window.sum()), "roi": int(roi.sum())},
