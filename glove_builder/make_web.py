@@ -1404,7 +1404,9 @@ def main():
         # (Not a lattice: conformed to the opening, it has no overshoot to
         # hide, and the rows under the opening's lowest point are not under
         # the opening anywhere else — keeping them left a detached strip of
-        # lace below a gap, a horizontal cut across the join.)
+        # lace below a gap, a horizontal cut across the join.) Kept here only
+        # as the starting point; for the older webs it is replaced by the
+        # knot footprint below, and the rigid path clears it.
         below[np.nonzero(ap_)[0].max():] = True
     # The finger strip counts as inside. build_assets feathers its alpha to
     # soften the join between two photographs, and a feather needs something
@@ -1440,6 +1442,43 @@ def main():
                                         iterations=2)
         knot &= ~ndimage.binary_dilation(alpha("knot_cut") > 40,
                                          np.ones((3, 3), bool), iterations=2)
+    if not lattice and not rigid:
+        # The row rule above cut every older web along one row: material
+        # just outside the opening's slanted lower edge was deleted above the
+        # opening's lowest row (718) and kept below it, so each web ended in a
+        # straight horizontal line with flakes of its own leather orphaned
+        # underneath, and the Closed Diamond Net's hanging lace was split in
+        # two. Measured on the shipped layers: every web or lace pixel these
+        # webs had outside the opening sat at or below that row.
+        #
+        # What lies below the opening there is the calibration glove's knot,
+        # which the page does not draw under a swapped web and heals into
+        # back 2. That footprint is the ground a web's own knot and strap may
+        # cover — the same exemption the lattices and SMLEE use — so the row
+        # rule goes and the footprint takes its place. Outside it, nothing is
+        # kept beyond the opening; off the glove, fit() has already clipped.
+        def alpha(name):
+            im_ = Image.open(HERE / f"customiser/assets/{name}.webp").convert("RGBA")
+            return np.asarray(im_.resize(ap_.shape[::-1], Image.LANCZOS))[..., 3]
+        cut_ = ndimage.binary_dilation(alpha("knot_cut") > 40,
+                                       np.ones((3, 3), bool), iterations=2)
+        knot = ndimage.binary_dilation(alpha("laces_knot") > 40,
+                                       np.ones((3, 3), bool), iterations=4) & ~cut_
+        below[:] = False
+        ap_ = ap_ | knot
+        # A lace that reaches onto the footprint is kept whole on the glove:
+        # clipped to the footprint, the Diamond Net's hanging lace stopped
+        # square at its edge.
+        if "lace" in aligned:
+            la_ = np.asarray(aligned["lace"])[..., 3] > 0
+            lbl_, _n = ndimage.label(la_)
+            whole = np.isin(lbl_, np.setdiff1d(np.unique(lbl_[la_ & knot]), [0]))
+            # ...but not onto the index finger. The Spiral I's crossing lace
+            # touches the footprint too, and kept whole it ran out across
+            # back 3 to a pointed end over the finger; the finger has its own
+            # strip and its own lacing rule, and the knot never hung there.
+            finger_ = alpha("back3") > 40
+            knot = knot | (whole & ~cut_ & ~finger_)
     if rigid:
         # These source laces lie over the finger and heel, outside the web
         # opening. Keep them only over those photographed attachment panels;

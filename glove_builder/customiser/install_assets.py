@@ -25,6 +25,9 @@ def main():
     ap.add_argument("--keys", required=True)
     ap.add_argument("--top", default="")
     ap.add_argument("--assets", type=pathlib.Path, default=HERE / "assets")
+    ap.add_argument("--replace", action="store_true",
+                    help="allow replacing keys that are already installed "
+                         "(their file, bbox and sheen); nothing else changes")
     args = ap.parse_args()
     src = json.loads((args.build / "glove-data.json").read_text())
     path = args.assets / "glove-data.json"
@@ -35,7 +38,7 @@ def main():
     keys = [k for k in args.keys.split(",") if k]
     keys += [k + "_hi" for k in keys if k + "_hi" in src["assets"]]
     for k in keys:
-        if k in data["assets"]:
+        if k in data["assets"] and not args.replace:
             raise SystemExit(f"{k} is already installed; not overwriting it")
         name = pathlib.Path(src["assets"][k]).name
         shutil.copyfile(args.build / name, args.assets / name)
@@ -43,6 +46,8 @@ def main():
         data["bbox"][k] = src["bbox"][k]
         if k in src["sheen"]:
             data["sheen"][k] = src["sheen"][k]
+        else:
+            data["sheen"].pop(k, None)
     for t in [t for t in args.top.split(",") if t]:
         if t in data:
             raise SystemExit(f"top-level '{t}' already exists; not overwriting it")

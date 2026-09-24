@@ -30,6 +30,109 @@ there is now traced by hand off the full-resolution frame; see "Round 4:
 hand-traced lower right ladder" below. The round-3 scallop fix and the
 earlier joins are unchanged.
 
+**Round 6 (this commit): all-web lower join, implementing ALL-WEB-JOIN-DIAGNOSIS.md
+sections 2 and 3.** Not approved; for Astra's independent review.
+
+- **Sync first.** Merged Root's `feature/ssk-custom-studio` at 61582b3 into this
+  branch (6d8c7a0, not main). Root had integrated this branch as cherry-picks,
+  so the three conflicts (`make_web.py`, `glove-engine.js`, `glove-data.json`)
+  were resolved to Root's versions, and the tree then equalled 61582b3
+  exactly. Root's SMLEE (68a9128), pad and palm work is preserved.
+- **Scope.** My three files only: `make_web.py` (the non-lattice, non-rigid
+  trim), the knot-heal block of `build_assets.py`, and `install_assets.py`.
+  I didn't touch Root's stitching-split block in `build_assets.py`, the
+  engine, SMLEE, the lattice path or the rigid path.
+
+### What changed
+
+1. **`make_web.py`: knot-footprint exemption replaces the row-718 rule**, for
+   non-lattice, non-rigid webs (Standard I, Spiral I, SMK, Em Rocket, Closed
+   Diamond Net).
+   - The old rule kept everything at or below the opening's lowest row and
+     trimmed everything outside the opening above it. That produced a
+     horizontal cut, orphaned flakes, and a split Closed Diamond Net lace.
+   - Now the calibration knot's footprint (`laces_knot` dilated 4, minus
+     `knot_cut`) is exempt, the same as in the lattice and rigid paths. A
+     lace piece that reaches the footprint is kept whole, but never onto
+     back 3.
+   - That last restriction was added after I saw Spiral I's crossing lace run
+     out across the index finger to a pointed tail (1,625 px). With it, lace
+     outside the footprint on Spiral I is 90 px.
+2. **`build_assets.py` knot-heal block: source grain restoration.** The
+   inpainted patch was smooth: fine-grain (σ3 high-pass) std 3.3 against
+   16.4 on the back 2 beside it.
+   - Per 24 px tile, the fine luminance ratio is copied from the nearest
+     block of real back 2 or back 3 leather where the whole tile lands on
+     photographed leather. The ratio is clamped to 0.75–1.25.
+   - Only texture moves. Tone, alpha and outline are unchanged: alpha is
+     byte-identical and the mean moves by 1.4 levels.
+   - Back 2: 42 tiles, median offset 52 px, grain 3.3 → 13.8 against 16.4
+     native. Back 3's native leather is smooth (2.7), and its patch goes from
+     4.4 → 5.1.
+3. **`install_assets.py`: `--replace`**, which updates only the named keys'
+   file, bbox and sheen.
+   - Installed: `web_*` and `laceweb_*` for the five webs, plus
+     `back{2,3}_knotheal`, each with `_hi`.
+   - `glove-data.json` diff: those keys' bboxes and three sheen scales,
+     nothing else. Backup: `assets/glove-data.json.bak.2`.
+
+### Excluded as environment drift (restored to HEAD, not committed)
+
+My OpenCV/numpy build re-generates some files differently from Root's even
+though my change doesn't touch them:
+
+- 18 photo-space run files are pixel-identical and differ only in PNG bytes;
+- `finger.png` and `finger_aligned` for Standard I, SMK and Spiral I differ by
+  1–13 levels on at most 438 px;
+- `window_aligned.png` for four webs differs too.
+
+None of these are produced by the trim, so `webfinger_*` was not
+re-installed.
+
+### Verification (tier: deterministic render measurements plus visual inspection)
+
+- **Renders.** HEAD (git-archive export of 6d8c7a0) against this commit: 9
+  webs × RHT/LHT × white and navy body (`/tmp/pw/render.mjs`, production
+  engine). Figures are in `runs/join-fix/validate.json`, sheets in
+  `runs/join-fix/join_{white,navy}.jpg`.
+  - **Native H-Web: 0 pixels changed**, both hands, both colourings.
+  - **Trapeze, Modified Trapeze, SMLEE:** changes only inside the knot-heal
+    patch (grain): 4,910 / 6,058 / 1,822 px, 0 outside it.
+  - **The five older webs:** the flat grey star, the y = 718 cut and the
+    flakes are gone in both hands. Closed Diamond Net's hanging lace is one
+    continuous strap. Detached pixels outside the opening: CDN and Em Rocket
+    0, others 71–97.
+  - **Elsewhere on those webs:** a median 1-level change (p99 5–9), from
+    `tint_base` renormalising to a new median and from re-encoding. Em Rocket
+    has 543 px and CDN 593 px above 12 levels. I attribute these to
+    `complete()` filling a different region, but haven't verified that.
+  - **Both hands:** identical change counts for every web.
+- **Windows:** unchanged. The same open-page pixel count before and after.
+  The 483 faint stitching pixels in Standard I and Spiral I remain, which is
+  Root's stitching-split fix, not mine.
+- **Checks, all passing:**
+  - `trapeze_check`: all passed;
+  - `render_check`, `state_check`, `keyboard_check`, `studio_check`: 0 FAIL;
+  - `pad_layer_check`: 36 cases pass, no-pad renders byte-identical;
+  - `web_matrix_check` (BASE_URL = this checkout on 8814, OUT_DIR = /tmp):
+    18 web/hand renders, alpha preserved, mirrors match;
+  - `refcode_check`, `palm_material_check`: pass;
+  - `sheen.py --check`: matches.
+
+### Remaining limits
+
+- The two Trapezes still show part of the knot-heal patch at the lower right.
+  It now has grain, but its outline is still the calibration knot's
+  footprint. Their lattice path already exempts the footprint, and their
+  photographed straps don't cover it all.
+- SMK and Em Rocket have 15–17 columns where the web edge crosses row 718.
+  Visually these are the opening's own slanted edge, not a cut.
+- The grain is copied from real leather up to about 50 px away. It is
+  texture from the photograph, but not what was under the knot, which was
+  never photographed.
+- Backups (gitignored): `make_web.py.bak.3`, `build_assets.py.bak.1`,
+  `install_assets.py.bak`, `WEB-ASSET-HANDOFF.md.bak.3`.
+
 **Round 5 (this commit), a shared join fix under swapped webs.** Independent
 review passed 961c2eb, and Root integrated it. Root then asked for this fix,
 bounded to `build_assets.py`'s knot heal and the engine's swap compositing,
