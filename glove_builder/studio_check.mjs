@@ -15,9 +15,27 @@ try {
   await page.goto(base);
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   await page.locator('#lang-en').click();
+  // An accepted blank SSK2 design must remain blank when shared as a link.
+  await page.locator('#body input').fill('SSK2-00');
+  await page.locator('#body .field button').click();
+  assert.equal(await page.locator('#refcode').textContent(), 'SSK2-00');
+  await page.locator('#share').click();
+  const blankLink = await page.evaluate(() => navigator.clipboard.readText());
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('about:blank'); // force startup restoration, not a hash-only navigation
+  await page.goto(blankLink);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  assert.equal(await page.locator('#refcode').textContent(), 'SSK2-00', 'blank design survives shared link');
+  await page.locator('#steps button').nth(5).click();
+  assert.ok(await page.getByRole('button', { name: 'Personalisation is correct' }).isVisible(), 'blank shared design retains required personalisation check');
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('about:blank');
+  await page.goto(base);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await page.locator('#lang-en').click();
   const original = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   const hostile = '<img src=x onerror="window.xss=1">';
-  await page.evaluate(([state, name]) => localStorage.setItem('ssk-glove-v1', JSON.stringify({ ...state, name, phone: '0612345678', thumbText: 'MY GLOVE', size: '11.5"', webType: 'H-Web', colors: { ...state.colors, palm: '10', back2: '90' } })), [original, hostile]);
+  await page.evaluate(([state, name]) => localStorage.setItem('ssk-glove-v1', JSON.stringify({ ...state, name, phone: '0612345678', thumbText: 'MY GLOVE', numberColor: '20', thumbOutline: '20', size: '11.5"', webType: 'H-Web', colors: { ...state.colors, palm: '10', back2: '90' } })), [original, hostile]);
   await page.reload();
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
@@ -36,6 +54,7 @@ try {
   await page.locator('[data-view="palm"]').click();
   assert.equal(await page.locator('#refcode').textContent(), colourCode, 'view does not change colour code');
   await page.locator('#steps button').last().click();
+  assert.equal(await page.locator('.spec dt').filter({ hasText: /^Number thread$/ }).evaluate(e => e.nextElementSibling.textContent), '—', 'inactive number thread is omitted');
   assert.equal(await page.locator('.spec img').count(), 0, 'user text never becomes markup');
   assert.ok((await page.locator('.spec').textContent()).includes(hostile));
   assert.equal(await page.evaluate(() => window.xss), undefined);

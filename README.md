@@ -2,7 +2,9 @@
 
 A 2.5D glove configurator for **SSK Europe** (sskeurope.ccvshop.nl). A customer
 picks a colour for each part of the glove, sees it on a photoreal render, and
-finishes with a reference code that identifies the exact build.
+finishes with an SSK2 design code for the selected options. The full design link
+also carries embroidery text and numbers; the downloadable specification is
+the complete review document. Saving a design does not place an order.
 
 It exists to replace the Google Form SSK currently uses to take custom glove
 orders. It is meant to live at its own URL and be linked from the shop, with
@@ -61,12 +63,15 @@ python -m venv .venv && .venv/bin/pip install -r glove_builder/requirements.txt
 
 # the checks: the palette still says what the photographs say, the highlight
 # scales still match the assets, every zone still renders its own colour, and a
-# draft saved by an older version of the page still opens
+# draft saved by an older version of the page still opens (the browser checks
+# exit 3 when Playwright is missing: not run, never read as passed)
 .venv/bin/python glove_builder/colour_evidence.py --photos <drive folder> --check
 .venv/bin/python glove_builder/sheen.py --assets glove_builder/customiser/assets --check
 node glove_builder/render_check.mjs
 node glove_builder/state_check.mjs
 node glove_builder/keyboard_check.mjs
+# reference codes: old SSK- codes still decode as issued, SSK2- round-trips
+node glove_builder/refcode_check.mjs
 
 # optional: fold the whole app into one self-contained file
 .venv/bin/python glove_builder/customiser/bundle.py
@@ -133,10 +138,13 @@ levels.
 It needs node and a Playwright chromium, and nothing the shipped page depends
 on.
 
-The reference code packs every choice into one string (5 bits per zone for its
-index in that zone's palette, 4 bits for the bullet logo, base36). It decodes
-as well as encodes, so "copy link" can put a whole design in a URL and pasting
-one back reopens it exactly.
+SSK2 codes use frozen option tables, fixed field capacities and a typo check.
+Their meaning does not depend on render-layer order or the displayed view.
+They preserve selectable design options but exclude free text: opening one
+clears prior embroidery names/numbers and requires personalisation confirmation.
+Full design links preserve that text while excluding the customer's name and
+phone. Older SSK codes are decoded against their original layout; ambiguous
+codes are refused rather than silently changing colours.
 
 ## Where the colours come from
 
@@ -260,19 +268,17 @@ other views will fix that. The pad and the hood are both drawn now, cut from
 SSK's own photographs of them, so the pad/hood colour is previewed too — the
 one thing it needs is for one of them to be fitted.
 
-The web-type picker draws its own thumbnails for the seven webs that can be
-rendered — the customer's colours, the customer's hand, cropped to the web.
-Two of those, SMLEE and Em Rocket, came out of the store shoot of 23 September
-2026 (`images/store-2026-09/`): closed webs, so an outline read off a gridded
-crop was enough and no tracing was needed. The Trapeze and Modified Trapeze
-from the same shoot are lattices of lace and are not shipped: their specs are
-in `make_web.py`, their photographs are in the tracer, and they wait for a
-hand trace of each lace. The other six still use SSK's form photographs, which are a different glove
-in a different colour each and several of which carry burned-in Japanese
-captions; the note under the picker says when the preview cannot follow. Those
-eight go away with one photo session (see the shoot rig above). And nothing is
-wired to a backend yet: the flow ends with a reference code and a copyable
-specification, which is what SSK receives alongside the order.
+The web-type picker renders nine catalogue webs in the customer's colours and
+hand. Trapeze and Modified Trapeze now use the September 23 source photographs,
+with traced lace/leather/window masks and independently reviewed contrasting
+renders. Four options (SMS, Basket, Sasaki 1 and Sasaki 2) retain reference photos;
+no confirmed photograph-to-catalogue mapping supports registering them yet.
+See docs/PHOTO-COVERAGE.md. SMLEE now uses independently reviewed September 23
+source masks, a fixed panel mapping and separate lace/leather colours. Regenerate
+its source layers with `python glove_builder/trace_smlee.py`, then build and review
+assets in a scratch directory before selective installation. The
+flow ends with a design code and downloadable specification; no live checkout
+or backend order submission is connected.
 
 ## Hosting
 
@@ -293,3 +299,22 @@ The site is closed to crawlers, by `robots.txt` and by an `X-Robots-Tag`
 header for the crawlers that ignore it. The photographs, the logo and the
 prices on these pages are SSK's, and publishing them is their call. Delete
 both when they say yes.
+
+## September 23 palm photograph
+
+The shipped palm now uses the source-pixel DSC05706 crop in
+`glove_builder/images/store-2026-09/rainbow-palm.png` (1534 × 1400 rendered canvas).
+`make_store_palm.py` traces separate palm, web, wingtips, welting, binding and
+laces. It preserves photographed openings and the foreground lace crossings.
+`build_store_palm.py --out work/palm-candidate/assets` creates an isolated
+candidate from those layers; it deliberately refuses the live assets directory.
+Run `make_store_palm.py` first. After mask changes, inspect source overlays and
+contrasting renders before promoting the referenced files and palm-data.json.
+The older build_palm.py is a shared helper and legacy pipeline, not the command
+for regenerating this source-photo version.
+
+Validation: `palm_material_check.mjs` checks seven independent material controls,
+stable alpha, both-hand hit targets and mirrored geometry outside readable stamp
+boxes. Set PALM_ASSETS to test an isolated candidate. The September 24 visual
+review found no blocking source/mask regressions; small dark marks inside the
+thumb panel remain a minor refinement.

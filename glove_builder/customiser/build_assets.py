@@ -1166,6 +1166,14 @@ def main():
                 # matched. The web draws over the other side, so a feather all
                 # round costs nothing.
                 a = np.asarray(im).astype(np.float32)
+                # Feathering extends alpha into formerly transparent pixels.
+                # Extend real strip colour there first, rather than revealing
+                # black/background RGB as a dark seam between photographs.
+                solid = a[..., 3] > 200
+                if solid.any():
+                    iy, ix = ndimage.distance_transform_edt(
+                        ~solid, return_indices=True, return_distances=False)
+                    a[..., :3] = a[..., :3][iy, ix]
                 a[..., 3] = ndimage.gaussian_filter(a[..., 3], 3.0)
                 im = Image.fromarray(a.astype(np.uint8), "RGBA")
             assets[name] = to_data_uri(tint_base(im), quality=85, method=4)

@@ -2,10 +2,11 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import { loadGlove, GloveRenderer, refCode, applyCode } from './glove-engine.js';
+import { loadGlove, GloveRenderer } from './glove-engine.js';
+import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
-         T } from './glove-catalog.js';
+         UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -73,12 +74,6 @@ const fieldLabel = (f, lang) => {
             : (T[lang][FIELD_LABEL[f]] || f);
   return s;
 };
-/* the other half of a tied pair, named without recursing back into the suffix */
-const fieldName = (f, lang) => {
-  const m = /^back([1-9])$/.exec(f);
-  return m ? `Back ${m[1]}` : (T[lang][FIELD_LABEL[f]] || f);
-};
-
 /* 36 order-form questions. `req` mirrors the form's required flag. */
 const QUESTIONS = [
   ...COLOUR_ORDER.map(f => ({ id: 'c:' + f, req: f !== 'pad_color' })),
@@ -89,7 +84,10 @@ const QUESTIONS = [
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
   { id: 'pinkyText', req: false },
-  { id: 'numberColor', req: false }, { id: 'flag', req: false }
+  { id: 'numberColor', req: false }, { id: 'flag', req: false },
+  // Not on SSK's form: set only after a reference code is opened, because a
+  // code carries no names or numbers. Answered until then, so it never shows.
+  { id: 'personalCheck', req: true }
 ];
 
 const S = {
@@ -114,16 +112,17 @@ const t = k => T[S.lang][k] || k;
 
 /* ------------------------------------------------------------------ state */
 function answered(q) {
+  if (q.id === 'personalCheck') return S.personalCheck !== true;
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
 }
 const requiredQuestions = () => QUESTIONS.filter(q => q.req
-  || (q.id === 'c:pad_color' && S.pad && S.pad !== 'None')
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
-const doneCount = () => requiredQuestions().filter(answered).length;
+const countedQuestions = () => requiredQuestions().filter(q => q.id !== 'personalCheck');
+const doneCount = () => countedQuestions().filter(answered).length;
 
 function snapshot() {
   if (suppress) return;
@@ -143,7 +142,7 @@ function restore(json) {
 const PRIVATE = ['name', 'phone'];
 
 function encodeState(forLink = false) {
-  const o = { ...S }; delete o.step;
+  const o = { ...S, schemaVersion: 1 }; delete o.step;
   if (forLink) for (const k of PRIVATE) delete o[k];
   return btoa(unescape(encodeURIComponent(JSON.stringify(o))))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -173,7 +172,7 @@ function cleanState(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
   const inList = (list, v) => (list.includes(v) ? v : null);
   const byId = (list, v) => (list.some((x) => x.id === v) ? v : null);
-  const text = (v) => (typeof v === 'string' ? v.slice(0, 120) : '');
+  const text = (v) => (typeof v === 'string' ? v.trim().slice(0, 120) : '');
   const embCode = (v) =>
     (DATA.palettes.embroidery.some((c) => c[0] === v) ? v : null);
 
@@ -187,7 +186,10 @@ function cleanState(o) {
   const clean = {
     lang: o.lang === 'en' ? 'en' : 'nl',
     part: COLOUR_ORDER.includes(o.part) ? o.part : 'web',
-    bullet: DATA.bullets[o.bullet] ? o.bullet : 7,
+    // A badge that no longer exists, or is switched off, becomes unanswered:
+    // substituting another one would change the order without saying so.
+    bullet: (Number.isInteger(o.bullet) && DATA.bullets[o.bullet] &&
+             DATA.bullets[o.bullet].active !== false) ? o.bullet : null,
     colors,
     hand: byId(HANDS, o.hand),
     size: inList(SIZES, o.size),
@@ -205,6 +207,7 @@ function cleanState(o) {
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 24),
     view: o.view === 'palm' ? 'palm' : 'back',
+    personalCheck: o.personalCheck === true,
   };
   if (clean.webType && !WEBS.find(w => w.id === clean.webType).sizes.includes(clean.size)) clean.webType = null;
   // Only carry a starter through if it still exists; otherwise leave whatever
@@ -219,7 +222,9 @@ function cleanSharedState(raw) {
   if (!raw || !raw.colors || typeof raw.colors !== 'object' || Array.isArray(raw.colors)
       || !Object.hasOwn(raw, 'bullet')) return null;
   const clean = cleanState(raw);
-  return clean && Object.keys(clean.colors).length ? clean : null;
+  // Versioned links may intentionally contain an unanswered/blank design.
+  // Legacy unversioned links still need a recognizable palette selection.
+  return clean && (raw.schemaVersion === 1 || Object.keys(clean.colors).length) ? clean : null;
 }
 
 /* Where work in progress lives.
@@ -237,7 +242,7 @@ const SAVE_KEY = 'ssk-glove-v1';
 
 function save() {
   try {
-    const o = { ...S }; delete o.step;
+    const o = { ...S, schemaVersion: 1 }; delete o.step;
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }
@@ -258,10 +263,44 @@ function layerState() {
   }
   return out;
 }
-// Legacy codes describe back-view colours only, regardless of the visible side.
-// Full designs travel in the share link and downloaded specification.
-const code = () => refCode(DATA, Object.fromEntries(DATA.zones.map(z =>
-  [z.id, S.colors[LAYER_TO_FIELD[z.id]] ?? DATA.palettes[z.group][0][0]])), S.bullet);
+// The order's reference: the form's answers, whatever view is on screen.
+const code = () => encodeV2(S, S.bullet == null ? null
+  : (DATA.bullets[S.bullet] || {}).name ?? null);
+
+/* A pasted code, applied through the same validation as a restored draft, so
+   it cannot produce an order the form itself would refuse. A version-2 code
+   is a whole order and replaces every choice it covers; an old one carries
+   only colours and the badge, so it leaves everything else as it was. A
+   badge that is gone, or not orderable, comes back unanswered. */
+function applyPasted(text) {
+  const d = isV2(text) ? decodeV2(text) : decodeV1(text);
+  if (!d) return 'bad';
+  if (d.ambiguous) return 'ambiguous';
+  const bi = d.bulletName == null ? -1
+    : DATA.bullets.findIndex((b) => b.name === d.bulletName);
+  const next = { ...S, colors: isV2(text) ? d.colors : { ...S.colors, ...d.colors },
+                 bullet: bi < 0 ? null : bi };
+  if (isV2(text)) {
+    for (const k of ['hand', 'size', 'pad', 'webType', 'flag', 'circle',
+                     'thumbFont', 'thumbMain', 'thumbOutline', 'numberColor'])
+      next[k] = d[k];
+    // The code carries no free text, so the thumb and pinky wording and the
+    // number belong to whoever had the page before: keeping them would put
+    // another player's name on this order under this code's styling. They
+    // are cleared and asked again. Name and phone are the buyer's, not the
+    // design's, and stay.
+    next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = '';
+    // …and the order is not complete until someone has looked: without this
+    // the restored glove reads "All set" with its lettering silently gone.
+    next.personalCheck = true;
+  }
+  const o = cleanState(next);
+  if (!o) return 'bad';
+  const { lang, part, view, ...order } = o;
+  snapshot();                     // only once the code is known to be good
+  Object.assign(S, order);
+  return 'ok';
+}
 const shareLink = () => location.origin + location.pathname + '#' + encodeState(true);
 
 /* ----------------------------------------------------------------- canvas */
@@ -320,7 +359,7 @@ const STEP_FIELDS = [
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
-   'circle', 'numberColor', 'flag'],
+   'circle', 'numberColor', 'flag', 'personalCheck'],
   ['name', 'phone'], []
 ];
 function stepOpen(i) {
@@ -379,15 +418,16 @@ function renderStart(b) {
       for (const k of PRIVATE) delete restored[k];
       Object.assign(S, restored); draw(); paint(); return;
     }
-    const r = !hash && applyCode(DATA, raw);
-    if (!r) { inp.setAttribute('aria-invalid', 'true'); feedback.textContent = t('invalidDesign'); return; }
-    inp.removeAttribute('aria-invalid');
-    snapshot();
-    for (const [layer, num] of Object.entries(r.state)) {
-      const fld = LAYER_TO_FIELD[layer];
-      if (fld) S.colors[fld] = num;
+    const r = hash ? 'bad' : applyPasted(raw);
+    if (r !== 'ok') {
+      inp.setAttribute('aria-invalid', 'true');
+      feedback.textContent = t(hash ? 'invalidDesign' : r === 'ambiguous' ? 'codeAmbiguous' : 'codeBad');
+      return;
     }
-    S.bullet = r.bulletSel; draw(); paint();
+    inp.removeAttribute('aria-invalid');
+    draw(); paint();
+    const notice = $('#body [role="status"]');
+    if (notice) notice.textContent = t(isV2(raw) ? 'codeNoText' : 'legacyNotice');
   };
   row.append(inp, go);
   f.append(row, feedback);
@@ -441,7 +481,7 @@ function renderFit(b) {
 
   const padOn = S.pad && S.pad !== 'None';
   const note = padOn ? null : OFFSTAGE.pad_color;
-  b.appendChild(swatchField('pad_color', note, !!padOn));
+  b.appendChild(swatchField('pad_color', note, false));
 }
 
 // The picker's pictures are SSK's own order-form thumbnails: a different
@@ -558,10 +598,21 @@ function renderWeb(b) {
   // Only some webs are photographed. The rest are ordered correctly but the
   // preview still shows the standard one, and saying so beats letting someone
   // believe the picture is their glove.
-  const w = WEBS.find(w => w.id === S.webType);
-  if (w && !w.render && w.id !== NATIVE_WEB)
-    b.appendChild(el('p', 'note', t('webNotDrawn')));
+  const note = webPreviewNote();
+  if (note) b.appendChild(el('p', 'note', t(note)));
   b.appendChild(swatchField('web', null, true));
+}
+
+/* Whether the picture shows the web that will be ordered, per view. Only
+   some webs are photographed at all, and those are cut for the back view
+   only: the palm view has no asset for a swapped web and draws the stock one
+   (see draw()). Saying so beats letting someone believe the picture is their
+   glove. */
+function webPreviewNote() {
+  const w = WEBS.find(w => w.id === S.webType);
+  if (!w || w.id === NATIVE_WEB) return null;
+  if (!w.render) return 'webNotDrawn';
+  return S.view === 'palm' ? 'webNotOnPalm' : null;
 }
 
 /* ----------------------------------------------------------- 4. colours */
@@ -610,7 +661,8 @@ function renderLogos(b) {
     c.dataset.key = 'bullet|' + i;
     c.innerHTML = `<img src="${bl.thumb}" alt="" loading="lazy">` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
-      (bl.active === false ? `<span class="sub">${t('notShown')}</span>` : '') + `</span>`;
+      (bl.active === false
+        ? `<span class="sub">${t(bl.pending ? 'askPim' : 'notShown')}</span>` : '') + `</span>`;
     if (bl.active === false) c.disabled = true;
     c.onclick = () => { snapshot(); S.bullet = i; draw(); paint(); };
     grid.appendChild(c);
@@ -624,13 +676,22 @@ function renderLogos(b) {
 
 /* ---------------------------------------------------- 6. personalisation */
 function renderPersonal(b) {
+  if (S.personalCheck) {
+    const box = el('div', 'field');
+    box.appendChild(el('p', 'note', t('codeNoText')));
+    const ok = el('button', 'btn btn-ghost', t('personalOk'));
+    ok.type = 'button';
+    ok.onclick = () => { snapshot(); S.personalCheck = false; paint(); };
+    box.appendChild(ok);
+    b.appendChild(box);
+  }
   b.appendChild(refStrip([
     ['assets/ref/thumb_name.webp', t('thumbText')],
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
   ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
     v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); }));
-  if (S.thumbText || S.pinkyText) {
+  if (S.thumbText.trim() || S.pinkyText.trim()) {
     b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
     })), S.thumbFont, v => { snapshot(); S.thumbFont = v; paint(); }, true));
@@ -805,12 +866,13 @@ function textField(label, value, max, onInput, required, type, clean) {
 /* ----------------------------------------------------------------- spec */
 function specRows() {
   const L = S.lang, rows = [];
-  const push = (k, v) => rows.push([k, v || '—']);
+  const push = (k, v) => rows.push([k, typeof v === 'string' ? v.trim() || '—' : v || '—']);
+  const active = key => requiredQuestions().some(q => q.id === key);
   rows.push(['#', t('fit')]);
   push(t('hand'), S.hand && HANDS.find(h => h.id === S.hand)?.[L]);
   push(t('size'), S.size);
   push(t('pad'), S.pad && PADS.find(p => p.id === S.pad)?.[L]);
-  push(t('padColor'), colName('pad_color'));
+  push(t('padColor'), S.pad && S.pad !== 'None' ? colName('pad_color') || '10. White' : null);
   rows.push(['#', t('web')]);
   push(t('webType'), S.webType);
   push(t('webColor'), colName('web'));
@@ -827,12 +889,12 @@ function specRows() {
   rows.push(['#', t('personal')]);
   push(t('thumbText'), S.thumbText);
   push(t('pinkyText'), S.pinkyText);
-  push(t('thumbFont'), S.thumbFont);
-  push(t('thumbMain'), embName(S.thumbMain));
-  push(t('thumbOutline'), embName(S.thumbOutline));
+  push(t('thumbFont'), active('thumbFont') ? S.thumbFont : null);
+  push(t('thumbMain'), active('thumbMain') ? embName(S.thumbMain) : null);
+  push(t('thumbOutline'), active('thumbOutline') ? embName(S.thumbOutline) : null);
   push(t('thumbNumber'), S.thumbNumber);
-  push(t('circle'), S.circle);
-  push(t('numberColor'), embName(S.numberColor));
+  push(t('circle'), active('circle') ? S.circle : null);
+  push(t('numberColor'), active('numberColor') ? embName(S.numberColor) : null);
   push(t('flag'), S.flag);
   rows.push(['#', t('you')]);
   push(t('name'), S.name);
@@ -865,7 +927,7 @@ function specText() {
   for (const [k, v] of specRows())
     lines.push(k === '#' ? `\n[${v}]` : `${k}: ${v}`);
   if (BASE_PRICE) lines.push('', `${t('basePrice')} ${BASE_PRICE}`);
-  lines.push('', t('copyLink') + ': ' + shareLink(), '', t('sendLead'));
+  lines.push('', t('designLink') + ': ' + shareLink(), '', t('sendLead'));
   return lines.join('\n');
 }
 
@@ -889,7 +951,8 @@ function closeSheet() {
   if (sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
 }
 $('#sheetx').onclick = $('#keep').onclick = closeSheet;
-$('#scrim').addEventListener('keydown', ev => {
+document.addEventListener('keydown', ev => {
+  if ($('#scrim').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
   if (ev.key !== 'Tab') return;
   const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
@@ -980,15 +1043,20 @@ function paint(rebuildBody = true) {
     tag.hidden = false;
     tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
-  $('#stagehint').textContent = S.step === 3 ? t('pickPart') : '';
+  // On any step, the stage says when it is not showing the chosen web.
+  const wn = webPreviewNote();
+  const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
+  $('#stagehint').textContent = S.step === 3
+    ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
+    : palmNote;
 
   // header + bar
   $('#refcode').textContent = code();
   $('#price').textContent = BASE_PRICE;
   const d = doneCount();
   $('#donecount').textContent = d;
-  $('#totalcount').textContent = requiredQuestions().length;
-  $('#barfill').style.width = (100 * d / requiredQuestions().length) + '%';
+  $('#totalcount').textContent = countedQuestions().length;
+  $('#barfill').style.width = (100 * d / countedQuestions().length) + '%';
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
@@ -1029,6 +1097,10 @@ $('#redo').onclick = () => {
 
 loadGlove().then(bundle => {
   DATA = bundle.DATA;
+  // The catalogue decides what can be ordered; the asset data only draws it.
+  for (const b of DATA.bullets) {
+    if (UNCONFIRMED_BULLETS.includes(b.name)) { b.active = false; b.pending = true; }
+  }
   R = new GloveRenderer(bundle);
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });
@@ -1076,7 +1148,8 @@ loadGlove().then(bundle => {
   }
 
   draw(); paint();
-}).catch(() => {
+}).catch(error => {
+  console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
   $('#steplead').textContent = t('loadRetry');
   $('#next').disabled = true;

@@ -20,7 +20,22 @@
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
-import { chromium } from '/tmp/pw/node_modules/playwright/index.mjs';
+import { createRequire } from 'node:module';
+import { execSync } from 'node:child_process';
+
+// Same loader as state_check and keyboard_check: the global Playwright. The
+// old import pointed at /tmp/pw, a scratch install that no longer exists, so
+// this check crashed before it ran and was read as broken rather than failed.
+let chromium;
+try {
+  const gRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+  const require = createRequire(import.meta.url);
+  ({ chromium } = require(require.resolve('playwright', { paths: [gRoot] })));
+} catch (err) {
+  console.error('SKIP: playwright not resolvable globally (npm i -g playwright).');
+  console.error(String(err.message).split('\n')[0]);
+  process.exit(3);
+}
 
 const ROOT = new URL('./customiser/', import.meta.url).pathname;
 const EXECUTABLE = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium';
