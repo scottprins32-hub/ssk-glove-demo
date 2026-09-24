@@ -34,8 +34,9 @@ the opening at IoU 0.83. No reshoot is needed for this web.
 1. **Source.** The camera JPEG of DSC05720, SHA-256 checked against
    `trace.json`, cropped at full resolution and committed as
    `images/store-2026-09/modified-trapeze-web-camera.jpg` so it re-runs
-   without the Drive. The 39.5 MB RAW could not be fetched here, because the
-   Drive connector caps downloads at 10 MB.
+   without the Drive. The RAW (DSC05720.ARW) was available in this session
+   but was overlooked and not used. Developing the black leather's shadows
+   from it instead of the JPEG is an open improvement.
 2. **Placement.** A similarity fit of the traced extent, without the strap,
    onto the opening. Uncovered opening and cover over other panels count in
    full. Rim overhanging open air counts at 0.15.
