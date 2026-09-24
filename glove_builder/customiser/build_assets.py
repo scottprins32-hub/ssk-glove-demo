@@ -999,6 +999,64 @@ def main():
                                               _cv2.INPAINT_TELEA)
                     arr[..., :3][hole & (za | fix)] = filled_rgb[hole & (za | fix)]
                     arr[..., 3][fix] = 255
+                    # The inpaint carries tone in but smooths away the grain:
+                    # under swapped webs the patch showed as a flat grey
+                    # area, texture std 24 against 41 on the back 2 beside
+                    # it. The grain is put back from the panel's own
+                    # photograph, not made up: the fine-scale luminance
+                    # ratio (pixel over its local mean, sigma 3) of the
+                    # nearest block of real back 2 leather — the smallest
+                    # offset at which the whole footprint lands on it — is
+                    # multiplied into the fill. Only texture moves; tone and
+                    # outline stay the inpaint's.
+                    lum_r = arr[..., :3].astype(np.float32) @ np.array(
+                        [0.299, 0.587, 0.114], np.float32)
+                    src_ok = za & ~ndimage.binary_dilation(knot, np.ones((3, 3), bool),
+                                                           iterations=14)
+                    ok_f = src_ok.astype(np.float32)
+                    loc = (_cv2.GaussianBlur(lum_r * ok_f, (0, 0), 3.0)
+                           / np.maximum(_cv2.GaussianBlur(ok_f, (0, 0), 3.0), 1e-3))
+                    ratio = np.where(src_ok, lum_r / np.maximum(loc, 1.0), 1.0)
+                    # Tile by tile (24 px): a footprint as large and
+                    # star-shaped as back 2's has no single offset that lands
+                    # wholly on photographed leather, but each tile has one
+                    # close by.
+                    H_, W_ = src_ok.shape
+                    tiles_done, offs = 0, []
+                    for ty in range(0, H_, 24):
+                        for tx in range(0, W_, 24):
+                            t = fix[ty:ty + 24, tx:tx + 24]
+                            if not t.any():
+                                continue
+                            ys_, xs_ = np.nonzero(t)
+                            ys_, xs_ = ys_ + ty, xs_ + tx
+                            best = None
+                            for r_ in range(8, 200, 4):
+                                for a_ in np.linspace(0, 2 * np.pi, 32, endpoint=False):
+                                    dy = int(round(r_ * np.sin(a_)))
+                                    dx = int(round(r_ * np.cos(a_)))
+                                    yy, xx = ys_ + dy, xs_ + dx
+                                    if (yy.min() < 0 or xx.min() < 0 or yy.max() >= H_
+                                            or xx.max() >= W_):
+                                        continue
+                                    if src_ok[yy, xx].all():
+                                        best = (dy, dx)
+                                        break
+                                if best:
+                                    break
+                            if not best:
+                                continue
+                            dy, dx = best
+                            g = np.clip(ratio[ys_ + dy, xs_ + dx], 0.75, 1.25)
+                            arr[..., :3][ys_, xs_] = np.clip(
+                                arr[..., :3][ys_, xs_].astype(np.float32) * g[:, None],
+                                0, 255).astype(np.uint8)
+                            tiles_done += 1
+                            offs.append(np.hypot(dy, dx))
+                    if offs:
+                        print(f"  {zn}: grain restored from real leather in "
+                              f"{tiles_done} tiles, median offset "
+                              f"{np.median(offs):.0f} px")
                     # Only the footprint, over the shipped panel: everywhere
                     # else the panel is drawn exactly as it always was. Its
                     # tone is cut at the shipped panel's own midtone, so the
