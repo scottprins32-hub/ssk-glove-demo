@@ -106,6 +106,15 @@ def main():
         palm = json.loads(palm_f.read_text())
         for k, v in list(palm["assets"].items()):
             palm["assets"][k] = data_uri(HERE / v); n += 1
+    # The thumb and pinky sides, the same way (build_side_views.py).
+    sides = {}
+    for name in ("thumb", "pinky"):
+        f = HERE / "assets" / f"{name}-data.json"
+        if f.exists():
+            sd = json.loads(f.read_text())
+            for k, v in list(sd["assets"].items()):
+                sd["assets"][k] = data_uri(HERE / v); n += 1
+            sides[name] = sd
 
     body = "\n".join(js)
     # catalogue and reference image paths (webs, pads, fonts, flags, photos)
@@ -145,6 +154,9 @@ def main():
             "window.__GLOVE_DATA__ = " + json.dumps(data, separators=(",", ":")) + ";\n"
             + ("window.__PALM_DATA__ = "
                + json.dumps(palm, separators=(",", ":")) + ";\n" if palm else "")
+            + "".join(f"window.__{name.upper()}_DATA__ = "
+                      + json.dumps(sd, separators=(",", ":")) + ";\n"
+                      for name, sd in sides.items())
             + body)
 
     html = html.replace('<script type="module" src="app.js"></script>',

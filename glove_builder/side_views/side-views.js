@@ -49,7 +49,9 @@ export async function boot() {
   const back = await (await fetch('../customiser/assets/glove-data.json')).json();
   const views = {};
   for (const v of Object.keys(VIEWS)) {
-    const D = await (await fetch(`${v}-data.json`)).json();
+    const D = await (await fetch(`../customiser/assets/${v}-data.json`)).json();
+    // asset paths in the data are relative to the configurator
+    for (const k of Object.keys(D.assets)) D.assets[k] = '../customiser/' + D.assets[k];
     D.palettes = back.palettes;
     views[v] = await decode(D);
   }

@@ -40,7 +40,19 @@ export function loadGlove() {
       PD.palettes = DATA.palettes;
       palm = await decode(PD);
     } catch { palm = null; }
-    return { ...back, views: { back, palm } };
+    // The thumb and pinky sides: two more views of the same glove, cut from
+    // the store shoot's frames of the calibration glove (build_side_views.py).
+    // Optional in the same way as the palm.
+    const side = async (name, inlined) => {
+      try {
+        const SD = inlined || await (await fetch(`assets/${name}-data.json`)).json();
+        SD.palettes = DATA.palettes;
+        return await decode(SD);
+      } catch { return null; }
+    };
+    const thumb = await side('thumb', window.__THUMB_DATA__);
+    const pinky = await side('pinky', window.__PINKY_DATA__);
+    return { ...back, views: { back, palm, thumb, pinky } };
   })();
   return _p;
 }
@@ -259,6 +271,31 @@ export class GloveRenderer {
     this.padHex = hex || '#F2F0EA';
   }
 
+  // Whether the chosen web is one a side view has no photograph of.
+  setWebMarked(on) { this.webMarked = !!on; }
+
+  // Grey stripes in the shape of a layer's alpha, cached per layer.
+  hatch(id) {
+    const key = 'hatch|' + id;
+    let c = this.cache.get(key);
+    if (c) return c;
+    const D = this.DATA;
+    c = document.createElement('canvas');
+    c.width = D.w; c.height = D.h;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(40,40,40,0.55)';
+    g.fillRect(0, 0, D.w, D.h);
+    g.strokeStyle = 'rgba(255,255,255,0.75)';
+    g.lineWidth = 6;
+    for (let x = -D.h; x < D.w; x += 22) {
+      g.beginPath(); g.moveTo(x, D.h); g.lineTo(x + D.h, 0); g.stroke();
+    }
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(this.imgs[id], 0, 0);
+    this.cache.set(key, c);
+    return c;
+  }
+
   // Which web to render, by slug, or null for the glove's own.
   setWeb(slug) {
     this.web = (slug && this.DATA.webs && this.DATA.webs[slug]) ? slug : null;
@@ -391,7 +428,14 @@ export class GloveRenderer {
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
       const c = this.tinted(z.id, this.hex(z.id, state));
-      if (z.id === 'embroidery') {
+      if (z.id === 'embroidery' && mirror && D.embroideryLHT
+          && this.imgs[D.embroideryLHT]) {
+        // A side view carries its own left-handed lettering, already
+        // reflected across the line it runs along, so under the page's
+        // mirror it reads along the mirrored finger at the mirrored slant.
+        const e = this.tinted(D.embroideryLHT, this.hex(z.id, state), z.id);
+        ctx.drawImage(e, e._ox, e._oy);
+      } else if (z.id === 'embroidery') {
         // Letter by letter, each flipped about its own centre. See embParts
         // in build_assets.py: flipping the wordmark as a whole keeps it
         // readable on a lefty but leaves its arc right-handed, and puts it
@@ -524,6 +568,12 @@ export class GloveRenderer {
         const c = key === swap.laceweb ? this.underPad(tinted) : tinted;
         ctx.drawImage(c, c._ox, c._oy);
       }
+    }
+    // A side view photographed with one web only (the thumb side shows the
+    // calibration glove's H-Web). Any other web is hatched there, web and
+    // the lacing through it, and never drawn as if it were the one ordered.
+    if (this.webMarked && D.webMarker && this.imgs[D.webMarker]) {
+      ctx.drawImage(this.hatch(D.webMarker), 0, 0);
     }
     // ...but not over a pad or a hood. That seam runs down the index finger,
     // and a piece of leather laid over the finger covers it — the same reason

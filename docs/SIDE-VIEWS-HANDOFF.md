@@ -1,10 +1,9 @@
 # Thumb-side and pinky-side views: handoff
 
-Branch `feature/side-views`, based on `origin/feature/glove-web-assets` 45aa9eb.
-New files only. `make_web.py`, the tracer, `customiser/` (app, renderer,
-catalogue, assets, dist) and every existing layer are untouched. Nothing is
-merged or published. The views are a working preview beside the configurator
-and are not wired into it yet (see Integration).
+The views were built on branch `feature/side-views` and merged to main at
+d548bc1. They are wired into the configurator on branch
+`feature/side-views-in-app` (see "In the configurator" below). `make_web.py`,
+the tracer and every existing layer are untouched.
 
 ## Sources
 
@@ -36,9 +35,12 @@ cannot give the fixed body's geometry, and it is not used.
 python glove_builder/make_side_views.py --shoot "<folder with DSC05708.ARW, DSC05710.ARW>"
 # zone layers from the committed crops -> layers/side-{thumb,pinky}/, runs/side-views/
 python glove_builder/make_side_views.py
-# page assets -> glove_builder/side_views/assets/, {thumb,pinky}-data.json
+# page assets -> customiser/assets/side/, customiser/assets/{thumb,pinky}-data.json
 python glove_builder/build_side_views.py
-# preview: serve glove_builder/ and open /side_views/index.html
+# the single-file build picks them up too
+python glove_builder/customiser/bundle.py
+# configurator: serve glove_builder/customiser/ and use the view switcher;
+# standalone preview: serve glove_builder/ and open /side_views/index.html
 python -m http.server 8000 --directory glove_builder
 # check (exit 0 pass, 1 fail, 3 Playwright missing, which is not a pass)
 NODE_PATH=<dir holding playwright> node glove_builder/side_views_check.mjs
@@ -139,36 +141,50 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
 `thumb_unphotographed_web.jpg`. The source/zone overlays are
 `runs/side-views/{thumb,pinky}_zones.jpg`.
 
+## In the configurator
+
+- **Views.** The stage's view switcher offers Back, Palm, Thumb side and Pinky
+  side (Achterkant, Palm, Duimzijde, Pinkzijde). Each extra view is an
+  optional data file, and the page works without it.
+- **Fields.** `app.js` reads each side zone's order field from the view's data.
+  Colours, zone highlighting and click-to-select use the same fields as the
+  back view. A field a side cannot show gets "Not visible from this side".
+- **Engine.** `glove-engine.js` loads `assets/{thumb,pinky}-data.json`, or the
+  inlined copies in the single-file build. It draws the left-hand lettering
+  from `embroideryLHT` and hatches `webMarker` when the chosen web is not the
+  H-Web. The stage then says so in both languages.
+- **Bundle.** `bundle.py` inlines both views. The single file grows from
+  4.7 MB to 6.0 MB.
+- **Checks.** `side_views_app_check.mjs` drives the real configurator. It
+  checks the switcher, every zone's colour, click-to-select, and the
+  unphotographed web in both views and both hands. All other checks still
+  pass.
+
 ## Remaining limitations
 
-1. **Not wired in.** The views are not in the configurator. Integration means
-   loading `{thumb,pinky}-data.json` as two more views in `glove-engine.js`,
-   adding them to the view switcher in `app.js`, and drawing the left-hand
-   lettering and web marker the way `side_views/side-views.js` does. Those are
-   Astra's files, so this branch does not touch them.
-2. **Other frames.** These are different frames from the back view's master
+1. **Other frames.** These are different frames from the back view's master
    photograph. The side views are separate views, not registered to it.
    Colours agree because the tint pipeline is shared. The lighting does not:
    the shoot had window light from one side. 65% of the broad fall-off is
    divided out, but a white or tan thumb still shows grey shading on its far
    side.
-3. **Traced edge.** The thumb's lower-right edge stands in shadow against the
+2. **Traced edge.** The thumb's lower-right edge stands in shadow against the
    black stand. That stretch of outline is traced, not measured, and can be a
    few pixels off.
-4. **Traced seams.** The web/back2, back1/belt, back8/back9 and back5/back6
+3. **Traced seams.** The web/back2, back1/belt, back8/back9 and back5/back6
    splits follow traced seams. The back5/back6 assignment, a narrow strip for
    back 5, rests on the panel order of the back view and has not been
    confirmed with SSK.
-5. **Fixed parts.** The piping above the belt has no known order field, so it
+4. **Fixed parts.** The piping above the belt has no known order field, so it
    stays as photographed. The thumb circle stays black with its logo, and
    circle colour and thumb number are not rendered. The bullet patch edge
    stays the rainbow patch whatever bullet is chosen.
-6. **Fields not shown.** Thumb loops, pinky loops, lining and pad colour are
+5. **Fields not shown.** Thumb loops, pinky loops, lining and pad colour are
    not visible in these frames. No welting was separated on the thumb side.
-7. **Pixel-level artefacts.** At 200% a few faint hairlines remain inside the
+6. **Pixel-level artefacts.** At 200% a few faint hairlines remain inside the
    embroidery letters. Seams read as thin dark lines, which are the
    photographed creases. Residual RAW grain shows in the deepest shadows.
-8. **No other views.** The heel view (DSC05712/13) is not built. No palm or
+7. **No other views.** The heel view (DSC05712/13) is not built. No palm or
    back changes were made.
 
 ## Files
@@ -177,8 +193,10 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
 |---|---|
 | `glove_builder/make_side_views.py` | source development and verification, zone map, overlays |
 | `glove_builder/build_side_views.py` | page assets and data per view |
-| `glove_builder/side_views/index.html`, `side-views.js` | the preview, using the existing engine and catalogue unchanged |
-| `glove_builder/side_views/assets/`, `{thumb,pinky}-data.json` | the built views |
+| `glove_builder/side_views/index.html`, `side-views.js` | standalone preview on the same engine |
+| `glove_builder/customiser/assets/side/`, `customiser/assets/{thumb,pinky}-data.json` | the built views |
+| `glove_builder/customiser/glove-engine.js`, `app.js`, `glove-catalog.js`, `bundle.py` | the wiring (see "In the configurator") |
+| `glove_builder/side_views_app_check.mjs` | the configurator check |
 | `glove_builder/side_views_check.mjs` | the check |
 | `glove_builder/side_views_review.py` | review sheets |
 | `glove_builder/images/store-2026-09/rainbow-{thumb,pinky}.png` | committed source crops |

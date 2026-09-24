@@ -3,14 +3,13 @@ make_side_views.py cuts.
 
 Same recipe as the palm view (customiser/build_palm.py), read-only reuse of
 its tint_base / spec_base / match_sheen and of sheen.py, so a colour renders
-the same on every side of the glove. Written to glove_builder/side_views/, not
-into customiser/assets: these views are not wired into the configurator yet
-(see docs/SIDE-VIEWS-HANDOFF.md).
+the same on every side of the glove. Written into customiser/assets, beside the
+palm view's, where the configurator loads them as two more views.
 
     python glove_builder/build_side_views.py
 
-Writes side_views/assets/{thumb,pinky}/*.webp and side_views/{thumb,pinky}-
-data.json in the shape GloveRenderer reads for a view (w, h, zones, bbox,
+Writes customiser/assets/side/{thumb,pinky}/*.webp and customiser/assets/
+{thumb,pinky}-data.json in the shape GloveRenderer reads for a view (w, h, zones, bbox,
 assets, sheen), plus which order field each zone answers and which web the
 thumb view photographed.
 """
@@ -29,7 +28,8 @@ sys.path.insert(0, str(HERE))
 from build_assets import match_sheen, sheen_p95, spec_base, tint_base  # noqa: E402
 import sheen  # noqa: E402
 
-OUT = HERE / "side_views"
+# Beside the palm view's assets, in the shape the engine loads for a view.
+OUT = HERE / "customiser" / "assets"
 HEIGHT = 1100
 MAX_SPREAD = 2.6      # p95 / p5 of a zone's luminance, at most
 
@@ -157,14 +157,14 @@ def build(view):
             a[..., :3] = a[..., :3][iy, ix]
         return Image.fromarray(a, "RGBA").resize((W, HEIGHT), Image.LANCZOS)
 
-    out = OUT / "assets" / view
+    out = OUT / "side" / view
     out.mkdir(parents=True, exist_ok=True)
     assets, zones, bbox = {}, [], {}
 
     def put(name, img, **kw):
         p = out / f"{name}.webp"
         img.save(p, "WEBP", **kw)
-        assets[name] = f"assets/{view}/{name}.webp"
+        assets[name] = f"assets/side/{view}/{name}.webp"
         a = np.asarray(Image.open(p).convert("RGBA"))[..., 3]
         ys, xs = np.nonzero(a > 8)
         if len(ys):
@@ -235,7 +235,7 @@ def build(view):
         lht = reflect_across_text(layers["embroidery"])
         put("embroidery_lht", tint_base(lht), quality=85, method=4)
     Image.fromarray(idmap, "L").save(out / "idmap.png")
-    assets["_idmap"] = f"assets/{view}/idmap.png"
+    assets["_idmap"] = f"assets/side/{view}/idmap.png"
 
     fields = {z["field"] for z in zones}
     data = {

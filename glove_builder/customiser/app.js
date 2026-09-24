@@ -34,10 +34,24 @@ const PALM_FIELDS = {
   palm: 'palm', web: 'web', back1: 'back1', back9: 'back9',
   welting: 'welting', binding: 'binding', laces: 'laces'
 };
-const viewLayerField = () => (S.view === 'palm' ? PALM_FIELDS : LAYER_TO_FIELD);
-const viewFieldLayer = () => (S.view === 'palm'
-  ? Object.fromEntries(Object.entries(PALM_FIELDS).map(([l, f]) => [f, l]))
-  : FIELD_TO_LAYER);
+/* The thumb and pinky sides name their zones' order fields in their own
+   data (build_side_views.py), so their maps are read from there. */
+const SIDE_VIEWS = ['thumb', 'pinky'];
+const VIEW_KEYS = { back: 'viewBack', palm: 'viewPalm', thumb: 'viewThumb',
+                    pinky: 'viewPinky' };
+const sideData = () => (SIDE_VIEWS.includes(S.view) && R && R.views[S.view]
+  ? R.views[S.view].DATA : null);
+const viewLayerField = () => {
+  const SD = sideData();
+  if (SD) return Object.fromEntries(SD.zones.map(z => [z.id, z.field]));
+  return S.view === 'palm' ? PALM_FIELDS : LAYER_TO_FIELD;
+};
+const viewFieldLayer = () => {
+  if (sideData() || S.view === 'palm') {
+    return Object.fromEntries(Object.entries(viewLayerField()).map(([l, f]) => [f, l]));
+  }
+  return FIELD_TO_LAYER;
+};
 
 /* SSK's order form asks separately for Palm Color and Back 2 (rest of
    thumb). Keep those choices independent until construction evidence says otherwise. */
@@ -206,7 +220,7 @@ function cleanState(o) {
     thumbNumber: text(o.thumbNumber).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2),
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 24),
-    view: o.view === 'palm' ? 'palm' : 'back',
+    view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
     personalCheck: o.personalCheck === true,
   };
   // Size and web are checked together, as the size picker does: a Trapeze
@@ -319,7 +333,7 @@ function paintView() {
   const vw = $('#stageview');
   if (!vw || vw.hidden) return;
   for (const b of vw.children) {
-    b.textContent = t(b.dataset.view === 'palm' ? 'viewPalm' : 'viewBack');
+    b.textContent = t(VIEW_KEYS[b.dataset.view]);
     b.classList.toggle('is-on', b.dataset.view === S.view);
     b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
   }
@@ -337,6 +351,8 @@ function draw() {
   R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
   const w = WEBS.find(w => w.id === S.webType);
   R.setWeb(w && w.render);
+  // A side view shows only the web it was photographed with.
+  R.setWebMarked(!!w && w.id !== NATIVE_WEB);
   // The pad is fitted or it is not; until a colour is chosen it is white,
   // which is the order the form asks in.
   R.setPad(PAD_PART[S.pad] || null,
@@ -618,9 +634,13 @@ function renderWeb(b) {
 function webPreviewNote() {
   const w = WEBS.find(w => w.id === S.webType);
   if (!w || w.id === NATIVE_WEB) return null;
+  if (S.view === 'thumb') return 'webNotOnThumb';
+  if (S.view === 'pinky') return null;             // no web from this side
   if (!w.render) return 'webNotDrawn';
   return S.view === 'palm' ? 'webNotOnPalm' : null;
 }
+/* Notes the stage itself carries, whatever step is open. */
+const STAGE_NOTES = ['webNotOnPalm', 'webNotOnThumb'];
 
 /* ----------------------------------------------------------- 4. colours */
 function renderColours(b) {
@@ -641,7 +661,8 @@ function renderColours(b) {
   b.appendChild(swatchField(
     S.part,
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
-                                              : (OFFSTAGE[S.part] || null),
+      : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
+      : (OFFSTAGE[S.part] || null),
     true));
 
   b.appendChild(el('p', 'note swatch-note', t('swatchNote')));
@@ -1052,7 +1073,7 @@ function paint(rebuildBody = true) {
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
-  const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
+  const palmNote = STAGE_NOTES.includes(wn) ? t(wn) : '';
   $('#stagehint').textContent = S.step === 3
     ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
     : palmNote;
@@ -1141,12 +1162,13 @@ loadGlove().then(bundle => {
     cv.style.cursor = id ? 'pointer' : 'default';
   });
 
-  // Which side of the glove. Only offered when the palm view actually
-  // loaded — it is a separate data file, and the page has to work without it.
+  // Which side of the glove. Each view past the back is a separate data file
+  // and is only offered when it loaded; the page has to work without them.
   const vw = $('#stageview');
-  if (R.hasView('palm')) {
+  const views = Object.keys(VIEW_KEYS).filter(id => id === 'back' || R.hasView(id));
+  if (views.length > 1) {
     vw.hidden = false;
-    for (const [id, key] of [['back', 'viewBack'], ['palm', 'viewPalm']]) {
+    for (const id of views) {
       const b = el('button');
       b.type = 'button'; b.dataset.view = id;
       b.onclick = () => { S.view = id; draw(); paint(); };
