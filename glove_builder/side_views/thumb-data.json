@@ -1,0 +1,247 @@
+{
+ "view": "thumb",
+ "w": 822,
+ "h": 1100,
+ "zones": [
+  {
+   "id": "web",
+   "n": 1,
+   "group": "leather",
+   "label": "Web",
+   "field": "web"
+  },
+  {
+   "id": "back1",
+   "n": 2,
+   "group": "leather",
+   "label": "Back 1 - thumb wingtip",
+   "field": "back1"
+  },
+  {
+   "id": "back2",
+   "n": 3,
+   "group": "leather",
+   "label": "Back 2 - thumb",
+   "field": "back2"
+  },
+  {
+   "id": "back3",
+   "n": 4,
+   "group": "leather",
+   "label": "Back 3 - index, 1st part",
+   "field": "back3"
+  },
+  {
+   "id": "palm",
+   "n": 5,
+   "group": "leather",
+   "label": "Palm (seen inside the pocket)",
+   "field": "palm"
+  },
+  {
+   "id": "belt",
+   "n": 6,
+   "group": "leather",
+   "label": "Belt",
+   "field": "belt"
+  },
+  {
+   "id": "binding",
+   "n": 7,
+   "group": "lace",
+   "label": "Binding",
+   "field": "binding"
+  },
+  {
+   "id": "laces",
+   "n": 8,
+   "group": "lace",
+   "label": "Laces",
+   "field": "laces"
+  },
+  {
+   "id": "stitching",
+   "n": 9,
+   "group": "stitching",
+   "label": "Stitching",
+   "field": "stitching"
+  }
+ ],
+ "bbox": {
+  "glove": [
+   83,
+   42,
+   756,
+   1057
+  ],
+  "web": [
+   83,
+   64,
+   628,
+   725
+  ],
+  "web_hi": [
+   83,
+   64,
+   628,
+   725
+  ],
+  "back1": [
+   192,
+   257,
+   756,
+   1017
+  ],
+  "back1_hi": [
+   192,
+   257,
+   756,
+   1017
+  ],
+  "back2": [
+   136,
+   694,
+   347,
+   840
+  ],
+  "back2_hi": [
+   136,
+   694,
+   347,
+   840
+  ],
+  "back3": [
+   96,
+   161,
+   251,
+   478
+  ],
+  "back3_hi": [
+   96,
+   161,
+   251,
+   478
+  ],
+  "palm": [
+   157,
+   156,
+   602,
+   654
+  ],
+  "palm_hi": [
+   157,
+   156,
+   602,
+   654
+  ],
+  "belt": [
+   194,
+   847,
+   393,
+   1037
+  ],
+  "belt_hi": [
+   194,
+   847,
+   393,
+   1037
+  ],
+  "binding": [
+   167,
+   779,
+   593,
+   1057
+  ],
+  "binding_hi": [
+   167,
+   779,
+   593,
+   1057
+  ],
+  "laces": [
+   88,
+   42,
+   709,
+   938
+  ],
+  "laces_hi": [
+   88,
+   42,
+   709,
+   938
+  ],
+  "stitching": [
+   90,
+   67,
+   727,
+   994
+  ],
+  "web_marker": [
+   83,
+   54,
+   634,
+   730
+  ]
+ },
+ "assets": {
+  "glove": "assets/thumb/glove.webp",
+  "web": "assets/thumb/web.webp",
+  "web_hi": "assets/thumb/web_hi.webp",
+  "back1": "assets/thumb/back1.webp",
+  "back1_hi": "assets/thumb/back1_hi.webp",
+  "back2": "assets/thumb/back2.webp",
+  "back2_hi": "assets/thumb/back2_hi.webp",
+  "back3": "assets/thumb/back3.webp",
+  "back3_hi": "assets/thumb/back3_hi.webp",
+  "palm": "assets/thumb/palm.webp",
+  "palm_hi": "assets/thumb/palm_hi.webp",
+  "belt": "assets/thumb/belt.webp",
+  "belt_hi": "assets/thumb/belt_hi.webp",
+  "binding": "assets/thumb/binding.webp",
+  "binding_hi": "assets/thumb/binding_hi.webp",
+  "laces": "assets/thumb/laces.webp",
+  "laces_hi": "assets/thumb/laces_hi.webp",
+  "stitching": "assets/thumb/stitching.webp",
+  "_idmap": "assets/thumb/idmap.png",
+  "web_marker": "assets/thumb/web_marker.webp"
+ },
+ "sheen": {
+  "back1": 0.471,
+  "back2": 0.5,
+  "back3": 0.571,
+  "belt": 0.382,
+  "binding": 0.471,
+  "laces": 0.533,
+  "palm": 0.471,
+  "web": 0.5
+ },
+ "source": "DSC05708.ARW",
+ "fieldsShown": [
+  "back1",
+  "back2",
+  "back3",
+  "belt",
+  "binding",
+  "laces",
+  "palm",
+  "stitching",
+  "web"
+ ],
+ "fieldsNotShown": [
+  "back4",
+  "back5",
+  "back6",
+  "back7",
+  "back8",
+  "back9",
+  "lining",
+  "welting",
+  "thumb_loops",
+  "pinky_loops",
+  "ring_emb",
+  "pad_color"
+ ],
+ "webMarker": "web_marker",
+ "webZone": "web",
+ "photographedWeb": "H-Web"
+}

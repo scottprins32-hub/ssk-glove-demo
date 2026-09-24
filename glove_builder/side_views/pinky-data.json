@@ -1,0 +1,303 @@
+{
+ "view": "pinky",
+ "w": 737,
+ "h": 1100,
+ "zones": [
+  {
+   "id": "back4",
+   "n": 1,
+   "group": "leather",
+   "label": "Back 4 - index, 2nd part",
+   "field": "back4"
+  },
+  {
+   "id": "back5",
+   "n": 2,
+   "group": "leather",
+   "label": "Back 5 - middle, 1st part",
+   "field": "back5"
+  },
+  {
+   "id": "back6",
+   "n": 3,
+   "group": "leather",
+   "label": "Back 6 - middle, 2nd part",
+   "field": "back6"
+  },
+  {
+   "id": "back7",
+   "n": 4,
+   "group": "leather",
+   "label": "Back 7 - ring",
+   "field": "back7"
+  },
+  {
+   "id": "back8",
+   "n": 5,
+   "group": "leather",
+   "label": "Back 8 - pinky",
+   "field": "back8"
+  },
+  {
+   "id": "back9",
+   "n": 6,
+   "group": "leather",
+   "label": "Back 9 - pinky wingtip",
+   "field": "back9"
+  },
+  {
+   "id": "palm",
+   "n": 7,
+   "group": "leather",
+   "label": "Palm (seen inside the pocket)",
+   "field": "palm"
+  },
+  {
+   "id": "binding",
+   "n": 8,
+   "group": "lace",
+   "label": "Binding",
+   "field": "binding"
+  },
+  {
+   "id": "welting",
+   "n": 9,
+   "group": "lace",
+   "label": "Welting",
+   "field": "welting"
+  },
+  {
+   "id": "laces",
+   "n": 10,
+   "group": "lace",
+   "label": "Laces",
+   "field": "laces"
+  },
+  {
+   "id": "embroidery",
+   "n": 11,
+   "group": "embroidery",
+   "label": "SSK embroidery",
+   "field": "ring_emb"
+  },
+  {
+   "id": "stitching",
+   "n": 12,
+   "group": "stitching",
+   "label": "Stitching",
+   "field": "stitching"
+  }
+ ],
+ "bbox": {
+  "glove": [
+   60,
+   44,
+   631,
+   990
+  ],
+  "back4": [
+   427,
+   75,
+   631,
+   602
+  ],
+  "back4_hi": [
+   427,
+   75,
+   631,
+   602
+  ],
+  "back5": [
+   464,
+   139,
+   616,
+   685
+  ],
+  "back5_hi": [
+   464,
+   139,
+   616,
+   685
+  ],
+  "back6": [
+   347,
+   44,
+   586,
+   757
+  ],
+  "back6_hi": [
+   347,
+   44,
+   586,
+   757
+  ],
+  "back7": [
+   244,
+   70,
+   558,
+   821
+  ],
+  "back7_hi": [
+   244,
+   70,
+   558,
+   821
+  ],
+  "back8": [
+   151,
+   151,
+   481,
+   915
+  ],
+  "back8_hi": [
+   151,
+   151,
+   481,
+   915
+  ],
+  "back9": [
+   64,
+   163,
+   401,
+   990
+  ],
+  "back9_hi": [
+   64,
+   163,
+   401,
+   990
+  ],
+  "palm": [
+   331,
+   381,
+   368,
+   483
+  ],
+  "palm_hi": [
+   331,
+   381,
+   368,
+   483
+  ],
+  "binding": [
+   445,
+   709,
+   583,
+   868
+  ],
+  "binding_hi": [
+   445,
+   709,
+   583,
+   868
+  ],
+  "welting": [
+   61,
+   56,
+   558,
+   778
+  ],
+  "welting_hi": [
+   61,
+   56,
+   558,
+   778
+  ],
+  "laces": [
+   60,
+   46,
+   551,
+   977
+  ],
+  "laces_hi": [
+   60,
+   46,
+   551,
+   977
+  ],
+  "embroidery": [
+   358,
+   244,
+   515,
+   561
+  ],
+  "stitching": [
+   80,
+   66,
+   607,
+   984
+  ],
+  "embroidery_lht": [
+   360,
+   243,
+   523,
+   564
+  ]
+ },
+ "assets": {
+  "glove": "assets/pinky/glove.webp",
+  "back4": "assets/pinky/back4.webp",
+  "back4_hi": "assets/pinky/back4_hi.webp",
+  "back5": "assets/pinky/back5.webp",
+  "back5_hi": "assets/pinky/back5_hi.webp",
+  "back6": "assets/pinky/back6.webp",
+  "back6_hi": "assets/pinky/back6_hi.webp",
+  "back7": "assets/pinky/back7.webp",
+  "back7_hi": "assets/pinky/back7_hi.webp",
+  "back8": "assets/pinky/back8.webp",
+  "back8_hi": "assets/pinky/back8_hi.webp",
+  "back9": "assets/pinky/back9.webp",
+  "back9_hi": "assets/pinky/back9_hi.webp",
+  "palm": "assets/pinky/palm.webp",
+  "palm_hi": "assets/pinky/palm_hi.webp",
+  "binding": "assets/pinky/binding.webp",
+  "binding_hi": "assets/pinky/binding_hi.webp",
+  "welting": "assets/pinky/welting.webp",
+  "welting_hi": "assets/pinky/welting_hi.webp",
+  "laces": "assets/pinky/laces.webp",
+  "laces_hi": "assets/pinky/laces_hi.webp",
+  "embroidery": "assets/pinky/embroidery.webp",
+  "stitching": "assets/pinky/stitching.webp",
+  "embroidery_lht": "assets/pinky/embroidery_lht.webp",
+  "_idmap": "assets/pinky/idmap.png"
+ },
+ "sheen": {
+  "back4": 0.5,
+  "back5": 0.615,
+  "back6": 0.471,
+  "back7": 0.381,
+  "back8": 0.364,
+  "back9": 0.4,
+  "binding": 0.421,
+  "laces": 0.381,
+  "palm": 0.385,
+  "welting": 0.398
+ },
+ "source": "DSC05710.ARW",
+ "fieldsShown": [
+  "back4",
+  "back5",
+  "back6",
+  "back7",
+  "back8",
+  "back9",
+  "binding",
+  "laces",
+  "palm",
+  "ring_emb",
+  "stitching",
+  "welting"
+ ],
+ "fieldsNotShown": [
+  "web",
+  "back1",
+  "back2",
+  "back3",
+  "belt",
+  "lining",
+  "thumb_loops",
+  "pinky_loops",
+  "pad_color"
+ ],
+ "embroideryLHT": "embroidery_lht"
+}

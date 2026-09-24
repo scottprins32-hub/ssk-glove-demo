@@ -33,7 +33,8 @@ export const WEBS = [
   { id: 'H-Web', img: F + 'webs/H_Web.jpg', sizes: ['11.75"', '12"', '12.25"', '12.5"', '12.75"'] },
   { id: 'SMLEE-Web', img: F + 'webs/SMLEE_Web.jpg', sizes: ['11.75"'],
     render: 'smlee' },
-  { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'] },
+  { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'],
+    render: 'modified-trapeze' },
   { id: 'Basket-Web', img: F + 'webs/Basket_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Em Rocket-Web', img: F + 'webs/Em_Rocket_Web.jpg', sizes: ['12"'],
     render: 'em-rocket' },
@@ -41,7 +42,8 @@ export const WEBS = [
   { id: 'Sasaki 2-Web', img: F + 'webs/Sasaki_2_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Closed Diamond Net-Web', img: F + 'webs/Closed_Diamond_Net_Web.jpg', sizes: ['12.25"'],
     render: 'closed-diamond-net' },
-  { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'] }
+  { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'],
+    render: 'trapeze' }
 ];
 
 export const EMB_FONTS = [
@@ -122,7 +124,8 @@ export const STARTERS = [
   // layer for, so the colours carry it.
   { id: 'jp', en: 'Japan', nl: 'Japan', group: 'national', bullet: 7,
     flag: 'Japan',
-    colors: { _panels: '71', back1: '32', back2: '32', web: '71', belt: '32',
+    // Navy palm is visible on the navy/red, yellow-laced glove in shoot frame DSC05725.
+    colors: { _panels: '71', palm: '71', back1: '32', back2: '32', web: '71', belt: '32',
               welting: '45', laces: '45', binding: '45', lining: '71',
               thumb_loops: '45', pinky_loops: '45', embroidery: '39',
               stitching: '45' } },
@@ -155,7 +158,7 @@ export const COLOUR_ORDER = ['web', 'back1', 'back2', 'back3', 'back4', 'back5',
 
 export const T = {
   en: {
-    builder: 'Custom glove builder', model: 'SSK Pro Custom · back view',
+    builder: 'Custom glove builder', model: 'SSK Pro Custom',
     start: 'Start', fit: 'Fit', web: 'Web', back: 'Back panels', leather: 'Leather & lacing',
     logos: 'Logos', personal: 'Personalisation', you: 'Your details',
     hand: 'Hand', size: 'Glove size', pad: 'Finger pad / hood', padColor: 'Pad / hood colour',
@@ -175,10 +178,10 @@ export const T = {
     name: 'Your name', phone: 'Phone number',
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
     compare: 'Compare', snapshot: 'Snapshot', clear: 'Clear', basePrice: 'From',
-    finish: 'Review & send', reference: 'Reference', copy: 'Copy specification',
+    finish: 'Save design', reference: 'Design code', copy: 'Copy specification',
     copyLink: 'Copy link',
     copied: 'Copied', keep: 'Keep building', open: 'Open a saved design',
-    paste: 'Paste a reference code', notShown: 'Not shown on this view',
+    paste: 'Paste a design link or reference code', notShown: 'Not shown on this view',
     askPim: 'Ask SSK Europe — not yet confirmed',
     codeBad: 'That is not a reference code, or it has a typo.',
     codeNoText: 'Reference codes carry no names or numbers. Add the thumb and pinky embroidery and the thumb number again, or confirm there are none.',
@@ -187,7 +190,7 @@ export const T = {
     codeAmbiguous: 'This older code can be read two ways, so it cannot be opened safely. Ask SSK Europe for the order.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
     pickPart: 'Click any part of the glove', required: 'Still needed',
-    sendTitle: 'Your SSK custom glove', sendLead: 'Send this reference to SSK Europe with your order — it holds every choice below.',
+    sendTitle: 'Your SSK custom glove', sendLead: 'Share the full specification with SSK Europe to confirm availability and your order. The design code saves your options; the design link also keeps embroidery text and numbers. Saving does not place an order.',
     viewBack: 'Back', viewPalm: 'Palm',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
     webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
@@ -195,7 +198,7 @@ export const T = {
     tiedTo: '(one piece with %s)',
     colours: 'Colours', review: 'Review', details: 'Your details', name2: 'Name on the glove',
     stepOf: 'Step', ofN: 'of', nextStep: 'Next', backStep: 'Back',
-    built: 'Built by SSK', national: 'National team', signature: 'Signature build', blankTag: 'Start clean',
+    built: 'Built by SSK', national: 'Country colours', signature: 'Colour inspiration', blankTag: 'Start clean',
     pickStart: 'Pick a starting point. You can change every part after this.',
     pickColour: 'Pick a part on the glove, then pick its colour.',
     // SSK has no hex values for these colours -- the number is the colour, and
@@ -205,11 +208,17 @@ export const T = {
       + 'number comes out slightly different in each leather. The swatch is an '
       + 'indication \u2014 the number beside it is what gets ordered.',
     applyAll: 'Same colour on all back panels',
+    designLink: 'Design link', legacyNotice: 'Back-view colours restored. Other colours, fit and personalisation are unchanged; review them before saving.',
+    share: 'Share design', download: 'Download specification',
+    draftNotice: 'Draft: required choices are still missing. You can save and continue later.',
+    readyNotice: 'Required choices completed. SSK Europe still needs to confirm the order.',
+    invalidDesign: 'This design link or colour code could not be opened.', copyFailed: 'Copy failed. Try download.',
+    loadError: 'The glove could not be loaded', loadRetry: 'Check your connection and reload this page.',
     sigSlot: 'Signature slot — attach a real SSK player',
-    allSet: 'All set', sendIt: 'Send to SSK', model2: 'SSK Pro Custom'
+    allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom'
   },
   nl: {
-    builder: 'Handschoen samenstellen', model: 'SSK Pro Custom · achterzijde',
+    builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
     start: 'Start', fit: 'Pasvorm', web: 'Web', back: 'Achterpanelen', leather: 'Leer & veters',
     logos: "Logo's", personal: 'Personalisatie', you: 'Jouw gegevens',
     hand: 'Hand', size: 'Maat', pad: 'Vingerpad / kap', padColor: 'Kleur pad / kap',
@@ -229,10 +238,10 @@ export const T = {
     name: 'Je naam', phone: 'Telefoonnummer',
     left: 'nog open', done: 'klaar', undo: 'Ongedaan', redo: 'Opnieuw', reset: 'Wissen',
     compare: 'Vergelijk', snapshot: 'Vastleggen', clear: 'Wissen', basePrice: 'Vanaf',
-    finish: 'Controleren & versturen', reference: 'Referentie', copy: 'Kopieer specificatie',
+    finish: 'Ontwerp opslaan', reference: 'Ontwerpcode', copy: 'Kopieer specificatie',
     copied: 'Gekopieerd', keep: 'Verder bouwen', open: 'Bewaard ontwerp openen',
     copyLink: 'Kopieer link',
-    paste: 'Plak een referentiecode', notShown: 'Niet zichtbaar op deze weergave',
+    paste: 'Plak een ontwerplink of referentiecode', notShown: 'Niet zichtbaar op deze weergave',
     askPim: 'Vraag SSK Europe — nog niet bevestigd',
     codeBad: 'Dit is geen referentiecode, of er zit een typfout in.',
     codeNoText: 'Referentiecodes bevatten geen namen of nummers. Vul het borduurwerk op duim en pink en het duimnummer opnieuw in, of bevestig dat er geen is.',
@@ -241,7 +250,7 @@ export const T = {
     codeAmbiguous: 'Deze oudere code is op twee manieren te lezen en kan daarom niet veilig worden geopend. Vraag SSK Europe om de bestelling.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
-    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Stuur deze referentie mee met je bestelling bij SSK Europe — hij bevat elke keuze hieronder.',
+    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Deel de volledige specificatie met SSK Europe om beschikbaarheid en je bestelling te bevestigen. De ontwerpcode bewaart je keuzes; de ontwerplink bewaart ook borduurtekst en nummers. Opslaan plaatst geen bestelling.',
     viewBack: 'Achterkant', viewPalm: 'Palm',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
     webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
@@ -249,14 +258,20 @@ export const T = {
     tiedTo: '(één stuk met %s)',
     colours: 'Kleuren', review: 'Controleren', details: 'Jouw gegevens', name2: 'Naam op de handschoen',
     stepOf: 'Stap', ofN: 'van', nextStep: 'Verder', backStep: 'Terug',
-    built: 'Door SSK gebouwd', national: 'Nationaal team', signature: 'Signature build', blankTag: 'Blanco beginnen',
+    built: 'Door SSK gebouwd', national: 'Landenkleuren', signature: 'Kleurinspiratie', blankTag: 'Blanco beginnen',
     pickStart: 'Kies een startpunt. Daarna pas je elk onderdeel nog aan.',
     pickColour: 'Kies een onderdeel op de handschoen en daarna de kleur.',
     swatchNote: 'SSK heeft geen kleurcodes buiten deze nummers, en hetzelfde '
       + 'nummer valt in elk leer net iets anders uit. Het staaltje is een '
       + 'indicatie \u2014 het nummer ernaast is wat besteld wordt.',
     applyAll: 'Zelfde kleur op alle achterpanelen',
+    designLink: 'Ontwerplink', legacyNotice: 'Kleuren van de rugweergave hersteld. Andere kleuren, pasvorm en personalisatie zijn ongewijzigd; controleer ze voor het opslaan.',
+    share: 'Ontwerp delen', download: 'Specificatie downloaden',
+    draftNotice: 'Concept: er ontbreken nog verplichte keuzes. Je kunt opslaan en later verdergaan.',
+    readyNotice: 'Verplichte keuzes ingevuld. SSK Europe moet de bestelling nog bevestigen.',
+    invalidDesign: 'Deze ontwerplink of kleurcode kon niet worden geopend.', copyFailed: 'Kopiëren mislukt. Download de specificatie.',
+    loadError: 'De handschoen kon niet worden geladen', loadRetry: 'Controleer je verbinding en laad deze pagina opnieuw.',
     sigSlot: 'Signature-plek — koppel een echte SSK-speler',
-    allSet: 'Compleet', sendIt: 'Naar SSK sturen', model2: 'SSK Pro Custom'
+    allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom'
   }
 };

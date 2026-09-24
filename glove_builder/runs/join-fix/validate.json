@@ -1,0 +1,180 @@
+{
+ "renders": {
+  "h-web RHT white": {
+   "changed": 0,
+   "outside_knotheal": 0
+  },
+  "h-web LHT white": {
+   "changed": 0,
+   "outside_knotheal": 0
+  },
+  "h-web RHT navy": {
+   "changed": 0,
+   "outside_knotheal": 0
+  },
+  "h-web LHT navy": {
+   "changed": 0,
+   "outside_knotheal": 0
+  },
+  "standard-i RHT white": {
+   "changed": 70446,
+   "outside_knotheal": 58689
+  },
+  "standard-i LHT white": {
+   "changed": 70446,
+   "outside_knotheal": 58689
+  },
+  "standard-i RHT navy": {
+   "changed": 76268,
+   "outside_knotheal": 64467
+  },
+  "standard-i LHT navy": {
+   "changed": 76268,
+   "outside_knotheal": 64467
+  },
+  "spiral-i RHT white": {
+   "changed": 69395,
+   "outside_knotheal": 56522
+  },
+  "spiral-i LHT white": {
+   "changed": 69395,
+   "outside_knotheal": 56522
+  },
+  "spiral-i RHT navy": {
+   "changed": 73350,
+   "outside_knotheal": 60429
+  },
+  "spiral-i LHT navy": {
+   "changed": 73350,
+   "outside_knotheal": 60429
+  },
+  "smk RHT white": {
+   "changed": 80104,
+   "outside_knotheal": 67595
+  },
+  "smk LHT white": {
+   "changed": 80104,
+   "outside_knotheal": 67595
+  },
+  "smk RHT navy": {
+   "changed": 83913,
+   "outside_knotheal": 71530
+  },
+  "smk LHT navy": {
+   "changed": 83913,
+   "outside_knotheal": 71530
+  },
+  "em-rocket RHT white": {
+   "changed": 92653,
+   "outside_knotheal": 78593
+  },
+  "em-rocket LHT white": {
+   "changed": 92653,
+   "outside_knotheal": 78593
+  },
+  "em-rocket RHT navy": {
+   "changed": 98419,
+   "outside_knotheal": 84523
+  },
+  "em-rocket LHT navy": {
+   "changed": 98419,
+   "outside_knotheal": 84523
+  },
+  "closed-diamond-net RHT white": {
+   "changed": 100626,
+   "outside_knotheal": 87037
+  },
+  "closed-diamond-net LHT white": {
+   "changed": 100626,
+   "outside_knotheal": 87037
+  },
+  "closed-diamond-net RHT navy": {
+   "changed": 103872,
+   "outside_knotheal": 90287
+  },
+  "closed-diamond-net LHT navy": {
+   "changed": 103872,
+   "outside_knotheal": 90287
+  },
+  "trapeze RHT white": {
+   "changed": 4910,
+   "outside_knotheal": 0
+  },
+  "trapeze LHT white": {
+   "changed": 4910,
+   "outside_knotheal": 0
+  },
+  "trapeze RHT navy": {
+   "changed": 4678,
+   "outside_knotheal": 0
+  },
+  "trapeze LHT navy": {
+   "changed": 4678,
+   "outside_knotheal": 0
+  },
+  "modified-trapeze RHT white": {
+   "changed": 6058,
+   "outside_knotheal": 0
+  },
+  "modified-trapeze LHT white": {
+   "changed": 6058,
+   "outside_knotheal": 0
+  },
+  "modified-trapeze RHT navy": {
+   "changed": 5758,
+   "outside_knotheal": 0
+  },
+  "modified-trapeze LHT navy": {
+   "changed": 5758,
+   "outside_knotheal": 0
+  },
+  "smlee RHT white": {
+   "changed": 1822,
+   "outside_knotheal": 0
+  },
+  "smlee LHT white": {
+   "changed": 1822,
+   "outside_knotheal": 0
+  },
+  "smlee RHT navy": {
+   "changed": 1689,
+   "outside_knotheal": 0
+  },
+  "smlee LHT navy": {
+   "changed": 1689,
+   "outside_knotheal": 0
+  }
+ },
+ "layers": {
+  "standard-i": {
+   "detached_outside": 87,
+   "outside_not_footprint": 87,
+   "row718_edge_cols": 4,
+   "lace_components_outside": 3
+  },
+  "spiral-i": {
+   "detached_outside": 71,
+   "outside_not_footprint": 90,
+   "row718_edge_cols": 6,
+   "lace_components_outside": 40
+  },
+  "smk": {
+   "detached_outside": 97,
+   "outside_not_footprint": 105,
+   "row718_edge_cols": 17,
+   "lace_components_outside": 1
+  },
+  "em-rocket": {
+   "detached_outside": 0,
+   "outside_not_footprint": 861,
+   "row718_edge_cols": 15,
+   "lace_components_outside": 2
+  },
+  "closed-diamond-net": {
+   "detached_outside": 0,
+   "outside_not_footprint": 4489,
+   "row718_edge_cols": 4,
+   "lace_components_outside": 4
+  }
+ }
+}

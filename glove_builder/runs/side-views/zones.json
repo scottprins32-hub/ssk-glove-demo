@@ -1,0 +1,42 @@
+{
+  "pinky": {
+    "source": "DSC05710.ARW",
+    "zones_px": {
+      "back9": 286674,
+      "back7": 228912,
+      "back6": 103726,
+      "back4": 38570,
+      "palm": 2212,
+      "back8": 222221,
+      "back5": 57786,
+      "laces": 205946,
+      "welting": 33001,
+      "stitching": 7541,
+      "binding": 7003,
+      "embroidery": 28525
+    },
+    "fixed_px": {},
+    "glove_px": 1217497
+  },
+  "thumb": {
+    "source": "DSC05708.ARW",
+    "zones_px": {
+      "web": 429915,
+      "back1": 484929,
+      "back3": 21115,
+      "back2": 38943,
+      "belt": 43139,
+      "laces": 174593,
+      "welting": 0,
+      "stitching": 13897,
+      "binding": 13223,
+      "palm": 146649
+    },
+    "fixed_px": {
+      "circle": 36897,
+      "piping": 7470,
+      "bullet_edge": 1940
+    },
+    "glove_px": 1412132
+  }
+}

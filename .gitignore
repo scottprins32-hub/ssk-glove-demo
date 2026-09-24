@@ -14,3 +14,8 @@ venv/
 # cross-review working files
 HANDOFF.md
 REVIEW.md
+
+# Local cross-review evidence and preserved backups
+/.cross-review/
+*.bak
+*.bak.[0-9]*

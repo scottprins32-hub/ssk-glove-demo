@@ -26,10 +26,11 @@ import json
 import pathlib
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage
 
 HERE = pathlib.Path(__file__).parent
+LAST_FIT = {}
 
 # One entry per photographed web. `seam` is (y, x) waypoints down the welt
 # that bounds the web on the finger side; everything left of it is another
@@ -418,30 +419,46 @@ WEBS = {
     # Outlines were read off a gridded crop, not traced by hand in the tracer,
     # so they are a first cut: fit() and complete() take up the slack, and the
     # tracer can replace any of them.
+    # The two lattices. An outline and a colour rule, which were enough for
+    # the closed webs above, cannot tell a window between two laces from a
+    # lace in shadow, so these are traced pixel by pixel off the camera's own
+    # frames by trace_trapeze.py (DSC05716 and DSC05720, at twice this
+    # resolution) and read back here as masks: leather, lace, and the windows
+    # the backdrop shows through. Nothing inside the web is drawn by hand.
     "trapeze": {
         "photo": "images/store-2026-09/trapeze.jpg",
         "glove_mask": "runs/store-trapeze/masks/glove.png",
-        # white leather, purple lacing: the T-bar of leather down the finger
-        # side and a lattice of lace between it and the thumb
-        "outline": [(950, 130), (1000, 110), (1100, 140), (1180, 200),
-                    (1260, 300), (1300, 400), (1330, 500), (1350, 650),
-                    (1350, 800), (1330, 950), (1300, 1080), (1230, 1160),
-                    (1150, 1190), (1050, 1170), (1010, 1150), (1000, 1000),
-                    (985, 700), (975, 450), (965, 300)],
-        "lace_hue": (240, 360), "lace_s": (40, 255), "lace_v_min": 5,
-        "lace_v_max": 95,
+        # white leather, purple lacing: a lace ladder from the index finger
+        # to a single leather post, another from the post to the rim
+        "traced": "runs/store-trapeze/masks",
+        # the index finger's edge beside the web, 80 px of it, down to where
+        # the finger meets the heel of the web — far enough that it covers
+        # the lowest of the calibration H-web's loops on back 3 as well
+        "finger_poly": [(1064, 170), (1072, 185), (1089, 205), (1110, 230),
+                        (1116, 260), (1114, 300), (1111, 350), (1109, 400),
+                        (1097, 450), (1088, 500), (1080, 550), (1068, 600),
+                        (1063, 650), (1057, 700), (1049, 745), (1039, 790),
+                        (1019, 840), (1000, 880), (920, 880), (939, 840),
+                        (959, 790), (969, 745), (977, 700), (983, 650),
+                        (988, 600), (1000, 550), (1008, 500), (1017, 450),
+                        (1029, 400), (1031, 350), (1034, 300), (1036, 260),
+                        (1030, 230), (1009, 205), (992, 185), (984, 170)],
+        "finger_band": 40,
     },
     "modified-trapeze": {
         "photo": "images/store-2026-09/modified-trapeze.jpg",
         "glove_mask": "runs/store-modified-trapeze/masks/glove.png",
-        # black leather, gold lacing: the hue holds where a lace falls into
-        # shadow and Otsu on brightness did not
-        "lace_hue": (30, 58), "lace_s": (80, 255), "lace_v_min": 40,
-        "outline": [(1110, 250), (1160, 200), (1220, 190), (1300, 220),
-                    (1370, 280), (1420, 360), (1460, 470), (1480, 600),
-                    (1470, 720), (1420, 860), (1330, 940), (1250, 1000),
-                    (1150, 1010), (1080, 950), (1070, 800), (1085, 600),
-                    (1100, 400)],
+        # black leather, gold lacing: the same ladders either side of a
+        # wider post, stitched in two strips
+        "traced": "runs/store-modified-trapeze/masks",
+        "finger_poly": [(1144, 185), (1144, 260), (1145, 320), (1146, 380),
+                        (1147, 440), (1148, 500), (1148, 560), (1147, 620),
+                        (1146, 680), (1144, 740), (1144, 800), (1150, 860),
+                        (1156, 910), (1076, 910), (1070, 860),
+                        (1064, 800), (1064, 740), (1066, 680), (1067, 620),
+                        (1068, 560), (1068, 500), (1067, 440), (1066, 380),
+                        (1065, 320), (1064, 260), (1064, 185)],
+        "finger_band": 40,
     },
     "smlee": {
         "photo": "images/store-2026-09/smlee.jpg",
@@ -472,11 +489,60 @@ WEBS = {
 }
 
 
+def traced_masks(spec):
+    """The masks trace_trapeze.py read off the frame: leather, lace, window,
+    and the boundary of the web they all lie inside."""
+    d = HERE / spec["traced"]
+    t = {n: np.asarray(Image.open(d / f"web_{n}.png").convert("L")) > 127
+         for n in ("leather", "lace", "window", "roi", "extent", "strap")}
+    t["lace_anywhere"] = np.asarray(
+        Image.open(d / "lace_anywhere.png").convert("L")) > 127
+    return t
+
+
 def cut(spec):
     im = Image.open(HERE / spec["photo"]).convert("RGB")
     a = np.asarray(im).astype(float)
     lum = a @ [0.299, 0.587, 0.114]
     glove = np.asarray(Image.open(HERE / spec["glove_mask"]).convert("L")) > 127
+
+    if "traced" in spec:
+        # Every pixel already decided, off the camera's frame. The glove mask
+        # from a saturation threshold is only right outside the web: inside it,
+        # on the Trapeze, it counts half the windows as glove.
+        t = traced_masks(spec)
+        glove = (glove & ~t["roi"]) | t["leather"] | t["lace"]
+        print(f"traced: {int(t['leather'].sum())} px leather, "
+              f"{int(t['lace'].sum())} px lacing, "
+              f"{int(t['window'].sum())} px of window")
+        finger = None
+        if "finger_poly" in spec:
+            # The index finger's own edge, which on both gloves is smooth: the
+            # lattice's laces run in behind it, and nothing of them shows on
+            # its back. Carried with the web so that is what the join shows,
+            # instead of the calibration glove's H-web loops cut in half.
+            import cv2
+            fp = np.zeros(glove.shape, np.uint8)
+            cv2.fillPoly(fp, [np.array(spec["finger_poly"], np.int32)], 1)
+            band = fp.astype(bool) & ~t["roi"] & ndimage.binary_dilation(
+                t["roi"], np.ones((3, 3), bool),
+                iterations=int(spec.get("finger_band", 36)))
+            # Lace in the strip is lace: the ends of the web's laces going in
+            # behind the finger, and on the Trapeze one loop of it passing
+            # through the finger's back half way down. Each piece is taken
+            # whole, as far as it runs inside the finger outline, so none is
+            # cut square at the edge of the band; the strip is leather only
+            # round them.
+            la = t["lace_anywhere"] & fp.astype(bool) & ~t["roi"]
+            lbl, k = ndimage.label(la)
+            ends = np.isin(lbl, np.setdiff1d(np.unique(lbl[band]), [0]))
+            finger = glove & band & ~t["lace_anywhere"]
+            finger = ndimage.binary_opening(finger, np.ones((5, 5), bool))
+            lace = t["lace"] | ends
+            print(f"index finger's edge carried with it: {int(finger.sum())} px, "
+                  f"and {int(ends.sum())} px of lace ends going in behind it")
+            return im, t["leather"], lace, finger, glove
+        return im, t["leather"], t["lace"], finger, glove
 
     def drawn(polys):
         import cv2
@@ -510,7 +576,9 @@ def cut(spec):
             print(f"knotted lace carried with the web: {int(tie.sum())} px")
         web &= ~lace
         print(f"traced: {int(web.sum())} px leather, {int(lace.sum())} px lacing")
-        return im, web, lace, None, glove
+        finger = (glove & drawn(spec["finger_polys"]) & ~web & ~lace
+                  if "finger_polys" in spec else None)
+        return im, web, lace, finger, glove
 
     if "outline" in spec:
         # Trace the web's boundary and take everything inside it.
@@ -933,7 +1001,7 @@ def straighten(img):
 
 
 def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
-        lean=0.55):
+        lean=0.55, outline_only=False, search=True):
     """Warp a cutout onto the reference glove's web aperture.
 
     Not a stretch — a perspective transform. The reference glove is
@@ -1003,7 +1071,7 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
 
     base = best = overlap(dst)
     bd = dst.astype(np.float64).copy()
-    for step in (24.0, 12.0, 6.0, 3.0):
+    for step in ((24.0, 12.0, 6.0, 3.0) if search else ()):
         moved = True
         while moved:
             moved = False
@@ -1028,6 +1096,8 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
         low = np.argsort(dst[:, 1])[-2:]
         dst[low] += (dst[low] - ctr) * extend
     M = cv2.getPerspectiveTransform(qs, dst)
+    # kept so a point on the render can be traced back to its source pixel
+    LAST_FIT["photo_to_canvas"] = np.round(M, 8).tolist()
 
     # Nothing out of a cutout may render outside the glove. Warped freely, the
     # finger strip put 4,500 px past the silhouette — a bulge down the side of
@@ -1036,7 +1106,16 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
     # it, and the finger keeps the shape it always had.
     sil_im = Image.open(HERE / "layers/rainbow-back-4x/glove.png").convert("RGBA")
     sil = np.asarray(sil_im.resize((w, height), Image.LANCZOS))[..., 3]
-    sil = (ndimage.binary_erosion(sil > 40, np.ones((3, 3), bool))
+    sil = sil > 40
+    if outline_only:
+        # The calibration glove's silhouette has its own H-web's windows cut
+        # out of it. Clipped to that, a lattice lost its lace and its windows
+        # in the H-web's two slots beside the index finger, and the fill then
+        # laid 11,000 px of invented leather where the photograph has lace
+        # and daylight. The glove's outline is the limit; its old web's holes
+        # are not.
+        sil = ndimage.binary_fill_holes(sil)
+    sil = (ndimage.binary_erosion(sil, np.ones((3, 3), bool))
            * 255).astype(np.uint8)
 
     # Supersampled, because this warp is a big SHRINK — the calibration glove
@@ -1071,6 +1150,121 @@ def fit(layers, web_mask, height=1100, extend=0.06, finger=None,
     return out
 
 
+def settle(img, height=1100):
+    """Give a finger strip the tonal spread of the finger it lies on.
+
+    The page tints a layer by its luminance over its own midtone, so a strip
+    cut from black leather carries black leather's contrast: highlights three
+    times its midtone, grain and creases a third of it. Painted in a light
+    colour that is grey smudges and dirt on a clean finger, beside the
+    calibration glove's own finger which spreads far less. So the strip's
+    spread about its midtone is brought to back 3's, measured over the same
+    pixels (p5 to p95), after taking out what is a pixel's grain. The shape
+    of the light across the strip is kept; only its range is the finger's.
+    """
+    a = np.asarray(img).astype(np.float32)
+    m = a[..., 3] > 90
+    if m.sum() < 500:
+        return img
+    lum = a[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
+    own = m.astype(np.float32)
+    lum = (ndimage.gaussian_filter(lum * own, 1.5)
+           / np.maximum(ndimage.gaussian_filter(own, 1.5), 1e-3))
+    b3 = Image.open(HERE / "layers/rainbow-back-4x/back3.png").convert("RGBA")
+    b3 = np.asarray(b3.resize(img.size, Image.LANCZOS)).astype(np.float32)
+    ref = b3[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32)
+    both = m & (b3[..., 3] > 200)
+    if both.sum() < 500:
+        both = m
+    spread = lambda v: np.log(max(np.percentile(v, 95), 1.0)
+                              / max(np.percentile(v, 5), 1.0))
+    s_own, s_ref = spread(lum[m]), spread(ref[both])
+    k = min(1.0, s_ref / max(s_own, 1e-3))
+    med = float(np.median(lum[m]))
+    new = med * np.exp(k * np.log(np.maximum(lum, 1.0) / max(med, 1.0)))
+    scale = np.where(m, new / np.maximum(a[..., :3] @ np.array(
+        [0.299, 0.587, 0.114], np.float32), 1.0), 1.0)
+    a[..., :3] = np.clip(a[..., :3] * scale[..., None], 0, 255)
+    print(f"finger strip settled to back 3's spread: x{k:.2f} "
+          f"({np.exp(s_own):.1f}:1 -> {np.exp(k * s_own):.1f}:1)")
+    return Image.fromarray(a.astype(np.uint8), "RGBA")
+
+
+def conform(layers, extent, ap, n=400, run=4, band=60.0):
+    """Bend a fitted lattice the last few pixels onto the opening's outline.
+
+    A perspective fit has four corners to give. The Trapeze webs were
+    photographed on 12" and 12.75" gloves and the opening is a 12.5" glove's,
+    so after the best four-corner fit a wedge at the heel of the web and a
+    strip along the rim were still opening with no web over them — 4,000 to
+    5,000 px that `complete` then filled with flat, invented leather. Scott's
+    reviewers saw the wedge first: a slab of web colour across the join.
+
+    So the outline of what was traced (leather, lace and windows) is matched
+    to the outline of the opening, point for point along it, and a thin-plate
+    spline carries the difference inwards. It is held at zero `band` px inside
+    the opening, so the post, the lattice and every window keep exactly the
+    geometry the perspective fit gave them and only the margin flexes. Every
+    pixel in the opening is then a photographed one, and no lace is added,
+    removed or re-routed — only moved, by at most the distance printed.
+    """
+    import cv2
+    from scipy.interpolate import RBFInterpolator
+    from scipy.spatial import cKDTree
+    E = ndimage.binary_fill_holes(ndimage.binary_closing(extent, np.ones((7, 7), bool)))
+    lbl, k = ndimage.label(E)
+    E = lbl == 1 + int(np.argmax(ndimage.sum(E, lbl, range(1, k + 1))))
+
+    def outline(m):
+        cs, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL,
+                                 cv2.CHAIN_APPROX_NONE)
+        return max(cs, key=cv2.contourArea)[:, 0, :].astype(np.float64)
+
+    ca, ce = outline(ap), outline(E)
+    s = np.r_[0, np.cumsum(np.hypot(*np.diff(ca, axis=0).T))]
+    t = np.linspace(0, s[-1], n, endpoint=False)
+    pa = np.c_[np.interp(t, s, ca[:, 0]), np.interp(t, s, ca[:, 1])]
+    pe = ce[cKDTree(ce).query(pa)[1]]
+    # smoothed along the outline, so neighbouring points cannot cross over
+    d = pe - pa
+    pad = np.r_[d[-run:], d, d[:run]]
+    ker = np.ones(2 * run + 1) / (2 * run + 1)
+    d = np.c_[np.convolve(pad[:, 0], ker, "valid"), np.convolve(pad[:, 1], ker, "valid")]
+    inside = ndimage.distance_transform_edt(ap)
+    gy, gx = np.mgrid[0:ap.shape[0]:12, 0:ap.shape[1]:12]
+    deep = inside[gy, gx] > band
+    anchors = np.c_[gx[deep], gy[deep]].astype(np.float64)
+    f = RBFInterpolator(np.r_[pa, anchors], np.r_[d, np.zeros_like(anchors)],
+                        kernel="thin_plate_spline", smoothing=0.5)
+    # the displacement is needed round the opening and fades to nothing a
+    # little way outside it, where there is nothing left to bend
+    ys, xs = np.nonzero(ndimage.binary_dilation(ap, np.ones((3, 3), bool),
+                                                iterations=int(band)))
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    yy, xx = np.mgrid[y0:y1, x0:x1]
+    disp = f(np.c_[xx.ravel(), yy.ravel()].astype(np.float64)).reshape(yy.shape + (2,))
+    outside = ndimage.distance_transform_edt(~ap)[y0:y1, x0:x1]
+    disp *= np.clip(1.0 - outside / band, 0.0, 1.0)[..., None]
+    mx = np.tile(np.arange(ap.shape[1], dtype=np.float32), (ap.shape[0], 1))
+    my = np.tile(np.arange(ap.shape[0], dtype=np.float32)[:, None], (1, ap.shape[1]))
+    mx[y0:y1, x0:x1] += disp[..., 0]
+    my[y0:y1, x0:x1] += disp[..., 1]
+    mag = np.hypot(disp[..., 0], disp[..., 1])
+    print(f"outline conformed to the opening: {n} points, largest move "
+          f"{mag.max():.1f} px, {int((mag > 2).sum())} px moved more than 2")
+    out = {}
+    for name, im in layers.items():
+        a = np.asarray(im).astype(np.float32)
+        al = a[..., 3:4] / 255.0
+        pm = np.dstack([a[..., :3] * al, a[..., 3:4]])
+        w = cv2.remap(pm, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+        al = w[..., 3:4] / 255.0
+        w = np.dstack([np.where(al > 1e-3, w[..., :3] / np.maximum(al, 1e-3), 0),
+                       w[..., 3:4]])
+        out[name] = Image.fromarray(np.clip(w, 0, 255).astype(np.uint8), "RGBA")
+    return out, float(mag.max())
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--web", required=True, choices=sorted(WEBS))
@@ -1102,6 +1296,14 @@ def main():
     if n:
         sizes = ndimage.sum(window, lbl, range(1, n + 1))
         window = np.isin(lbl, np.nonzero(sizes >= 400)[0] + 1)
+    lattice = "traced" in spec
+    if lattice:
+        # A lattice's windows are slots between laces, most of them narrower
+        # than the opening above erases and smaller than the size floor
+        # keeps, and the ones against the index finger lie outside any hull
+        # drawn round the lace. They were read off the frame one pixel at a
+        # time, so take them as they are.
+        window = traced_masks(spec)["window"]
     print(f"windows photographed through the web: {int(window.sum())} px "
           f"in {int(ndimage.label(window)[1])} of them")
 
@@ -1115,7 +1317,32 @@ def main():
     for n, layer in layers.items():
         layer.save(out / f"{n}.png")
 
-    aligned = fit(layers, web | lace, finger=finger)
+    # A lattice is fitted by everything it is, windows included. Its windows
+    # run right up to the index finger, and fitted by its leather and lace
+    # alone the warp would stretch the lace across them to reach the seam.
+    # Its strap is left out: that lies over the next panel, not in the web.
+    rigid = spec.get("rigid_fit", False)
+    extent = traced_masks(spec)["extent"] if lattice else (web if rigid else (web | lace))
+    if rigid and spec.get("fit_polys"):
+        # Source ownership corrections must not silently move a reviewed map.
+        fit_shape = Image.new("1", im.size)
+        painter = ImageDraw.Draw(fit_shape)
+        for polygon in spec["fit_polys"]:
+            painter.polygon(polygon, fill=1)
+        extent = np.asarray(fit_shape) & glove & ~lace
+    if lattice:
+        layers["extent"] = rgba(im, extent)
+        layers["strap"] = rgba(im, traced_masks(spec)["strap"])
+    aligned = fit(layers, extent, finger=None if rigid else finger, outline_only=lattice or rigid,
+                  extend=0.0 if lattice or rigid else 0.06, search=not rigid)
+    strap_on = None
+    if lattice:
+        aligned, LAST_FIT["conform_max_px"] = conform(
+            aligned, np.asarray(aligned["extent"])[..., 3] > 90, aperture())
+        strap_on = np.asarray(aligned.pop("strap"))[..., 3] > 0
+        aligned.pop("extent")
+        layers.pop("extent")
+        layers.pop("strap")
     # The windows come back out of the warp as a mask, not as a layer to draw.
     if "window" in aligned:
         aligned["window"].save(out / "window_aligned.png")   # for check.jpg's sake
@@ -1128,8 +1355,10 @@ def main():
     # the finger's edge only ever removes pixels, and doing it last took away
     # ground that `complete` had already counted as filled — which is where the
     # SMK's 4,400 px hole against the finger came from.
-    if "finger" in aligned:
+    if "finger" in aligned and not rigid:
         aligned["finger"] = straighten(aligned["finger"])
+    if (lattice or rigid) and "finger" in aligned:
+        aligned["finger"] = settle(aligned["finger"])
     # What the web itself covers — the finger strip deliberately left out of
     # it. The strip overlaps the opening by a couple of thousand pixels along
     # the seam, and counting that as covered stopped the leather being filled
@@ -1171,7 +1400,14 @@ def main():
     ap_ = ndimage.binary_dilation(aperture(), np.ones((3, 3), bool),
                                   iterations=2)
     below = np.zeros_like(ap_)
-    below[np.nonzero(ap_)[0].max():] = True
+    if not lattice:
+        # (Not a lattice: conformed to the opening, it has no overshoot to
+        # hide, and the rows under the opening's lowest point are not under
+        # the opening anywhere else — keeping them left a detached strip of
+        # lace below a gap, a horizontal cut across the join.) Kept here only
+        # as the starting point; for the older webs it is replaced by the
+        # knot footprint below, and the rigid path clears it.
+        below[np.nonzero(ap_)[0].max():] = True
     # The finger strip counts as inside. build_assets feathers its alpha to
     # soften the join between two photographs, and a feather needs something
     # opaque beneath it — stopping the leather dead on the seam left the
@@ -1179,12 +1415,93 @@ def main():
     # the whole height of the web. The strip draws last, over the top, so the
     # leather underneath it is never seen.
     if "finger" in aligned:
-        ap_ = ap_ | (np.asarray(aligned["finger"])[..., 3] > 40)
+        fa = np.asarray(aligned["finger"])[..., 3] > 40
+        ap_ = ap_ | fa
+        if lattice:
+            # with the pockets the lace passes through between the strip and
+            # the opening, or the lace in them is trimmed away as lying
+            # outside both
+            ap_ = ndimage.binary_fill_holes(ap_)
+    knot = np.zeros_like(ap_)
+    if lattice:
+        # A lattice's own strap and knot lie where the calibration glove's
+        # knot lay: over the glove, below and left of the opening. The page
+        # draws no stock knot under a swapped web and heals its footprint
+        # into back 2, so that footprint is where this web's lace may lie too
+        # — but not the stretch of it that hung off the rim into the air
+        # (knot_cut), which the page cuts away because there is no glove there.
+        def alpha(name):
+            im_ = Image.open(HERE / f"customiser/assets/{name}.webp").convert("RGBA")
+            return np.asarray(im_.resize(ap_.shape[::-1], Image.LANCZOS))[..., 3]
+        knot = ndimage.binary_dilation(alpha("laces_knot") > 40,
+                                       np.ones((3, 3), bool), iterations=4)
+        # And the strap to its own end, wherever that falls: it was traced to
+        # the point it goes through the welt, and stopping it at the edge of
+        # another glove's knot left a square-cut end in mid-panel.
+        knot |= ndimage.binary_dilation(strap_on, np.ones((3, 3), bool),
+                                        iterations=2)
+        knot &= ~ndimage.binary_dilation(alpha("knot_cut") > 40,
+                                         np.ones((3, 3), bool), iterations=2)
+    if not lattice and not rigid:
+        # The row rule above cut every older web along one row: material
+        # just outside the opening's slanted lower edge was deleted above the
+        # opening's lowest row (718) and kept below it, so each web ended in a
+        # straight horizontal line with flakes of its own leather orphaned
+        # underneath, and the Closed Diamond Net's hanging lace was split in
+        # two. Measured on the shipped layers: every web or lace pixel these
+        # webs had outside the opening sat at or below that row.
+        #
+        # What lies below the opening there is the calibration glove's knot,
+        # which the page does not draw under a swapped web and heals into
+        # back 2. That footprint is the ground a web's own knot and strap may
+        # cover — the same exemption the lattices and SMLEE use — so the row
+        # rule goes and the footprint takes its place. Outside it, nothing is
+        # kept beyond the opening; off the glove, fit() has already clipped.
+        def alpha(name):
+            im_ = Image.open(HERE / f"customiser/assets/{name}.webp").convert("RGBA")
+            return np.asarray(im_.resize(ap_.shape[::-1], Image.LANCZOS))[..., 3]
+        cut_ = ndimage.binary_dilation(alpha("knot_cut") > 40,
+                                       np.ones((3, 3), bool), iterations=2)
+        knot = ndimage.binary_dilation(alpha("laces_knot") > 40,
+                                       np.ones((3, 3), bool), iterations=4) & ~cut_
+        below[:] = False
+        ap_ = ap_ | knot
+        # A lace that reaches onto the footprint is kept whole on the glove:
+        # clipped to the footprint, the Diamond Net's hanging lace stopped
+        # square at its edge.
+        if "lace" in aligned:
+            la_ = np.asarray(aligned["lace"])[..., 3] > 0
+            lbl_, _n = ndimage.label(la_)
+            whole = np.isin(lbl_, np.setdiff1d(np.unique(lbl_[la_ & knot]), [0]))
+            # ...but not onto the index finger. The Spiral I's crossing lace
+            # touches the footprint too, and kept whole it ran out across
+            # back 3 to a pointed end over the finger; the finger has its own
+            # strip and its own lacing rule, and the knot never hung there.
+            finger_ = alpha("back3") > 40
+            knot = knot | (whole & ~cut_ & ~finger_)
+    if rigid:
+        # These source laces lie over the finger and heel, outside the web
+        # opening. Keep them only over those photographed attachment panels;
+        # fit() already clipped loose tails at the glove silhouette.
+        def attachment_alpha(name):
+            pic = Image.open(HERE / f"customiser/assets/{name}.webp").convert("RGBA")
+            return np.asarray(pic.resize(ap_.shape[::-1], Image.LANCZOS))[..., 3] > 40
+        knot = attachment_alpha("back3") | ndimage.binary_dilation(
+            attachment_alpha("laces_knot"), np.ones((3, 3), bool), iterations=4)
+        knot &= ~attachment_alpha("knot_cut")
+        below[:] = False
     for n in ("leather", "lace"):
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
         over = (arr[..., 3] > 0) & ~ap_ & ~below
+        if n == "lace":
+            over &= ~knot
+        if rigid:
+            # The rigid source retains its own physical attachments on the
+            # glove. fit() has already clipped them at the silhouette; the
+            # stock H-web aperture is not their material boundary.
+            over[:] = False
         if over.any():
             arr[..., 3][over] = 0
             print(f"  {n}: {int(over.sum())} px trimmed back to the opening")
@@ -1200,8 +1517,24 @@ def main():
     lac = (np.asarray(aligned["lace"])[..., 3] if "lace" in aligned
            else np.zeros_like(lea))
     arr = np.asarray(aligned["leather"]).copy()
-    arr[..., 3] = np.where(core & ((lea > 0) | (lac > 40)), 255, arr[..., 3])
+    solid = core & ((lea > 0) | (lac > 40))
+    if lattice and win is not None:
+        # Not behind a lace's edge where it borders a window: there the
+        # backing would show as a rim of web colour round every lace.
+        solid &= ~ndimage.binary_dilation(win, np.ones((3, 3), bool))
+    arr[..., 3] = np.where(solid, 255, arr[..., 3])
     aligned["leather"] = Image.fromarray(arr, "RGBA")
+    if lattice and "lace" in aligned:
+        # A lace is opaque. Resampled twice, its interior comes back at alpha
+        # 250-254, which lets 2% of the web's colour through every lace: pick
+        # a different web colour and 15,000 lace pixels moved by 3 levels.
+        # Only the soft edge is soft.
+        # The leather likewise, or the glove's own lacing under the rim shows
+        # through its last few percent and moves with the lace colour.
+        for n in ("lace", "leather"):
+            la = np.asarray(aligned[n]).copy()
+            la[..., 3] = np.where(la[..., 3] >= 245, 255, la[..., 3])
+            aligned[n] = Image.fromarray(la, "RGBA")
     # The shape is this web's, traced by hand. The MATERIAL is this glove's,
     # so every web is cut out of one piece of leather under one light at one
     # angle. That is the whole fix: the borrowed pixels — another glove, another
@@ -1255,7 +1588,17 @@ def main():
         # buys back the stitching along every piece of a web, which is most
         # of what says one piece of leather ends here and the next begins.
         lum = ndimage.median_filter(lum, size=3)
-        base = ndimage.gaussian_filter(lum, sigma)
+        if lattice:
+            # Averaged over the layer's own pixels only. Blurred straight, the
+            # transparent pixels beside every lace count as black, the local
+            # mean sags at each edge and the ratio lights a rim round every
+            # lace — invisible at sigma 13 on a closed web, a halo at 40 on
+            # a lattice that is nearly all edge.
+            own = (a[..., 3] > 40).astype(np.float32)
+            base = (ndimage.gaussian_filter(lum * own, sigma)
+                    / np.maximum(ndimage.gaussian_filter(own, sigma), 1e-3))
+        else:
+            base = ndimage.gaussian_filter(lum, sigma)
         r = np.clip(np.where(base > 6, lum / np.maximum(base, 1e-3), 1.0),
                     lo, hi)
         # Centred on the layer itself, because clamping is not symmetric in
@@ -1288,18 +1631,32 @@ def main():
         if n not in aligned:
             continue
         arr = np.asarray(aligned[n]).copy()
+        # A lattice keeps its photographed shading, not just its grain. At
+        # sigma 13 everything wider than a lace's own edge was divided out,
+        # so a lace in the shadow of the one crossing it came out as bright
+        # as one in the light, the crossings merged, and the web rendered as
+        # flat blobs of lace colour beside a photograph full of depth. At 40
+        # the shade one lace throws on the next survives, and the clamp is
+        # opened to let it.
+        kw = dict(sigma=40.0, lo=0.30, hi=1.70) if lattice else {}
         arr[..., :3] = relief(aligned[n], src,
-                              flat=invented if n == "leather" else None
-                              ).astype(np.uint8)
+                              flat=invented if n == "leather" else None,
+                              **kw).astype(np.uint8)
         aligned[n] = Image.fromarray(arr, "RGBA")
     # Thickness. The leather takes a soft inner shadow; the lacing takes a
     # tighter, stronger one, because a lace is a round cord and needs to read
     # that way against the flat bars behind it.
-    aligned["leather"] = emboss(aligned["leather"])
-    if "finger" in aligned:
-        aligned["finger"] = emboss(aligned["finger"])
-    if "lace" in aligned:
-        aligned["lace"] = cord(aligned["lace"])
+    #
+    # Not on a lattice. Its laces are flat straps, not cords, and the shading
+    # that says so is in the photograph and has just been kept; drawing a
+    # cord's profile over it as well gave every strap a false ridge, and an
+    # inner shadow round the leather doubled the one the laces really cast.
+    if not lattice:
+        aligned["leather"] = emboss(aligned["leather"])
+        if "finger" in aligned and not rigid:
+            aligned["finger"] = emboss(aligned["finger"])
+        if "lace" in aligned:
+            aligned["lace"] = cord(aligned["lace"])
     print("cut from the glove's own web leather, with edges shaded")
 
     # where build_assets.py picks them up, alongside the glove's own layers
@@ -1325,6 +1682,8 @@ def main():
               "leather_px": int(web.sum()), "lace_px": int(lace.sum()),
               "finger_px": int(finger.sum()) if finger is not None else 0,
               "bbox": [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())]}
+    if lattice or rigid:
+        report.update(LAST_FIT)
     (out / "report.json").write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
     print(f"wrote {out}/ — look at check.jpg before trusting it")

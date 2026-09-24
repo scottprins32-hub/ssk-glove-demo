@@ -93,7 +93,22 @@ export class GloveRenderer {
     return c ? c[2] : '#C4C9D0';   // --gray-300, matching app.js
   }
 
-  tinted(id, hx) {
+  // The photographed hood covers web lacing at the index finger. Mask in
+  // layer coordinates so the same construction holds for either hand.
+  underPad(c) {
+    const pad = this.pad && this.imgs[this.pad];
+    if (!pad) return c;
+    const masked = document.createElement('canvas');
+    masked.width = c.width; masked.height = c.height;
+    const g = masked.getContext('2d');
+    g.drawImage(c, 0, 0);
+    g.globalCompositeOperation = 'destination-out';
+    g.drawImage(pad, -c._ox, -c._oy);
+    masked._ox = c._ox; masked._oy = c._oy;
+    return masked;
+  }
+
+  tinted(id, hx, sheenOf = id) {
     const key = id + '|' + hx;
     const hit = this.cache.get(key);
     if (hit) return hit;
@@ -117,7 +132,7 @@ export class GloveRenderer {
     // glove_builder/sheen.py, not tuned by eye.
     const hi = this.imgs[id + '_hi'];
     if (hi) {
-      const k = (this.DATA.sheen || {})[id];
+      const k = (this.DATA.sheen || {})[sheenOf];
       g.globalCompositeOperation = 'lighter';
       if (k != null) g.globalAlpha = k;
       g.drawImage(hi, -x0, -y0);
@@ -391,6 +406,17 @@ export class GloveRenderer {
         }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
+        // Under a swapped web the calibration glove's knot is not drawn, and
+        // the panels it lay on have to be whole without it. knotHeal names a
+        // patch over the knot's footprint on this panel, filled from the
+        // panel's own leather (build_assets.py); it takes the panel's colour
+        // and the panel's sheen, so it is the same leather. The native H-web
+        // never draws it.
+        const kh = swap && D.knotHeal && D.knotHeal[z.id];
+        if (kh && this.imgs[kh] && D.bbox[kh]) {
+          const p = this.tinted(kh, this.hex(z.id, state), z.id);
+          ctx.drawImage(p, p._ox, p._oy);
+        }
         // A zone can carry lettering of its own that the global flip turns
         // backwards — on the palm, the embossed "Sasaki PRO Custom Made",
         // the SHOKUNIN stamp and the SSK wordmark are pressed into the palm
@@ -453,7 +479,7 @@ export class GloveRenderer {
       }
       if (z.id === 'laces') {
         if (!swap && this.imgs.laces_web && D.bbox.laces_web) {
-          const w = this.tinted('laces_web', this.hex('laces', state));
+          const w = this.underPad(this.tinted('laces_web', this.hex('laces', state)));
           ctx.drawImage(w, w._ox, w._oy);
         }
         // The knotted lace belongs to the web, not the glove: the Standard I
@@ -465,7 +491,7 @@ export class GloveRenderer {
         // that blue knot is different on other gloves." Every web now brings
         // its own, traced off its own photograph, or has none.
         if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
-          const k = this.tinted('laces_knot', this.hex('laces', state));
+          const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state)));
           ctx.drawImage(k, k._ox, k._oy);
         }
       }
@@ -494,7 +520,8 @@ export class GloveRenderer {
                                  [swap.laceweb, 'laces'],
                                  [swap.webfinger, 'back3']]) {
         if (!key || !this.imgs[key] || !D.bbox[key]) continue;
-        const c = this.tinted(key, this.hex(zone, state));
+        const tinted = this.tinted(key, this.hex(zone, state));
+        const c = key === swap.laceweb ? this.underPad(tinted) : tinted;
         ctx.drawImage(c, c._ox, c._oy);
       }
     }

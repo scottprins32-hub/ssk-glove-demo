@@ -13,7 +13,8 @@ Run the Claude ↔ Astra cross-review loop on the current work. Follow these ste
 
 ## 2. Write HANDOFF.md
 
-At the repo root: what was built, files changed (from `git diff --stat <base>...HEAD`), and what you are least sure about. HANDOFF.md is gitignored; do not commit it.
+Back up an existing HANDOFF.md first, preserving older backups with numbered suffixes.
+Start with `Builder: Claude`. At the repo root: what was built, files changed (from `git diff --stat <base>...HEAD`), and what you are least sure about. HANDOFF.md is gitignored; do not commit it.
 
 ## 3. Ask Astra for the review
 
@@ -28,12 +29,12 @@ codex exec \
   --ephemeral \
   -C "$(git rev-parse --show-toplevel)" \
   -o "$OUT" \
-  "You are reviewing work on the SSK Europe glove configurator. Follow the Reviewer rules in AGENTS.md. Read HANDOFF.md, then review \`git diff <base>...HEAD\`. Check hardest: part-to-letter mappings and product data, SVG recoloring, and anything that changes what a customer orders." \
+  "You are reviewing work on the SSK Europe glove configurator. Follow the Reviewer rules (only when asked to review) in AGENTS.md. Read HANDOFF.md, then review \`git diff <base>...HEAD\`. Check hardest: part-to-letter mappings and product data, SVG recoloring, and anything that changes what a customer orders." \
   < /dev/null > "$LOG" 2>&1
 echo "exit $?"
 ```
 
-Give the command a long timeout (up to 10 minutes). `-o` holds only Astra's final message. Then write `REVIEW.md` yourself from the contents of `$OUT`. REVIEW.md is gitignored; do not commit it.
+Give the command a long timeout (up to 10 minutes). `-o` holds only Astra's final message. Back up any existing REVIEW.md first, preserving older backups with numbered suffixes. Then write `REVIEW.md` yourself from the contents of `$OUT`. REVIEW.md is gitignored; do not commit it.
 
 If the exit code is non-zero, or `$OUT` is missing or empty, show the tail of `$LOG` and report the error. **Never treat an empty or failed review as "no issues".** Stop there.
 
