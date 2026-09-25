@@ -36,9 +36,9 @@ const PALM_FIELDS = {
 };
 /* The thumb and pinky sides name their zones' order fields in their own
    data (build_side_views.py), so their maps are read from there. */
-const SIDE_VIEWS = ['thumb', 'pinky'];
+const SIDE_VIEWS = ['thumb', 'pinky', 'heel'];
 const VIEW_KEYS = { back: 'viewBack', palm: 'viewPalm', thumb: 'viewThumb',
-                    pinky: 'viewPinky' };
+                    pinky: 'viewPinky', heel: 'viewHeel' };
 const sideData = () => (SIDE_VIEWS.includes(S.view) && R && R.views[S.view]
   ? R.views[S.view].DATA : null);
 const viewLayerField = () => {
@@ -661,8 +661,10 @@ function renderWeb(b) {
 function webPreviewNote() {
   const w = WEBS.find(w => w.id === S.webType);
   if (!w || w.id === NATIVE_WEB) return null;
-  if (S.view === 'thumb') return 'webNotOnThumb';
-  if (S.view === 'pinky') return null;             // no web from this side
+  // A side that shows the web shows the one it was photographed with, and
+  // marks it (glove-engine.js webMarked); a side that shows no web says
+  // nothing.
+  if (sideData()) return sideData().webMarker ? 'webNotOnThumb' : null;
   if (!w.render) return 'webNotDrawn';
   return S.view === 'palm' ? 'webNotOnPalm' : null;
 }

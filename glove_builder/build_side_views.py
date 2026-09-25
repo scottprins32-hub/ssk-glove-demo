@@ -54,7 +54,11 @@ ZONES = {
     "laces":      ("laces", "lace", "Laces"),
     "embroidery": ("ring_emb", "embroidery", "SSK embroidery"),
     "stitching":  ("stitching", "stitching", "Stitching"),
+    "lining":     ("lining", "leather", "Lining"),
 }
+# A cavity, not a panel: the page keeps it this much darker than the leather
+# round it (the back view's rule, build_assets.CAVITY).
+CAVITY = {"lining": 0.62}
 # The order form's colour fields, as customiser/glove-catalog.js COLOUR_ORDER
 # lists them (read at build time so the two cannot drift apart).
 def order_colour_fields():
@@ -176,6 +180,135 @@ def reflect_across_text(img):
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGBA")
 
 
+def badge_fit(patch, badge_alpha, badge_rgb):
+    """The transform that lays the front-on badge photograph onto the patch
+    as the heel frame shows it.
+
+    Anchored on what both pictures share: the red and green arms' centroids
+    give the axis and the centre, the outline's extents along and across it
+    the scale. Then refined to a perspective transform by matching the
+    badge's outline to the patch's, point to nearest point, a dozen times.
+    Returns the 3x3 transform and the overlap it reaches.
+    """
+    import cv2
+    from scipy.spatial import cKDTree
+
+    def frame(mask, rgb):
+        hsv = cv2.cvtColor(np.ascontiguousarray(rgb), cv2.COLOR_RGB2HSV)
+        H, S = hsv[..., 0].astype(int), hsv[..., 1]
+        red = mask & (S > 90) & ((H <= 8) | (H >= 170))
+        green = mask & (S > 90) & (H >= 40) & (H <= 80)
+        rc = np.c_[np.nonzero(red)[1], np.nonzero(red)[0]].mean(0)
+        gc = np.c_[np.nonzero(green)[1], np.nonzero(green)[0]].mean(0)
+        c = (rc + gc) / 2
+        ax = (rc - gc) / np.linalg.norm(rc - gc)
+        up = np.array([-ax[1], ax[0]])
+        ys, xs = np.nonzero(mask)
+        pts = np.c_[xs, ys] - c
+        t, w = pts @ ax, pts @ up
+        return c, ax, up, (t.min(), t.max()), (w.min(), w.max())
+
+    def outline(m):
+        cs, _ = cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL,
+                                 cv2.CHAIN_APPROX_NONE)
+        return max(cs, key=cv2.contourArea)[:, 0, :].astype(np.float64)
+
+    return_shape = patch.shape
+    fc, hc = frame(badge_alpha, badge_rgb), frame(patch, PATCH_RGB[0])
+    sa = (hc[3][1] - hc[3][0]) / (fc[3][1] - fc[3][0])
+    sw = (hc[4][1] - hc[4][0]) / (fc[4][1] - fc[4][0])
+    pt = lambda f, a, b: f[0] + f[1] * a + f[2] * b
+    src = np.float32([pt(fc, 0, 0), pt(fc, 100, 0), pt(fc, 0, 100)])
+    dst = np.float32([pt(hc, 0, 0), pt(hc, 100 * sa, 0), pt(hc, 0, 100 * sw)])
+    Hm = np.vstack([cv2.getAffineTransform(src, dst), [0, 0, 1]])
+    fo, ho = outline(badge_alpha), outline(patch)
+    tree = cKDTree(ho)
+    for _ in range(20):
+        s_ = fo[::6]
+        q = cv2.perspectiveTransform(s_.reshape(-1, 1, 2).astype(np.float32),
+                                     Hm.astype(np.float32)).reshape(-1, 2)
+        dd, idx = tree.query(q)
+        keep = dd < np.percentile(dd, 85)
+        Hn, _ = cv2.findHomography(s_[keep].astype(np.float32),
+                                   ho[idx[keep]].astype(np.float32), cv2.RANSAC, 4.0)
+        if Hn is None:
+            break
+        Hm = Hn
+    w = cv2.warpPerspective(badge_alpha.astype(np.uint8), Hm,
+                            return_shape[::-1], flags=cv2.INTER_NEAREST) > 0
+    return Hm, float((w & patch).sum() / (w | patch).sum())
+
+
+PATCH_RGB = [None]
+
+
+def badges_on_patch(view, src, W, put, data):
+    """Every orderable badge, laid onto the heel's patch.
+
+    The rainbow patch the frame shows is the calibration glove's own badge,
+    and its front-on photograph (customiser/bullet_rainbow_badge.png) is the
+    one the fit is made with. Every other badge is the same patch shape
+    photographed front-on too (build_assets.py), so each is first laid onto
+    the rainbow badge's own frame by its outline's box, then carried by the
+    same transform. The rubber Edge badges are a slightly different shape
+    and take a small stretch from that.
+    """
+    import cv2
+    fixed = np.asarray(Image.open(src / "fixed.png").convert("RGBA"))
+    patch = fixed[..., 3] > 127
+    if not patch.any():
+        return
+    PATCH_RGB[0] = np.ascontiguousarray(fixed[..., :3])
+    cust = HERE / "customiser"
+    rb = np.asarray(Image.open(cust / "bullet_rainbow_badge.png").convert("RGBA"))
+    Hm, overlap = badge_fit(patch, rb[..., 3] > 127, np.ascontiguousarray(rb[..., :3]))
+    print(f"  badge fitted to the patch: overlap {overlap:.3f}")
+    k = HEIGHT / patch.shape[0]
+    to_canvas = np.array([[k, 0, 0], [0, k, 0], [0, 0, 1]]) @ Hm
+
+    def quad(mask):
+        ys, xs = np.nonzero(mask)
+        box = cv2.boxPoints(cv2.minAreaRect(np.c_[xs, ys].astype(np.float32)))
+        ctr = box.mean(0)
+        box = box[np.argsort(np.arctan2(box[:, 1] - ctr[1], box[:, 0] - ctr[0]))]
+        return np.roll(box, -int(np.argmin(box.sum(1))), axis=0).astype(np.float32)
+
+    rq = quad(rb[..., 3] > 127)
+    bullets = json.loads((cust / "assets/glove-data.json").read_text())["bullets"]
+    keys, boxes = {}, []
+    for b in bullets:
+        art = b.get("asset")
+        f = cust / f"{art}_badge.png" if art else None
+        if not f or not f.exists():
+            continue
+        im = np.asarray(Image.open(f).convert("RGBA")).astype(np.float32)
+        if art != "bullet_rainbow":
+            A = cv2.getPerspectiveTransform(quad(im[..., 3] > 127), rq)
+            M = to_canvas @ A
+        else:
+            M = to_canvas
+        al = im[..., 3:4] / 255.0
+        pm = np.dstack([im[..., :3] * al, im[..., 3:4]])
+        out = cv2.warpPerspective(pm, M, (W, HEIGHT), flags=cv2.INTER_AREA)
+        a = out[..., 3:4] / 255.0
+        rgb = np.where(a > 1e-3, out[..., :3] / np.maximum(a, 1e-3), 0)
+        layer = Image.fromarray(np.clip(np.dstack([rgb, out[..., 3:4]]), 0, 255).astype(np.uint8), "RGBA")
+        # the belt's own light over the badge, so it sits in the leather's shade
+        put(f"badge_{art}", layer, quality=85, method=4)
+        keys[b["name"]] = f"badge_{art}"
+        ys, xs = np.nonzero(out[..., 3] > 8)
+        if len(ys):
+            boxes.append([xs.min(), ys.min(), xs.max() + 1, ys.max() + 1])
+    if keys:
+        boxes = np.array(boxes)
+        data["bulletAssets"] = keys
+        data["bulletDefault"] = "badge_bullet_rainbow"
+        data["bulletBox"] = [int(boxes[:, 0].min()), int(boxes[:, 1].min()),
+                             int(boxes[:, 2].max()), int(boxes[:, 3].max())]
+        data["badgeFit"] = {"overlap": round(overlap, 3)}
+        print(f"  {len(keys)} badges laid on the patch, box {data['bulletBox']}")
+
+
 def build(view):
     src = HERE / f"layers/side-{view}"
     if not (src / "glove.png").exists():
@@ -223,6 +356,8 @@ def build(view):
 
     glove = load("glove")
     fixed = load("fixed")
+    glove_lum = np.asarray(glove).astype(np.float32)
+    glove_med = float(np.median((glove_lum[..., :3] @ np.array([0.299, 0.587, 0.114], np.float32))[glove_lum[..., 3] > 40]))
     # The neutral base, as the back and palm views do it: the glove tinted to
     # its own midtone and multiplied by tan, so a pixel no zone covers reads
     # as leather. The fixed parts (thumb circle, piping, the bullet's edge)
@@ -241,7 +376,8 @@ def build(view):
         if f.exists():
             im = load(zid)
             if (np.asarray(im)[..., 3] > 90).sum() >= 150:
-                layers[zid] = settle(im, max_spread=1.8 if zid in THREAD else None)
+                layers[zid] = im if zid in CAVITY else settle(
+                    im, max_spread=1.8 if zid in THREAD else None)
     if "embroidery" in layers:
         # The left-handed lettering is not in the same place as the mirrored
         # holes it leaves (see reflect_across_text), so the leather it is
@@ -268,10 +404,14 @@ def build(view):
     idmap = np.zeros((HEIGHT, W), np.uint8)
     for i, (zid, im) in enumerate(layers.items(), 1):
         field, group, label = ZONES[zid]
-        put(zid, tint_base(im), quality=85, method=4)
+        if zid in CAVITY:
+            # darker than the leather round it, by the back view's rule
+            put(zid, tint_base(im, ref=glove_med, depth=CAVITY[zid]), quality=85, method=4)
+        else:
+            put(zid, tint_base(im), quality=85, method=4)
         # Thread is matte. Given a sheen layer, the bright thread against its
         # own dark stitch holes came out as white specks on a tan glove.
-        sp = None if zid in THREAD else match_sheen(spec_base(im), target)
+        sp = None if zid in THREAD or zid in CAVITY else match_sheen(spec_base(im), target)
         if sp is not None:
             put(zid + "_hi", sp, quality=80, method=4)
         zones.append({"id": zid, "n": i, "group": group, "label": label,
@@ -297,6 +437,31 @@ def build(view):
     }
     if "embroidery" in layers:
         data["embroideryLHT"] = "embroidery_lht"
+    if any(z in CAVITY for z in layers):
+        data["cavity"] = {z: CAVITY[z] for z in layers if z in CAVITY}
+    if view == "heel" and "belt" in layers:
+        # the belt's leather carries on under the patch, so a smaller badge
+        # (or none) leaves leather, not a hole
+        # Filled with the belt's own colour read a little way out, not
+        # inpainted from the patch's edge: the stitched margin round the
+        # patch is in shadow, and an inpaint spread that shadow across the
+        # whole hole, which showed as a grey S beside a left-hand badge.
+        fa = np.asarray(fixed)[..., 3] > 127
+        hole = ndimage.binary_dilation(fa, iterations=8)
+        ring = ndimage.binary_dilation(hole, iterations=32) & ~hole
+        a = np.asarray(layers["belt"]).copy()
+        ok = ring & (a[..., 3] > 200)
+        fill = np.median(a[..., :3][ok], axis=0)
+        a[..., :3][hole] = fill
+        a[..., 3] = np.maximum(a[..., 3], (hole * 255).astype(np.uint8))
+        layers["belt"] = Image.fromarray(a, "RGBA")
+        # (re-encode the belt with the patch filled in)
+        put("belt", tint_base(layers["belt"]), quality=85, method=4)
+        sp = match_sheen(spec_base(layers["belt"]), target)
+        if sp is not None:
+            put("belt_hi", sp, quality=80, method=4)
+        badges_on_patch(view, src, W, put, data)
+        data["sheen"] = sheen.scales(out)
     if view in TEXT_PANELS and TEXT_PANELS[view][0] in layers:
         data["textMount"] = text_mount(view, layers[TEXT_PANELS[view][0]])
         print(f"  {data['textMount']['field']} on {data['textMount']['zone']}: "
@@ -327,7 +492,7 @@ def build(view):
 
 
 def main():
-    for view in ("thumb", "pinky"):
+    for view in ("thumb", "pinky", "heel"):
         build(view)
 
 

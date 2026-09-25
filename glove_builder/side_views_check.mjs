@@ -57,11 +57,11 @@ const ok = msg => console.log(`ok    ${msg}`);
 const A = { web: '70', back1: '20', back2: '35', back3: '60', back4: '90',
   back5: '45', back6: '10', back7: '43', back8: '50', back9: '25', palm: '12',
   belt: '48', binding: '10', welting: '90', laces: '45', stitching: '20',
-  ring_emb: '10' };
+  ring_emb: '10', lining: '35' };
 const B = { web: '10', back1: '70', back2: '90', back3: '20', back4: '10',
   back5: '70', back6: '90', back7: '10', back8: '20', back9: '90', palm: '90',
   belt: '10', binding: '90', welting: '10', laces: '90', stitching: '10',
-  ring_emb: '90' };
+  ring_emb: '90', lining: '60' };
 
 const browser = await chromium.launch({ executablePath: EXECUTABLE, args: ['--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: 1300, height: 1000 } });
@@ -111,11 +111,20 @@ await page.evaluate(() => {
                  .map(([id, z]) => [id, { field: z.field, solid: z.solid.length }])) };
     },
     medians(key, view, hand) {
-      const px = snaps[key], out = {};
-      for (const [id, z] of Object.entries(maskOf(view, hand).zones)) {
-        if (z.solid.length < 200) continue;
+      // outside the badge, which lies over the belt and is not the belt
+      const px = snaps[key], out = {}, M = maskOf(view, hand);
+      const bb = window.__side.views[view].DATA.bulletBox;
+      const inBadge = p => {
+        if (!bb) return false;
+        let x = p % M.w; const y = (p / M.w) | 0;
+        if (hand === 'LHT') x = M.w - 1 - x;
+        return x >= bb[0] && x < bb[2] && y >= bb[1] && y < bb[3];
+      };
+      for (const [id, z] of Object.entries(M.zones)) {
+        const solid = z.solid.filter(p => !inBadge(p));
+        if (solid.length < 200) continue;
         out[id] = [0, 1, 2].map(ch => {
-          const v = z.solid.map(p => px[p * 4 + ch]).sort((a, b) => a - b);
+          const v = solid.map(p => px[p * 4 + ch]).sort((a, b) => a - b);
           return v[v.length >> 1];
         });
       }
@@ -159,9 +168,16 @@ await page.evaluate(() => {
       return { outside };
     },
     mirror(kr, kl, view) {
-      // outside the lettering, which reads the right way in both hands
+      // outside the lettering and the badge, which read the right way in
+      // both hands rather than being mirrored
       const r = snaps[kr], l = snaps[kl], R = maskOf(view, 'RHT'), L = maskOf(view, 'LHT');
       const W = R.w, letters = new Uint8Array(W * R.h);
+      const bb = window.__side.views[view].DATA.bulletBox;
+      if (bb) {
+        for (let y = bb[1]; y < bb[3]; y++) for (let x = bb[0]; x < bb[2]; x++) {
+          letters[y * W + x] = 1; letters[y * W + (W - 1 - x)] = 1;
+        }
+      }
       for (const M of [R, L]) {
         const e = M.zones.embroidery;
         if (!e) continue;
@@ -183,6 +199,11 @@ await page.evaluate(() => {
     },
   };
 });
+// which views carry a web marker (read from their data files)
+const window_marker = Object.fromEntries(['thumb', 'pinky', 'heel'].map(v => {
+  const f = join(HERE, `customiser/assets/${v}-data.json`);
+  return [v, existsSync(f) && !!JSON.parse(readFileSync(f)).webMarker];
+}));
 const snap = (key, view, hand, colors, webType = 'H-Web') =>
   page.evaluate(a => window.__chk.snap(...a), [key, view, hand, colors, webType]);
 const call = (fn, ...args) => page.evaluate(([fn, args]) => window.__chk[fn](...args), [fn, args]);
@@ -195,17 +216,20 @@ const hexOf = (field, code) => {
 };
 const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 
-for (const view of ['thumb', 'pinky']) {
+for (const view of ['thumb', 'pinky', 'heel']) {
   for (const hand of ['RHT', 'LHT']) {
     console.log(`\n${view}, ${hand}`);
     for (const [name, order] of [['order A', A], ['order B', B]]) {
       const r = await snap('o', view, hand, order);
       const med = await call('medians', 'o', view, hand);
       let worst = 0, worstZone = '';
+      const DV = JSON.parse(readFileSync(join(HERE, `customiser/assets/${view}-data.json`)));
       for (const [zid, got] of Object.entries(med)) {
         const f = r.zones[zid].field;
-        const want = rgb(hexOf(f, order[f]));
-        const d = Math.hypot(...got.map((g, i) => g - want[i]));
+        // a cavity (the lining) is held darker than its swatch on purpose
+        const depth = DV.cavity && DV.cavity[zid];
+        const want = rgb(hexOf(f, order[f])).map(v => depth ? v * (1 - depth) : v);
+        const d = Math.hypot(...got.map((g, i) => g - want[i])) * (depth ? 0.5 : 1);
         if (d > worst) { worst = d; worstZone = zid; }
         if (d > TOLERANCE) fail(`${view} ${hand} ${name}: ${zid} renders rgb(${got}) ` +
           `for ${f}=${order[f]} ${hexOf(f, order[f])} (${d.toFixed(1)})`);
@@ -224,10 +248,11 @@ for (const view of ['thumb', 'pinky']) {
     const { outside } = await call('webMoved', 'base', 'other', view, hand);
     if (outside) fail(`${view} ${hand}: choosing another web moved ${outside} body px`);
     else ok('the glove body is identical whichever web is chosen');
-    if (view === 'thumb') {
+    const hasWeb = !!(window_marker[view]);
+    if (hasWeb) {
       if (other.warn) ok('an unphotographed web is marked as not photographed');
-      else fail('thumb: an unphotographed web is not marked');
-    } else if (other.warn) fail('pinky: web warning shown on a view with no web');
+      else fail(`${view}: an unphotographed web is not marked`);
+    } else if (other.warn) fail(`${view}: web warning shown on a view with no web`);
   }
   await snap('R', view, 'RHT', A);
   await snap('L', view, 'LHT', A);
@@ -237,7 +262,7 @@ for (const view of ['thumb', 'pinky']) {
 }
 
 // renders to look at
-for (const view of ['thumb', 'pinky']) for (const hand of ['RHT', 'LHT']) {
+for (const view of ['thumb', 'pinky', 'heel']) for (const hand of ['RHT', 'LHT']) {
   await page.evaluate(([v, h]) => window.__side.set({ view: v, hand: h, webType: 'H-Web' }), [view, hand]);
   await page.locator('#glove').screenshot({ path: join(OUT, `${view}_${hand}.png`) });
 }

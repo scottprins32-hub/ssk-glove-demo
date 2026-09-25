@@ -51,7 +51,8 @@ CONTRAST = {"web": "70", "back1": "20", "back2": "35", "back3": "60",
             "binding": "10", "welting": "90", "laces": "45", "stitching": "20",
             "ring_emb": "10"}
 # (x0, y0, x1, y1) on each canvas, for 200%
-ZOOM = {"thumb": (380, 480, 822, 920), "pinky": (180, 150, 620, 590)}
+ZOOM = {"thumb": (380, 480, 822, 920), "pinky": (180, 150, 620, 590),
+        "heel": (460, 380, 1000, 860)}
 
 
 def serve(root):
@@ -188,7 +189,7 @@ def main():
     args.out.mkdir(parents=True, exist_ok=True)
     jobs = {}
     for name, colors in list(WAYS.items()) + [("contrast", CONTRAST)]:
-        for view in ("thumb", "pinky"):
+        for view in ("thumb", "pinky", "heel"):
             for hand in ("RHT", "LHT"):
                 jobs[(name, view, hand)] = (view, hand, colors, "H-Web")
     jobs[("unphotographed_web", "thumb", "RHT")] = ("thumb", "RHT", WAYS["japan_starter"],
@@ -199,10 +200,10 @@ def main():
     finally:
         srv.shutdown()
     for name in list(WAYS) + ["contrast"]:
-        tiles = [on(shots[(name, v, h)]) for v in ("thumb", "pinky") for h in ("RHT", "LHT")]
+        tiles = [on(shots[(name, v, h)]) for v in ("thumb", "pinky", "heel") for h in ("RHT", "LHT")]
         row(tiles).save(args.out / f"{name}.jpg", quality=88)
         zoom = []
-        for v in ("thumb", "pinky"):
+        for v in ("thumb", "pinky", "heel"):
             x0, y0, x1, y1 = ZOOM[v]
             t = on(shots[(name, v, "RHT")]).crop((x0, y0, x1, y1))
             zoom.append(t.resize((t.width * 2, t.height * 2), Image.LANCZOS))
@@ -211,7 +212,7 @@ def main():
         args.out / "thumb_unphotographed_web.jpg", quality=88)
     # each source frame beside the contrast render, same height
     src = []
-    for v in ("thumb", "pinky"):
+    for v in ("thumb", "pinky", "heel"):
         photo = Image.open(HERE / f"images/store-2026-09/rainbow-{v}.png").convert("RGB")
         src += [photo, on(shots[("contrast", v, "RHT")])]
     row(src, height=1100).save(args.out / "source_vs_contrast.jpg", quality=85)

@@ -47,12 +47,14 @@ export function loadGlove() {
       try {
         const SD = inlined || await (await fetch(`assets/${name}-data.json`)).json();
         SD.palettes = DATA.palettes;
+        SD.bullets = DATA.bullets;           // the badge list is the order's
         return await decode(SD);
       } catch { return null; }
     };
     const thumb = await side('thumb', window.__THUMB_DATA__);
     const pinky = await side('pinky', window.__PINKY_DATA__);
-    return { ...back, views: { back, palm, thumb, pinky } };
+    const heel = await side('heel', window.__HEEL_DATA__);
+    return { ...back, views: { back, palm, thumb, pinky, heel } };
   })();
   return _p;
 }
@@ -198,6 +200,13 @@ export class GloveRenderer {
   drawBullet(ctx, bulletSel) {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
+    // A side view carries every badge already laid onto its patch
+    // (build_side_views.py badges_on_patch); nothing is tinted here.
+    if (this.DATA.bulletAssets) {
+      const key = (opt && this.DATA.bulletAssets[opt.name]) || this.DATA.bulletDefault;
+      if (key && imgs[key]) ctx.drawImage(imgs[key], 0, 0);
+      return;
+    }
     if (!imgs.bullet_logo) return;
     // A photographed patch wins over everything: the rainbow one has no tint
     // (it is four threads and a blue border) but does have its own asset.

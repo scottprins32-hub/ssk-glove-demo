@@ -14,13 +14,14 @@ The fixed base glove is the rainbow calibration glove. The store shoot of
 |---|---|---|---|
 | Thumb side | DSC05708.ARW | DSC05709.ARW | 7f79d4c9bdbf4f976aaa2e17d44ecb0d1736c1ec8c141a536c81c59396fac060 |
 | Pinky side | DSC05710.ARW | DSC05711.ARW | c9d70fbfc3025927c2f98388dd7532deb44eee4edf98b237d2977b8278e0c568 |
+| Heel | DSC05712.ARW | DSC05713.ARW | 1372fbf711e2f18c53395e33ae5a59f1377ff4579a4f4996467168cb154ced0b |
 
 The RAWs are in Scott's Drive under SSK Europe / Pictures of gloves /
 SSK fotoshoot, and stay there. They are developed with rawpy 0.27.1 (camera
 white balance, half size, 16 bit) and cropped. The crops are committed as
-`images/store-2026-09/rainbow-thumb.png` and `rainbow-pinky.png`, so
-everything re-runs without the Drive. DSC05712 and DSC05713 show the heel and
-are not used here.
+`images/store-2026-09/rainbow-thumb.png`, `rainbow-pinky.png` and
+`rainbow-heel.png`, so everything re-runs without the Drive. In the Drive
+the ARWs now sit in the shoot folder's `RAW` subfolder.
 
 The photographs named in the brief, `images/scott-glove-2026-07/thumb_side_a.jpg`,
 `thumb_side_b.jpg` and `pinky_side_pad.jpg`, show Scott's own glove. It is a
@@ -32,7 +33,7 @@ cannot give the fixed body's geometry, and it is not used.
 
 ```bash
 # optional: re-develop the crops from the RAWs (checks each SHA-256)
-python glove_builder/make_side_views.py --shoot "<folder with DSC05708.ARW, DSC05710.ARW>"
+python glove_builder/make_side_views.py --shoot "<folder with DSC05708, DSC05710 and DSC05712.ARW>"
 # zone layers from the committed crops -> layers/side-{thumb,pinky}/, runs/side-views/
 python glove_builder/make_side_views.py
 # page assets -> customiser/assets/side/, customiser/assets/{thumb,pinky}-data.json
@@ -82,6 +83,25 @@ The rainbow glove gives every order field its own hue.
 
 Fixed: the thumb circle with the small SSK logo, the light piping between
 back 1 and the belt, and the bullet patch seen edge-on.
+
+### Heel (1233 x 1100)
+
+| Order field | What it is in the frame | Evidence |
+|---|---|---|
+| back9 | the pinky wingtip wrapping the heel | red |
+| back7 | the ring finger's back, foreshortened | orange |
+| back6, back5 | the middle finger's back, either side of its welt | yellow, split on the snapped welting line |
+| back4, back3 | the index finger's back, either side of its welt | green, split on the snapped welting line |
+| back2 | the thumb's panel | turquoise |
+| web | the H-Web's top bars | turquoise inside a traced outline |
+| belt | the band round the wrist opening | purple |
+| back1 | the thumb wingtip stitched to the belt | purple beyond a traced seam on the right |
+| lining | the wrist opening | dark and colourless inside the ring of binding; a cavity, kept darker than its colour (depth 0.62, the back view's rule) |
+| welting, laces, binding, stitching | pink by shape | see above |
+
+The bullet patch is found as the one thing on the belt that is not purple,
+opened with a disc wider than any piping. The belt's leather carries on
+under it in the belt's own colour, so a smaller badge leaves leather.
 
 ### Pinky side (737 x 1100)
 
@@ -143,9 +163,9 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
 
 ## In the configurator
 
-- **Views.** The stage's view switcher offers Back, Palm, Thumb side and Pinky
-  side (Achterkant, Palm, Duimzijde, Pinkzijde). Each extra view is an
-  optional data file, and the page works without it.
+- **Views.** The stage's view switcher offers Back, Palm, Thumb side, Pinky
+  side and Heel (Achterkant, Palm, Duimzijde, Pinkzijde, Hiel). Each extra
+  view is an optional data file, and the page works without it.
 - **Fields.** `app.js` reads each side zone's order field from the view's data.
   Colours, zone highlighting and click-to-select use the same fields as the
   back view. A field a side cannot show gets "Not visible from this side".
@@ -153,12 +173,37 @@ version (`*_2x.jpg`), plus `source_vs_contrast.jpg` and
   inlined copies in the single-file build. It draws the left-hand lettering
   from `embroideryLHT` and hatches `webMarker` when the chosen web is not the
   H-Web. The stage then says so in both languages.
-- **Bundle.** `bundle.py` inlines both views. The single file grows from
-  4.7 MB to 6.0 MB.
+- **Bundle.** `bundle.py` inlines all three views and the embroidery faces.
+  The single file grows from 4.7 MB to 7.4 MB.
 - **Checks.** `side_views_app_check.mjs` drives the real configurator. It
   checks the switcher, every zone's colour, click-to-select, and the
   unphotographed web in both views and both hands. All other checks still
   pass.
+
+## The badge on the heel
+
+The heel shows the bullet patch obliquely, on the curved belt. Each
+orderable badge is laid onto that patch (`build_side_views.py`,
+`badges_on_patch`):
+
+- **Fit.** The front-on photograph of the rainbow badge (the calibration
+  glove's own) is fitted to the patch the frame shows: the red and green
+  arms' centroids give the axis and centre, the outline's extents the scale,
+  then the outline is matched point to nearest point to a perspective
+  transform. Overlap with the photographed patch: 0.946.
+- **Every badge.** The other embroidered badges are the same shape
+  photographed front-on, so each is laid onto the rainbow badge's frame by
+  its outline's box and carried by the same transform. The rubber Edge
+  badges are a slightly different shape and take a small stretch. All 15
+  orderable badges are built; none is tinted at run time.
+- **In the page.** A view that carries `bulletAssets` draws the chosen
+  badge's own image; with no badge chosen it shows the rainbow patch, as
+  the back view shows its photographed patch. On a left-handed glove the
+  badge is unmirrored about its box so the mark reads the right way, as on
+  the back view.
+- **Check.** `side_views_app_check.mjs` switches the badge from Edge Gold to
+  Navy/Gold on the heel and confirms only the patch's box changes, both
+  hands.
 
 ## Embroidered text
 
@@ -224,8 +269,18 @@ known hand would settle it.
 6. **Pixel-level artefacts.** At 200% a few faint hairlines remain inside the
    embroidery letters. Seams read as thin dark lines, which are the
    photographed creases. Residual RAW grain shows in the deepest shadows.
-7. **No other views.** The heel view (DSC05712/13) is not built. No palm or
-   back changes were made.
+7. **Heel: panels.** From the heel, Back 8 (the pinky's back panel) is not
+   separated from Back 9; the red the heel shows is mapped to Back 9. The
+   belt/Back 1 seam is traced along the stitch line, not measured.
+8. **Heel: badge.** The patch sits on a curved band, and a perspective
+   transform of a flat photograph is an approximation (overlap 0.946). On a
+   left-handed glove the badge is unmirrored while the hole in the belt is
+   mirrored, so a sliver of flat belt colour shows beside the badge where
+   the two S shapes differ.
+9. **Heel: edges.** The heel's lower edge stands against the black stand and
+   is traced, not measured; the deepest shadows under the lower binding are
+   assigned by their nearest neighbour.
+10. **No palm or back changes** were made.
 
 ## Files
 

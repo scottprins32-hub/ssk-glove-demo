@@ -68,7 +68,7 @@ await page.waitForFunction(() => document.querySelectorAll('#stageview button').
 
 const views = await page.evaluate(() =>
   [...document.querySelectorAll('#stageview button')].map(b => b.dataset.view));
-if (['back', 'palm', 'thumb', 'pinky'].every(v => views.includes(v)))
+if (['back', 'palm', 'thumb', 'pinky', 'heel'].every(v => views.includes(v)))
   ok(`view switcher offers ${views.join(', ')}`);
 else fail(`view switcher offers ${views.join(', ')}`);
 
@@ -103,8 +103,17 @@ const measure = (view, hand) => page.evaluate(async ([view, hand]) => {
     if (hand === 'LHT') g.setTransform(-1, 0, 0, 1, D.w, 0);
     g.drawImage(img, 0, 0);
     const a = g.getImageData(0, 0, D.w, D.h).data;
-    const solid = [];
-    for (let p = 0; p < D.w * D.h; p++) if (a[p * 4 + 3] > 250) solid.push(p);
+    // solid pixels of the zone, outside the badge that lies over the belt
+    const bb = D.bulletBox, solid = [];
+    for (let p = 0; p < D.w * D.h; p++) {
+      if (a[p * 4 + 3] <= 250) continue;
+      if (bb) {
+        let x = p % D.w; const y = (p / D.w) | 0;
+        if (hand === 'LHT') x = D.w - 1 - x;
+        if (x >= bb[0] && x < bb[2] && y >= bb[1] && y < bb[3]) continue;
+      }
+      solid.push(p);
+    }
     if (solid.length < 200) continue;
     const med = [0, 1, 2].map(ch => {
       const v = solid.map(p => px[p * 4 + ch]).sort((x, y) => x - y);
@@ -131,14 +140,21 @@ const snap = () => page.evaluate(() => {
   return Array.from(c.getContext('2d').getImageData(0, 0, c.width, c.height).data);
 });
 
-for (const view of ['thumb', 'pinky']) {
+for (const view of ['thumb', 'pinky', 'heel']) {
   for (const hand of ['RHT', 'LHT']) {
     await open(view, hand, 'H-Web');
     const r = await measure(view, hand);
     if (r.w !== r.dw || r.h !== r.dh) fail(`${view} ${hand}: stage ${r.w}x${r.h}, view is ${r.dw}x${r.dh}`);
     let worst = 0, at = '';
+    const D0 = JSON.parse(readFileSync(join(ROOT, `assets/${view}-data.json`)));
     for (const [zid, z] of Object.entries(r.zones)) {
-      const d = Math.hypot(...z.med.map((v, i) => v - rgb(hexOf(z.field, COLORS[z.field]))[i]));
+      // a cavity is meant to be darker than its swatch (the lining is a
+      // hole you look into); it is held to its recorded depth instead
+      const depth = D0.cavity && D0.cavity[zid];
+      const want = rgb(hexOf(z.field, COLORS[z.field])).map(v => depth ? v * (1 - depth) : v);
+      const d = depth
+        ? Math.hypot(...z.med.map((v, i) => v - want[i])) * 0.5
+        : Math.hypot(...z.med.map((v, i) => v - want[i]));
       if (d > worst) { worst = d; at = zid; }
       if (d > TOLERANCE) fail(`${view} ${hand}: ${zid} shows rgb(${z.med}) for ${z.field} (${d.toFixed(1)})`);
     }
@@ -169,6 +185,29 @@ for (const view of ['thumb', 'pinky']) {
     let moved = 0;
     for (let i = 0; i < base.length; i += 4)
       if (base[i] !== other[i] || base[i + 1] !== other[i + 1] || base[i + 2] !== other[i + 2]) moved++;
+    // the badge: choosing another bullet changes the patch and nothing else
+    if (D.bulletAssets) {
+      const names = Object.keys(D.bulletAssets);
+      const idx = n => JSON.parse(readFileSync(join(ROOT, 'assets/glove-data.json'))).bullets.findIndex(b => b.name === n);
+      await open(view, hand, 'H-Web', 0);
+      await page.evaluate(i => { const st = JSON.parse(localStorage.getItem('ssk-glove-v1')); st.bullet = i; localStorage.setItem('ssk-glove-v1', JSON.stringify(st)); }, idx(names[0]));
+      await page.reload(); await page.waitForTimeout(900);
+      const b0 = await snap();
+      await page.evaluate(i => { const st = JSON.parse(localStorage.getItem('ssk-glove-v1')); st.bullet = i; localStorage.setItem('ssk-glove-v1', JSON.stringify(st)); }, idx(names[names.length - 1]));
+      await page.reload(); await page.waitForTimeout(900);
+      const b1 = await snap();
+      const [x0, y0, x1, y1] = D.bulletBox;
+      let inBox = 0, outBox = 0;
+      for (let i = 0; i < b0.length; i += 4) {
+        if (b0[i] === b1[i] && b0[i + 1] === b1[i + 1] && b0[i + 2] === b1[i + 2]) continue;
+        const p = i / 4, x = p % D.w, y = (p / D.w) | 0;
+        const xx = hand === 'LHT' ? D.w - 1 - x : x;
+        if (xx >= x0 - 1 && xx <= x1 && y >= y0 - 1 && y <= y1) inBox++; else outBox++;
+      }
+      if (outBox) fail(`${view} ${hand}: changing the badge moved ${outBox} px outside the patch`);
+      else if (!inBox) fail(`${view} ${hand}: changing the badge changed nothing`);
+      else ok(`${view} ${hand}: the badge follows the order (${names[0]} -> ${names[names.length - 1]}: ${inBox} px), nothing else moves`);
+    }
     if (D.webMarker) {
       const inMark = await page.evaluate(async ([src, hand, w, h]) => {
         const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });

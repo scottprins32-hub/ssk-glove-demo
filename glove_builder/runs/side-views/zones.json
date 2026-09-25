@@ -1,4 +1,28 @@
 {
+  "heel": {
+    "source": "DSC05712.ARW",
+    "zones_px": {
+      "back9": 236397,
+      "back7": 62899,
+      "back6": 45986,
+      "back4": 39403,
+      "back2": 35789,
+      "belt": 218239,
+      "back5": 33154,
+      "back3": 45021,
+      "back1": 51047,
+      "laces": 359926,
+      "welting": 10624,
+      "stitching": 8305,
+      "binding": 4176,
+      "web": 33192,
+      "lining": 177646
+    },
+    "fixed_px": {
+      "patch": 110164
+    },
+    "glove_px": 1471963
+  },
   "pinky": {
     "source": "DSC05710.ARW",
     "zones_px": {

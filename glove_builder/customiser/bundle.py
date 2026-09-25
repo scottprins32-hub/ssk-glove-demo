@@ -118,7 +118,7 @@ def main():
             palm["assets"][k] = data_uri(HERE / v); n += 1
     # The thumb and pinky sides, the same way (build_side_views.py).
     sides = {}
-    for name in ("thumb", "pinky"):
+    for name in ("thumb", "pinky", "heel"):
         f = HERE / "assets" / f"{name}-data.json"
         if f.exists():
             sd = json.loads(f.read_text())

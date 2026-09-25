@@ -13,7 +13,7 @@ import { GloveRenderer } from '../customiser/glove-engine.js';
 import { NATIVE_WEB, WEBS, STARTERS, PALETTE_OF } from '../customiser/glove-catalog.js';
 
 const SAVE_KEY = 'ssk-glove-v1';          // the configurator's own key
-const VIEWS = { thumb: 'Duimzijde', pinky: 'Pinkzijde' };
+const VIEWS = { thumb: 'Duimzijde', pinky: 'Pinkzijde', heel: 'Hiel' };
 const LEATHER_FIELDS = ['web', 'back1', 'back2', 'back3', 'back4', 'back5',
   'back6', 'back7', 'back8', 'back9', 'palm', 'belt', 'lining', 'thumb_loops',
   'pinky_loops'];
@@ -53,6 +53,7 @@ export async function boot() {
     // asset paths in the data are relative to the configurator
     for (const k of Object.keys(D.assets)) D.assets[k] = '../customiser/' + D.assets[k];
     D.palettes = back.palettes;
+    D.bullets = back.bullets;            // the heel's badge needs the list
     views[v] = await decode(D);
   }
   const R = new GloveRenderer({ views, ...views.thumb });
@@ -116,7 +117,7 @@ export async function boot() {
       ctx.setTransform(mirror ? -1 : 1, 0, 0, 1, mirror ? D.w : 0, 0);
       ctx.drawImage(h, 0, 0);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      warn.textContent = `Web "${S.webType}" is niet gefotografeerd vanaf de duimzijde. ` +
+      warn.textContent = `Web "${S.webType}" is niet gefotografeerd vanaf deze kant. ` +
         `Het gearceerde deel is de ${D.photographedWeb} van de basishandschoen met de veters ` +
         `erdoorheen, niet het gekozen web. ` +
         `De rest van de handschoen is wel correct.`;

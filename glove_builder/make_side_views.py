@@ -49,6 +49,13 @@ VIEWS = {
         # in the half-size development (3514 x 2344)
         "crop": (950, 60, 2400, 2000),
     },
+    "heel": {
+        "raw": "DSC05712.ARW",
+        "raw_sha256": None,
+        "repeat": "DSC05713.ARW",
+        "photo": "images/store-2026-09/rainbow-heel.png",
+        "crop": (600, 300, 2450, 1950),
+    },
     "pinky": {
         "raw": "DSC05710.ARW",
         "raw_sha256": "c9d70fbfc3025927c2f98388dd7532deb44eee4edf98b237d2977b8278e0c568",
@@ -68,6 +75,7 @@ HUES = {
     "yellow":    ((18, 34), 100, 50),
     "green":     ((40, 79), 60, 25),
     "pink":      ((150, 179), 25, 70),   # laces, binding, welting, lettering
+    "blue":      ((100, 124), 120, 60),  # the bullet patch's border
 }
 PAINT = {"turquoise": (40, 220, 210), "purple": (150, 80, 230),
          "red": (235, 50, 50), "orange": (255, 150, 30),
@@ -80,7 +88,10 @@ def develop(shoot, view):
     spec = VIEWS[view]
     raw = pathlib.Path(shoot) / spec["raw"]
     got = hashlib.sha256(raw.read_bytes()).hexdigest()
-    if got != spec["raw_sha256"]:
+    if spec["raw_sha256"] is None:
+        print(f"{view}: {raw.name} sha256 {got} (recorded on first use)")
+        spec["raw_sha256"] = got
+    elif got != spec["raw_sha256"]:
         raise SystemExit(f"{raw}: sha256 {got}, expected {spec['raw_sha256']}")
     with rawpy.imread(str(raw)) as r:
         im = r.postprocess(**DEVELOP)
@@ -163,6 +174,39 @@ MAP = {
         # purple leather never reaches brightness 40 in this frame; the pale
         # suede laces hanging over it do
         "bright_is_lace": {"back1": 55, "belt": 55},
+        "binding_near_edge": True,
+    },
+    "heel": {
+        # Seen from the heel: the pinky wingtip on the left, the belt round
+        # the wrist opening with the bullet patch, the finger backs
+        # foreshortened at the top, the thumb's panel and the web's top bars
+        # at the right. Stand and wall left out by outline.
+        "hues": {"red": "back9", "orange": "back7", "yellow": "back6",
+                 "green": "back4", "turquoise": "back2", "purple": "belt"},
+        # welting lines, snapped to the pink piping: they divide the middle
+        # finger (back6/back5) and the index finger (back4/back3) as on the
+        # pinky side; the thumb's wingtip is stitched to the belt on the right
+        "welts": {"yellow": [(855, 330), (868, 420), (882, 510), (896, 600)],
+                  "green": [(1138, 250), (1152, 340), (1166, 430), (1180, 520)]},
+        "welt_half_width": 9,
+        "seams": [("yellow", "back6", "back5", "yellow", (960, 450)),
+                  ("green", "back4", "back3", "green", (1230, 400)),
+                  ("purple", "belt", "back1",
+                   [(1530, 850), (1560, 950), (1590, 1050), (1620, 1150),
+                    (1650, 1250), (1680, 1350)], (1730, 1100))],
+        # the web's top bars, on the thumb's turquoise
+        "scope_split": {"back2": ("web", [(1230, 230), (1400, 190), (1620, 280),
+                                          (1700, 470), (1600, 560), (1440, 540),
+                                          (1290, 520), (1220, 400)])},
+        "roi": [(0, 0), (1850, 0), (1850, 1300), (1760, 1420), (1520, 1450),
+                (940, 1450), (900, 1650), (450, 1650), (420, 1420), (300, 1380),
+                (0, 1300)],
+        # the wrist opening: the lining, a cavity the page keeps dark
+        "cavity": ("lining", 30, [(640, 560), (1500, 560), (1500, 1010), (640, 1010)]),
+        # the bullet patch, by its blue border; the chosen badge is warped
+        # onto it at build time and the belt's leather is carried under it
+        "patch": [(960, 850), (1560, 850), (1560, 1320), (960, 1320)],
+        "fixed": {},
         "binding_near_edge": True,
     },
     "pinky": {
@@ -319,7 +363,7 @@ def segment(view, rgb):
     # Each colour's chromaticity, measured on its own well-lit pixels (the
     # hue windows only choose which pixels to measure), then every glove
     # pixel goes to the nearest one.
-    names = list(spec["hues"]) + ["pink"]
+    names = list(spec["hues"]) + ["pink"] + (["blue"] if spec.get("patch") else [])
     means = {}
     for n_ in names:
         sure = cls[n_] & glove & (S > 110) & (V > 60)
@@ -451,6 +495,11 @@ def segment(view, rgb):
 
     for z, poly in spec.get("scope", {}).items():
         zones[z] &= shape_mask(shape, "poly", poly)
+    for z, (new, poly) in spec.get("scope_split", {}).items():
+        # part of a hue that is another field, by outline
+        inside = zones[z] & shape_mask(shape, "poly", poly)
+        zones[z] &= ~inside
+        zones[new] = zones.get(new, np.zeros(shape, bool)) | inside
     for z, lmin in spec.get("bright_is_lace", {}).items():
         pale = zones[z] & (lum > lmin)
         pale = ndimage.binary_opening(pale, np.ones((5, 5), bool))
@@ -468,6 +517,42 @@ def segment(view, rgb):
             dark = np.isin(lbl, 1 + np.nonzero(sz > 1500)[0])
         zones[src] &= ~dark
         zones[dst] = zones.get(dst, np.zeros(shape, bool)) | dark
+    if spec.get("cavity"):
+        # the hand opening: dark, colourless, inside the ring of binding
+        zone, lmax, poly = spec["cavity"]
+        # by darkness alone: a black pixel's chromaticity is noise
+        cav = glove & (lum < lmax) & shape_mask(shape, "poly", poly)
+        cav = ndimage.binary_opening(cav, np.ones((5, 5), bool))
+        cav = ndimage.binary_closing(cav, np.ones((9, 9), bool))
+        lbl, n = ndimage.label(cav)
+        if n:
+            sz = ndimage.sum(cav, lbl, range(1, n + 1))
+            cav = lbl == 1 + int(np.argmax(sz))
+        for z in zones:
+            zones[z] &= ~cav
+        zones[zone] = cav
+    if spec.get("patch"):
+        # The bullet patch is the one thing on the belt that is not purple.
+        # Its stitched border is too thin to close reliably, so: everything
+        # in the patch's box that is not the belt's colour, filled, then
+        # opened with a disc wider than any piping or stitch line, which
+        # leaves the patch alone.
+        box = shape_mask(shape, "poly", spec["patch"])
+        belt_c = chrom[box & zones["belt"] & (lum > 25)].mean(0)
+        # The belt's own purple wanders by 0.15 between light and shadow;
+        # the patch's border and threads sit 0.4 and more from it.
+        far = box & (np.abs(chrom - belt_c).sum(-1) > 0.26) & (lum > 20)
+        far = ndimage.binary_closing(far, np.ones((9, 9), bool))
+        far = ndimage.binary_fill_holes(far)
+        disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (45, 45)).astype(bool)
+        patch = ndimage.binary_opening(far, structure=disc)
+        lbl, n = ndimage.label(patch)
+        if n:
+            sz = ndimage.sum(patch, lbl, range(1, n + 1))
+            patch = lbl == 1 + int(np.argmax(sz))
+        fixed["patch"] = patch
+        for z in zones:
+            zones[z] &= ~patch
     if "bullet_edge" in fixed:
         # only the patch itself, not the belt leather in its box
         fixed["bullet_edge"] = fixed["bullet_edge"] & ~zones.get("belt", np.zeros(shape, bool))
@@ -508,7 +593,7 @@ PAINT_ZONE = {"web": (40, 220, 210), "back2": (20, 120, 255),
               "back9": (200, 20, 20), "palm": (0, 70, 170),
               "laces": (255, 120, 200), "welting": (255, 255, 255),
               "binding": (120, 60, 255), "embroidery": (255, 255, 0),
-              "stitching": (255, 255, 255)}
+              "stitching": (255, 255, 255), "lining": (30, 30, 30)}
 
 
 def main():
@@ -518,7 +603,9 @@ def main():
     ap.add_argument("--view", choices=sorted(VIEWS), action="append")
     args = ap.parse_args()
     RUNS.mkdir(parents=True, exist_ok=True)
-    report = {}
+    # one file for every view; a run of one view keeps the others' entries
+    zf = RUNS / "zones.json"
+    report = json.loads(zf.read_text()) if zf.exists() else {}
     for view in args.view or sorted(VIEWS):
         if args.shoot:
             rgb = develop(args.shoot, view)

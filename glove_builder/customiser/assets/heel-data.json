@@ -1,0 +1,504 @@
+{
+ "view": "heel",
+ "w": 1233,
+ "h": 1100,
+ "zones": [
+  {
+   "id": "web",
+   "n": 1,
+   "group": "leather",
+   "label": "Web",
+   "field": "web"
+  },
+  {
+   "id": "back1",
+   "n": 2,
+   "group": "leather",
+   "label": "Back 1 - thumb wingtip",
+   "field": "back1"
+  },
+  {
+   "id": "back2",
+   "n": 3,
+   "group": "leather",
+   "label": "Back 2 - thumb",
+   "field": "back2"
+  },
+  {
+   "id": "back3",
+   "n": 4,
+   "group": "leather",
+   "label": "Back 3 - index, 1st part",
+   "field": "back3"
+  },
+  {
+   "id": "back4",
+   "n": 5,
+   "group": "leather",
+   "label": "Back 4 - index, 2nd part",
+   "field": "back4"
+  },
+  {
+   "id": "back5",
+   "n": 6,
+   "group": "leather",
+   "label": "Back 5 - middle, 1st part",
+   "field": "back5"
+  },
+  {
+   "id": "back6",
+   "n": 7,
+   "group": "leather",
+   "label": "Back 6 - middle, 2nd part",
+   "field": "back6"
+  },
+  {
+   "id": "back7",
+   "n": 8,
+   "group": "leather",
+   "label": "Back 7 - ring",
+   "field": "back7"
+  },
+  {
+   "id": "back9",
+   "n": 9,
+   "group": "leather",
+   "label": "Back 9 - pinky wingtip",
+   "field": "back9"
+  },
+  {
+   "id": "belt",
+   "n": 10,
+   "group": "leather",
+   "label": "Belt",
+   "field": "belt"
+  },
+  {
+   "id": "binding",
+   "n": 11,
+   "group": "lace",
+   "label": "Binding",
+   "field": "binding"
+  },
+  {
+   "id": "welting",
+   "n": 12,
+   "group": "lace",
+   "label": "Welting",
+   "field": "welting"
+  },
+  {
+   "id": "laces",
+   "n": 13,
+   "group": "lace",
+   "label": "Laces",
+   "field": "laces"
+  },
+  {
+   "id": "stitching",
+   "n": 14,
+   "group": "stitching",
+   "label": "Stitching",
+   "field": "stitching"
+  },
+  {
+   "id": "lining",
+   "n": 15,
+   "group": "leather",
+   "label": "Lining",
+   "field": "lining"
+  }
+ ],
+ "bbox": {
+  "glove": [
+   79,
+   145,
+   1230,
+   1097
+  ],
+  "web": [
+   834,
+   185,
+   1031,
+   367
+  ],
+  "web_hi": [
+   834,
+   185,
+   1031,
+   367
+  ],
+  "back1": [
+   934,
+   249,
+   1166,
+   897
+  ],
+  "back1_hi": [
+   934,
+   249,
+   1166,
+   897
+  ],
+  "back2": [
+   849,
+   345,
+   1138,
+   560
+  ],
+  "back2_hi": [
+   849,
+   345,
+   1138,
+   560
+  ],
+  "back3": [
+   748,
+   145,
+   1139,
+   591
+  ],
+  "back3_hi": [
+   748,
+   145,
+   1139,
+   591
+  ],
+  "back4": [
+   643,
+   152,
+   774,
+   369
+  ],
+  "back4_hi": [
+   643,
+   152,
+   774,
+   369
+  ],
+  "back5": [
+   568,
+   209,
+   687,
+   405
+  ],
+  "back5_hi": [
+   568,
+   209,
+   687,
+   405
+  ],
+  "back6": [
+   449,
+   209,
+   598,
+   454
+  ],
+  "back6_hi": [
+   449,
+   209,
+   598,
+   454
+  ],
+  "back7": [
+   324,
+   333,
+   524,
+   601
+  ],
+  "back7_hi": [
+   324,
+   333,
+   524,
+   601
+  ],
+  "back9": [
+   151,
+   425,
+   1093,
+   1097
+  ],
+  "back9_hi": [
+   151,
+   425,
+   1093,
+   1097
+  ],
+  "belt": [
+   289,
+   542,
+   1102,
+   1097
+  ],
+  "belt_hi": [
+   289,
+   542,
+   1102,
+   1097
+  ],
+  "binding": [
+   456,
+   644,
+   1155,
+   1097
+  ],
+  "binding_hi": [
+   456,
+   644,
+   1155,
+   1097
+  ],
+  "welting": [
+   343,
+   165,
+   786,
+   816
+  ],
+  "welting_hi": [
+   343,
+   165,
+   786,
+   816
+  ],
+  "laces": [
+   79,
+   146,
+   1230,
+   1097
+  ],
+  "laces_hi": [
+   79,
+   146,
+   1230,
+   1097
+  ],
+  "stitching": [
+   127,
+   157,
+   1146,
+   1097
+  ],
+  "lining": [
+   461,
+   390,
+   965,
+   679
+  ],
+  "badge_edge_gold": [
+   661,
+   583,
+   1016,
+   862
+  ],
+  "badge_edge_silver": [
+   661,
+   583,
+   1016,
+   862
+  ],
+  "badge_edge_gunmetal": [
+   661,
+   583,
+   1016,
+   862
+  ],
+  "badge_bullet_whitegold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_redgold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_redgreen": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_rainbow": [
+   664,
+   581,
+   1013,
+   869
+  ],
+  "badge_bullet_blackgold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_blackpink": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_blackpurple": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_blacksilver": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_greengold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_wineredgold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_bluegold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "badge_bullet_navygold": [
+   670,
+   582,
+   1018,
+   882
+  ],
+  "web_marker": [
+   834,
+   182,
+   1030,
+   373
+  ]
+ },
+ "assets": {
+  "glove": "assets/side/heel/glove.webp",
+  "web": "assets/side/heel/web.webp",
+  "web_hi": "assets/side/heel/web_hi.webp",
+  "back1": "assets/side/heel/back1.webp",
+  "back1_hi": "assets/side/heel/back1_hi.webp",
+  "back2": "assets/side/heel/back2.webp",
+  "back2_hi": "assets/side/heel/back2_hi.webp",
+  "back3": "assets/side/heel/back3.webp",
+  "back3_hi": "assets/side/heel/back3_hi.webp",
+  "back4": "assets/side/heel/back4.webp",
+  "back4_hi": "assets/side/heel/back4_hi.webp",
+  "back5": "assets/side/heel/back5.webp",
+  "back5_hi": "assets/side/heel/back5_hi.webp",
+  "back6": "assets/side/heel/back6.webp",
+  "back6_hi": "assets/side/heel/back6_hi.webp",
+  "back7": "assets/side/heel/back7.webp",
+  "back7_hi": "assets/side/heel/back7_hi.webp",
+  "back9": "assets/side/heel/back9.webp",
+  "back9_hi": "assets/side/heel/back9_hi.webp",
+  "belt": "assets/side/heel/belt.webp",
+  "belt_hi": "assets/side/heel/belt_hi.webp",
+  "binding": "assets/side/heel/binding.webp",
+  "binding_hi": "assets/side/heel/binding_hi.webp",
+  "welting": "assets/side/heel/welting.webp",
+  "welting_hi": "assets/side/heel/welting_hi.webp",
+  "laces": "assets/side/heel/laces.webp",
+  "laces_hi": "assets/side/heel/laces_hi.webp",
+  "stitching": "assets/side/heel/stitching.webp",
+  "lining": "assets/side/heel/lining.webp",
+  "_idmap": "assets/side/heel/idmap.png",
+  "badge_edge_gold": "assets/side/heel/badge_edge_gold.webp",
+  "badge_edge_silver": "assets/side/heel/badge_edge_silver.webp",
+  "badge_edge_gunmetal": "assets/side/heel/badge_edge_gunmetal.webp",
+  "badge_bullet_whitegold": "assets/side/heel/badge_bullet_whitegold.webp",
+  "badge_bullet_redgold": "assets/side/heel/badge_bullet_redgold.webp",
+  "badge_bullet_redgreen": "assets/side/heel/badge_bullet_redgreen.webp",
+  "badge_bullet_rainbow": "assets/side/heel/badge_bullet_rainbow.webp",
+  "badge_bullet_blackgold": "assets/side/heel/badge_bullet_blackgold.webp",
+  "badge_bullet_blackpink": "assets/side/heel/badge_bullet_blackpink.webp",
+  "badge_bullet_blackpurple": "assets/side/heel/badge_bullet_blackpurple.webp",
+  "badge_bullet_blacksilver": "assets/side/heel/badge_bullet_blacksilver.webp",
+  "badge_bullet_greengold": "assets/side/heel/badge_bullet_greengold.webp",
+  "badge_bullet_wineredgold": "assets/side/heel/badge_bullet_wineredgold.webp",
+  "badge_bullet_bluegold": "assets/side/heel/badge_bullet_bluegold.webp",
+  "badge_bullet_navygold": "assets/side/heel/badge_bullet_navygold.webp",
+  "web_marker": "assets/side/heel/web_marker.webp"
+ },
+ "sheen": {
+  "back2": 0.5,
+  "back3": 0.5,
+  "back4": 0.533,
+  "back5": 0.571,
+  "back6": 0.571,
+  "back7": 0.571,
+  "back9": 0.571,
+  "binding": 0.694,
+  "laces": 0.568,
+  "web": 0.571,
+  "welting": 0.615
+ },
+ "source": "DSC05712.ARW",
+ "fieldsShown": [
+  "back1",
+  "back2",
+  "back3",
+  "back4",
+  "back5",
+  "back6",
+  "back7",
+  "back9",
+  "belt",
+  "binding",
+  "laces",
+  "lining",
+  "stitching",
+  "web",
+  "welting"
+ ],
+ "fieldsNotShown": [
+  "back8",
+  "palm",
+  "thumb_loops",
+  "pinky_loops",
+  "ring_emb",
+  "pad_color"
+ ],
+ "cavity": {
+  "lining": 0.62
+ },
+ "bulletAssets": {
+  "Edge Gold": "badge_edge_gold",
+  "Edge Silver": "badge_edge_silver",
+  "Edge Gun Metal": "badge_edge_gunmetal",
+  "White/Gold": "badge_bullet_whitegold",
+  "Red/Gold": "badge_bullet_redgold",
+  "Red/Green": "badge_bullet_redgreen",
+  "Rainbow": "badge_bullet_rainbow",
+  "Black/Gold": "badge_bullet_blackgold",
+  "Black/Pink": "badge_bullet_blackpink",
+  "Black/Purple": "badge_bullet_blackpurple",
+  "Black/Silver": "badge_bullet_blacksilver",
+  "Green/Gold": "badge_bullet_greengold",
+  "Winered/Gold": "badge_bullet_wineredgold",
+  "Blue/Gold": "badge_bullet_bluegold",
+  "Navy/Gold": "badge_bullet_navygold"
+ },
+ "bulletDefault": "badge_bullet_rainbow",
+ "bulletBox": [
+  661,
+  581,
+  1018,
+  882
+ ],
+ "badgeFit": {
+  "overlap": 0.946
+ },
+ "webMarker": "web_marker",
+ "webZone": "web",
+ "photographedWeb": "H-Web"
+}
