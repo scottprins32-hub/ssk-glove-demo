@@ -2,9 +2,10 @@
 
 A 2.5D glove configurator for **SSK Europe** (sskeurope.ccvshop.nl). A customer
 picks a colour for each part of the glove, sees it on a photoreal render, and
-finishes with an SSK2 design code for the selected options. The full design link
-also carries embroidery text and numbers; the downloadable specification is
-the complete review document. Saving a design does not place an order.
+finishes by sending the order to SSK Europe: one e-mail with Pim's order
+sheet, the design codes and a picture of each glove, and an order number the
+customer pays with in the existing CCV Shop checkout. Up to five gloves go in
+one order. Nothing is stored on the way; see `docs/ORDER-HANDOFF.md`.
 
 It exists to replace the Google Form SSK currently uses to take custom glove
 orders. It is meant to live at its own URL and be linked from the shop, with
@@ -30,6 +31,8 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/render_check.mjs` | Paints the glove one colour and checks every zone comes back that colour |
 | `glove_builder/state_check.mjs` | Poisons a saved draft field by field and checks the page still comes up |
 | `glove_builder/keyboard_check.mjs` | Builds the glove with Tab and Enter and checks focus survives every repaint |
+| `glove_builder/order_check.mjs` | Builds a two-glove order, sends it, and reads Pim's workbook back cell by cell |
+| `api/order.mjs`, `glove_builder/customiser/order-sheet.js` | The order endpoint and Pim's sheet layout it writes |
 | `glove_builder/runs/rainbow-back/masks_raw/` | The raw SAM3 masks, committed so the pipeline re-runs without a GPU |
 | `glove_builder/source/` | The 4× upscaled source photograph the layers are cut from |
 | `glove_builder/zones_rainbow_back.json` | Per-zone boxes and HSV rules for the back view |
@@ -277,8 +280,10 @@ See docs/PHOTO-COVERAGE.md. SMLEE now uses independently reviewed September 23
 source masks, a fixed panel mapping and separate lace/leather colours. Regenerate
 its source layers with `python glove_builder/trace_smlee.py`, then build and review
 assets in a scratch directory before selective installation. The
-flow ends with a design code and downloadable specification; no live checkout
-or backend order submission is connected.
+flow ends by e-mailing the order to SSK Europe (`api/order.mjs`) and sending
+the customer to the shop's checkout with an order number; the shop's own
+payment is the checkout. The endpoint needs three environment variables
+before it sends (`docs/ORDER-HANDOFF.md`).
 
 ## Hosting
 

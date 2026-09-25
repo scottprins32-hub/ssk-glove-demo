@@ -464,7 +464,7 @@ button { font: inherit; color: inherit; }
 .part:hover { border-color: var(--border-strong); }
 .part.is-on { border-color: var(--state-selected); box-shadow: inset 0 0 0 1px var(--state-selected); color: var(--navy-900); }
 
-input[type="text"], input[type="tel"] {
+input[type="text"], input[type="tel"], input[type="email"] {
   height: var(--control-h-md); padding: 0 var(--space-3);
   border: 1px solid var(--border-default); border-radius: var(--radius-sm);
   background: var(--white); font-size: var(--text-base); color: var(--gray-900); width: 100%;
@@ -540,6 +540,27 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 }
 .spec h3:first-child { margin-top: 0; }
 .sheet-acts { display: flex; gap: var(--space-2); margin-top: var(--space-5); }
+.sheet-send { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.sheet-acts a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+/* the gloves of one order, on the review step and in the sheet */
+.gloves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.glove-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3); background: var(--surface-card);
+}
+.glove-row.is-stage { border-color: var(--state-selected); }
+.glove-thumb { width: 42px; height: 50px; flex: 0 0 auto; border-radius: var(--radius-sm); background: var(--gray-100); }
+.glove-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; font-size: var(--text-sm); }
+.glove-info .sub { color: var(--text-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.glove-info code { font-family: var(--font-mono); }
+.glove-acts { display: flex; gap: var(--space-1); flex: 0 0 auto; }
+.btn-sm { padding: 4px 10px; min-height: 32px; font-size: var(--text-xs); }
+/* after sending: the number to pay with */
+.order-done h3 { margin: var(--space-2) 0; font-family: var(--font-display); font-size: var(--text-lg); text-transform: uppercase; color: var(--text-heading); }
+.order-lab { margin: var(--space-4) 0 var(--space-1); font-size: var(--text-xs); letter-spacing: var(--tracking-wide-caps); text-transform: uppercase; color: var(--gray-500); }
+.order-num { font-size: var(--display-sm); letter-spacing: 0.04em; }
+.pay-steps { margin: 0; padding-left: 20px; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------------------------------------------------------------- mobile */
 @media (max-width: 900px) {
@@ -666,12 +687,37 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
     <p class="sheet-lead" data-t="sendLead"></p>
     <div class="sheet-code" id="sheetcode"></div>
     <p id="sheetstatus" class="note" role="status"></p>
-    <div id="spechost"></div>
-    <div class="sheet-acts">
-      <button class="btn btn-primary" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
-      <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
-      <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
-      <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
+    <div id="orderform">
+      <div id="spechost"></div>
+      <div class="sheet-send">
+        <button class="btn btn-primary" id="send" type="button" data-t="sendOrder">Bestelling naar SSK Europe sturen</button>
+        <p class="note" id="sendnote" role="status"></p>
+      </div>
+      <div class="sheet-acts">
+        <button class="btn btn-ghost" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
+        <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
+        <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
+        <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
+      </div>
+    </div>
+    <div id="orderdone" class="order-done" hidden>
+      <h3 data-t="sendDone">Je bestelling is bij SSK Europe</h3>
+      <p class="note" id="ordercount"></p>
+      <p class="order-lab" data-t="orderNumber">Bestelnummer</p>
+      <div class="sheet-code order-num" id="ordernum" tabindex="-1"></div>
+      <p class="order-lab" data-t="payNow">Nu betalen in de SSK Europe shop</p>
+      <ol class="pay-steps">
+        <li data-t="payStep1"></li>
+        <li id="paystep2"></li>
+        <li id="paystep3"></li>
+        <li data-t="payStep4"></li>
+      </ol>
+      <p class="note" data-t="payNote"></p>
+      <div class="sheet-acts">
+        <a class="btn btn-primary" id="checkout" href="#" target="_blank" rel="noopener" data-t="goCheckout">Naar de SSK Europe shop</a>
+        <button class="btn btn-ghost" id="copynum" type="button" data-t="copyNumber">Kopieer bestelnummer</button>
+        <button class="btn btn-ghost" id="keep2" type="button" data-t="keep">Verder bouwen</button>
+      </div>
     </div>
   </div>
 </div>
@@ -863,7 +909,7 @@ const T = {
     name: 'Your name', phone: 'Phone number',
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
     compare: 'Compare', snapshot: 'Snapshot', clear: 'Clear', basePrice: 'From',
-    finish: 'Save design', reference: 'Design code', copy: 'Copy specification',
+    finish: 'Review & order', reference: 'Design code', copy: 'Copy specification',
     copyLink: 'Copy link',
     copied: 'Copied', keep: 'Keep building', open: 'Open a saved design',
     paste: 'Paste a design link or reference code', notShown: 'Not shown on this view',
@@ -875,7 +921,7 @@ const T = {
     codeAmbiguous: 'This older code can be read two ways, so it cannot be opened safely. Ask SSK Europe for the order.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
     pickPart: 'Click any part of the glove', required: 'Still needed',
-    sendTitle: 'Your SSK custom glove', sendLead: 'Share the full specification with SSK Europe to confirm availability and your order. The design code saves your options; the design link also keeps embroidery text and numbers. Saving does not place an order.',
+    sendTitle: 'Your SSK custom glove', sendLead: 'Send the order and SSK Europe receives every choice with the design code; you then pay in their shop with the order number you get back. The design code saves your options; the design link also keeps embroidery text and numbers.',
     viewBack: 'Back', viewPalm: 'Palm', viewThumb: 'Thumb side', viewPinky: 'Pinky side',
     webNotOnThumb: 'This side was photographed with the standard H-Web. The hatched part is that web, not yours; your web is ordered as chosen.',
     notOnThisSide: 'Not visible from this side.',
@@ -902,7 +948,28 @@ const T = {
     invalidDesign: 'This design link or colour code could not be opened.', copyFailed: 'Copy failed. Try download.',
     loadError: 'The glove could not be loaded', loadRetry: 'Check your connection and reload this page.',
     sigSlot: 'Signature slot — attach a real SSK player',
-    allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom'
+    allSet: 'All set', sendIt: 'Review & order', model2: 'SSK Pro Custom',
+    // ordering: the order goes to SSK Europe by e-mail, the payment through
+    // their shop with the order number the customer gets back
+    email: 'E-mail address', emailHint: 'Your order number and a copy of the order go here.',
+    inOrder: 'Gloves in this order', gloveN: 'Glove', onStage: 'on the stage',
+    addGlove: 'Add another glove', editGlove: 'Edit', removeGlove: 'Remove',
+    completeFirst: 'Finish the required choices for this glove first.',
+    sendOrder: 'Send order to SSK Europe', sending: 'Sending…',
+    sendHint: 'One e-mail goes to SSK Europe with every choice, the design code and a picture of each glove; you get a copy with your order number. Nothing is stored on this page.',
+    sendFail: 'Sending failed. Check your connection and try again.',
+    sendBusy: 'Too many orders from this connection in a short time. Wait a minute and try again.',
+    sendNotConfigured: 'Ordering by e-mail is not switched on yet. Copy the specification and send it to SSK Europe yourself.',
+    sendDone: 'Your order has reached SSK Europe', orderNumber: 'Order number',
+    oneGloveSent: 'One glove, with its design code, is in SSK Europe\'s inbox.',
+    nGlovesSent: '%n gloves, each with its own design code, are in SSK Europe\'s inbox.',
+    payNow: 'Now pay in the SSK Europe shop',
+    payStep1: 'Open the SSK Europe shop and choose the custom glove.',
+    payStep2: 'Set the quantity to %n.',
+    payStep3: 'Enter order number %s in the configurator field.',
+    payStep4: 'Pay as usual. SSK Europe matches the payment to your design.',
+    payNote: 'The order goes to SSK only after payment. You also have these steps in your e-mail.',
+    goCheckout: 'Go to the SSK Europe shop', copyNumber: 'Copy order number'
   },
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
@@ -925,7 +992,7 @@ const T = {
     name: 'Je naam', phone: 'Telefoonnummer',
     left: 'nog open', done: 'klaar', undo: 'Ongedaan', redo: 'Opnieuw', reset: 'Wissen',
     compare: 'Vergelijk', snapshot: 'Vastleggen', clear: 'Wissen', basePrice: 'Vanaf',
-    finish: 'Ontwerp opslaan', reference: 'Ontwerpcode', copy: 'Kopieer specificatie',
+    finish: 'Controleren & bestellen', reference: 'Ontwerpcode', copy: 'Kopieer specificatie',
     copied: 'Gekopieerd', keep: 'Verder bouwen', open: 'Bewaard ontwerp openen',
     copyLink: 'Kopieer link',
     paste: 'Plak een ontwerplink of referentiecode', notShown: 'Niet zichtbaar op deze weergave',
@@ -937,7 +1004,7 @@ const T = {
     codeAmbiguous: 'Deze oudere code is op twee manieren te lezen en kan daarom niet veilig worden geopend. Vraag SSK Europe om de bestelling.',
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
-    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Deel de volledige specificatie met SSK Europe om beschikbaarheid en je bestelling te bevestigen. De ontwerpcode bewaart je keuzes; de ontwerplink bewaart ook borduurtekst en nummers. Opslaan plaatst geen bestelling.',
+    sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Verstuur de bestelling en SSK Europe ontvangt elke keuze met de ontwerpcode; daarna betaal je in hun shop met het bestelnummer dat je terugkrijgt. De ontwerpcode bewaart je keuzes; de ontwerplink bewaart ook borduurtekst en nummers.',
     viewBack: 'Achterkant', viewPalm: 'Palm', viewThumb: 'Duimzijde', viewPinky: 'Pinkzijde',
     webNotOnThumb: 'Deze kant is gefotografeerd met het standaard H-web. Het gearceerde deel is dat web, niet het jouwe; je web wordt besteld zoals gekozen.',
     notOnThisSide: 'Niet zichtbaar vanaf deze kant.',
@@ -961,7 +1028,26 @@ const T = {
     invalidDesign: 'Deze ontwerplink of kleurcode kon niet worden geopend.', copyFailed: 'Kopiëren mislukt. Download de specificatie.',
     loadError: 'De handschoen kon niet worden geladen', loadRetry: 'Controleer je verbinding en laad deze pagina opnieuw.',
     sigSlot: 'Signature-plek — koppel een echte SSK-speler',
-    allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom'
+    allSet: 'Compleet', sendIt: 'Controleren & bestellen', model2: 'SSK Pro Custom',
+    email: 'E-mailadres', emailHint: 'Hier komen je bestelnummer en een kopie van de bestelling.',
+    inOrder: 'Handschoenen in deze bestelling', gloveN: 'Handschoen', onStage: 'op het podium',
+    addGlove: 'Nog een handschoen toevoegen', editGlove: 'Bewerken', removeGlove: 'Verwijderen',
+    completeFirst: 'Maak eerst de verplichte keuzes voor deze handschoen af.',
+    sendOrder: 'Bestelling naar SSK Europe sturen', sending: 'Versturen…',
+    sendHint: 'Er gaat één e-mail naar SSK Europe met elke keuze, de ontwerpcode en een foto van elke handschoen; jij krijgt een kopie met je bestelnummer. Er wordt niets op deze pagina bewaard.',
+    sendFail: 'Versturen is mislukt. Controleer je verbinding en probeer het opnieuw.',
+    sendBusy: 'Te veel bestellingen vanaf deze verbinding in korte tijd. Wacht een minuut en probeer opnieuw.',
+    sendNotConfigured: 'Bestellen per e-mail staat nog niet aan. Kopieer de specificatie en stuur die zelf naar SSK Europe.',
+    sendDone: 'Je bestelling is bij SSK Europe', orderNumber: 'Bestelnummer',
+    oneGloveSent: 'Eén handschoen, met ontwerpcode, ligt in de inbox van SSK Europe.',
+    nGlovesSent: '%n handschoenen, elk met een eigen ontwerpcode, liggen in de inbox van SSK Europe.',
+    payNow: 'Nu betalen in de SSK Europe shop',
+    payStep1: 'Open de SSK Europe shop en kies de custom handschoen.',
+    payStep2: 'Zet het aantal op %n.',
+    payStep3: 'Vul bestelnummer %s in het veld voor de configurator in.',
+    payStep4: 'Reken af zoals je gewend bent. SSK Europe koppelt de betaling aan je ontwerp.',
+    payNote: 'De bestelling gaat pas na betaling naar SSK. Deze stappen staan ook in je e-mail.',
+    goCheckout: 'Naar de SSK Europe shop', copyNumber: 'Kopieer bestelnummer'
   }
 };
 
@@ -1784,12 +1870,218 @@ function decodeV1(code) {
   return { colors, bulletName: RC_V1_BULLETS[bullet] ?? null };
 }
 
+/* ---- order-sheet.js ---- */
+/* The order as Pim's order sheet sees it.
+
+   SSK Europe collects custom glove orders in one workbook
+   ("SSK Custom Gloves Order <month>.xlsx", sheet "Order Sheet glove") that
+   goes to SSK Japan: one row per glove, three header rows, and colours
+   written as "70.Navy" — SSK's code, a dot, SSK's name. This module turns a
+   finished design into that row, so what Pim receives is what he already
+   works with, not a new format to retype.
+
+   Plain ES module with no DOM and no catalogue import: the page fills the
+   row with names it resolves itself, and the order endpoint (api/order.mjs)
+
+   `h1`/`h2`/`h3` are the three header rows exactly as in his workbook
+   (a run of columns under one h1 is merged there; here it is repeated once
+   and left blank after, which is what a merged range reads as). */
+const SHEET_COLUMNS = [
+  { key: 'no', h1: 'No' },
+  { key: 'po', h1: 'PO#' },
+  { key: 'reference', h1: 'REFERENCE＃' },
+  { key: 'pattern', h1: 'Pattern' },
+  { key: 'size', h1: 'Size' },
+  { key: 'qtyRHT', h1: 'QTY', h2: 'RHT' },
+  { key: 'qtyLHT', h2: 'LHT' },
+  { key: 'pad', h1: 'Finger Pad' },
+  { key: 'padColor', h1: 'Finger Pad Color' },
+  { key: 'web', h1: 'Web' },
+  { key: 'palm', h1: 'Color', h2: '①', h3: 'Palm' },
+  { key: 'webColor', h2: '②', h3: 'Web' },
+  { key: 'back1', h2: '③', h3: 'Back1' },
+  { key: 'back2', h2: '④', h3: 'Back2' },
+  { key: 'back3', h2: '⑤', h3: 'Back3' },
+  { key: 'back4', h2: '⑥', h3: 'Back4' },
+  { key: 'back5', h2: '⓻', h3: 'Back5' },
+  { key: 'back6', h2: '⑧', h3: 'Back6' },
+  { key: 'back7', h2: '⑨', h3: 'Back7' },
+  { key: 'back8', h2: '⑩', h3: 'Back8' },
+  { key: 'back9', h2: '⑪', h3: 'Back9' },
+  { key: 'thumbLoops', h2: '⑫', h3: 'Thumb Loops' },
+  { key: 'pinkyLoops', h2: '⑬', h3: 'Pinky Loops' },
+  { key: 'belt', h2: '⑭', h3: 'Belt' },
+  { key: 'lining', h2: '⑮', h3: 'Lining' },
+  { key: 'weltingType', h2: '⑰Welting', h3: 'Type' },
+  { key: 'welting', h3: 'Color' },
+  { key: 'laces', h2: '⑱', h3: 'Lacing' },
+  { key: 'binding', h2: '⑲', h3: 'Binding' },
+  { key: 'stitching', h2: '⑳', h3: 'Stitching' },
+  { key: 'ringEmb', h1: 'Ring  Finger Embroidery', h3: 'Embroidery' },
+  { key: 'ringEmbColor', h2: '㉑', h3: 'Embroidery color' },
+  { key: 'backStyle', h1: 'Back Style' },
+  { key: 'bullet', h1: 'Bullet Logo', h2: '㉒', h3: 'Wrist Strap' },
+  { key: 'palmLogoCenter', h1: 'Palm Logo', h2: 'Center' },
+  { key: 'palmLogoHeel', h2: 'Heel' },
+  { key: 'thumbText', h1: 'Thumb Embroidery', h3: 'Name' },
+  { key: 'thumbFont', h3: 'Font' },
+  { key: 'thumbMain', h2: 'Embroidery Color' },
+  { key: 'thumbOutline', h2: 'Embroidery Color Outline' },
+  { key: 'thumbNumber', h1: 'Thumb Number', h2: 'Number', h3: 'Number' },
+  { key: 'circle', h3: 'Base color' },
+  { key: 'numberColor', h3: 'Embroidery Color' },
+  { key: 'bulletEmb', h2: 'Bullet' },
+  { key: 'bulletEmbColor', h3: 'Embroidery Color' },
+  { key: 'patternNote', h1: 'Pattern' },
+  { key: 'embroideryNote', h1: 'Embroidery' },
+  { key: 'flagNote', h1: 'Flags' },
+  // Not in Pim's workbook: what ties a row back to the customer's payment
+  // in the shop and to the configurator. Appended after his last column so
+  // his layout is untouched.
+  { key: 'orderNumber', h1: 'Configurator order' },
+  { key: 'gloveNo', h1: 'Glove' },
+  { key: 'code', h1: 'Design code' },
+  { key: 'phone', h1: 'Phone' },
+  { key: 'email', h1: 'E-mail' },
+];
+
+/* What every row carries that the form does not ask. "Conventional" is the
+   only back style SSK Europe orders and every row in Pim's workbook has it.
+   Welting type and the crocodile emboss are also on every row of his, but
+   the form has no question for either, so they are left for Pim to fill:
+   a default would order a finish nobody chose. */
+const SHEET_FIXED = { pattern: 'AP1', backStyle: 'Conventional' };
+
+/* A design, with its names already resolved, as one sheet row.
+
+   `g` (one glove):
+     hand 'RHT'|'LHT', size '11.75"', pad 'None'|'Finger Pad'|'Finger Hood',
+     webType 'H-Web', colours {field: '70.Navy'} for every colour field the
+     form has (pad_color may be missing), bullet 'Edge Gold',
+     thumbText, thumbFont, thumbMain '39.Gold', thumbOutline, thumbNumber,
+     circle 'Navy', numberColor, pinkyText, flag 'Netherlands'|'None'|null,
+     code 'SSK2-…'
+   `o` (the order): orderNumber, name, phone, email
+   `no`: 1-based position in the order. */
+function sheetRow(g, o, no) {
+  const c = g.colours || {};
+  const font = g.thumbFont || '';
+  const thread = (v) => (v ? String(v).replace(/^\d+\.\s*/, '') : '');
+  const padOn = g.pad && g.pad !== 'None';
+  const row = {
+    no, po: '',
+    reference: o.name || '',
+    pattern: SHEET_FIXED.pattern,
+    size: String(g.size || '').replace(/"$/, ''),
+    qtyRHT: g.hand === 'RHT' ? 1 : '',
+    qtyLHT: g.hand === 'LHT' ? 1 : '',
+    pad: g.pad || '',
+    padColor: padOn ? (c.pad_color || '10.White') : '',
+    web: String(g.webType || '').replace(/-Web$/, ' WEB'),
+    palm: c.palm || '', webColor: c.web || '',
+    back1: c.back1 || '', back2: c.back2 || '', back3: c.back3 || '',
+    back4: c.back4 || '', back5: c.back5 || '', back6: c.back6 || '',
+    back7: c.back7 || '', back8: c.back8 || '', back9: c.back9 || '',
+    thumbLoops: c.thumb_loops || '', pinkyLoops: c.pinky_loops || '',
+    belt: c.belt || '', lining: c.lining || '',
+    weltingType: '', welting: c.welting || '',
+    laces: c.laces || '', binding: c.binding || '', stitching: c.stitching || '',
+    ringEmb: c.ring_emb ? 'SSK' : '', ringEmbColor: c.ring_emb || '',
+    backStyle: SHEET_FIXED.backStyle,
+    bullet: g.bullet || '',
+    palmLogoCenter: '', palmLogoHeel: '',
+    thumbText: g.thumbText || '',
+    thumbFont: g.thumbText ? font : '',
+    thumbMain: g.thumbText ? (g.thumbMain || '') : '',
+    thumbOutline: g.thumbText && /Outline|Shadow/.test(font) ? (g.thumbOutline || '') : '',
+    thumbNumber: g.thumbNumber || '',
+    circle: g.thumbNumber ? (g.circle || '') : '',
+    numberColor: g.thumbNumber ? (g.numberColor || '') : '',
+    bulletEmb: '', bulletEmbColor: '',
+    patternNote: '',
+    embroideryNote: g.pinkyText
+      ? `Please Embroider on Pinky ${g.pinkyText} in ${[font, thread(g.thumbMain)].filter(Boolean).join(' ')}`.trim()
+      : '',
+    flagNote: !g.flag || g.flag === 'None' ? ''
+      : g.flag === 'Other Flag' ? 'Please add flag to index finger (flag to be confirmed with the customer)'
+      : `Please add ${g.flag} Flag to index finger`,
+    orderNumber: o.orderNumber || '',
+    gloveNo: no,
+    code: g.code || '',
+    phone: o.phone || '', email: o.email || '',
+  };
+  return row;
+}
+
+/* The three header rows and one value row per glove, as arrays of cells in
+   column order: what a workbook or a CSV is written from. */
+function sheetTable(gloves, o) {
+  const cols = SHEET_COLUMNS;
+  const header = ['h1', 'h2', 'h3'].map((h) => cols.map((col) => col[h] || ''));
+  const rows = gloves.map((g, i) => {
+    const r = sheetRow(g, o, i + 1);
+    return cols.map((col) => r[col.key] ?? '');
+  });
+  return { header, rows };
+}
+
+/* Order numbers: what the customer types into the shop's checkout so Pim can
+   match the payment to the e-mailed sheet. "SSK-" + date + 4 characters
+   from an alphabet without I and O (read aloud on the phone) + one Luhn
+   check character, so a typo in the shop is caught rather than matched to
+   the wrong order. */
+const ORDER_ALPHA = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+function orderCheck(body) {
+  const n = ORDER_ALPHA.length;
+  let factor = 2, sum = 0;
+  for (let i = body.length - 1; i >= 0; i--) {
+    const a = factor * ORDER_ALPHA.indexOf(body[i]);
+    factor = factor === 2 ? 1 : 2;
+    sum += Math.floor(a / n) + (a % n);
+  }
+  return ORDER_ALPHA[(n - (sum % n)) % n];
+}
+/** `random` gives 4 characters of ORDER_ALPHA; `date` is a Date (UTC). */
+function makeOrderNumber(date, random) {
+  const d = date.toISOString().slice(2, 10).replace(/-/g, '');
+  const body = d + String(random).toUpperCase();
+  if (!/^\d{6}[0-9A-HJ-NP-Z]{4}$/.test(body)) throw new Error('order number: bad body');
+  return `SSK-${d}-${body.slice(6)}${orderCheck(body)}`;
+}
+function isOrderNumber(s) {
+  const m = /^\s*SSK-?(\d{6})-?([0-9A-HJ-NP-Z]{4})([0-9A-HJ-NP-Z])\s*$/i.exec(String(s).toUpperCase());
+  return !!m && orderCheck(m[1] + m[2]) === m[3];
+}
+
+/* Limits both sides enforce, so a request that breaks them is refused
+   before anything is built from it. */
+const LIMITS = {
+  gloves: 5,             // per order; the shop's quantity field carries the same number
+  text: 120,             // any free-text field
+  specLines: 80,         // spec rows per glove
+  image: 400 * 1024,     // one JPEG of the glove, in bytes of base64
+};
+
 /* ---- app.js ---- */
 /* SSK glove configurator — "Straight Line".
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
 
+
+
+/* Where an order goes. The page posts the finished order to /api/order
+   (api/order.mjs), which e-mails Pim the order sheet and gives the customer
+   an order number to pay with in the shop. The same endpoint serves the
+   single-file bundle wherever it is embedded, so off this host the call
+   goes to the production deployment by name. */
+const ORDER_HOST = 'https://ssk-glove-configurator.vercel.app';
+const ORDER_ENDPOINT = /\.vercel\.app$/.test(location.hostname)
+  ? '/api/order' : ORDER_HOST + '/api/order';
+/* The shop page where the customer pays: SSK Europe's existing CCV Shop
+   checkout. Pim's custom glove product there carries a required text field
+   for the order number; the page sends people to it with that number. */
+const CHECKOUT_URL = 'https://sskeurope.ccvshop.nl/SSK-Custom-Gloves';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -1877,6 +2169,9 @@ const QUESTIONS = [
   { id: 'hand', req: true }, { id: 'size', req: true }, { id: 'pad', req: true },
   { id: 'webType', req: true }, { id: 'bullet', req: true },
   { id: 'name', req: true }, { id: 'phone', req: true },
+  // Not on SSK's form either: the address the order confirmation and the
+  // order number go to. Required to send, not counted as a form question.
+  { id: 'email', req: true },
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
@@ -1894,7 +2189,7 @@ const S = {
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null,
   pinkyText: '',
-  name: '', phone: ''
+  name: '', phone: '', email: ''
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 
@@ -1908,8 +2203,10 @@ const el = (tag, cls, html) => {
 const t = k => T[S.lang][k] || k;
 
 /* ------------------------------------------------------------------ state */
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function answered(q) {
   if (q.id === 'personalCheck') return S.personalCheck !== true;
+  if (q.id === 'email') return EMAIL_OK.test(S.email || '');
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
@@ -1918,7 +2215,8 @@ const requiredQuestions = () => QUESTIONS.filter(q => q.req
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
-const countedQuestions = () => requiredQuestions().filter(q => q.id !== 'personalCheck');
+const OURS = ['personalCheck', 'email'];
+const countedQuestions = () => requiredQuestions().filter(q => !OURS.includes(q.id));
 const doneCount = () => countedQuestions().filter(answered).length;
 
 function snapshot() {
@@ -1936,7 +2234,7 @@ function restore(json) {
 /* A link describes the glove, not the person. Name and phone are answers on
    the order form, not part of the design, and a configuration gets pasted
    into WhatsApp — contact details should not travel with it. */
-const PRIVATE = ['name', 'phone'];
+const PRIVATE = ['name', 'phone', 'email'];
 
 function encodeState(forLink = false) {
   const o = { ...S, schemaVersion: 1 }; delete o.step;
@@ -2003,6 +2301,7 @@ function cleanState(o) {
     thumbNumber: text(o.thumbNumber).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2),
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 24),
+    email: text(o.email).slice(0, 120),
     view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
     personalCheck: o.personalCheck === true,
   };
@@ -2055,6 +2354,125 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
+}
+
+/* ---------------------------------------------------------------- cart */
+/* One order can hold up to LIMITS.gloves gloves: a team, a family, a spare.
+   The glove on the stage is always the one being built; finished ones wait
+   here until the order is sent, in the same local storage as the draft (and
+   nowhere else). The buyer's name, phone and e-mail belong to the order,
+   not to a glove, so they stay in S and are not copied per glove. */
+const CART_KEY = 'ssk-glove-cart-v1';
+const DESIGN_KEYS = ['colors', 'hand', 'size', 'pad', 'webType', 'bullet',
+  'thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
+  'circle', 'numberColor', 'pinkyText', 'flag', 'startId'];
+let CART = [];
+const designOf = () => {
+  const d = {};
+  for (const k of DESIGN_KEYS) d[k] = k === 'colors' ? { ...S.colors } : S[k];
+  return d;
+};
+function saveCart() {
+  try { localStorage.setItem(CART_KEY, JSON.stringify(CART)); } catch (e) { /* as save() */ }
+}
+function loadCart() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    // Through the same validation as a draft: a glove the catalogue no
+    // longer offers must not be ordered from an old cart.
+    return raw.slice(0, LIMITS.gloves).map(cleanState).filter(Boolean)
+      .map(o => { const d = {}; for (const k of DESIGN_KEYS) d[k] = o[k]; return d; });
+  } catch (e) { return []; }
+}
+/* Run `fn` with another design on the stage state, then put the current
+   one back. Everything that reads the design reads S, so this is how a
+   cart glove is rendered or specified without a second copy of the code. */
+function withDesign(d, fn) {
+  const keep = designOf();
+  Object.assign(S, d, { colors: { ...d.colors } });
+  try { return fn(); } finally { Object.assign(S, keep); }
+}
+/* Whether the design on the stage answers everything SSK requires; the
+   e-mail and the personalisation check are the order's, not the glove's. */
+const gloveComplete = () => requiredQuestions()
+  .filter(q => q.id !== 'email' && !answered(q)).length === 0;
+/* The back of a glove, drawn by the real compositor into its own canvas.
+   `w` is the output width; the height follows the glove's proportions. */
+function renderDesign(d, w) {
+  return withDesign(d, () => {
+    const wasView = S.view;
+    S.view = 'back'; R.setView('back');
+    const wb = WEBS.find(x => x.id === S.webType);
+    R.setWeb((wb && wb.render) || null);
+    R.setPad(PAD_PART[S.pad] || null, S.colors.pad_color ? hexOf('pad_color') : null);
+    R.setFlag(flagArt());
+    const tmp = document.createElement('canvas');
+    tmp.width = DATA.w; tmp.height = DATA.h;
+    R.draw(tmp.getContext('2d'), layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    const out = document.createElement('canvas');
+    out.width = w; out.height = Math.round(w * DATA.h / DATA.w);
+    out.getContext('2d').drawImage(tmp, 0, 0, out.width, out.height);
+    S.view = wasView; R.setView(wasView);
+    return out;
+  });
+}
+/* A finished glove goes into the order and the stage starts a new one:
+   colours from the blank starter, fit and personalisation asked again (it
+   may be for someone else), the buyer's details kept. */
+function addGloveToOrder() {
+  if (!gloveComplete() || CART.length >= LIMITS.gloves - 1) return false;
+  snapshot();
+  CART.push(designOf()); saveCart();
+  applyStarter(STARTERS[0], true); S.startId = STARTERS[0].id;
+  Object.assign(S, { hand: null, size: null, pad: null, webType: null,
+    thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
+    thumbNumber: '', circle: null, numberColor: null, pinkyText: '', flag: null,
+    personalCheck: false, step: 0 });
+  draw(); paint();
+  return true;
+}
+/* Editing a waiting glove swaps it with the one on the stage, so nothing
+   is lost either way. */
+function editGloveInOrder(i) {
+  if (!CART[i]) return;
+  snapshot();
+  const onStage = designOf();
+  Object.assign(S, CART[i], { colors: { ...CART[i].colors } });
+  CART[i] = onStage; saveCart();
+  draw(); paint();
+}
+function removeGloveFromOrder(i) {
+  if (!CART[i]) return;
+  snapshot();
+  CART.splice(i, 1); saveCart(); paint();
+}
+/* One glove as the order endpoint takes it: its code, the design with
+   every name resolved (what Pim's sheet shows), the specification as the
+   review page lists it, and a picture. */
+function gloveForOrder(d) {
+  return withDesign(d, () => {
+    const colours = {};
+    for (const f of COLOUR_ORDER) {
+      const c = colName(f);
+      if (c) colours[f] = c.replace('. ', '.');
+    }
+    const em = k => (embName(S[k]) || '').replace('. ', '.');
+    return {
+      code: code(),
+      design: {
+        hand: S.hand, size: S.size, pad: S.pad, webType: S.webType,
+        bullet: (DATA.bullets[S.bullet] || {}).name || '',
+        colours,
+        thumbText: S.thumbText, thumbFont: S.thumbFont, thumbMain: em('thumbMain'),
+        thumbOutline: em('thumbOutline'), thumbNumber: S.thumbNumber,
+        circle: S.circle, numberColor: em('numberColor'),
+        pinkyText: S.pinkyText, flag: S.flag,
+      },
+      spec: specRows().map(([k, v]) => [String(k), String(v)]),
+      image: renderDesign(d, 560).toDataURL('image/jpeg', 0.82),
+    };
+  });
 }
 
 /* Colours the renderer needs, keyed by layer id. */
@@ -2166,7 +2584,7 @@ const STEP_FIELDS = [
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
    'circle', 'numberColor', 'flag', 'personalCheck'],
-  ['name', 'phone'], []
+  ['name', 'phone', 'email'], []
 ];
 function stepOpen(i) {
   return STEP_FIELDS[i]
@@ -2558,6 +2976,9 @@ function threadField(key, label) {
 function renderYou(b) {
   b.appendChild(textField(t('name'), S.name, 60, v => { S.name = v; paint(false); }, true));
   b.appendChild(textField(t('phone'), S.phone, 24, v => { S.phone = v; paint(false); }, true, 'tel'));
+  const em = textField(t('email'), S.email, 120, v => { S.email = v; paint(false); }, true, 'email');
+  em.appendChild(el('p', 'note', t('emailHint')));
+  b.appendChild(em);
 }
 
 /* -------------------------------------------------------------- 8. review */
@@ -2569,11 +2990,62 @@ function renderReview(b) {
   } else {
     b.appendChild(el('p', 'note', t('allSet')));
   }
+  b.appendChild(orderList());
   b.appendChild(buildSpec());
+  const acts = el('div', 'opts');
   const go = el('button', 'btn btn-primary', t('finish'));
-  go.type = 'button'; go.style.alignSelf = 'flex-start';
+  go.type = 'button';
   go.onclick = openSheet;
-  b.appendChild(go);
+  acts.appendChild(go);
+  if (CART.length < LIMITS.gloves - 1) {
+    const add = el('button', 'btn btn-ghost', t('addGlove'));
+    add.type = 'button'; add.dataset.key = 'addGlove';
+    add.disabled = !gloveComplete();
+    add.title = add.disabled ? t('completeFirst') : '';
+    add.onclick = () => addGloveToOrder();
+    acts.appendChild(add);
+  }
+  b.appendChild(acts);
+  if (!gloveComplete()) b.appendChild(el('p', 'note', t('completeFirst')));
+}
+/* The gloves of this order: the ones waiting, then the one on the stage. */
+function orderList(readOnly = false) {
+  const wrap = el('div', 'field order-list');
+  const n = CART.length + 1;
+  wrap.appendChild(el('span', 'field-lab', `${t('inOrder')} (${n})`));
+  const list = el('ol', 'gloves');
+  const item = (d, i, onStage) => {
+    const li = el('li', 'glove-row' + (onStage ? ' is-stage' : ''));
+    const cv = el('canvas'); cv.width = 84; cv.height = 100;
+    cv.className = 'glove-thumb';
+    requestAnimationFrame(() => {
+      if (!cv.isConnected) return;
+      cv.getContext('2d').drawImage(renderDesign(d, 84), 0, 0);
+    });
+    const info = el('div', 'glove-info');
+    const line = withDesign(d, () => [S.size, S.hand, S.webType,
+      S.thumbText || S.pinkyText || ''].filter(Boolean).join(' · '));
+    info.appendChild(el('b', null, `${t('gloveN')} ${i + 1}` + (onStage ? ` — ${t('onStage')}` : '')));
+    info.appendChild(el('span', 'sub', line || '—'));
+    info.appendChild(el('code', 'sub', withDesign(d, code)));
+    li.append(cv, info);
+    if (!onStage && !readOnly) {
+      const acts = el('div', 'glove-acts');
+      const ed = el('button', 'btn btn-ghost btn-sm', t('editGlove'));
+      ed.type = 'button'; ed.dataset.key = 'editGlove|' + i;
+      ed.onclick = () => editGloveInOrder(i);
+      const rm = el('button', 'btn btn-ghost btn-sm', t('removeGlove'));
+      rm.type = 'button'; rm.dataset.key = 'removeGlove|' + i;
+      rm.onclick = () => removeGloveFromOrder(i);
+      acts.append(ed, rm);
+      li.appendChild(acts);
+    }
+    return li;
+  };
+  CART.forEach((d, i) => list.appendChild(item(d, i, false)));
+  list.appendChild(item(designOf(), CART.length, true));
+  wrap.appendChild(list);
+  return wrap;
 }
 
 /* --------------------------------------------------------------- widgets */
@@ -2750,8 +3222,16 @@ function openSheet() {
   $('#shot').src = $('#glove').toDataURL('image/png');
   const host = $('#spechost');
   host.textContent = '';
+  if (CART.length) host.appendChild(orderList(true));
   host.appendChild(buildSpec());
-  $('#sheetstatus').textContent = requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice');
+  const ready = !requiredQuestions().some(q => !answered(q));
+  $('#sheetstatus').textContent = ready ? t('readyNotice') : t('draftNotice');
+  $('#send').disabled = !ready;
+  $('#send').textContent = t('sendOrder');
+  $('#sendnote').textContent = t('sendHint');
+  $('#orderdone').hidden = true;
+  $('#orderform').hidden = false;
+  for (const id of ['#sheetcode', '#sheetstatus', '.sheet-lead']) $(id).hidden = false;
   $('#scrim').hidden = false;
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
   $('#sheetx').focus();
@@ -2761,12 +3241,13 @@ function closeSheet() {
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
   if (sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
 }
-$('#sheetx').onclick = $('#keep').onclick = closeSheet;
+$('#sheetx').onclick = $('#keep').onclick = $('#keep2').onclick = closeSheet;
 document.addEventListener('keydown', ev => {
   if ($('#scrim').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
   if (ev.key !== 'Tab') return;
-  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
+  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled), a[href]')]
+    .filter(e => e.offsetParent !== null);
   const first = buttons[0], last = buttons.at(-1);
   if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
@@ -2786,6 +3267,62 @@ async function copyToClipboard(ev, txt) {
   setTimeout(() => { b.textContent = was; }, 1600);
 }
 $('#copy').onclick = ev => copyToClipboard(ev, specText());
+
+/* Sending: one request with every glove of the order. On success the cart
+   is emptied (the order is now in SSK Europe's inbox, not here) and the
+   customer is handed the number to pay with. */
+let sending = false;
+async function sendOrder() {
+  if (sending) return;
+  const gloves = [...CART, designOf()];
+  if (!answered({ id: 'email' }) || !gloveComplete()) return;
+  sending = true;
+  const btn = $('#send'), note = $('#sendnote');
+  btn.disabled = true; btn.textContent = t('sending'); note.textContent = '';
+  let payload;
+  try {
+    payload = {
+      lang: S.lang, website: '',
+      contact: { name: S.name, phone: S.phone, email: S.email },
+      gloves: gloves.map(gloveForOrder),
+    };
+  } finally { draw(); }
+  let r = null, err = 'sendFail';
+  try {
+    const res = await fetch(ORDER_ENDPOINT, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    r = await res.json().catch(() => null);
+    if (res.status === 503 && r && r.error === 'not-configured') err = 'sendNotConfigured';
+    else if (res.status === 429) err = 'sendBusy';
+    if (!res.ok) r = null;
+  } catch (e) { r = null; }
+  sending = false;
+  if (!r || !r.ok || !r.orderNumber) {
+    btn.disabled = false; btn.textContent = t('sendOrder');
+    note.textContent = t(err);
+    return;
+  }
+  CART = []; saveCart();
+  showOrderDone(r.orderNumber, gloves.length);
+}
+function showOrderDone(number, n) {
+  $('#orderform').hidden = true;
+  // The design code and the draft notice are the order's past now; the
+  // number to pay with is what this panel is about.
+  for (const id of ['#sheetcode', '#sheetstatus', '.sheet-lead']) $(id).hidden = true;
+  const box = $('#orderdone'); box.hidden = false;
+  $('#ordernum').textContent = number;
+  $('#ordercount').textContent = n === 1 ? t('oneGloveSent') : t('nGlovesSent').replace('%n', n);
+  $('#paystep2').textContent = t('payStep2').replace('%n', n);
+  $('#paystep3').textContent = t('payStep3').replace('%s', number);
+  $('#checkout').href = CHECKOUT_URL;
+  $('#copynum').onclick = ev => copyToClipboard(ev, number);
+  $('#ordernum').focus();
+  paint();
+}
+$('#send').onclick = sendOrder;
 /* The only place a URL is ever written. Asked for, not imposed. */
 $('#copylink').onclick = ev => copyToClipboard(ev,
   shareLink());
@@ -2926,6 +3463,7 @@ loadGlove().then(bundle => {
   const shared = h ? cleanSharedState(decodeState(h)) : null;
   const o = cleanState(shared || load());
   if (o) Object.assign(S, o, { step: 0 });
+  CART = loadCart();
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');
