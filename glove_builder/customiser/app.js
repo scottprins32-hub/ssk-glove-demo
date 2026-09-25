@@ -7,6 +7,20 @@ import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
+import { LIMITS } from './order-sheet.js';
+
+/* Where an order goes. The page posts the finished order to /api/order
+   (api/order.mjs), which e-mails Pim the order sheet and gives the customer
+   an order number to pay with in the shop. The same endpoint serves the
+   single-file bundle wherever it is embedded, so off this host the call
+   goes to the production deployment by name. */
+const ORDER_HOST = 'https://ssk-glove-configurator.vercel.app';
+const ORDER_ENDPOINT = /\.vercel\.app$/.test(location.hostname)
+  ? '/api/order' : ORDER_HOST + '/api/order';
+/* The shop page where the customer pays: SSK Europe's existing CCV Shop
+   checkout. Pim's custom glove product there carries a required text field
+   for the order number; the page sends people to it with that number. */
+const CHECKOUT_URL = 'https://sskeurope.ccvshop.nl/SSK-Custom-Gloves';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -94,6 +108,9 @@ const QUESTIONS = [
   { id: 'hand', req: true }, { id: 'size', req: true }, { id: 'pad', req: true },
   { id: 'webType', req: true }, { id: 'bullet', req: true },
   { id: 'name', req: true }, { id: 'phone', req: true },
+  // Not on SSK's form either: the address the order confirmation and the
+  // order number go to. Required to send, not counted as a form question.
+  { id: 'email', req: true },
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
@@ -111,7 +128,7 @@ const S = {
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null,
   pinkyText: '',
-  name: '', phone: ''
+  name: '', phone: '', email: ''
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 
@@ -125,8 +142,10 @@ const el = (tag, cls, html) => {
 const t = k => T[S.lang][k] || k;
 
 /* ------------------------------------------------------------------ state */
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function answered(q) {
   if (q.id === 'personalCheck') return S.personalCheck !== true;
+  if (q.id === 'email') return EMAIL_OK.test(S.email || '');
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
@@ -135,7 +154,8 @@ const requiredQuestions = () => QUESTIONS.filter(q => q.req
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
-const countedQuestions = () => requiredQuestions().filter(q => q.id !== 'personalCheck');
+const OURS = ['personalCheck', 'email'];
+const countedQuestions = () => requiredQuestions().filter(q => !OURS.includes(q.id));
 const doneCount = () => countedQuestions().filter(answered).length;
 
 function snapshot() {
@@ -153,7 +173,7 @@ function restore(json) {
 /* A link describes the glove, not the person. Name and phone are answers on
    the order form, not part of the design, and a configuration gets pasted
    into WhatsApp — contact details should not travel with it. */
-const PRIVATE = ['name', 'phone'];
+const PRIVATE = ['name', 'phone', 'email'];
 
 function encodeState(forLink = false) {
   const o = { ...S, schemaVersion: 1 }; delete o.step;
@@ -220,6 +240,7 @@ function cleanState(o) {
     thumbNumber: text(o.thumbNumber).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2),
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 24),
+    email: text(o.email).slice(0, 120),
     view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
     personalCheck: o.personalCheck === true,
   };
@@ -272,6 +293,125 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
+}
+
+/* ---------------------------------------------------------------- cart */
+/* One order can hold up to LIMITS.gloves gloves: a team, a family, a spare.
+   The glove on the stage is always the one being built; finished ones wait
+   here until the order is sent, in the same local storage as the draft (and
+   nowhere else). The buyer's name, phone and e-mail belong to the order,
+   not to a glove, so they stay in S and are not copied per glove. */
+const CART_KEY = 'ssk-glove-cart-v1';
+const DESIGN_KEYS = ['colors', 'hand', 'size', 'pad', 'webType', 'bullet',
+  'thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
+  'circle', 'numberColor', 'pinkyText', 'flag', 'startId'];
+let CART = [];
+const designOf = () => {
+  const d = {};
+  for (const k of DESIGN_KEYS) d[k] = k === 'colors' ? { ...S.colors } : S[k];
+  return d;
+};
+function saveCart() {
+  try { localStorage.setItem(CART_KEY, JSON.stringify(CART)); } catch (e) { /* as save() */ }
+}
+function loadCart() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    if (!Array.isArray(raw)) return [];
+    // Through the same validation as a draft: a glove the catalogue no
+    // longer offers must not be ordered from an old cart.
+    return raw.slice(0, LIMITS.gloves).map(cleanState).filter(Boolean)
+      .map(o => { const d = {}; for (const k of DESIGN_KEYS) d[k] = o[k]; return d; });
+  } catch (e) { return []; }
+}
+/* Run `fn` with another design on the stage state, then put the current
+   one back. Everything that reads the design reads S, so this is how a
+   cart glove is rendered or specified without a second copy of the code. */
+function withDesign(d, fn) {
+  const keep = designOf();
+  Object.assign(S, d, { colors: { ...d.colors } });
+  try { return fn(); } finally { Object.assign(S, keep); }
+}
+/* Whether the design on the stage answers everything SSK requires; the
+   e-mail and the personalisation check are the order's, not the glove's. */
+const gloveComplete = () => requiredQuestions()
+  .filter(q => q.id !== 'email' && !answered(q)).length === 0;
+/* The back of a glove, drawn by the real compositor into its own canvas.
+   `w` is the output width; the height follows the glove's proportions. */
+function renderDesign(d, w) {
+  return withDesign(d, () => {
+    const wasView = S.view;
+    S.view = 'back'; R.setView('back');
+    const wb = WEBS.find(x => x.id === S.webType);
+    R.setWeb((wb && wb.render) || null);
+    R.setPad(PAD_PART[S.pad] || null, S.colors.pad_color ? hexOf('pad_color') : null);
+    R.setFlag(flagArt());
+    const tmp = document.createElement('canvas');
+    tmp.width = DATA.w; tmp.height = DATA.h;
+    R.draw(tmp.getContext('2d'), layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    const out = document.createElement('canvas');
+    out.width = w; out.height = Math.round(w * DATA.h / DATA.w);
+    out.getContext('2d').drawImage(tmp, 0, 0, out.width, out.height);
+    S.view = wasView; R.setView(wasView);
+    return out;
+  });
+}
+/* A finished glove goes into the order and the stage starts a new one:
+   colours from the blank starter, fit and personalisation asked again (it
+   may be for someone else), the buyer's details kept. */
+function addGloveToOrder() {
+  if (!gloveComplete() || CART.length >= LIMITS.gloves - 1) return false;
+  snapshot();
+  CART.push(designOf()); saveCart();
+  applyStarter(STARTERS[0], true); S.startId = STARTERS[0].id;
+  Object.assign(S, { hand: null, size: null, pad: null, webType: null,
+    thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
+    thumbNumber: '', circle: null, numberColor: null, pinkyText: '', flag: null,
+    personalCheck: false, step: 0 });
+  draw(); paint();
+  return true;
+}
+/* Editing a waiting glove swaps it with the one on the stage, so nothing
+   is lost either way. */
+function editGloveInOrder(i) {
+  if (!CART[i]) return;
+  snapshot();
+  const onStage = designOf();
+  Object.assign(S, CART[i], { colors: { ...CART[i].colors } });
+  CART[i] = onStage; saveCart();
+  draw(); paint();
+}
+function removeGloveFromOrder(i) {
+  if (!CART[i]) return;
+  snapshot();
+  CART.splice(i, 1); saveCart(); paint();
+}
+/* One glove as the order endpoint takes it: its code, the design with
+   every name resolved (what Pim's sheet shows), the specification as the
+   review page lists it, and a picture. */
+function gloveForOrder(d) {
+  return withDesign(d, () => {
+    const colours = {};
+    for (const f of COLOUR_ORDER) {
+      const c = colName(f);
+      if (c) colours[f] = c.replace('. ', '.');
+    }
+    const em = k => (embName(S[k]) || '').replace('. ', '.');
+    return {
+      code: code(),
+      design: {
+        hand: S.hand, size: S.size, pad: S.pad, webType: S.webType,
+        bullet: (DATA.bullets[S.bullet] || {}).name || '',
+        colours,
+        thumbText: S.thumbText, thumbFont: S.thumbFont, thumbMain: em('thumbMain'),
+        thumbOutline: em('thumbOutline'), thumbNumber: S.thumbNumber,
+        circle: S.circle, numberColor: em('numberColor'),
+        pinkyText: S.pinkyText, flag: S.flag,
+      },
+      spec: specRows().map(([k, v]) => [String(k), String(v)]),
+      image: renderDesign(d, 560).toDataURL('image/jpeg', 0.82),
+    };
+  });
 }
 
 /* Colours the renderer needs, keyed by layer id. */
@@ -410,7 +550,7 @@ const STEP_FIELDS = [
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
    'circle', 'numberColor', 'flag', 'personalCheck'],
-  ['name', 'phone'], []
+  ['name', 'phone', 'email'], []
 ];
 function stepOpen(i) {
   return STEP_FIELDS[i]
@@ -819,6 +959,9 @@ function threadField(key, label) {
 function renderYou(b) {
   b.appendChild(textField(t('name'), S.name, 60, v => { S.name = v; paint(false); }, true));
   b.appendChild(textField(t('phone'), S.phone, 24, v => { S.phone = v; paint(false); }, true, 'tel'));
+  const em = textField(t('email'), S.email, 120, v => { S.email = v; paint(false); }, true, 'email');
+  em.appendChild(el('p', 'note', t('emailHint')));
+  b.appendChild(em);
 }
 
 /* -------------------------------------------------------------- 8. review */
@@ -830,11 +973,62 @@ function renderReview(b) {
   } else {
     b.appendChild(el('p', 'note', t('allSet')));
   }
+  b.appendChild(orderList());
   b.appendChild(buildSpec());
+  const acts = el('div', 'opts');
   const go = el('button', 'btn btn-primary', t('finish'));
-  go.type = 'button'; go.style.alignSelf = 'flex-start';
+  go.type = 'button';
   go.onclick = openSheet;
-  b.appendChild(go);
+  acts.appendChild(go);
+  if (CART.length < LIMITS.gloves - 1) {
+    const add = el('button', 'btn btn-ghost', t('addGlove'));
+    add.type = 'button'; add.dataset.key = 'addGlove';
+    add.disabled = !gloveComplete();
+    add.title = add.disabled ? t('completeFirst') : '';
+    add.onclick = () => addGloveToOrder();
+    acts.appendChild(add);
+  }
+  b.appendChild(acts);
+  if (!gloveComplete()) b.appendChild(el('p', 'note', t('completeFirst')));
+}
+/* The gloves of this order: the ones waiting, then the one on the stage. */
+function orderList(readOnly = false) {
+  const wrap = el('div', 'field order-list');
+  const n = CART.length + 1;
+  wrap.appendChild(el('span', 'field-lab', `${t('inOrder')} (${n})`));
+  const list = el('ol', 'gloves');
+  const item = (d, i, onStage) => {
+    const li = el('li', 'glove-row' + (onStage ? ' is-stage' : ''));
+    const cv = el('canvas'); cv.width = 84; cv.height = 100;
+    cv.className = 'glove-thumb';
+    requestAnimationFrame(() => {
+      if (!cv.isConnected) return;
+      cv.getContext('2d').drawImage(renderDesign(d, 84), 0, 0);
+    });
+    const info = el('div', 'glove-info');
+    const line = withDesign(d, () => [S.size, S.hand, S.webType,
+      S.thumbText || S.pinkyText || ''].filter(Boolean).join(' · '));
+    info.appendChild(el('b', null, `${t('gloveN')} ${i + 1}` + (onStage ? ` — ${t('onStage')}` : '')));
+    info.appendChild(el('span', 'sub', line || '—'));
+    info.appendChild(el('code', 'sub', withDesign(d, code)));
+    li.append(cv, info);
+    if (!onStage && !readOnly) {
+      const acts = el('div', 'glove-acts');
+      const ed = el('button', 'btn btn-ghost btn-sm', t('editGlove'));
+      ed.type = 'button'; ed.dataset.key = 'editGlove|' + i;
+      ed.onclick = () => editGloveInOrder(i);
+      const rm = el('button', 'btn btn-ghost btn-sm', t('removeGlove'));
+      rm.type = 'button'; rm.dataset.key = 'removeGlove|' + i;
+      rm.onclick = () => removeGloveFromOrder(i);
+      acts.append(ed, rm);
+      li.appendChild(acts);
+    }
+    return li;
+  };
+  CART.forEach((d, i) => list.appendChild(item(d, i, false)));
+  list.appendChild(item(designOf(), CART.length, true));
+  wrap.appendChild(list);
+  return wrap;
 }
 
 /* --------------------------------------------------------------- widgets */
@@ -1011,8 +1205,16 @@ function openSheet() {
   $('#shot').src = $('#glove').toDataURL('image/png');
   const host = $('#spechost');
   host.textContent = '';
+  if (CART.length) host.appendChild(orderList(true));
   host.appendChild(buildSpec());
-  $('#sheetstatus').textContent = requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice');
+  const ready = !requiredQuestions().some(q => !answered(q));
+  $('#sheetstatus').textContent = ready ? t('readyNotice') : t('draftNotice');
+  $('#send').disabled = !ready;
+  $('#send').textContent = t('sendOrder');
+  $('#sendnote').textContent = t('sendHint');
+  $('#orderdone').hidden = true;
+  $('#orderform').hidden = false;
+  for (const id of ['#sheetcode', '#sheetstatus', '.sheet-lead']) $(id).hidden = false;
   $('#scrim').hidden = false;
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
   $('#sheetx').focus();
@@ -1022,12 +1224,13 @@ function closeSheet() {
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
   if (sheetReturnFocus?.isConnected) sheetReturnFocus.focus();
 }
-$('#sheetx').onclick = $('#keep').onclick = closeSheet;
+$('#sheetx').onclick = $('#keep').onclick = $('#keep2').onclick = closeSheet;
 document.addEventListener('keydown', ev => {
   if ($('#scrim').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
   if (ev.key !== 'Tab') return;
-  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
+  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled), a[href]')]
+    .filter(e => e.offsetParent !== null);
   const first = buttons[0], last = buttons.at(-1);
   if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
@@ -1047,6 +1250,62 @@ async function copyToClipboard(ev, txt) {
   setTimeout(() => { b.textContent = was; }, 1600);
 }
 $('#copy').onclick = ev => copyToClipboard(ev, specText());
+
+/* Sending: one request with every glove of the order. On success the cart
+   is emptied (the order is now in SSK Europe's inbox, not here) and the
+   customer is handed the number to pay with. */
+let sending = false;
+async function sendOrder() {
+  if (sending) return;
+  const gloves = [...CART, designOf()];
+  if (!answered({ id: 'email' }) || !gloveComplete()) return;
+  sending = true;
+  const btn = $('#send'), note = $('#sendnote');
+  btn.disabled = true; btn.textContent = t('sending'); note.textContent = '';
+  let payload;
+  try {
+    payload = {
+      lang: S.lang, website: '',
+      contact: { name: S.name, phone: S.phone, email: S.email },
+      gloves: gloves.map(gloveForOrder),
+    };
+  } finally { draw(); }
+  let r = null, err = 'sendFail';
+  try {
+    const res = await fetch(ORDER_ENDPOINT, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    r = await res.json().catch(() => null);
+    if (res.status === 503 && r && r.error === 'not-configured') err = 'sendNotConfigured';
+    else if (res.status === 429) err = 'sendBusy';
+    if (!res.ok) r = null;
+  } catch (e) { r = null; }
+  sending = false;
+  if (!r || !r.ok || !r.orderNumber) {
+    btn.disabled = false; btn.textContent = t('sendOrder');
+    note.textContent = t(err);
+    return;
+  }
+  CART = []; saveCart();
+  showOrderDone(r.orderNumber, gloves.length);
+}
+function showOrderDone(number, n) {
+  $('#orderform').hidden = true;
+  // The design code and the draft notice are the order's past now; the
+  // number to pay with is what this panel is about.
+  for (const id of ['#sheetcode', '#sheetstatus', '.sheet-lead']) $(id).hidden = true;
+  const box = $('#orderdone'); box.hidden = false;
+  $('#ordernum').textContent = number;
+  $('#ordercount').textContent = n === 1 ? t('oneGloveSent') : t('nGlovesSent').replace('%n', n);
+  $('#paystep2').textContent = t('payStep2').replace('%n', n);
+  $('#paystep3').textContent = t('payStep3').replace('%s', number);
+  $('#checkout').href = CHECKOUT_URL;
+  $('#copynum').onclick = ev => copyToClipboard(ev, number);
+  $('#ordernum').focus();
+  paint();
+}
+$('#send').onclick = sendOrder;
 /* The only place a URL is ever written. Asked for, not imposed. */
 $('#copylink').onclick = ev => copyToClipboard(ev,
   shareLink());
@@ -1190,6 +1449,7 @@ loadGlove().then(bundle => {
   const shared = h ? cleanSharedState(decodeState(h)) : null;
   const o = cleanState(shared || load());
   if (o) Object.assign(S, o, { step: 0 });
+  CART = loadCart();
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');

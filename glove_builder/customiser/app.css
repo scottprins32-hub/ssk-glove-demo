@@ -288,7 +288,7 @@ button { font: inherit; color: inherit; }
 .part:hover { border-color: var(--border-strong); }
 .part.is-on { border-color: var(--state-selected); box-shadow: inset 0 0 0 1px var(--state-selected); color: var(--navy-900); }
 
-input[type="text"], input[type="tel"] {
+input[type="text"], input[type="tel"], input[type="email"] {
   height: var(--control-h-md); padding: 0 var(--space-3);
   border: 1px solid var(--border-default); border-radius: var(--radius-sm);
   background: var(--white); font-size: var(--text-base); color: var(--gray-900); width: 100%;
@@ -364,6 +364,27 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 }
 .spec h3:first-child { margin-top: 0; }
 .sheet-acts { display: flex; gap: var(--space-2); margin-top: var(--space-5); }
+.sheet-send { margin-top: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.sheet-acts a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+/* the gloves of one order, on the review step and in the sheet */
+.gloves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.glove-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3); background: var(--surface-card);
+}
+.glove-row.is-stage { border-color: var(--state-selected); }
+.glove-thumb { width: 42px; height: 50px; flex: 0 0 auto; border-radius: var(--radius-sm); background: var(--gray-100); }
+.glove-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; font-size: var(--text-sm); }
+.glove-info .sub { color: var(--text-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.glove-info code { font-family: var(--font-mono); }
+.glove-acts { display: flex; gap: var(--space-1); flex: 0 0 auto; }
+.btn-sm { padding: 4px 10px; min-height: 32px; font-size: var(--text-xs); }
+/* after sending: the number to pay with */
+.order-done h3 { margin: var(--space-2) 0; font-family: var(--font-display); font-size: var(--text-lg); text-transform: uppercase; color: var(--text-heading); }
+.order-lab { margin: var(--space-4) 0 var(--space-1); font-size: var(--text-xs); letter-spacing: var(--tracking-wide-caps); text-transform: uppercase; color: var(--gray-500); }
+.order-num { font-size: var(--display-sm); letter-spacing: 0.04em; }
+.pay-steps { margin: 0; padding-left: 20px; font-size: var(--text-sm); display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------------------------------------------------------------- mobile */
 @media (max-width: 900px) {

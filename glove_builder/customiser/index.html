@@ -82,12 +82,37 @@
     <p class="sheet-lead" data-t="sendLead"></p>
     <div class="sheet-code" id="sheetcode"></div>
     <p id="sheetstatus" class="note" role="status"></p>
-    <div id="spechost"></div>
-    <div class="sheet-acts">
-      <button class="btn btn-primary" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
-      <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
-      <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
-      <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
+    <div id="orderform">
+      <div id="spechost"></div>
+      <div class="sheet-send">
+        <button class="btn btn-primary" id="send" type="button" data-t="sendOrder">Bestelling naar SSK Europe sturen</button>
+        <p class="note" id="sendnote" role="status"></p>
+      </div>
+      <div class="sheet-acts">
+        <button class="btn btn-ghost" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
+        <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
+        <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
+        <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
+      </div>
+    </div>
+    <div id="orderdone" class="order-done" hidden>
+      <h3 data-t="sendDone">Je bestelling is bij SSK Europe</h3>
+      <p class="note" id="ordercount"></p>
+      <p class="order-lab" data-t="orderNumber">Bestelnummer</p>
+      <div class="sheet-code order-num" id="ordernum" tabindex="-1"></div>
+      <p class="order-lab" data-t="payNow">Nu betalen in de SSK Europe shop</p>
+      <ol class="pay-steps">
+        <li data-t="payStep1"></li>
+        <li id="paystep2"></li>
+        <li id="paystep3"></li>
+        <li data-t="payStep4"></li>
+      </ol>
+      <p class="note" data-t="payNote"></p>
+      <div class="sheet-acts">
+        <a class="btn btn-primary" id="checkout" href="#" target="_blank" rel="noopener" data-t="goCheckout">Naar de SSK Europe shop</a>
+        <button class="btn btn-ghost" id="copynum" type="button" data-t="copyNumber">Kopieer bestelnummer</button>
+        <button class="btn btn-ghost" id="keep2" type="button" data-t="keep">Verder bouwen</button>
+      </div>
     </div>
   </div>
 </div>
