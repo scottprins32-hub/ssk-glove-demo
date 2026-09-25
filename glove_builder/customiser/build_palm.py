@@ -50,13 +50,11 @@ ZONES = [
 # and the SSK wordmark would all come out backwards. Boxes here, in the zone
 # map's own 1400x1398 space, read off a grid over layers/rainbow-palm/palm.png.
 #
-# Flipping the boxes straight off the palm asset does read the right way round
-# — but the leather under a mark is not flat, and a flipped rectangle of it
-# lands its light side against its neighbour's dark side, so three rectangles
-# stand out on the render. So each mark is lifted off the leather instead: the
-# lettering becomes a multiply mask of its own, and the palm under it is
-# divided by that mask and comes out smooth. Then the mark can be flipped on
-# its own with nothing but the letters moving.
+# These are the calibration glove's marks, and SSK Europe's gloves do not
+# carry them: erase_marks() takes them off the leather, and stamp_mask() puts
+# SSK Europe's own stamp there as a multiply mask of its own, which the
+# engine lays back over the palm inside its box — flipped about its own
+# centre on a left-handed glove, so it reads forwards.
 MARKS = [
     (555, 762, 905, 912),    # Sasaki PRO Custom Made
     (798, 920, 900, 995),    # the SHOKUNIN box
@@ -64,55 +62,118 @@ MARKS = [
 ]
 
 
-def lift_marks(im, boxes, sigma=9.0, close=55, feather=8.0, floor=0.10):
-    """Split a layer into (leather without the marks, the marks as a mask).
+def erase_marks(im, boxes, feather=10, margin=18, size=61, sigma=6, patch=24, pad=60, seed=0,
+                grain=0.85):
+    """The palm leather with the calibration glove's marks taken off.
 
-    The mark is what is darker than its own surroundings, which is what a
-    local ratio measures: the pixel over a blur of it. Away from lettering
-    that ratio is 1 and neither half changes, so the seam a box would leave
-    closes itself; a short feather at the border makes sure of it.
+    Inside each box a median window wider than any stroke — PRO is set in
+    strokes 25 px wide, so the window is 61 — gives the leather's shading
+    without the lettering. What the window took off is grain and lettering
+    together, and an embossed mark is too faint to tell from grain by its
+    depth, so none of it goes back: the grain is borrowed instead, in small
+    patches from the clean pocket leather round the boxes, tiled over each
+    box with a soft join. Feathered at the border so no rectangle shows;
+    the alpha is untouched, and the borrowed grain is laid a little lighter
+    than it was found, since the pocket is smoother than the leather round
+    it. The boxes are grown by `margin` so the feather starts outside the
+    last line of lettering. Each box is worked on its own crop.
+    (The first version lifted the marks into a mask and divided them out of
+    the leather, which left each box a shade paler and the ghost of "Custom
+    Made" behind, hidden only as long as the same mask went back over it.)"""
+    a = np.asarray(im).copy()
+    H, W = a.shape[:2]
+    rgb_all = a[..., :3].astype(np.float32)
+    # clean leather: on the palm, away from every box
+    clean = a[..., 3] > 200
+    for x0, y0, x1, y1 in boxes:
+        clean[max(y0 - 12, 0):y1 + 12, max(x0 - 12, 0):x1 + 12] = False
+    clean = ndimage.binary_erosion(clean, np.ones((patch + 2, patch + 2), bool))
+    grain_all = rgb_all - ndimage.gaussian_filter(rgb_all, (8, 8, 0))
+    ys, xs = np.nonzero(clean)
+    rng = np.random.default_rng(seed)
+    pick = rng.choice(len(ys), size=min(600, len(ys)), replace=False)
+    bank = [grain_all[ys[i] - patch // 2:ys[i] + patch // 2,
+                      xs[i] - patch // 2:xs[i] + patch // 2] for i in pick]
+    win = np.hanning(patch)[:, None] * np.hanning(patch)[None, :]
+    win = win[..., None].astype(np.float32)
 
-    The floor has to be low. Lift the lettering only part of the way and it
-    disappears from the diffuse half — which is clipped at the midtone — while
-    staying dark in the specular half, and the mark comes back as a ghost of
-    itself in the highlights.
-    """
-    a = np.asarray(im).astype(np.float32)
-    r = np.ones(a.shape[:2], np.float32)
     for x0, y0, x1, y1 in boxes:
-        reg = a[y0:y1, x0:x1, :3]
-        lum = reg @ np.array([0.299, 0.587, 0.114], np.float32)
-        # A blur alone will not do it: PRO is set in strokes 25 px wide, and
-        # a blur of a 25 px stroke is still dark in the middle of it, so the
-        # ratio comes out at 1 there and the mark keeps its insides. A grey
-        # closing first fills any dark feature narrower than its footprint
-        # with the leather around it, and what is left to blur is the
-        # lighting.
-        base = ndimage.gaussian_filter(
-            ndimage.grey_closing(lum, size=close), sigma)
-        q = np.where(base > 6, lum / np.maximum(base, 1e-3), 1.0)
-        # A closing only ever brightens, so the whole box comes out lifted a
-        # little and stands out as a pale rectangle. The leather between the
-        # letters is what should be left alone: put its ratio back at 1.
-        q = q / max(float(np.percentile(q, 96)), 1e-3)
-        h, w = q.shape
-        yy = np.minimum(np.arange(h), h - 1 - np.arange(h))[:, None]
-        xx = np.minimum(np.arange(w), w - 1 - np.arange(w))[None, :]
-        f = np.clip(np.minimum(yy, xx) / feather, 0.0, 1.0)
-        r[y0:y1, x0:x1] = 1.0 + (q - 1.0) * f
-    r = np.clip(r, floor, 1.0)
-    flat = a.copy()
-    flat[..., :3] = np.clip(a[..., :3] / r[..., None], 0, 255)
-    # The mask is opaque only inside the boxes, and only where the layer
-    # itself is: a multiply over a lace crossing the palm would darken the
-    # lace with lettering that is not on it.
-    inside = np.zeros(a.shape[:2], bool)
-    for x0, y0, x1, y1 in boxes:
-        inside[y0:y1, x0:x1] = True
-    al = np.where(inside, a[..., 3], 0.0)
-    mask = np.dstack([np.repeat((r * 255.0)[..., None], 3, 2), al[..., None]])
-    return (Image.fromarray(flat.astype(np.uint8), "RGBA"),
-            Image.fromarray(np.clip(mask, 0, 255).astype(np.uint8), "RGBA"))
+        cy0, cy1 = max(y0 - pad, 0), min(y1 + pad, H)
+        cx0, cx1 = max(x0 - pad, 0), min(x1 + pad, W)
+        # from `a`, not rgb_all: the crops overlap, and a later box must build on
+        # what an earlier one erased rather than write the original back
+        rgb = a[cy0:cy1, cx0:cx1, :3].astype(np.float32)
+        h, w = rgb.shape[:2]
+        hole = np.zeros((h, w), bool)
+        hole[y0 - margin - cy0:y1 + margin - cy0, x0 - margin - cx0:x1 + margin - cx0] = True
+        shade = ndimage.gaussian_filter(
+            ndimage.median_filter(rgb, size=(size, size, 1), mode="nearest"), (sigma, sigma, 0))
+        tiled = np.zeros((h, w, 3), np.float32)
+        weight = np.zeros((h, w, 1), np.float32)
+        step = patch // 2
+        for py in range(0, h + step, step):
+            for px in range(0, w + step, step):
+                g = bank[rng.integers(len(bank))]
+                yy0, xx0 = py - patch // 2, px - patch // 2
+                sy0, sx0 = max(0, -yy0), max(0, -xx0)
+                sy1, sx1 = min(patch, h - yy0), min(patch, w - xx0)
+                if sy1 <= sy0 or sx1 <= sx0:
+                    continue
+                tiled[yy0 + sy0:yy0 + sy1, xx0 + sx0:xx0 + sx1] += g[sy0:sy1, sx0:sx1] * win[sy0:sy1, sx0:sx1]
+                weight[yy0 + sy0:yy0 + sy1, xx0 + sx0:xx0 + sx1] += win[sy0:sy1, sx0:sx1]
+        tiled *= grain / np.maximum(weight, 1e-3)
+        wgt = np.clip(ndimage.distance_transform_edt(hole) / feather, 0, 1)[..., None]
+        a[cy0:cy1, cx0:cx1, :3] = np.clip(rgb * (1 - wgt) + (shade + tiled) * wgt, 0, 255).astype(np.uint8)
+    return Image.fromarray(a, "RGBA"), int(sum((y1 - y0) * (x1 - x0) for x0, y0, x1, y1 in boxes))
+
+
+# SSK Europe's own stamp goes where the marks were: thirteen stars round the
+# SSK mark over "Custom Made" (images/stamp/Stamp_SSK_Custom_glove.pdf from
+# Pim, 25 Sep 2026, with a 600 dpi raster beside it so this runs without a
+# PDF rasteriser). It sits inside the clear pocket leather between the lace
+# crossings — on the real glove it does not run under the laces (Scott:
+# "It doesn't overlap the laces running through that piece of leather. A
+# little bit smaller like in picture DSC05727") — at three quarters of the
+# largest lace-free circle there, 406 px round (864, 900) on the 1534 x 1400
+# canvas; pressed a fixed fraction darker than the leather. One box, so a
+# left-handed glove gets it flipped about its own centre and reading forwards.
+STAMP = HERE.parent / "images" / "stamp" / "ssk-custom-made-600dpi.png"
+STAMP_CENTRE = (864, 910)
+STAMP_DIAMETER = 300
+STAMP_DROP = 0.24
+
+
+def stamp_mask(palm_alpha, glove_alpha):
+    """The stamp as a multiply mask over the palm leather, and its box."""
+    H, W = palm_alpha.shape
+    ink = 1.0 - np.asarray(Image.open(STAMP).convert("L")).astype(np.float32) / 255.0
+    ys, xs = np.nonzero(ink > 0.5)
+    ink = ink[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    side = max(ink.shape)
+    sq = np.zeros((side, side), np.float32)
+    oy, ox = (side - ink.shape[0]) // 2, (side - ink.shape[1]) // 2
+    sq[oy:oy + ink.shape[0], ox:ox + ink.shape[1]] = ink
+    d = STAMP_DIAMETER
+    small = np.asarray(Image.fromarray((sq * 255).astype(np.uint8))
+                       .resize((d, d), Image.LANCZOS)).astype(np.float32) / 255.0
+    small = ndimage.gaussian_filter(small, 0.7)        # a pressed edge, not a printed one
+    cx, cy = STAMP_CENTRE
+    x0, y0 = cx - d // 2, cy - d // 2
+    x1, y1 = x0 + d, y0 + d
+    off = int(((glove_alpha[y0:y1, x0:x1] <= 200) & (small >= 0.05)).sum())
+    under = int(((palm_alpha[y0:y1, x0:x1] <= 200) & (small >= 0.5)).sum())
+    if off or under:
+        raise SystemExit(f"stamp leaves the glove on {off} px and runs under a lace "
+                         f"on {under} px; move or shrink it")
+    ratio = np.ones((H, W), np.float32)
+    ratio[y0:y1, x0:x1] = 1.0 - STAMP_DROP * small
+    alpha = np.zeros((H, W), np.uint8)
+    alpha[y0:y1, x0:x1] = np.where(palm_alpha[y0:y1, x0:x1] > 0, 255, 0)
+    rgb = np.repeat((ratio * 255.0)[..., None], 3, 2)
+    mask = Image.fromarray(np.dstack([rgb, alpha[..., None]]).astype(np.uint8), "RGBA")
+    print(f"  stamp {d} px at {STAMP_CENTRE}, ink {int((small > 0.5).sum())} px, "
+          f"{STAMP_DROP:.0%} darker, clear of the laces")
+    return mask, [x0, y0, x1, y1]
 
 
 def close_gaps(src, names):
@@ -166,7 +227,10 @@ def main():
     k = HEIGHT / Image.open(LAYERS / "glove.png").height
     boxes = [[int(x0 * k), int(y0 * k), int(round(x1 * k)), int(round(y1 * k))]
              for x0, y0, x1, y1 in MARKS]
-    src["palm"], marks = lift_marks(src["palm"], boxes)
+    src["palm"], n_erased = erase_marks(src["palm"], boxes)
+    print(f"  erased the calibration glove's marks from {n_erased} px of palm")
+    marks, stamp_box = stamp_mask(np.asarray(src["palm"])[..., 3],
+                                  np.asarray(src["glove"])[..., 3])
 
     (OUT / "palm").mkdir(parents=True, exist_ok=True)
 
@@ -226,7 +290,7 @@ def main():
     put("marks", marks, quality=88, method=4)
 
     data = {"w": W, "h": HEIGHT, "zones": zones, "assets": assets,
-            "bbox": bbox, "marks": {"zone": "palm", "boxes": boxes}}
+            "bbox": bbox, "marks": {"zone": "palm", "boxes": [stamp_box]}}
     (OUT / "palm-data.json").write_text(json.dumps(data, separators=(",", ":")))
     total = sum(f.stat().st_size for f in (OUT / "palm").glob("*"))
     print(f"\nwrote assets/palm/ — {len(assets)} files, {total/1e6:.2f} MB"
