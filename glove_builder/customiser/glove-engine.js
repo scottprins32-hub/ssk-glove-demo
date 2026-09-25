@@ -120,6 +120,57 @@ export class GloveRenderer {
     return masked;
   }
 
+  /* Leather behind the pad or the hood, in its own tone.
+
+     The hood is cut from a photograph, and the cut left its stitch holes
+     and seam lines open, so whatever lay under it — the welt in one colour,
+     the finger in another — showed through as red and navy specks. Scott:
+     "De welting schijnt ook door de vingerpad heen. Dat mag niet gebeuren."
+     This closes the silhouette (dilate, then erode, with canvas composites
+     only) and fills it a shade darker than the pad, so the holes read as
+     seams in the pad's own leather. Built once per part and colour, inside
+     the part's box. */
+  padBacking(part, hx) {
+    const key = 'backing|' + part + '|' + hx;
+    let c = this.cache.get(key);
+    if (c) return c;
+    const img = this.imgs[part], bb = this.DATA.bbox[part];
+    if (!img || !bb) return null;
+    const r = 4, pad = r + 1;
+    const w = bb[2] - bb[0] + 2 * pad, h = bb[3] - bb[1] + 2 * pad;
+    const mk = () => { const k = document.createElement('canvas'); k.width = w; k.height = h; return k; };
+    const offsets = [];
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+      if (dx * dx + dy * dy <= r * r) offsets.push([dx, dy]);
+    const dilate = (src) => {
+      const d = mk(), g = d.getContext('2d');
+      for (const [dx, dy] of offsets) g.drawImage(src, dx, dy);
+      return d;
+    };
+    const sil = mk(), sg = sil.getContext('2d');
+    sg.drawImage(img, pad - bb[0], pad - bb[1]);
+    sg.globalCompositeOperation = 'source-in';
+    sg.fillStyle = '#000'; sg.fillRect(0, 0, w, h);
+    const grown = dilate(sil);
+    const inv = mk(), ig = inv.getContext('2d');
+    ig.fillStyle = '#000'; ig.fillRect(0, 0, w, h);
+    ig.globalCompositeOperation = 'destination-out';
+    ig.drawImage(grown, 0, 0);
+    const shrunk = dilate(inv);
+    // A shade darker than the pad: a seam, not a hole and not a highlight.
+    const n = parseInt(hx.slice(1), 16);
+    const dk = (v) => Math.round(v * 0.62);
+    c = mk();
+    const g = c.getContext('2d');
+    g.fillStyle = `rgb(${dk(n >> 16)},${dk((n >> 8) & 255)},${dk(n & 255)})`;
+    g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = 'destination-out';
+    g.drawImage(shrunk, 0, 0);
+    c._ox = bb[0] - pad; c._oy = bb[1] - pad;
+    this.cache.set(key, c);
+    return c;
+  }
+
   tinted(id, hx, sheenOf = id) {
     const key = id + '|' + hx;
     const hit = this.cache.get(key);
@@ -492,6 +543,8 @@ export class GloveRenderer {
       // sitting on top of it.
       if (z.id === 'welting' && this.pad && this.imgs[this.pad]
           && D.bbox[this.pad]) {
+        const bk = this.padBacking(this.pad, this.padHex || '#F2F0EA');
+        if (bk) ctx.drawImage(bk, bk._ox, bk._oy);
         const pd = this.tinted(this.pad, this.padHex || '#F2F0EA');
         ctx.drawImage(pd, pd._ox, pd._oy);
         // Clipped to where the binding is a solid band. Drawing all of it
