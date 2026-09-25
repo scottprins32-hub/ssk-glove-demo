@@ -81,9 +81,9 @@ def main():
     html = html.replace('<link rel="icon" href="favicon.svg" type="image/svg+xml">',
                         f'<link rel="icon" href="{data_uri(HERE / "favicon.svg")}">')
 
-    # ---- JS: four ES modules concatenated into one inline module
+    # ---- JS: five ES modules concatenated into one inline module
     js = []
-    for name in ("glove-catalog.js", "glove-engine.js", "refcode.js", "app.js"):
+    for name in ("glove-catalog.js", "glove-engine.js", "refcode.js", "order-sheet.js", "app.js"):
         src = (HERE / name).read_text()
         src = re.sub(r"^\s*import[^;]+;\s*$", "", src, flags=re.M)
         src = re.sub(r"^export\s+", "", src, flags=re.M)
