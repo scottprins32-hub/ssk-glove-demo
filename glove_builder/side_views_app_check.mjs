@@ -52,7 +52,8 @@ const PAL = { stitching: 'stitching', ring_emb: 'embroidery', binding: 'lace',
   welting: 'lace', laces: 'lace' };
 const hexOf = (f, code) => DATA.palettes[PAL[f] ?? 'leather'].find(c => c[0] === code)[2];
 const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-const COLORS = { web: '70', back1: '20', back2: '35', back3: '60', back4: '90',
+// Back 2 is always the palm's colour: the page ties them (app.js TIED).
+const COLORS = { web: '70', back1: '20', back2: '12', back3: '60', back4: '90',
   back5: '45', back6: '10', back7: '43', back8: '50', back9: '25', palm: '12',
   belt: '48', binding: '10', welting: '90', laces: '45', stitching: '20',
   ring_emb: '10', lining: '10', thumb_loops: '10', pinky_loops: '10' };
