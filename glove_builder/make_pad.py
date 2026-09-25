@@ -83,7 +83,42 @@ PARTS["hood"] = {
     # lands on top of it, which is what the first two tries did. The flag
     # mount ends 42% of the way down the finger, so the hood starts there.
     "top": 0.54, "bottom": 1.10, "fill": 0.84,
+    # The orange glove's hood is stitched with dark thread, and the luminance
+    # floor cut the darkest of those stitches out as holes. On a white hood
+    # the rows read as the welt seam running on under the pad, and the holes
+    # let the real welt and the finger show through them. Scott: "De welting
+    # schijnt ook door de vingerpad heen. Dat mag niet gebeuren." The rows are
+    # thin and much darker than the leather beside them; they are found
+    # against a local midtone, inpainted from that leather, and the holes
+    # closed. The hood renders as one piece of leather in the pad colour.
+    "unstitch": {"radius": 15, "ratio": 0.72, "min_drop": 30, "close": 4},
 }
+
+
+def unstitch(rgba, spec):
+    """Take the dark stitch rows out of a warped part, and close their holes.
+
+    rgba: HxWx4 uint8 in render space. Returns a new array."""
+    import cv2
+    out = rgba.copy()
+    alpha = out[..., 3] > 90
+    lum = out[..., :3].astype(np.float32) @ np.array([0.299, 0.587, 0.114], np.float32)
+    # the leather's own tone nearby, from the visible pixels only
+    k = 2 * spec["radius"] + 1
+    vis = alpha.astype(np.float32)
+    local = cv2.blur(lum * vis, (k, k)) / np.maximum(cv2.blur(vis, (k, k)), 1e-3)
+    dark = alpha & (lum < local * spec["ratio"]) & (local - lum > spec["min_drop"])
+    # thin things only: a shaded flank is darker too, but it is broad
+    dark &= ~ndimage.binary_opening(dark, np.ones((9, 9), bool))
+    # the holes the floor punched inside the outline
+    closed = ndimage.binary_closing(alpha, np.ones((2 * spec["close"] + 1,) * 2, bool))
+    holes = closed & ~alpha
+    fix = ndimage.binary_dilation(dark | holes, np.ones((3, 3), bool)) & closed
+    rgb = cv2.inpaint(np.ascontiguousarray(out[..., :3]), fix.astype(np.uint8),
+                      5, cv2.INPAINT_TELEA)
+    out[..., :3][fix] = rgb[fix]
+    out[..., 3][holes] = 255
+    return out, int(dark.sum()), int(holes.sum())
 
 
 def main():
@@ -153,6 +188,10 @@ def main():
     lin = np.asarray(lin.resize((W, H), Image.LANCZOS))[..., 3] > 90
     out[..., 3][ndimage.binary_erosion(lin, np.ones((3, 3), bool),
                                        iterations=7)] = 0
+
+    if SPEC.get("unstitch"):
+        out, n_dark, n_holes = unstitch(out, SPEC["unstitch"])
+        print(f"unstitched {n_dark} px of dark stitch rows, closed {n_holes} px of holes")
 
     lay = HERE / "layers" / args.part
     lay.mkdir(parents=True, exist_ok=True)

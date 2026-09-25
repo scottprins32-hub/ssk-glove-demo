@@ -229,6 +229,42 @@ for (const [what, poison, step] of [
   await second.ctx.close();
 }
 
+// Back 2 is the palm's colour (Scott, 25 Sep 2026). An older draft that
+// carries two colours restores with the palm's, and picking either part
+// colours both.
+{
+  const { ctx, page } = await freshPage();
+  await page.goto(BASE, { waitUntil: 'load' });
+  await page.waitForTimeout(400);
+  await page.evaluate(([k, v]) => localStorage.setItem(k, v),
+    ['ssk-glove-v1', JSON.stringify({ ...draft, colors: { ...draft.colors, palm: '70', back2: '32' } })]);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  const restored = await page.evaluate(() => {
+    const o = JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}');
+    return [o.colors.palm, o.colors.back2];
+  });
+  check(restored[0] === '70' && restored[1] === '70',
+    'a draft with Back 2 in another colour restores it as the palm colour', restored.join('/'));
+  await page.evaluate(() => document.querySelectorAll('#steps .step')[3].click());
+  await page.waitForTimeout(500);
+  await page.click('[data-key="part|back2"]');
+  await page.waitForTimeout(400);
+  await page.click('#body .sw[data-key$="|60"]');
+  await page.waitForTimeout(500);
+  const picked = await page.evaluate(() => {
+    const o = JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}');
+    return [o.colors.palm, o.colors.back2, o.view];
+  });
+  check(picked[0] === '60' && picked[1] === '60', 'picking Back 2 colours the palm too', picked.join('/'));
+  await page.click('[data-key="part|palm"]');
+  await page.waitForTimeout(500);
+  const view = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}').view);
+  const views = await page.evaluate(() => document.querySelectorAll('#stageview button').length);
+  check(views < 2 || view === 'palm', 'picking the palm shows the palm view', view);
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(failures

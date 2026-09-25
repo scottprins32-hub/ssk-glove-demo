@@ -68,7 +68,13 @@ const viewFieldLayer = () => {
 };
 
 /* SSK's order form asks separately for Palm Color and Back 2 (rest of
-   thumb). Keep those choices independent until construction evidence says otherwise. */
+   thumb), but they are one answer: Back 2 is always the palm's colour
+   (Scott, 25 Sep 2026: "Back 2 is ALTIJD dezelfde kleur als de palm"). Both
+   questions are still filled in, with the same colour, wherever either is
+   picked. */
+const TIED = { palm: 'back2', back2: 'palm' };
+const tie = (field) => { if (TIED[field]) S.colors[TIED[field]] = S.colors[field]; };
+const tieName = (f) => (f === 'palm' ? (S.lang === 'nl' ? 'de palm' : 'the palm') : 'Back 2');
 /* A flag is embroidered on one piece of leather, so back3 and back4 stop
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
@@ -244,6 +250,9 @@ function cleanState(o) {
     view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
     personalCheck: o.personalCheck === true,
   };
+  // Back 2 is the palm's colour; an older draft may still carry two.
+  if (clean.colors.palm) clean.colors.back2 = clean.colors.palm;
+  else if (clean.colors.back2) clean.colors.palm = clean.colors.back2;
   // Size and web are checked together, as the size picker does: a Trapeze
   // is 12.75" only, and a link or an old draft carrying it at 11.5" would
   // otherwise restore an order the form itself cannot produce. The web goes
@@ -646,6 +655,7 @@ function applyStarter(st, quiet) {
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
   if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
+  tie('palm');
   if (!quiet) { S.startId = st.id; draw(); }
 }
 
@@ -811,6 +821,16 @@ function webPreviewNote() {
 /* Notes the stage itself carries, whatever step is open. */
 const STAGE_NOTES = ['webNotOnPalm', 'webNotOnThumb'];
 
+/* The stage follows the part: the palm is on the palm view, Back 2 on the
+   back. Picking either takes the stage there, so the colour lands where the
+   customer can see it change. */
+function showPart(f) {
+  const want = f === 'palm' ? 'palm' : f === 'back2' ? 'back' : null;
+  if (want && want !== S.view && (want === 'back' || R.hasView(want))) {
+    S.view = want; draw();
+  }
+}
+
 /* ----------------------------------------------------------- 4. colours */
 function renderColours(b) {
   const parts = el('div', 'parts');
@@ -822,8 +842,9 @@ function renderColours(b) {
     p.dataset.key = 'part|' + f;
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
                   (f === 'back3' && indexIsOnePiece()
-                    ? t('indexOnePiece') : fieldLabel(f, S.lang));
-    p.onclick = () => { S.part = f; paint(); };
+                    ? t('indexOnePiece') : fieldLabel(f, S.lang)) +
+                  (TIED[f] ? ` <small>${t('tiedTo').replace('%s', tieName(TIED[f]))}</small>` : '');
+    p.onclick = () => { S.part = f; showPart(f); paint(); };
     parts.appendChild(p);
   }
   b.appendChild(parts);
@@ -843,6 +864,7 @@ function renderColours(b) {
       snapshot();
       const v = S.colors[S.part];
       for (let i = 1; i <= 9; i++) S.colors['back' + i] = v;
+      tie('back2');
       draw(); paint();
     };
     b.appendChild(all);
@@ -965,11 +987,41 @@ function renderYou(b) {
 }
 
 /* -------------------------------------------------------------- 8. review */
+/* What an open question is called, and which step asks it. */
+function questionLabel(id) {
+  if (id.startsWith('c:')) return fieldLabel(id.slice(2), S.lang);
+  const key = { webType: 'webType', hand: 'hand', size: 'size', pad: 'pad',
+    bullet: 'bullet', name: 'name', phone: 'phone', email: 'email',
+    thumbFont: 'thumbFont', thumbMain: 'thumbMain', thumbOutline: 'thumbOutline',
+    circle: 'circle', numberColor: 'numberColor', personalCheck: 'personalCheck' }[id];
+  return key ? t(key) : id;
+}
+const questionStep = (id) => STEP_FIELDS.findIndex(ids => ids.includes(id));
+function missingList(open) {
+  const wrap = el('div', 'field missing');
+  wrap.appendChild(el('span', 'field-lab', `${t('required')} (${open.length})`));
+  const ul = el('ul', 'missing-list');
+  for (const q of open) {
+    const li = el('li');
+    const b = el('button', 'missing-item', questionLabel(q.id));
+    b.type = 'button'; b.dataset.key = 'missing|' + q.id;
+    const step = questionStep(q.id);
+    b.onclick = () => {
+      if (step < 0) return;
+      S.step = step;
+      if (q.id.startsWith('c:')) { S.part = q.id.slice(2); showPart(S.part); }
+      paint();
+    };
+    li.appendChild(b);
+    ul.appendChild(li);
+  }
+  wrap.appendChild(ul);
+  return wrap;
+}
 function renderReview(b) {
   const open = requiredQuestions().filter(q => !answered(q));
   if (open.length) {
-    b.appendChild(el('p', 'note',
-      `${t('required')}: ${open.length}`));
+    b.appendChild(missingList(open));
   } else {
     b.appendChild(el('p', 'note', t('allSet')));
   }
@@ -1101,6 +1153,7 @@ function swatchField(field, note, required) {
     S.colors[field], v => {
       snapshot();
       S.colors[field] = v;
+      tie(field);
       if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
         S.colors.back3 = S.colors.back4 = v;
       }
@@ -1207,8 +1260,10 @@ function openSheet() {
   host.textContent = '';
   if (CART.length) host.appendChild(orderList(true));
   host.appendChild(buildSpec());
-  const ready = !requiredQuestions().some(q => !answered(q));
-  $('#sheetstatus').textContent = ready ? t('readyNotice') : t('draftNotice');
+  const open = requiredQuestions().filter(q => !answered(q));
+  const ready = !open.length;
+  $('#sheetstatus').textContent = ready ? t('readyNotice')
+    : `${t('draftNotice')} ${t('required')}: ${open.map(q => questionLabel(q.id)).join(', ')}.`;
   $('#send').disabled = !ready;
   $('#send').textContent = t('sendOrder');
   $('#sendnote').textContent = t('sendHint');
