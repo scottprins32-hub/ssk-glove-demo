@@ -1453,6 +1453,17 @@ const doRedo = () => {
   undoStack.push(JSON.stringify(S));
   restore(redoStack.pop()); paint();
 };
+/* Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z or Ctrl+Y redoes. Typing fields keep
+   their own text undo, and nothing fires while the order sheet is open. */
+document.addEventListener('keydown', ev => {
+  if (!(ev.ctrlKey || ev.metaKey) || ev.altKey || !$('#scrim').hidden) return;
+  if (ev.target.closest && ev.target.closest('input, textarea, select, [contenteditable]')) return;
+  const k = ev.key.toLowerCase();
+  if (k === 'z' && !ev.shiftKey) doUndo();
+  else if ((k === 'z' && ev.shiftKey) || k === 'y') doRedo();
+  else return;
+  ev.preventDefault();
+});
 $('#undo').onclick = $('#undo2').onclick = doUndo;
 $('#redo').onclick = $('#redo2').onclick = doRedo;
 
