@@ -1394,6 +1394,11 @@ function paint(rebuildBody = true) {
 
   if (rebuildBody) {
     const b = $('#body'); b.textContent = ''; st.render(b); b.scrollTop = 0;
+    // fade/slide the new step in, direction following navigation
+    if (wasStep !== undefined && wasStep !== S.step) {
+      b.classList.remove('step-in', 'step-in-back'); void b.offsetWidth;
+      b.classList.add(S.step > wasStep ? 'step-in' : 'step-in-back');
+    }
   }
 
   // stage
