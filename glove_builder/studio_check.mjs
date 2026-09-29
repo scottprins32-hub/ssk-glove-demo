@@ -40,7 +40,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(state.webType, null, 'incompatible size/web must be cleared');
-  assert.notEqual(state.colors.palm, state.colors.back2, 'independent palm and thumb colours survive');
+  assert.equal(state.colors.palm, state.colors.back2, 'palm and back 2 are one piece of leather, so they share a colour');
   const beforeInvalid = await page.evaluate(() => localStorage.getItem('ssk-glove-v1'));
   await page.locator('#body input').fill('https://example.com/#e30');
   await page.locator('#body .field button').click();
@@ -82,7 +82,7 @@ try {
   await page.locator('#download').click();
   const downloaded = await downloadPromise;
   const spec = await readFile(await downloaded.path(), 'utf8');
-  assert.ok(spec.includes(hostile)); assert.ok(spec.includes('#')); assert.ok(spec.includes('Saving does not place an order'));
+  assert.ok(spec.includes(hostile)); assert.ok(spec.includes('#')); assert.ok(spec.includes('SSK Europe receives every choice'));
   await page.keyboard.press('Escape');
   for (const width of [360, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });

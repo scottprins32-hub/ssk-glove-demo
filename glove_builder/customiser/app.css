@@ -515,14 +515,20 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   /* undo/redo stay available on larger screens; the phone header keeps only
      brand, language, share and price so it fits on one line */
   #undo, #redo { display: none; }
-  #share { padding-inline: 8px; font-size: 11px; }
-  .wordmark { font-size: 13px; }
+  #share { padding-inline: 6px; font-size: 10px; }
+  .wordmark { font-size: 12px; }
+  .hdr-tools { gap: 4px; }
+  .lang-btn { padding: 5px 5px; }
+  .price-val { font-size: 13px; }
   .bar-count { font-size: 11px; }
   /* progress gets its own row so the price and buttons never overlap it */
   .bar { flex-wrap: wrap; row-gap: var(--space-2); }
   .bar-progress { flex: 1 1 100%; }
   .bar-acts { flex: 1 1 100%; justify-content: space-between; }
   .bar-price b { font-size: 15px; }
+  .bar-price > span { display: none; }   /* the header already says "Vanaf" */
+  .bar-acts { min-width: 0; }
+  #next { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-inline: 10px; }
 }
 
 /* review: per-section edit link and price line */
