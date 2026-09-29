@@ -46,13 +46,17 @@
   </div>
 </header>
 
-<nav class="steps" id="steps" aria-label="Stappen"></nav>
+<nav class="steps" id="steps" aria-label="Stappen" data-aria="stepsNav"></nav>
 
 <main class="wrap">
   <section class="stage">
     <div class="stage-tag" id="stagetag" hidden></div>
     <div class="stage-view" id="stageview" hidden role="group"></div>
-    <canvas id="glove" width="929" height="1100" aria-label="Handschoen"></canvas>
+    <canvas id="glove" width="929" height="1100" aria-label="Handschoen" data-aria="gloveAria"></canvas>
+    <div class="stage-undo">
+      <button id="undo2" class="icon-btn" type="button" data-tip="undo" aria-label="Ongedaan" title="Ongedaan">&#8630;</button>
+      <button id="redo2" class="icon-btn" type="button" data-tip="redo" aria-label="Opnieuw" title="Opnieuw">&#8631;</button>
+    </div>
     <p class="stage-hint" id="stagehint"></p>
   </section>
 
@@ -80,7 +84,7 @@
 
 <div class="scrim" id="scrim" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheettitle">
-    <button class="sheet-x" id="sheetx" type="button" aria-label="Sluiten">&times;</button>
+    <button class="sheet-x" id="sheetx" type="button" aria-label="Sluiten" data-aria="close">&times;</button>
     <h2 id="sheettitle" data-t="sendTitle">Jouw SSK custom handschoen</h2>
     <img id="shot" alt="">
     <p class="sheet-lead" data-t="sendLead"></p>

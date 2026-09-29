@@ -965,7 +965,12 @@ function renderReview(b) {
     b.appendChild(el('p', 'note', t('allSet')));
   }
   b.appendChild(orderList());
-  b.appendChild(buildSpec());
+  b.appendChild(buildSpec(true));
+  if (BASE_PRICE) {
+    const pr = el('p', 'review-price');
+    pr.append(el('span', null, t('basePrice')), el('b', null, BASE_PRICE));
+    b.appendChild(pr);
+  }
   const acts = el('div', 'opts');
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button';
@@ -1168,10 +1173,22 @@ function embName(num) {
   const c = DATA.palettes.embroidery.find(c => c[0] === num);
   return c ? `${c[0]}. ${c[1]}` : null;
 }
-function buildSpec() {
+function buildSpec(editable = false) {
   const wrap = el('div', 'spec'), dl = el('dl');
+  let section = 0;   // spec sections follow steps 1..6
   for (const [k, v] of specRows()) {
-    if (k === '#') { dl.appendChild(el('h3', null, v)); continue; }
+    if (k === '#') {
+      section++;
+      const h = el('h3', null, v);
+      if (editable) {
+        const ed = el('button', 'spec-edit', t('editGlove'));
+        ed.type = 'button'; ed.dataset.key = 'specEdit|' + section;
+        ed.onclick = () => { S.step = +ed.dataset.step; paint(); };
+        ed.dataset.step = section;
+        h.appendChild(ed);
+      }
+      dl.appendChild(h); continue;
+    }
     const term = el('dt'), value = el('dd');
     term.textContent = k; value.textContent = v;
     dl.append(term, value);
@@ -1341,6 +1358,7 @@ function paint(rebuildBody = true) {
   const wasStep = paint.lastStep;
   paint.lastStep = S.step;
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-aria]')) e.setAttribute('aria-label', t(e.dataset.aria));
   for (const e of document.querySelectorAll('[data-tip]')) e.title = e.ariaLabel = t(e.dataset.tip);
   $('#lang-nl').classList.toggle('is-on', L === 'nl');
   $('#lang-en').classList.toggle('is-on', L === 'en');
@@ -1359,6 +1377,8 @@ function paint(rebuildBody = true) {
     b.onclick = () => { S.step = i; paint(); };
     nav.appendChild(b);
   });
+  const on = nav.querySelector('.is-on');
+  if (on) nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
   const legend = el('span', 'steps-legend');
   legend.innerHTML = `<span class="dot done" aria-hidden="true">✓</span>${t('legendDone')}` +
     `<span class="dot todo" aria-hidden="true"></span>${t('legendOpen')}`;
@@ -1399,8 +1419,8 @@ function paint(rebuildBody = true) {
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
-  $('#undo').disabled = !undoStack.length;
-  $('#redo').disabled = !redoStack.length;
+  $('#undo').disabled = $('#undo2').disabled = !undoStack.length;
+  $('#redo').disabled = $('#redo2').disabled = !redoStack.length;
 
   if (hadKey && wasStep !== undefined && wasStep !== S.step && hadKey.startsWith('step|')) {
     const h = $('#steptitle');
@@ -1423,16 +1443,18 @@ $('#next').onclick = () => {
 };
 $('#lang-nl').onclick = () => { S.lang = 'nl'; paint(); };
 $('#lang-en').onclick = () => { S.lang = 'en'; paint(); };
-$('#undo').onclick = () => {
+const doUndo = () => {
   if (!undoStack.length) return;
   redoStack.push(JSON.stringify(S));
   restore(undoStack.pop()); paint();
 };
-$('#redo').onclick = () => {
+const doRedo = () => {
   if (!redoStack.length) return;
   undoStack.push(JSON.stringify(S));
   restore(redoStack.pop()); paint();
 };
+$('#undo').onclick = $('#undo2').onclick = doUndo;
+$('#redo').onclick = $('#redo2').onclick = doRedo;
 
 loadGlove().then(bundle => {
   DATA = bundle.DATA;

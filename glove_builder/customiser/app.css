@@ -524,3 +524,23 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   .bar-acts { flex: 1 1 100%; justify-content: space-between; }
   .bar-price b { font-size: 15px; }
 }
+
+/* review: per-section edit link and price line */
+.spec h3 { display: flex; align-items: center; justify-content: space-between; }
+.spec-edit {
+  border: 0; background: none; color: var(--text-link); cursor: pointer;
+  font: inherit; font-size: var(--text-xs); text-decoration: underline; padding: 4px 0;
+}
+.review-price { display: flex; justify-content: space-between; align-items: baseline;
+  margin: var(--space-3) 0; padding-top: var(--space-3); border-top: 1px solid var(--border-default);
+  color: var(--text-muted); }
+.review-price b { font-family: var(--font-mono); font-size: var(--text-md); color: var(--text-price); }
+
+/* undo/redo over the glove: only where the header hides them */
+.stage-undo { display: none; position: absolute; left: var(--space-3); bottom: var(--space-3); gap: var(--space-2); }
+.stage-undo .icon-btn { background: var(--white); color: var(--navy-900); border-color: var(--gray-300); }
+@media (max-width: 420px) {
+  .stage-undo { display: flex; }
+  /* fade hints that the step tabs scroll sideways */
+  .steps { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+}
