@@ -64,3 +64,23 @@ Set CLAUDE_BIN to an explicit executable path if needed. It makes no global
 configuration changes. Claude Code 2.1.280 or newer is required for Opus 5.5 on
 this account (verified September 2026). Authentication failures require a local
 Claude `/login`, independently of a Claude desktop cloud session's login.
+
+## Base44 dev environment
+
+The configurator is a static ES-module site — plain `index.html` + `app.js` +
+`assets/` under `glove_builder/customiser/`, with no build step and no npm deps.
+`vercel.json` just serves that directory; `dist/index.html` is a separate
+single-file bundle for hosts that allow only one file (not what the preview runs).
+
+- Preview: `docker compose -f docker-compose.base44.yml up -d` serves
+  `glove_builder/customiser/` on port 3000 via a Vite dev server (live reload).
+  Vite only serves files; it does not transform the app source.
+- No secrets are required — the app is fully client-side. `api/order.mjs` is a
+  Vercel serverless function not exercised by the local preview.
+- Verify it works: the page renders the 8-step configurator with no console
+  errors; toggling "Achterkant" ↔ "Palm" swaps the glove view and loads the
+  palm assets (`assets/palm/*.webp`) without failed requests.
+- The Python scripts under `glove_builder/` (build_palm.py, build_assets.py,
+  refine_zones.py, …) are the asset *build* pipeline, not the running app. They
+  need `pip install -r glove_builder/requirements.txt` and are not needed to
+  serve the preview.

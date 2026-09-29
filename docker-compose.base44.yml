@@ -1,0 +1,37 @@
+# Base44 dev environment for the SSK glove configurator.
+# The configurator is a static ES-module site (plain HTML/CSS/JS, no build step)
+# served from glove_builder/customiser/. Vite provides live reload; it only
+# serves files, it does not transform the app's source.
+services:
+  web:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+      - vite_cache:/root/.vite
+    environment:
+      - NODE_ENV=development
+      # Inherited from the platform so Vite allows the preview's external host.
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    command:
+      - sh
+      - -ec
+      - |
+        npm install -g vite@6.3 >/dev/null 2>&1
+        exec npx vite glove_builder/customiser \
+          --host 0.0.0.0 --port 3000 --strictPort
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >
+          node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 25s
+
+volumes:
+  vite_cache:
