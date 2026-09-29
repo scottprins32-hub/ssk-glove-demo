@@ -518,4 +518,9 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   #share { padding-inline: 8px; font-size: 11px; }
   .wordmark { font-size: 13px; }
   .bar-count { font-size: 11px; }
+  /* progress gets its own row so the price and buttons never overlap it */
+  .bar { flex-wrap: wrap; row-gap: var(--space-2); }
+  .bar-progress { flex: 1 1 100%; }
+  .bar-acts { flex: 1 1 100%; justify-content: space-between; }
+  .bar-price b { font-size: 15px; }
 }
