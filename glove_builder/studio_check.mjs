@@ -40,7 +40,10 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(state.webType, null, 'incompatible size/web must be cleared');
-  assert.notEqual(state.colors.palm, state.colors.back2, 'independent palm and thumb colours survive');
+  // Back 2 is always the palm's colour (Scott, 25 Sep; 14452ce): a draft
+  // carrying two restores with the palm's.
+  assert.equal(state.colors.palm, '10', 'restored palm colour survives');
+  assert.equal(state.colors.back2, state.colors.palm, 'Back 2 follows the palm on restore');
   const beforeInvalid = await page.evaluate(() => localStorage.getItem('ssk-glove-v1'));
   await page.locator('#body input').fill('https://example.com/#e30');
   await page.locator('#body .field button').click();
@@ -82,7 +85,7 @@ try {
   await page.locator('#download').click();
   const downloaded = await downloadPromise;
   const spec = await readFile(await downloaded.path(), 'utf8');
-  assert.ok(spec.includes(hostile)); assert.ok(spec.includes('#')); assert.ok(spec.includes('Saving does not place an order'));
+  assert.ok(spec.includes(hostile)); assert.ok(spec.includes('#')); assert.ok(spec.includes('Send the order'), 'spec says how the order is placed');
   await page.keyboard.press('Escape');
   for (const width of [360, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });
@@ -93,6 +96,36 @@ try {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `step ${i+1} no overflow at ${width}`);
     }
   }
+  // The palm view draws the stock web. A phone hid the stage hint outright,
+  // so outside the web picker the warning vanished and the palm showed an
+  // H-Web under an SMLEE order with nothing said.
+  await page.locator('#steps button').nth(1).click();
+  await page.getByRole('button', { name: '11.75"', exact: true }).click();
+  await page.locator('#steps button').nth(2).click();
+  await page.locator('.card', { hasText: 'SMLEE-Web' }).click();
+  await page.locator('[data-view="palm"]').click();
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (let i = 0; i < 8; i++) {
+      await page.locator('#steps button').nth(i).click();
+      const hint = page.locator('#stagehint .hint-warn');
+      assert.ok(await hint.isVisible(), `palm web warning visible on step ${i + 1} at ${width}`);
+      assert.match(await hint.textContent(), /palm view shows the standard web/);
+      if (width < 900) {
+        const [h, g] = await Promise.all([hint.boundingBox(), page.locator('#glove').boundingBox()]);
+        assert.ok(h.y >= g.y + g.height - 1, `warning sits below the glove, not over it, on step ${i + 1}`);
+        assert.equal(await page.locator('#stagehint .hint-pick').isVisible(), false, 'phone keeps the guidance hidden');
+      }
+    }
+  }
+  // Fit and web render their cards from the back view; the customer's view
+  // must survive that, on screen and in the saved draft.
+  await page.waitForTimeout(1500);
+  assert.equal(await page.locator('[data-view="palm"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')).view), 'palm', 'saved draft keeps the palm view');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('[data-view="back"]').click();
+  assert.equal(await page.locator('#stagehint').isVisible(), false, 'back view shows the web, so no warning');
   assert.deepEqual(errors, []);
-  console.log('PASS: hostile text, colour independence, compatible restoration, stable palette code, private full-design sharing, draft status, modal keyboard, download, all steps at four widths.');
+  console.log('PASS: hostile text, Back 2 tied to palm, palm-view web warning on phone and desktop, compatible restoration, stable palette code, private full-design sharing, draft status, modal keyboard, download, all steps at four widths.');
 } finally { await browser.close(); }

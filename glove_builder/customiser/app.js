@@ -688,11 +688,6 @@ function liveThumbs(field, items, box, jobFor, restore) {
   const tmp = document.createElement('canvas');
   tmp.width = DATA.w; tmp.height = DATA.h;
   const tc = tmp.getContext('2d');
-  // Always the back of the glove, whichever view the stage is showing: the
-  // crops below are in the back view's pixels, and a web or a pad is what
-  // these cards are about.
-  const wasView = S.view;
-  S.view = 'back'; R.setView('back');
   let [sx, sy, sw, sh] = box;
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
@@ -702,10 +697,19 @@ function liveThumbs(field, items, box, jobFor, restore) {
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) { restore(); S.view = wasView; R.setView(wasView); draw(); return; }
+    if (!job) { restore(); draw(); return; }
     const [it, card, setUp] = job;
+    // Always the back of the glove, whichever view the stage is showing: the
+    // crops are in the back view's pixels, and a web or a pad is what these
+    // cards are about. Switched per card and put straight back: this runs
+    // across frames, and holding S.view at 'back' in between hid the palm
+    // warning from the paint() that started it, and undid a view picked
+    // while the cards were still filling in.
+    const view = S.view;
+    S.view = 'back'; R.setView('back');
     setUp();
     R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    S.view = view; R.setView(view);
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
@@ -1364,12 +1368,19 @@ function paint(rebuildBody = true) {
     tag.hidden = false;
     tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
-  // On any step, the stage says when it is not showing the chosen web.
+  // On any step, the stage says when it is not showing the chosen web. The
+  // guidance and the warning are separate spans: a phone has no room under
+  // the glove for the guidance, but the warning is the one thing it must show.
   const wn = webPreviewNote();
   const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
-  $('#stagehint').textContent = S.step === 3
-    ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
-    : palmNote;
+  const hint = $('#stagehint');
+  hint.textContent = '';
+  if (S.step === 3) hint.appendChild(el('span', 'hint-pick')).textContent = t('pickPart');
+  if (palmNote) {
+    if (S.step === 3) hint.append(' ');
+    hint.appendChild(el('span', 'hint-warn')).textContent = palmNote;
+  }
+  hint.classList.toggle('is-warn', !!palmNote);
 
   // header + bar
   $('#refcode').textContent = code();
