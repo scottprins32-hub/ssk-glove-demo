@@ -28,8 +28,8 @@
       <button id="lang-en" class="lang-btn" type="button">EN</button>
       <button id="lang-nl" class="lang-btn is-on" type="button">NL</button>
     </div>
-    <button id="undo" class="icon-btn" type="button" aria-label="Undo">&#8630;</button>
-    <button id="redo" class="icon-btn" type="button" aria-label="Redo">&#8631;</button>
+    <button id="undo" class="icon-btn" type="button" aria-label="Ongedaan maken" title="Ongedaan maken" data-tip="undo">&#8630;</button>
+    <button id="redo" class="icon-btn" type="button" aria-label="Opnieuw" title="Opnieuw" data-tip="redo">&#8631;</button>
     <div class="share-wrap">
       <button id="share" class="btn btn-ghost" type="button" data-t="share"
               aria-expanded="false" aria-controls="sharepop">Ontwerp delen</button>
@@ -73,6 +73,7 @@
   </div>
   <div class="bar-acts">
     <button id="prev" class="btn btn-ghost" type="button" data-t="backStep">Terug</button>
+    <span class="bar-price"><span data-t="basePrice">Vanaf</span> <b id="barprice">—</b></span>
     <button id="next" class="btn btn-primary" type="button">Verder</button>
   </div>
 </footer>

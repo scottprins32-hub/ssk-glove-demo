@@ -1341,6 +1341,7 @@ function paint(rebuildBody = true) {
   const wasStep = paint.lastStep;
   paint.lastStep = S.step;
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
+  for (const e of document.querySelectorAll('[data-tip]')) e.title = e.ariaLabel = t(e.dataset.tip);
   $('#lang-nl').classList.toggle('is-on', L === 'nl');
   $('#lang-en').classList.toggle('is-on', L === 'en');
   paintView();
@@ -1390,7 +1391,7 @@ function paint(rebuildBody = true) {
 
   // header + bar
   $('#refcode').textContent = code();
-  $('#price').textContent = BASE_PRICE;
+  $('#price').textContent = $('#barprice').textContent = BASE_PRICE;
   const d = doneCount();
   $('#donecount').textContent = d;
   $('#totalcount').textContent = countedQuestions().length;

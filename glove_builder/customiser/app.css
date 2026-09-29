@@ -121,6 +121,8 @@ button { font: inherit; color: inherit; }
   padding: var(--space-5);
 }
 #glove { max-width: 100%; max-height: 100%; height: auto; width: auto; cursor: crosshair; }
+.stage { background: radial-gradient(ellipse at center, var(--gray-100, #eef0f3) 0%, var(--gray-200, #e2e5ea) 100%); }
+#glove { filter: drop-shadow(0 8px 18px rgba(16, 32, 64, .18)); }
 .stage-tag {
   position: absolute; top: var(--space-5); left: var(--space-5); z-index: 2;
   background: var(--white); border: 1px solid var(--border-default);
@@ -302,7 +304,9 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .bar-count b { color: var(--navy-900); }
 .bar-track { flex: 1 1 auto; max-width: 380px; height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
 .bar-fill { display: block; height: 100%; width: 0; background: var(--red-600); transition: width var(--dur-med) var(--ease-out); }
-.bar-acts { display: flex; gap: var(--space-2); }
+.bar-acts { display: flex; gap: var(--space-2); align-items: center; }
+.bar-price { font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; margin-right: var(--space-1); }
+.bar-price b { font-family: var(--font-mono); font-size: var(--text-md); color: var(--text-price); font-weight: 600; }
 
 .btn {
   height: var(--control-h-md); padding: 0 var(--space-5);
