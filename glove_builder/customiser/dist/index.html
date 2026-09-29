@@ -579,9 +579,19 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   .hdr-tools { flex-wrap: wrap; justify-content: flex-end; row-gap: var(--space-2); }
   .ref { order: 3; flex: 1 0 100%; justify-content: center; }
   .wrap { flex-direction: column; flex-wrap: nowrap; }
-  .stage { flex: none; padding: var(--space-3); }
+  .stage { flex: none; flex-wrap: wrap; padding: var(--space-3); }
   #glove { max-height: 34vh; }
+  /* No room for the guidance under a phone-sized glove, but the palm view's
+     "not your web" warning must still show: in flow, below the glove, so it
+     never covers the part it is warning about. */
   .stage-hint { display: none; }
+  .stage-hint.is-warn {
+    display: block; position: static; flex: 1 0 100%; margin-top: var(--space-2);
+    border-left: 3px solid var(--tan-500); background: var(--tan-100);
+    padding: var(--space-2) var(--space-3); color: var(--gray-700);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .stage-hint.is-warn .hint-pick { display: none; }
   .panel { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--border-default); }
   .panel-head, .panel-title, .panel-lead { margin-inline: var(--space-4); padding-inline: 0; }
   .panel-head { padding-top: var(--space-4); }
@@ -2755,11 +2765,6 @@ function liveThumbs(field, items, box, jobFor, restore) {
   const tmp = document.createElement('canvas');
   tmp.width = DATA.w; tmp.height = DATA.h;
   const tc = tmp.getContext('2d');
-  // Always the back of the glove, whichever view the stage is showing: the
-  // crops below are in the back view's pixels, and a web or a pad is what
-  // these cards are about.
-  const wasView = S.view;
-  S.view = 'back'; R.setView('back');
   let [sx, sy, sw, sh] = box;
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
@@ -2769,10 +2774,19 @@ function liveThumbs(field, items, box, jobFor, restore) {
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) { restore(); S.view = wasView; R.setView(wasView); draw(); return; }
+    if (!job) { restore(); draw(); return; }
     const [it, card, setUp] = job;
+    // Always the back of the glove, whichever view the stage is showing: the
+    // crops are in the back view's pixels, and a web or a pad is what these
+    // cards are about. Switched per card and put straight back: this runs
+    // across frames, and holding S.view at 'back' in between hid the palm
+    // warning from the paint() that started it, and undid a view picked
+    // while the cards were still filling in.
+    const view = S.view;
+    S.view = 'back'; R.setView('back');
     setUp();
     R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    S.view = view; R.setView(view);
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
@@ -3431,12 +3445,19 @@ function paint(rebuildBody = true) {
     tag.hidden = false;
     tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
-  // On any step, the stage says when it is not showing the chosen web.
+  // On any step, the stage says when it is not showing the chosen web. The
+  // guidance and the warning are separate spans: a phone has no room under
+  // the glove for the guidance, but the warning is the one thing it must show.
   const wn = webPreviewNote();
   const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
-  $('#stagehint').textContent = S.step === 3
-    ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
-    : palmNote;
+  const hint = $('#stagehint');
+  hint.textContent = '';
+  if (S.step === 3) hint.appendChild(el('span', 'hint-pick')).textContent = t('pickPart');
+  if (palmNote) {
+    if (S.step === 3) hint.append(' ');
+    hint.appendChild(el('span', 'hint-warn')).textContent = palmNote;
+  }
+  hint.classList.toggle('is-warn', !!palmNote);
 
   // header + bar
   $('#refcode').textContent = code();
