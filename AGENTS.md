@@ -53,6 +53,18 @@ workflow: Claude builds, Astra reviews. Do not run both loops concurrently.
 6. Report found, fixed, rejected (with reasons/evidence), and open decisions. Do not
    merge. Do not describe a skipped or failed review as a pass.
 
+## Base44 dev environment
+
+- Static app served from `glove_builder/customiser/` via nginx on port 3000
+  (`docker-compose.base44.yml`). No build step — files are served directly.
+- The order API (`api/order.mjs`) is a Vercel serverless function that needs
+  `RESEND_API_KEY`, `ORDER_TO`, `ORDER_FROM` to actually send e-mails. Without
+  them it returns 503 and the page falls back to copying the spec — the
+  configurator works without any credentials.
+- ES modules + fetch, so it must be served over HTTP (not file://).
+- `glove_builder/customiser/dist/index.html` is a self-contained single-file
+  build with all assets embedded; the live source is in the parent directory.
+
 Review prompt sent by the runner:
 "You are reviewing work on the SSK Europe glove configurator. Follow
 `Reviewer rules (only when asked to review)` in AGENTS.md. Read HANDOFF.md, then
