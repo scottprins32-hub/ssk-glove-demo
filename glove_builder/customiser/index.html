@@ -30,10 +30,14 @@
     </div>
     <button id="undo" class="icon-btn" type="button" aria-label="Undo">&#8630;</button>
     <button id="redo" class="icon-btn" type="button" aria-label="Redo">&#8631;</button>
-    <button id="share" class="btn btn-ghost" type="button" data-t="share">Ontwerp delen</button>
-    <div class="ref">
-      <span class="ref-lab" data-t="reference">Referentie</span>
-      <span class="ref-code" id="refcode">SSK2-00</span>
+    <div class="share-wrap">
+      <button id="share" class="btn btn-ghost" type="button" data-t="share"
+              aria-expanded="false" aria-controls="sharepop">Ontwerp delen</button>
+      <div class="share-pop" id="sharepop" hidden>
+        <span class="ref-lab" data-t="reference">Ontwerpcode</span>
+        <span class="ref-code" id="refcode">SSK2-00</span>
+        <span class="share-note" data-t="linkCopied">Link gekopieerd — stuur hem door of bewaar de code.</span>
+      </div>
     </div>
     <div class="price">
       <span class="price-lab" data-t="basePrice">Vanaf</span>
@@ -54,7 +58,6 @@
 
   <aside class="panel">
     <div class="panel-head">
-      <span class="panel-count"><b id="stepnum">01</b> / <span id="steptot">08</span></span>
       <span class="panel-state" id="stepstate"></span>
     </div>
     <h1 class="panel-title" id="steptitle">Start</h1>
@@ -65,7 +68,7 @@
 
 <footer class="bar">
   <div class="bar-progress">
-    <span class="bar-count"><b id="donecount">0</b> / <span id="totalcount">36</span></span>
+    <span class="bar-count"><b id="donecount">0</b> <span data-t="of">van</span> <span id="totalcount">36</span> <span data-t="choicesMade">keuzes gemaakt</span></span>
     <span class="bar-track"><span class="bar-fill" id="barfill"></span></span>
   </div>
   <div class="bar-acts">

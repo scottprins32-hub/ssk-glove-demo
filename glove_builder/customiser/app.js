@@ -954,6 +954,10 @@ function missingList(open) {
   return wrap;
 }
 function renderReview(b) {
+  const rc = el('div', 'review-code');
+  rc.appendChild(el('span', 'ref-lab', t('reference')));
+  rc.appendChild(el('span', 'sheet-code', code()));
+  b.appendChild(rc);
   const open = requiredQuestions().filter(q => !answered(q));
   if (open.length) {
     b.appendChild(missingList(open));
@@ -1299,7 +1303,17 @@ $('#send').onclick = sendOrder;
 /* The only place a URL is ever written. Asked for, not imposed. */
 $('#copylink').onclick = ev => copyToClipboard(ev,
   shareLink());
-$('#share').onclick = ev => copyToClipboard(ev, shareLink());
+/* "Ontwerp delen" opens a small panel with the design code and the link. */
+const sharePop = $('#sharepop');
+const setSharePop = show => {
+  sharePop.hidden = !show;
+  $('#share').setAttribute('aria-expanded', String(show));
+};
+$('#share').onclick = ev => { setSharePop(true); copyToClipboard(ev, shareLink()); };
+document.addEventListener('click', ev => {
+  if (!sharePop.hidden && !ev.target.closest('.share-wrap')) setSharePop(false);
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') setSharePop(false); });
 $('#download').onclick = () => {
   const url = URL.createObjectURL(new Blob([specText()], { type: 'text/plain;charset=utf-8' }));
   const a = el('a'); a.href = url; a.download = 'SSK-glove-design.txt';
@@ -1339,14 +1353,17 @@ function paint(rebuildBody = true) {
     b.type = 'button';
     b.dataset.key = 'step|' + i;
     b.innerHTML = `<span class="n">${i + 1}</span>${t(st.title)}` +
-      (STEP_FIELDS[i].length ? `<span class="dot${open ? ' todo' : ''}"></span>` : '');
+      (STEP_FIELDS[i].length
+        ? `<span class="dot${open ? ' todo' : ' done'}" aria-hidden="true">${open ? '' : '✓'}</span>` : '');
     b.onclick = () => { S.step = i; paint(); };
     nav.appendChild(b);
   });
+  const legend = el('span', 'steps-legend');
+  legend.innerHTML = `<span class="dot done" aria-hidden="true">✓</span>${t('legendDone')}` +
+    `<span class="dot todo" aria-hidden="true"></span>${t('legendOpen')}`;
+  nav.appendChild(legend);
 
   const st = STEPS[S.step];
-  $('#stepnum').textContent = String(S.step + 1).padStart(2, '0');
-  $('#steptot').textContent = String(STEPS.length).padStart(2, '0');
   $('#steptitle').textContent = t(st.title);
   $('#steplead').textContent = st.lead ? t(st.lead) : '';
   const open = stepOpen(S.step);

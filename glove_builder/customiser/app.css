@@ -438,3 +438,80 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   .panel, .panel-body { overflow: visible; }
   .bar { position: sticky; bottom: 0; }
 }
+
+/* ------------------------------------------- interface refinements (Base44) */
+/* Design code lives in the share panel and on the review step, not the header. */
+.share-wrap { position: relative; }
+.share-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; width: 280px;
+  display: flex; flex-direction: column; gap: 6px; padding: var(--space-3) var(--space-4);
+  background: var(--white); color: var(--navy-900);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md); box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,.18));
+}
+.share-pop[hidden] { display: none; }
+.share-pop .ref-lab { color: var(--text-muted); }
+.share-pop .ref-code { color: var(--navy-900); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.share-note { font-size: 12px; color: var(--text-muted); }
+.review-code { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-4); }
+.review-code .ref-lab { color: var(--text-muted); }
+
+/* Step status: a checkmark for finished steps, plus a legend. */
+.step .dot.done {
+  width: 14px; height: 14px; display: inline-grid; place-items: center;
+  color: var(--white); font-size: 9px; line-height: 1;
+}
+.steps-legend {
+  flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+  padding-left: var(--space-3); font-size: 11px; color: var(--text-muted); white-space: nowrap;
+}
+.steps-legend .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red-600); margin-left: 8px; }
+.steps-legend .dot.done {
+  width: 14px; height: 14px; display: inline-grid; place-items: center; margin-left: 0;
+  background: var(--status-success); color: var(--white); font-size: 9px;
+}
+
+/* One progress indicator, labelled. */
+.bar-count { white-space: nowrap; }
+
+@media (max-width: 900px) {
+  /* one compact header line */
+  .hdr { flex-wrap: nowrap; height: 52px; padding: 0 var(--space-3); }
+  .hdr-title { display: none; }
+  .hdr-tools { width: auto; flex: 1 1 auto; justify-content: flex-end; gap: 6px; }
+  .wordmark { font-size: 15px; white-space: nowrap; }
+  .lang-btn { padding: 5px 7px; }
+  .icon-btn { min-width: 36px; width: 36px; }
+  .lang-btn, .icon-btn { min-height: 36px; height: 36px; }
+  #share { height: 36px; white-space: nowrap; }
+  .price { margin-left: 0; }
+  .price-lab { display: none; }
+  .share-pop { position: fixed; top: 60px; left: 12px; right: 12px; width: auto; }
+
+  /* tabs scroll sideways: fade the edge so it shows there is more */
+  .steps { padding-inline: var(--space-3);
+           mask-image: linear-gradient(90deg, #000 85%, transparent);
+           -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .steps-legend { display: none; }
+
+  /* a larger glove that stays in view while the panel below scrolls */
+  #glove { max-height: 40vh; }
+  .wrap { overflow: hidden; }
+  .panel { min-height: 0; overflow: auto; }
+
+  .bar-count { display: inline; }
+}
+@media (max-width: 900px) {
+  .hdr-brand { flex: none; }
+  .bar { gap: var(--space-3); }
+  .bar-progress { flex-direction: column; align-items: stretch; gap: 6px; }
+  .bar-track { max-width: none; }
+  .bar-acts .btn { white-space: nowrap; }
+}
+@media (max-width: 420px) {
+  /* undo/redo stay available on larger screens; the phone header keeps only
+     brand, language, share and price so it fits on one line */
+  #undo, #redo { display: none; }
+  #share { padding-inline: 8px; font-size: 11px; }
+  .wordmark { font-size: 13px; }
+  .bar-count { font-size: 11px; }
+}
