@@ -19,3 +19,6 @@ REVIEW.md
 /.cross-review/
 *.bak
 *.bak.[0-9]*
+
+# Vite dev-server cache (Base44 preview)
+.vite/
