@@ -4,7 +4,7 @@
 
 import { loadGlove, GloveRenderer } from './glove-engine.js';
 import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
-import { HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
+import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 
@@ -34,10 +34,31 @@ const PALM_FIELDS = {
   palm: 'palm', web: 'web', back1: 'back1', back9: 'back9',
   welting: 'welting', binding: 'binding', laces: 'laces'
 };
-const viewLayerField = () => (S.view === 'palm' ? PALM_FIELDS : LAYER_TO_FIELD);
-const viewFieldLayer = () => (S.view === 'palm'
-  ? Object.fromEntries(Object.entries(PALM_FIELDS).map(([l, f]) => [f, l]))
-  : FIELD_TO_LAYER);
+/* The thumb and pinky sides name their zones' order fields in their own
+   data (build_side_views.py), so their maps are read from there. */
+const SIDE_VIEWS = ['thumb', 'pinky'];
+const VIEW_KEYS = { back: 'viewBack', palm: 'viewPalm', thumb: 'viewThumb',
+                    pinky: 'viewPinky' };
+const sideData = () => (SIDE_VIEWS.includes(S.view) && R && R.views[S.view]
+  ? (R.view === S.view || (S.view === 'thumb' && typeof R.view === 'string' && R.view.startsWith('thumbEstimated:'))
+      ? R.DATA : R.views[S.view].DATA)
+  : null);
+/* A PALM-P1 insert brings its own thread (zone 8), so the stitching colour is
+   a palm field only while one is drawn. The palm body's own thread is baked
+   into the photograph and is never offered as recolourable. */
+const palmFields = () => R && R.view === 'palm' && R.DATA.palmWebs?.entries?.[R.web]
+  ? { ...PALM_FIELDS, stitching: 'stitching' } : PALM_FIELDS;
+const viewLayerField = () => {
+  const SD = sideData();
+  if (SD) return Object.fromEntries(SD.zones.map(z => [z.id, z.field]));
+  return S.view === 'palm' ? palmFields() : LAYER_TO_FIELD;
+};
+const viewFieldLayer = () => {
+  if (sideData() || S.view === 'palm') {
+    return Object.fromEntries(Object.entries(viewLayerField()).map(([l, f]) => [f, l]));
+  }
+  return FIELD_TO_LAYER;
+};
 
 /* SSK's order form asks separately for Palm Color and Back 2 (rest of
    thumb). Keep those choices independent until construction evidence says otherwise. */
@@ -79,12 +100,16 @@ const QUESTIONS = [
   ...COLOUR_ORDER.map(f => ({ id: 'c:' + f, req: f !== 'pad_color' })),
   { id: 'hand', req: true }, { id: 'size', req: true }, { id: 'pad', req: true },
   { id: 'webType', req: true }, { id: 'bullet', req: true },
-  { id: 'name', req: true }, { id: 'phone', req: true },
+  // Contact is the buyer's, not the design's: a draft is complete without it.
+  // contactOpen() reports it separately, for sending to SSK Europe.
+  { id: 'name', req: false, contact: true }, { id: 'phone', req: false, contact: true },
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
   { id: 'pinkyText', req: false },
   { id: 'numberColor', req: false }, { id: 'flag', req: false },
+  // "Other Flag" is not an instruction until it names the flag.
+  { id: 'flagOther', req: false },
   // Not on SSK's form: set only after a reference code is opened, because a
   // code carries no names or numbers. Answered until then, so it never shows.
   { id: 'personalCheck', req: true }
@@ -93,13 +118,20 @@ const QUESTIONS = [
 const S = {
   lang: 'nl', step: 0, part: 'web', bullet: 7,
   view: 'back',
-  colors: {}, hand: null, size: null, pad: null, webType: null,
+  colors: {}, hand: null, size: '11.75"', pad: null, webType: NATIVE_WEB,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
-  thumbNumber: '', circle: null, numberColor: null, flag: null,
+  thumbNumber: '', circle: null, numberColor: null, flag: null, flagOther: '',
   pinkyText: '',
-  name: '', phone: ''
+  name: '', phone: '',
+  // A withdrawn web a saved design or link named (WITHDRAWN_WEBS). Kept, so a
+  // reload still says why the web is empty; never an order option. Cleared
+  // when an available web is chosen.
+  withdrawnWeb: null
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
+/* The web question reads unanswered while S.withdrawnWeb is set; this says why. */
+const withdrawnNote = () => (S.withdrawnWeb && !S.webType)
+  ? t('webWithdrawn').replace('%s', S.withdrawnWeb) : '';
 
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => {
@@ -114,10 +146,23 @@ const t = k => T[S.lang][k] || k;
 function answered(q) {
   if (q.id === 'personalCheck') return S.personalCheck !== true;
   if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
+  if (q.id === 'phone') return phoneOk(S.phone);
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
 }
+/* Permissive on purpose: country codes, spaces, dots, dashes, brackets, a
+   slash, and an extension. What it refuses is text with no number in it. */
+function phoneOk(v) {
+  if (typeof v !== 'string') return false;
+  const [main, ext] = v.trim().split(/\s*(?:ext\.?|extension|x|toestel|tst\.?)\s*(?=\d)/i);
+  if (ext !== undefined && !/^\d{1,6}$/.test(ext)) return false;
+  if (!/^\+?[\d\s().\-\/]+$/.test(main || '')) return false;
+  const digits = main.replace(/\D/g, '').length;
+  return digits >= 7 && digits <= 15;
+}
+const contactOpen = () => QUESTIONS.filter(q => q.contact && !answered(q)).length;
 const requiredQuestions = () => QUESTIONS.filter(q => q.req
+  || (q.id === 'flagOther' && S.flag === 'Other Flag')
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
   || (q.id === 'thumbOutline' && (S.thumbText.trim() || S.pinkyText.trim()) && /Outline|Shadow/.test(S.thumbFont || ''))
   || (['circle', 'numberColor'].includes(q.id) && S.thumbNumber));
@@ -197,6 +242,8 @@ function cleanState(o) {
     webType: byId(WEBS, o.webType),
     thumbFont: byId(EMB_FONTS, o.thumbFont),
     flag: byId(FLAGS, o.flag),
+    // Only meaningful with Other Flag; anywhere else it would be a stray name.
+    flagOther: o.flag === 'Other Flag' ? text(o.flagOther).slice(0, 40) : '',
     circle: CIRCLE_COLORS.some((c) => c[0] === o.circle) ? o.circle : null,
     thumbMain: embCode(o.thumbMain),
     thumbOutline: embCode(o.thumbOutline),
@@ -205,11 +252,16 @@ function cleanState(o) {
     pinkyText: text(o.pinkyText).slice(0, 18),
     thumbNumber: text(o.thumbNumber).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2),
     name: text(o.name).slice(0, 60),
-    phone: text(o.phone).slice(0, 24),
-    view: o.view === 'palm' ? 'palm' : 'back',
+    phone: text(o.phone).slice(0, 32),     // room for a country code and extension
+    view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
     personalCheck: o.personalCheck === true,
   };
   if (clean.webType && !WEBS.find(w => w.id === clean.webType).sizes.includes(clean.size)) clean.webType = null;
+  // A withdrawn web is never mapped to another one: it is dropped, so the
+  // customer has to choose, and the page says why.
+  clean.withdrawnWeb = clean.webType ? null
+    : WITHDRAWN_WEBS.includes(o.webType) ? o.webType
+    : WITHDRAWN_WEBS.includes(o.withdrawnWeb) ? o.withdrawnWeb : null;
   // Only carry a starter through if it still exists; otherwise leave whatever
   // the page already set, rather than blanking the highlight to undefined.
   if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
@@ -254,13 +306,13 @@ function load() {
 }
 
 /* Colours the renderer needs, keyed by layer id. */
-function layerState() {
+function layerState(D = R ? R.DATA : DATA, map = viewLayerField()) {
   const out = {};
-  const D = R ? R.DATA : DATA, map = viewLayerField();
   for (const z of D.zones) {
     const f = map[z.id];
     out[z.id] = S.colors[f] || DATA.palettes[z.group][0][0];
   }
+  out.palm = S.colors.palm || '10';
   return out;
 }
 // The order's reference: the form's answers, whatever view is on screen.
@@ -289,7 +341,7 @@ function applyPasted(text) {
     // another player's name on this order under this code's styling. They
     // are cleared and asked again. Name and phone are the buyer's, not the
     // design's, and stay.
-    next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = '';
+    next.thumbText = ''; next.pinkyText = ''; next.thumbNumber = ''; next.flagOther = '';
     // …and the order is not complete until someone has looked: without this
     // the restored glove reads "All set" with its lettering silently gone.
     next.personalCheck = true;
@@ -312,32 +364,222 @@ function paintView() {
   const vw = $('#stageview');
   if (!vw || vw.hidden) return;
   for (const b of vw.children) {
-    b.textContent = t(b.dataset.view === 'palm' ? 'viewPalm' : 'viewBack');
+    b.textContent = t(VIEW_KEYS[b.dataset.view]);
     b.classList.toggle('is-on', b.dataset.view === S.view);
     b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
+    const a = viewAvailability(b.dataset.view);
+    // A missing web render is a notice within this angle, not a navigation lock.
+    b.setAttribute('aria-disabled', 'false');
+    b.title = a.ok ? '' : a.reason === 'webWithdrawn' ? withdrawnNote() : vt(a.reason);
   }
 }
 
-function draw() {
+/* Which sides of the glove can honestly show the chosen web. One answer, used
+   by the view buttons, the stage, the picture and the proof. Read from the
+   loaded data, never assumed:
+     - H-Web is the photographed glove: every side.
+     - Pinky side: the web is not visible from there, so every web, said so.
+     - Back: only when the back data carries a render for that web.
+     - Palm: H-Web, or one of the six PALM-P1 estimated inserts the loaded
+       palm data registers and the engine verified. The two I-web estimates
+       are not installed and stay unavailable, never an H-Web.
+     - Thumb: H-Web, or a reviewed C3 estimate. The legacy thumb inserts in
+       thumb-data predate the accepted studies and wait for a reviewed
+       replacement; they are never shown as current.
+   An unavailable side is drawn as an explicit notice, never as an H-Web. */
+const VIEW_TEXT = {
+  en: {
+    pinkyNoWeb: 'The web is not visible from the pinky side. Your web is ordered as chosen.',
+    webNoBack: 'There is no picture of this web yet. It is ordered exactly as chosen.',
+    webNoPalm: 'There is no palm picture of this web yet. It is ordered exactly as chosen.',
+    palmEstimated: 'Estimated palm view: the web is a generated inside-face render on the photographed H-Web palm, not a photograph of this web. Fit and construction are not shown. Your web and colours are ordered as chosen.',
+    thumbAwaitingReview: 'The thumb-side picture of this web is being redone and is not shown until it is approved. It is ordered exactly as chosen.',
+    webNoThumb: 'There is no thumb-side picture of this web yet. It is ordered exactly as chosen.',
+    viewNotLoaded: 'This side could not be loaded.',
+    viewUnavailableTitle: 'No picture of this side for %s',
+    anglesUnavailable: 'Not available for this web: %s.',
+    limUnavailable: 'No picture of the %s for %s; the image shows a notice instead.'
+  },
+  nl: {
+    pinkyNoWeb: 'Het web is vanaf de pinkzijde niet zichtbaar. Je web wordt besteld zoals gekozen.',
+    webNoBack: 'Van dit web is nog geen afbeelding. Het wordt precies zo besteld.',
+    webNoPalm: 'Van dit web is nog geen afbeelding van de binnenkant. Het wordt precies zo besteld.',
+    palmEstimated: 'Geschatte binnenkant: het web is een gegenereerde render op de gefotografeerde H-Web-palm, geen foto van dit web. Pasvorm en constructie worden niet getoond. Je web en kleuren worden besteld zoals gekozen.',
+    thumbAwaitingReview: 'De afbeelding van de duimzijde van dit web wordt opnieuw gemaakt en pas getoond na goedkeuring. Het wordt precies zo besteld.',
+    webNoThumb: 'Van dit web is nog geen afbeelding van de duimzijde. Het wordt precies zo besteld.',
+    viewNotLoaded: 'Deze kant kon niet worden geladen.',
+    viewUnavailableTitle: 'Geen afbeelding van deze kant voor %s',
+    anglesUnavailable: 'Niet beschikbaar voor dit web: %s.',
+    limUnavailable: 'Geen afbeelding van de %s voor %s; de afbeelding toont een melding.'
+  }
+};
+const vt = k => (VIEW_TEXT[S.lang] || VIEW_TEXT.en)[k] || t(k);
+const selectedWeb = () => WEBS.find(w => w.id === S.webType);
+function viewAvailability(view, w = selectedWeb()) {
+  if (S.withdrawnWeb && !S.webType) return { ok: false, reason: 'webWithdrawn' };
+  if (!R || (view !== 'back' && !R.hasView(view))) return { ok: false, reason: 'viewNotLoaded' };
+  const native = !w || w.id === NATIVE_WEB;
+  if (view === 'pinky') return { ok: true, note: native ? null : 'pinkyNoWeb' };
+  if (native) return { ok: true, note: null };
+  if (view === 'back') return w.render && R.views.back?.DATA?.webs?.[w.render]
+    ? { ok: true, note: null } : { ok: false, reason: 'webNoBack' };
+  if (view === 'palm') return w.render && R.views.palm?.DATA?.palmWebs?.entries?.[w.render]
+    ? { ok: true, note: 'palmEstimated' } : { ok: false, reason: 'webNoPalm' };
+  if (view === 'thumb') {
+    if (estimatesThumb(w)) return { ok: true, note: 'thumbEstimated' };
+    return R.views.thumb?.DATA?.thumbWebs?.[w.render]
+      ? { ok: false, reason: 'thumbAwaitingReview' } : { ok: false, reason: 'webNoThumb' };
+  }
+  return { ok: false, reason: 'viewNotLoaded' };
+}
+/* Choosing a web preserves the user's angle. If this web has no reviewed
+   asset for that angle, keep the angle and show its existing honest notice. */
+function editView(view) {
+  if (!R || !R.hasView(view) || S.view === view) return false;
+  S.view = view;
+  return true;
+}
+function colourView(field) {
+  // These parts are most clearly separated in their side view.
+  const preferred = { back1: 'thumb', back2: 'thumb', back8: 'pinky',
+    back9: 'pinky', palm: 'palm' }[field];
+  if (preferred && viewAvailability(preferred).ok) return editView(preferred);
+  if (viewAvailability(S.view).ok && viewFieldLayer()[field]) return false;
+  // Retain any angle already showing the part; otherwise find a view that
+  // can actually render it. Never change the web to make a view available.
+  for (const view of ['back', 'palm', 'thumb', 'pinky']) {
+    if (!viewAvailability(view).ok) continue;
+    const fields = view === 'back' ? Object.keys(FIELD_TO_LAYER)
+      : view === 'palm' ? Object.keys(PALM_FIELDS)
+      : R.views[view].DATA.fieldsShown;
+    if (fields.includes(field)) return editView(view);
+  }
+  return false;
+}
+function drawUnavailable(target, reason) {
+  const D = R.views.back.DATA, cv = target.canvas;
+  if (cv.width !== D.w || cv.height !== D.h) { cv.width = D.w; cv.height = D.h; }
+  const g = target;
+  g.save();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, D.w, D.h);
+  g.fillStyle = '#EEF0F2';
+  g.fillRect(0, 0, D.w, D.h);
+  g.fillStyle = '#3A3F47';
+  g.textAlign = 'center';
+  const w = selectedWeb();
+  const lines = [[vt('viewUnavailableTitle').replace('%s', w ? w.id : (S.withdrawnWeb || '')), 'bold 34px system-ui, sans-serif'],
+                 [t(VIEW_KEYS[S.view]), '30px system-ui, sans-serif']];
+  let y = D.h / 2 - 80;
+  for (const [txt, font] of lines) { g.font = font; g.fillText(txt, D.w / 2, y); y += 52; }
+  g.font = '26px system-ui, sans-serif';
+  let cur = '';
+  for (const word of (reason === 'webWithdrawn' ? withdrawnNote() : vt(reason)).split(' ')) {
+    const next = cur ? cur + ' ' + word : word;
+    if (cur && g.measureText(next).width > D.w - 120) { g.fillText(cur, D.w / 2, y); y += 36; cur = word; }
+    else cur = next;
+  }
+  if (cur) g.fillText(cur, D.w / 2, y);
+  g.restore();
+}
+
+/* The selection tint is an editing aid, not part of the glove: only the
+   Colours step shows it, and a proof never does (see proofImage). */
+function draw(target = ctx, highlight = S.step === 3) {
+  if (!R) return;
   // The palm is a second view of the same glove. Everything the back view
   // hangs on the glove — a swapped web, the flag, the bullet, the pad — has
   // no asset on this side, and the engine skips each of them on that basis.
-  if (!R.setView(S.view) && S.view !== 'back') { S.view = 'back'; R.setView('back'); }
-  const cv = ctx.canvas;
+  const w = WEBS.find(w => w.id === S.webType);
+  const avail = viewAvailability(S.view, w);
+  if (!avail.ok) { drawUnavailable(target, avail.reason); return; }
+  // The webs C3 covers are drawn on the estimated body of their family, not the
+  // photograph. Each family has its own view name so I-webs stay off the EM body.
+  const view = S.view === 'thumb' && thumbEstimatedViewOf(w) || S.view;
+  if (!R.setView(view)) { drawUnavailable(target, 'viewNotLoaded'); return; }
+  const cv = target.canvas;
   if (cv.width !== R.DATA.w || cv.height !== R.DATA.h) {
     cv.width = R.DATA.w; cv.height = R.DATA.h;
   }
-  R.setFlag(flagArt(), draw);      // redraws once the SVG has decoded
-  const w = WEBS.find(w => w.id === S.webType);
+  R.setFlag(flagArt(), () => draw());   // redraws once the SVG has decoded
   R.setWeb(w && w.render);
+  // A side view shows only the web it was photographed with.
+  R.setWebMarked(!!w && w.id !== NATIVE_WEB);
   // The pad is fitted or it is not; until a colour is chosen it is white,
   // which is the order the form asks in.
   R.setPad(PAD_PART[S.pad] || null,
            S.colors.pad_color ? hexOf('pad_color') : null);
-  R.draw(ctx, layerState(), S.bullet,
-    S.step === 3 && viewFieldLayer()[S.part]
+  R.draw(target, layerState(), S.bullet,
+    highlight && viewFieldLayer()[S.part]
       ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
     indexIsOnePiece(), isLefty());
+}
+
+/* What the picture cannot show, in words. The same list goes on the Review
+   step, under the saved image, burned into the image, and into the exported
+   text, so a proof never travels without it. */
+function proofLimits() {
+  const L = S.lang, out = [];
+  out.push(t('limView').replace('%s', t(VIEW_KEYS[S.view])));
+  if (withdrawnNote()) out.push(withdrawnNote());
+  const w = WEBS.find(w => w.id === S.webType);
+  const a = viewAvailability(S.view, w);
+  if (!a.ok && a.reason === 'webWithdrawn') { /* said by withdrawnNote above */ }
+  else if (!a.ok) out.push(vt('limUnavailable').replace('%s', t(VIEW_KEYS[S.view])).replace('%s', w ? w.id : '—'), vt(a.reason));
+  else if (a.note === 'thumbEstimated') out.push(t('thumbEstimated'));
+  else if (a.note) out.push(vt(a.note));
+  if (S.thumbText.trim() || S.pinkyText.trim() || S.thumbNumber) out.push(t('limPersonal'));
+  if (S.flag === 'Other Flag') out.push(t('limOtherFlag').replace('%s', S.flagOther.trim() || '—'));
+  if (S.size) out.push(t('limSize').replace('%s', S.size));
+  if (S.colors.back7 && S.colors.back8 && S.colors.back7 !== S.colors.back8 && S.view !== 'pinky')
+    out.push(t('limBack8'));
+  return out;
+}
+/* The saved picture: a clean draw — no selection tint, whichever step is
+   open — with the limitations written underneath it. */
+function proofImage() {
+  const glove = document.createElement('canvas');
+  draw(glove.getContext('2d'), false);
+  const lines = proofLimits(), pad = 28, size = 24, lh = 32, maxW = glove.width - 2 * pad;
+  const out = document.createElement('canvas');
+  const g = out.getContext('2d');
+  g.font = `${size}px system-ui, sans-serif`;
+  const wrapped = [];
+  for (const line of [t('limitsTitle') + ':', ...lines.map(l => '• ' + l)]) {
+    let cur = '';
+    for (const word of line.split(' ')) {
+      const next = cur ? cur + ' ' + word : word;
+      if (cur && g.measureText(next).width > maxW) { wrapped.push(cur); cur = '  ' + word; }
+      else cur = next;
+    }
+    wrapped.push(cur);
+  }
+  out.width = glove.width;
+  out.height = glove.height + pad * 2 + wrapped.length * lh;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, out.width, out.height);
+  g.drawImage(glove, 0, 0);
+  g.font = `${size}px system-ui, sans-serif`;
+  g.fillStyle = '#1C1F24'; g.textBaseline = 'top';
+  wrapped.forEach((l, i) => g.fillText(l, pad, glove.height + pad + i * lh));
+  // Redraw the stage, since draw() switched the renderer's shared state.
+  draw();
+  return out;
+}
+function limitsBlock() {
+  const box = el('div', 'note limits');
+  box.appendChild(el('strong', null, t('limitsTitle')));
+  const ul = el('ul');
+  for (const l of proofLimits()) { const li = el('li'); li.textContent = l; ul.appendChild(li); }
+  box.appendChild(ul);
+  const w = WEBS.find(w => w.id === S.webType);
+  if (w && w.id !== NATIVE_WEB && w.img) {
+    const f = el('figure', 'refshot webref');
+    const img = el('img'); img.src = w.img; img.alt = w.id; img.loading = 'lazy';
+    const cap = el('figcaption'); cap.textContent = `${t('limWebRef')}: ${w.id}`;
+    f.append(img, cap);
+    box.appendChild(f);
+  }
+  return box;
 }
 
 /* ------------------------------------------------------------------ steps */
@@ -359,10 +601,11 @@ const STEP_FIELDS = [
   ['bullet', 'c:ring_emb'],
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
-   'circle', 'numberColor', 'flag', 'personalCheck'],
+   'circle', 'numberColor', 'flag', 'flagOther', 'personalCheck'],
   ['name', 'phone'], []
 ];
 function stepOpen(i) {
+  if (STEPS[i].key === 'you') return contactOpen();
   return STEP_FIELDS[i]
     .map(id => requiredQuestions().find(q => q.id === id))
     .filter(q => q && !answered(q)).length;
@@ -370,12 +613,17 @@ function stepOpen(i) {
 
 /* ------------------------------------------------------------- 1. start */
 function renderStart(b) {
+  // Starter cards always show the back and never mutate the active view.
+  const starterR = new GloveRenderer(R.views.back);
+  // Reuse decoded flag images; thumbnail draws are synchronous.
+  starterR._flags = R._flags || {};
   const grid = el('div', 'cards starter-cards');
   const groups = { built: t('built'), national: t('national'),
                    signature: t('signature'), blank: t('blankTag') };
   for (const st of STARTERS) {
     const c = el('button', 'card' + (S.startId === st.id ? ' is-on' : ''));
     c.type = 'button';
+    c.setAttribute('aria-pressed', String(S.startId === st.id));
     c.dataset.key = 'starter|' + st.id;
     const cv = el('canvas'); cv.width = 200; cv.height = 237;
     cv.style.width = '100%'; cv.style.aspectRatio = '200/237';
@@ -389,14 +637,14 @@ function renderStart(b) {
       const g = cv.getContext('2d');
       const prev = { ...S.colors }, pb = S.bullet, pf = S.flag;
       applyStarter(st, true);
-      R.setFlag(flagArt());
+      starterR.setFlag(flagArt());
       const tmp = document.createElement('canvas');
       tmp.width = DATA.w; tmp.height = DATA.h;
-      R.draw(tmp.getContext('2d'), layerState(), S.bullet, null,
+      starterR.draw(tmp.getContext('2d'), layerState(DATA, LAYER_TO_FIELD), S.bullet, null,
              indexIsOnePiece(), isLefty());
       g.drawImage(tmp, 0, 0, 200, 237);
       S.colors = prev; S.bullet = pb; S.flag = pf;
-      R.setFlag(flagArt());          // the renderer holds one flag at a time
+      starterR.setFlag(flagArt());          // the renderer holds one flag at a time
     });
   }
   b.appendChild(grid);
@@ -442,8 +690,8 @@ function applyStarter(st, quiet) {
   const pr = DATA.presets[st.id] || st.colors
     || Object.values(DATA.presets)[0] || {};
   for (const f of COLOUR_ORDER) {
-    // The pad is fitted white and stays white until someone picks a colour —
-    // a starter colourway should not answer an optional question for them.
+    // Match optional finger protection to the starter index colour below,
+    // after all panel colours have been resolved.
     if (f === 'pad_color') continue;
     const pal = DATA.palettes[PALETTE_OF(f)];
     let v = pr[FIELD_TO_LAYER[f]] !== undefined ? pr[FIELD_TO_LAYER[f]]
@@ -456,6 +704,9 @@ function applyStarter(st, quiet) {
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
   if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
+  // Reset the shared hood/pad colour with the colourway; a later manual
+  // choice remains independent until another starter is selected.
+  S.colors.pad_color = S.colors.back3;
   if (!quiet) { S.startId = st.id; draw(); }
 }
 
@@ -506,7 +757,13 @@ const thumbs = new Map();
 // Replace an option card's supplied photograph with the customer's own glove,
 // rendered from the compositor. `jobs` is [id, setUp] per drawable card, where
 // setUp() puts the renderer in the state that card is offering.
-function liveThumbs(field, items, box, jobFor, restore) {
+function liveThumbs(field, items, box, jobFor) {
+  const previewR = new GloveRenderer(R.views.back);
+  previewR._flags = R._flags || {};
+  previewR.setFlag(flagArt());
+  const selectedWeb = WEBS.find(w => w.id === S.webType);
+  previewR.setWeb(selectedWeb && selectedWeb.render);
+  previewR.setPad(PAD_PART[S.pad] || null, S.colors.pad_color ? hexOf('pad_color') : null);
   const cards = field.querySelectorAll('.cards .card');
   const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag,
                               S.webType, box]);
@@ -534,8 +791,6 @@ function liveThumbs(field, items, box, jobFor, restore) {
   // Always the back of the glove, whichever view the stage is showing: the
   // crops below are in the back view's pixels, and a web or a pad is what
   // these cards are about.
-  const wasView = S.view;
-  S.view = 'back'; R.setView('back');
   let [sx, sy, sw, sh] = box;
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
@@ -545,10 +800,10 @@ function liveThumbs(field, items, box, jobFor, restore) {
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) { restore(); S.view = wasView; R.setView(wasView); draw(); return; }
+    if (!job) return;
     const [it, card, setUp] = job;
-    setUp();
-    R.draw(tc, layerState(), S.bullet, null, indexIsOnePiece(), isLefty());
+    setUp(previewR);
+    previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, indexIsOnePiece(), isLefty());
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
@@ -560,11 +815,9 @@ function liveThumbs(field, items, box, jobFor, restore) {
 }
 
 function webThumbs(field, fit) {
-  const keep = WEBS.find(x => x.id === S.webType);
   liveThumbs(field, fit, WEB_BOX,
              w => (w.render || w.id === NATIVE_WEB)
-               ? () => R.setWeb(w.render || null) : null,
-             () => R.setWeb((keep && keep.render) || null));
+               ? renderer => renderer.setWeb(w.render || null) : null);
 }
 
 // The finger pad, shown fitted rather than as a photograph of the part on its
@@ -576,8 +829,7 @@ function padThumbs(field) {
   const hex = S.colors.pad_color ? hexOf('pad_color') : null;
   liveThumbs(field, PADS, PAD_BOX,
              p => (p.id === 'None' || PAD_PART[p.id])
-               ? () => R.setPad(PAD_PART[p.id] || null, hex) : null,
-             () => R.setPad(PAD_PART[S.pad] || null, hex));
+               ? renderer => renderer.setPad(PAD_PART[p.id] || null, hex) : null);
 }
 
 /* --------------------------------------------------------------- 3. web */
@@ -591,15 +843,32 @@ function renderWeb(b) {
     `${fit.length} ${t('filtered')} ${S.size}`));
   const field = cardField(t('webType'), fit.map(w => ({
     id: w.id, label: w.id, img: w.img
-  })), S.webType, v => { snapshot(); S.webType = v; draw(); paint(); }, true,
+  })), S.webType, v => { snapshot(); S.webType = v; S.withdrawnWeb = null; draw(); paint(); }, true,
     'portrait');
   b.appendChild(field);
   webThumbs(field, fit);
+  const wd = withdrawnNote();
+  if (wd) b.appendChild(el('p', 'note note-warn', wd)).setAttribute('role', 'status');
+  // Pictures of form webs that are not offered. Figures, not buttons: they
+  // hold no state and nothing about them reaches the design or the order.
+  const refs = el('section', 'web-refs');
+  refs.setAttribute('aria-labelledby', 'webrefs-title');
+  const h = el('h3', 'web-refs-title'); h.id = 'webrefs-title'; h.textContent = t('webRefTitle');
+  refs.append(h, el('p', 'note', t('webRefNote')));
+  const grid = el('div', 'web-refs-grid');
+  for (const r of WEB_REFERENCES) {
+    const fig = el('figure', 'web-ref');
+    const img = el('img'); img.src = r.img; img.alt = `${r.id}: ${t('webRefBadge')}`; img.loading = 'lazy';
+    const cap = el('figcaption');
+    cap.append(el('strong', null, r.id), el('span', 'web-ref-badge', t('webRefBadge')));
+    fig.append(img, cap); grid.appendChild(fig);
+  }
+  refs.appendChild(grid); b.appendChild(refs);
   // Only some webs are photographed. The rest are ordered correctly but the
   // preview still shows the standard one, and saying so beats letting someone
   // believe the picture is their glove.
   const note = webPreviewNote();
-  if (note) b.appendChild(el('p', 'note', t(note)));
+  if (note) b.appendChild(el('p', 'note', note === 'webWithdrawn' ? withdrawnNote() : vt(note)));
   b.appendChild(swatchField('web', null, true));
 }
 
@@ -609,11 +878,102 @@ function renderWeb(b) {
    (see draw()). Saying so beats letting someone believe the picture is their
    glove. */
 function webPreviewNote() {
-  const w = WEBS.find(w => w.id === S.webType);
-  if (!w || w.id === NATIVE_WEB) return null;
-  if (!w.render) return 'webNotDrawn';
-  return S.view === 'palm' ? 'webNotOnPalm' : null;
+  if (!R) return null;
+  const a = viewAvailability(S.view);
+  return a.ok ? a.note : a.reason;
 }
+/* Notes the stage itself carries, whatever step is open. */
+const STAGE_NOTES = ['pinkyNoWeb', 'webNoBack', 'webNoPalm', 'thumbAwaitingReview',
+                     'webNoThumb', 'viewNotLoaded', 'thumbEstimated', 'palmEstimated'];
+
+/* Contract C3 (outputs/2d-finish-plan/CONTRACT-C3.json). For the webs it
+   lists, the thumb side is drawn on a generated body — never the photograph —
+   and per Scott's 29 Sep correction (draft-3) there are TWO body families,
+   ONE fixed webless body each, and one web-local insert per web:
+     - i  : standard-i, spiral-i share the webless i-fixed body (Standard I r03
+            with its web removed to a bed). Two inserts, one per web. Neither
+            insert has a thumb-side web-leather tab; the index attachment is
+            the inward lace return, two short in/out points.
+     - em : smlee, em-rocket, closed-diamond-net share the webless em-fixed
+            body (EM Rocket r08, web removed to a bed). Three inserts.
+   Both bodies keep a full 360° stitch ring around the SSK thumb-circle
+   badge, delivered as body 'stitching' pixels (n=9) so it follows the
+   stitching colour. The block sits in thumb-data.json as estimatedBody, so
+   bundle.py inlines its assets with the rest. Until the installer writes a
+   REVIEWED block, or if a body's layers or ANY insert of a web in its
+   servesWebs is missing, there is no view for that body and the photographed
+   thumb side, its inserts and its hatch behave exactly as before. */
+const C3_ROLES = ['leather', 'laces', 'stitching', 'palm', 'cut', 'idmap'];
+/* Draft-3: the two accepted bodies and their exact family/servesWebs. The route
+   is driven by this table, not by data-block keys — an attacker who edited
+   thumb-data.json cannot invent a body id, swap a family label or claim an
+   I-web on the em-fixed body. Anything not in this map is ignored. */
+const C3_FAMILIES = Object.freeze({
+  'i-fixed':  Object.freeze({ family: 'i',  servesWebs: Object.freeze(['standard-i', 'spiral-i']) }),
+  'em-fixed': Object.freeze({ family: 'em', servesWebs: Object.freeze(['smlee', 'em-rocket', 'closed-diamond-net']) })
+});
+/* {slug -> viewName}. Populated at load once the C3 bodies decode. */
+const C3_ROUTE = {};
+function estimatedThumbViews(v) {
+  const B = v && v.DATA.estimatedBody;
+  if (!B || B.contractRevision !== 'C3' || B.status !== 'REVIEWED'
+      || B.label !== 'estimated' || !B.bodies) return null;
+  const views = {}, bodyOfWeb = {}, inserts = (B.inserts && typeof B.inserts === 'object') ? B.inserts : {};
+  // Iterate the canonical map, not B.bodies: an unknown bodyId, or a body
+  // whose family / servesWebs disagree with the contract, never gets a view.
+  for (const [bodyId, spec] of Object.entries(C3_FAMILIES)) {
+    const body = B.bodies[bodyId];
+    if (!body || body.family !== spec.family || !body.thumbCircle
+        || !Array.isArray(body.servesWebs)
+        || body.servesWebs.length !== spec.servesWebs.length
+        || !spec.servesWebs.every(s => body.servesWebs.includes(s))) continue;
+    // Defence in depth: the two families' canonical servesWebs sets are
+    // disjoint, so any overlap in bodyOfWeb means the block was tampered
+    // with — drop this body rather than route a slug twice.
+    if (body.servesWebs.some(s => bodyOfWeb[s])) continue;
+    // Every served slug must have an insert entry; missing insert fails closed.
+    if (!body.servesWebs.every(s => inserts[s] && typeof inserts[s] === 'object')) continue;
+    const imgs = {}, bbox = {};
+    let ok = true;
+    const take = (name, key) => {
+      if (!key || !v.imgs[key]) { ok = false; return; }
+      imgs[name] = v.imgs[key];
+      if (v.DATA.bbox[key]) bbox[name] = v.DATA.bbox[key];
+    };
+    // Nothing of the photographed body is carried over: a zone's _hi sheen
+    // left behind would light the estimated leather with the photograph.
+    for (const [name, key] of Object.entries(body.layers || {})) take(name, key);
+    for (const s of body.servesWebs) for (const key of Object.values(inserts[s])) take(key, key);
+    // The generated body shows its welting, which the photograph's zones do
+    // not: the one zone C3 may add, and only in this view.
+    const extra = (body.zones || []).filter(z => z.id === 'welting' && z.n === 10
+      && z.field === 'welting' && z.group === 'lace').slice(0, 1);
+    const zones = [...v.DATA.zones, ...extra];
+    if (!ok || !imgs.glove || !imgs._idmap || !imgs.thumb_circle_art
+        || !zones.every(z => imgs[z.id] && bbox[z.id])
+        || !body.servesWebs.every(s => C3_ROLES.every(r => imgs[inserts[s][r]] && bbox[inserts[s][r]]))) continue;
+    const shown = extra.map(z => z.field);
+    // Every web served by this body gets a thumbWebs entry; the engine's
+    // insert block runs for both families identically.
+    const thumbWebs = Object.fromEntries(body.servesWebs.map(s => [s, inserts[s]]));
+    const DATA = { ...v.DATA, zones, bbox, thumbWebs, thumbCircle: body.thumbCircle,
+                   sheen: body.sheen || {}, webMarker: null,
+                   fieldsShown: [...v.DATA.fieldsShown, ...shown],
+                   fieldsNotShown: v.DATA.fieldsNotShown.filter(f => !shown.includes(f)) };
+    const c = document.createElement('canvas');
+    c.width = DATA.w; c.height = DATA.h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(imgs._idmap, 0, 0);
+    const viewName = 'thumbEstimated:' + bodyId;
+    views[viewName] = { DATA, imgs, idData: g.getImageData(0, 0, DATA.w, DATA.h).data };
+    for (const s of body.servesWebs) bodyOfWeb[s] = viewName;
+  }
+  return Object.keys(views).length ? { views, bodyOfWeb } : null;
+}
+/* H-Web and every web C3 does not list stay on the photographed side. */
+const thumbEstimatedViewOf = w => (w && w.id !== NATIVE_WEB && w.render
+  && C3_ROUTE[w.render] && R?.views?.[C3_ROUTE[w.render]]) ? C3_ROUTE[w.render] : null;
+const estimatesThumb = w => !!thumbEstimatedViewOf(w);
 
 /* ----------------------------------------------------------- 4. colours */
 function renderColours(b) {
@@ -627,14 +987,20 @@ function renderColours(b) {
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
                   (f === 'back3' && indexIsOnePiece()
                     ? t('indexOnePiece') : fieldLabel(f, S.lang));
-    p.onclick = () => { S.part = f; paint(); };
+    p.setAttribute('aria-pressed', String(S.part === f));
+    p.onclick = () => {
+      S.part = f;
+      colourView(f);
+      draw(); paint();                 // the tint follows the chosen part
+    };
     parts.appendChild(p);
   }
   b.appendChild(parts);
   b.appendChild(swatchField(
     S.part,
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
-                                              : (OFFSTAGE[S.part] || null),
+      : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
+      : (OFFSTAGE[S.part] || null),
     true));
 
   b.appendChild(el('p', 'note swatch-note', t('swatchNote')));
@@ -656,8 +1022,10 @@ function renderColours(b) {
 function renderLogos(b) {
   const grid = el('div', 'cards');
   DATA.bullets.forEach((bl, i) => {
+    if (UNCONFIRMED_BULLETS.includes(bl.name)) return;
     const c = el('button', 'card' + (i === S.bullet ? ' is-on' : ''));
     c.type = 'button';
+    c.setAttribute('aria-pressed', String(i === S.bullet));
     c.dataset.key = 'bullet|' + i;
     c.innerHTML = `<img src="${bl.thumb}" alt="" loading="lazy">` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
@@ -690,7 +1058,7 @@ function renderPersonal(b) {
     ['assets/ref/thumb_circle.webp', t('thumbNumber')]
   ]));
   b.appendChild(textField(t('thumbText'), S.thumbText, 18,
-    v => { const changed = !!S.thumbText !== !!v; S.thumbText = v; paint(changed); }));
+    v => { const changed = !!S.thumbText.trim() !== !!v.trim(); S.thumbText = v; return changed; }, false, 'text', null, 'thumb'));
   if (S.thumbText.trim() || S.pinkyText.trim()) {
     b.appendChild(cardField(t('thumbFont'), EMB_FONTS.map(f => ({
       id: f.id, label: f.id, img: f.img
@@ -701,8 +1069,8 @@ function renderPersonal(b) {
   }
   const twoChars = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
   const circleField = textField(t('thumbNumber'), S.thumbNumber, 2,
-    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); paint(changed); },
-    false, 'text', twoChars);
+    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); return changed; },
+    false, 'text', twoChars, 'thumb');
   circleField.appendChild(el('p', 'note', t('circleHint')));
   b.appendChild(circleField);
   b.appendChild(choiceField(t('circle'), CIRCLE_COLORS.map(([n, hx]) => ({
@@ -714,8 +1082,8 @@ function renderPersonal(b) {
   // confirmed it. Font and thread follow the thumb's; if the pinky can carry
   // its own, it needs its own two questions rather than sharing them.
   const pinky = textField(t('pinkyText'), S.pinkyText, 18,
-    v => { const changed = !!S.pinkyText !== !!v; S.pinkyText = v; paint(changed); });
-  if (S.pinkyText) pinky.appendChild(el('p', 'note', t('pinkyHint')));
+    v => { const changed = !!S.pinkyText.trim() !== !!v.trim(); S.pinkyText = v; return changed; }, false, 'text', null, 'pinky');
+  if (S.pinkyText.trim()) pinky.appendChild(el('p', 'note', t('pinkyHint')));
   b.appendChild(pinky);
   b.appendChild(cardField(t('flag'), FLAGS.map(f => ({
     id: f.id, label: f[S.lang] || f.id, img: f.img
@@ -723,8 +1091,15 @@ function renderPersonal(b) {
     snapshot(); S.flag = v;
     // one piece of leather now, so the two halves share a colour
     if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
+    if (v !== 'Other Flag') S.flagOther = '';
     draw(); paint();
   }, false));
+  if (S.flag === 'Other Flag') {
+    const other = textField(t('flagOther'), S.flagOther, 40,
+      v => { const changed = !!S.flagOther.trim() !== !!v.trim(); S.flagOther = v; return changed; }, true);
+    other.appendChild(el('p', 'note', t(S.flagOther.trim() ? 'flagPending' : 'flagOtherNeeded')));
+    b.appendChild(other);
+  }
 }
 /* Photographs of the real thing, so the wording is not the only guide to
    what these options actually look like. */
@@ -745,8 +1120,27 @@ function threadField(key, label) {
 
 /* --------------------------------------------------------- 7. your details */
 function renderYou(b) {
-  b.appendChild(textField(t('name'), S.name, 60, v => { S.name = v; paint(false); }, true));
-  b.appendChild(textField(t('phone'), S.phone, 24, v => { S.phone = v; paint(false); }, true, 'tel'));
+  const status = el('p', 'note');
+  status.setAttribute('role', 'status');
+  const showStatus = () => { status.textContent = t(contactOpen() ? 'contactMissing' : 'contactReady'); };
+  b.appendChild(textField(t('name'), S.name, 60, v => { S.name = v; showStatus(); return false; }, true));
+  const phone = textField(t('phone'), S.phone, 32,
+    v => { S.phone = v; showPhone(); showStatus(); return false; }, true, 'tel');
+  const input = phone.querySelector('input'), msg = el('p', 'note', t('phoneBad'));
+  msg.id = 'phonemsg';
+  input.setAttribute('aria-describedby', 'phonemsg');
+  input.autocomplete = 'tel';
+  // Checked in place, so typing is never interrupted by a rebuild.
+  const showPhone = () => {
+    const bad = !!S.phone.trim() && !phoneOk(S.phone);
+    msg.hidden = !bad;
+    if (bad) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+  };
+  phone.appendChild(msg);
+  showPhone();
+  b.appendChild(phone);
+  showStatus();
+  b.appendChild(status);
 }
 
 /* -------------------------------------------------------------- 8. review */
@@ -758,6 +1152,9 @@ function renderReview(b) {
   } else {
     b.appendChild(el('p', 'note', t('allSet')));
   }
+  if (S.flag === 'Other Flag' && S.flagOther.trim()) b.appendChild(el('p', 'note', t('flagPending')));
+  b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
+  b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
@@ -784,9 +1181,11 @@ function choiceField(label, opts, value, onPick, required) {
   const f = el('div', 'field');
   f.appendChild(labelRow(label, required, value != null));
   const row = el('div', 'opts');
+  row.setAttribute('role', 'group'); row.setAttribute('aria-label', label);
   for (const o of opts) {
     const b = el('button', 'opt-btn' + (value === o.id ? ' is-on' : ''));
     b.type = 'button';
+    b.setAttribute('aria-pressed', String(value === o.id));
     b.dataset.key = `${label}|${o.id}`;
     b.innerHTML = (o.swatch
       ? `<span class="chip" style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${o.swatch};border:1px solid rgba(0,0,0,.25);vertical-align:-1px;margin-right:6px"></span>` : '') +
@@ -801,9 +1200,11 @@ function cardField(label, opts, value, onPick, required, shape) {
   const f = el('div', 'field');
   f.appendChild(labelRow(label, required, value != null));
   const grid = el('div', 'cards' + (shape ? ' is-' + shape : ''));
+  grid.setAttribute('role', 'group'); grid.setAttribute('aria-label', label);
   for (const o of opts) {
     const c = el('button', 'card' + (value === o.id ? ' is-on' : ''));
     c.type = 'button';
+    c.setAttribute('aria-pressed', String(value === o.id));
     c.dataset.key = `${label}|${o.id}`;
     c.innerHTML = (o.img ? `<img src="${o.img}" alt="" loading="lazy">` : '') +
       `<span class="cap"><span class="nm">${o.label}</span></span>`;
@@ -818,9 +1219,11 @@ function swatchGrid(label, pal, value, onPick, required, note) {
   f.appendChild(labelRow(label, required, value != null));
   if (note) f.appendChild(el('p', 'note', note));
   const grid = el('div', 'swatches');
+  grid.setAttribute('role', 'group'); grid.setAttribute('aria-label', label);
   for (const [num, name, hx] of pal) {
     const s = el('button', 'sw' + (value === num ? ' is-on' : ''));
     s.type = 'button';
+    s.setAttribute('aria-pressed', String(value === num));
     s.dataset.key = `${label}|${num}`;
     s.innerHTML = `<span class="chip" style="background:${hx}"></span>` +
                   `<span class="num">${num}.</span><span class="nm">${name}</span>`;
@@ -841,24 +1244,80 @@ function swatchField(field, note, required) {
       draw(); paint();
     }, required, note);
 }
-function textField(label, value, max, onInput, required, type, clean) {
+/* One edit of one text field is one undo step. The state before the first
+   keystroke is kept, and pushed when the edit ends (blur, navigation, undo,
+   redo, save) — pushing on blur, as this used to, recorded the state the
+   debounce had already changed, so Undo kept the new text. The pending
+   debounce lives here too, so whatever ends the edit can flush it. */
+let textTx = null;   // { key, before, timer, apply, rebuild }
+function flushText() {
+  const tx = textTx;
+  if (!tx) return false;
+  textTx = null;
+  clearTimeout(tx.timer);
+  if (tx.apply) tx.rebuild = tx.apply() || tx.rebuild;
+  if (JSON.stringify(S) !== tx.before && !suppress) {
+    undoStack.push(tx.before);
+    if (undoStack.length > 60) undoStack.shift();
+    redoStack.length = 0;
+  }
+  return tx.rebuild;
+}
+/* Repainting during blur rebuilt the step buttons between mousedown and
+   mouseup, so the first click after typing went nowhere. While a pointer is
+   down the repaint waits until its click has been delivered. */
+let pointerDown = false;
+document.addEventListener('pointerdown', () => { pointerDown = true; }, true);
+for (const type of ['pointerup', 'pointercancel'])
+  document.addEventListener(type, () => { pointerDown = false; }, true);
+function afterPointer(fn) {
+  if (!pointerDown) { setTimeout(fn, 0); return; }
+  const done = () => {
+    document.removeEventListener('pointerup', done, true);
+    document.removeEventListener('pointercancel', done, true);
+    pointerDown = false;
+    setTimeout(fn, 0);          // click is dispatched before this runs
+  };
+  document.addEventListener('pointerup', done, true);
+  document.addEventListener('pointercancel', done, true);
+}
+function textField(label, value, max, apply, required, type, clean, preferredView) {
   const f = el('div', 'field');
   f.appendChild(labelRow(label, required, !!value));
   const i = el('input'); i.type = type || 'text'; i.value = value || '';
   i.maxLength = max;
   i.setAttribute('aria-label', label);
-  i.dataset.key = 'text|' + label;
+  const key = 'text|' + label;
+  i.dataset.key = key;
   i.required = !!required;
-  let tm;
+  i.onfocus = () => {
+    if (preferredView && editView(preferredView)) { draw(); paint(false); }
+  };
   i.oninput = () => {
     if (clean) {                       // show exactly what gets ordered
       const c = clean(i.value);
       if (c !== i.value) i.value = c;
     }
-    clearTimeout(tm);
-    tm = setTimeout(() => onInput(i.value), 250);
+    if (textTx && textTx.key !== key) flushText();
+    if (!textTx) textTx = { key, before: JSON.stringify(S), timer: 0, apply: null, rebuild: false };
+    const tx = textTx, v = i.value;
+    clearTimeout(tx.timer);
+    tx.apply = () => apply(v);
+    tx.timer = setTimeout(() => {
+      if (textTx !== tx) return;
+      tx.rebuild = tx.apply() || tx.rebuild;
+      tx.apply = null;
+      // The field is still being typed in: a rebuild is only for fields that
+      // appear or disappear with it (font, thread), and focus is restored.
+      if (tx.rebuild) { tx.rebuild = false; paint(true); } else paint(false);
+    }, 250);
   };
-  i.onblur = () => { snapshot(); onInput(i.value); };
+  i.onblur = () => {
+    // A rebuild removing this input is not the end of the edit.
+    if (!i.isConnected || !textTx || textTx.key !== key) return;
+    const rebuild = flushText();
+    afterPointer(() => paint(rebuild));
+  };
   f.appendChild(i);
   return f;
 }
@@ -895,7 +1354,9 @@ function specRows() {
   push(t('thumbNumber'), S.thumbNumber);
   push(t('circle'), active('circle') ? S.circle : null);
   push(t('numberColor'), active('numberColor') ? embName(S.numberColor) : null);
-  push(t('flag'), S.flag);
+  push(t('flag'), S.flag === 'Other Flag'
+    ? `${S.flag}: ${S.flagOther.trim() || '—'} (${t(S.flagOther.trim() ? 'flagPending' : 'flagOtherNeeded')})`
+    : S.flag);
   rows.push(['#', t('you')]);
   push(t('name'), S.name);
   push(t('phone'), S.phone);
@@ -921,9 +1382,21 @@ function buildSpec() {
   wrap.appendChild(dl);
   return wrap;
 }
+/* Design completeness and contact completeness are separate facts. */
+const designStatus = () => [
+  requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice'),
+  S.flag === 'Other Flag' && S.flagOther.trim() ? t('flagPending') : '',
+  t(contactOpen() ? 'contactMissing' : 'contactReady')
+].filter(Boolean).join(' ');
 function specText() {
-  const lines = [`SSK custom glove — ${t('reference')}: ${code()}`,
-    requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice'), ''];
+  if (flushText()) paint();
+  const lines = [`SSK custom glove — ${t('reference')}: ${code()}`, designStatus(), '',
+    `[${t('limitsTitle')}]`, ...proofLimits().map(l => '- ' + l)];
+  const w = WEBS.find(w => w.id === S.webType);
+  // The offline bundle inlines w.img as a data: URI; never put raw bytes in text.
+  const ref = w && w.img && !/^data:/i.test(w.img) ? w.img : null;
+  if (w) lines.push(`- ${t('webType')}: ${w.id}${ref ? ` (${t('limWebRef')}: ${ref})` : ''}`);
+  lines.push('');
   for (const [k, v] of specRows())
     lines.push(k === '#' ? `\n[${v}]` : `${k}: ${v}`);
   if (BASE_PRICE) lines.push('', `${t('basePrice')} ${BASE_PRICE}`);
@@ -934,13 +1407,16 @@ function specText() {
 /* ---------------------------------------------------------------- sheet */
 let sheetReturnFocus;
 function openSheet() {
+  if (flushText()) paint();
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
-  $('#shot').src = $('#glove').toDataURL('image/png');
+  $('#shot').src = proofImage().toDataURL('image/png');
+  $('#shot').alt = [t('limitsTitle'), ...proofLimits()].join(' ');
   const host = $('#spechost');
   host.textContent = '';
+  host.appendChild(limitsBlock());
   host.appendChild(buildSpec());
-  $('#sheetstatus').textContent = requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice');
+  $('#sheetstatus').textContent = designStatus();
   $('#scrim').hidden = false;
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
   $('#sheetx').focus();
@@ -1000,6 +1476,7 @@ const focusKey = (e) => e && e !== document.body && e.dataset
   : null;
 
 function paint(rebuildBody = true) {
+  if (!R) return; // Controls can be clicked while optional views are still loading.
   const L = S.lang;
   document.documentElement.lang = L;
   const hadKey = focusKey(document.activeElement);
@@ -1019,7 +1496,7 @@ function paint(rebuildBody = true) {
     b.dataset.key = 'step|' + i;
     b.innerHTML = `<span class="n">${i + 1}</span>${t(st.title)}` +
       (STEP_FIELDS[i].length ? `<span class="dot${open ? ' todo' : ''}"></span>` : '');
-    b.onclick = () => { S.step = i; paint(); };
+    b.onclick = () => { flushText(); S.step = i; paint(); };
     nav.appendChild(b);
   });
 
@@ -1033,8 +1510,15 @@ function paint(rebuildBody = true) {
   state.textContent = open ? `${open} ${t('left')}` : t('done');
   state.classList.toggle('todo', open > 0);
 
+  // Entering or leaving Colours adds or removes the selection tint.
+  if (wasStep !== undefined && wasStep !== S.step && (wasStep === 3 || S.step === 3)) draw();
   if (rebuildBody) {
-    const b = $('#body'); b.textContent = ''; st.render(b); b.scrollTop = 0;
+    const b = $('#body');
+    // A choice repaints the same step: keep the reader where they were.
+    const keep = wasStep === S.step ? b.scrollTop : 0;
+    const keepPage = wasStep === S.step ? document.scrollingElement.scrollTop : null;
+    b.textContent = ''; st.render(b); b.scrollTop = keep;
+    if (keepPage != null) document.scrollingElement.scrollTop = keepPage;
   }
 
   // stage
@@ -1045,7 +1529,11 @@ function paint(rebuildBody = true) {
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
-  const palmNote = wn === 'webNotOnPalm' ? t(wn) : '';
+  const off = [...($('#stageview')?.children || [])]
+    .filter(b => !viewAvailability(b.dataset.view).ok).map(b => t(VIEW_KEYS[b.dataset.view]));
+  const palmNote = [STAGE_NOTES.includes(wn) ? (wn === 'thumbEstimated' ? t(wn) : vt(wn)) : '',
+    off.length ? vt('anglesUnavailable').replace('%s', off.join(', ')) : '',
+    withdrawnNote()].filter(Boolean).join(' ');
   $('#stagehint').textContent = S.step === 3
     ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
     : palmNote;
@@ -1060,7 +1548,7 @@ function paint(rebuildBody = true) {
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
-  $('#undo').disabled = !undoStack.length;
+  $('#undo').disabled = !undoStack.length && !textTx;
   $('#redo').disabled = !redoStack.length;
 
   if (hadKey && wasStep !== undefined && wasStep !== S.step && hadKey.startsWith('step|')) {
@@ -1077,19 +1565,22 @@ function paint(rebuildBody = true) {
 }
 
 /* ------------------------------------------------------------------ wire */
-$('#prev').onclick = () => { if (S.step > 0) { S.step--; paint(); } };
+$('#prev').onclick = () => { flushText(); if (S.step > 0) { S.step--; paint(); } };
 $('#next').onclick = () => {
+  flushText();
   if (S.step === STEPS.length - 1) return openSheet();
   S.step++; paint();
 };
 $('#lang-nl').onclick = () => { S.lang = 'nl'; paint(); };
 $('#lang-en').onclick = () => { S.lang = 'en'; paint(); };
 $('#undo').onclick = () => {
+  flushText();
   if (!undoStack.length) return;
   redoStack.push(JSON.stringify(S));
   restore(undoStack.pop()); paint();
 };
 $('#redo').onclick = () => {
+  flushText();
   if (!redoStack.length) return;
   undoStack.push(JSON.stringify(S));
   restore(redoStack.pop()); paint();
@@ -1102,6 +1593,11 @@ loadGlove().then(bundle => {
     if (UNCONFIRMED_BULLETS.includes(b.name)) { b.active = false; b.pending = true; }
   }
   R = new GloveRenderer(bundle);
+  // Not views of their own: draw() switches the thumb side to the estimated
+  // view of the routed web's family. Two families, up to two view names
+  // ('thumbEstimated:i-fixed', 'thumbEstimated:em-fixed').
+  const est = estimatedThumbViews(R.views.thumb);
+  if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });
 
@@ -1119,33 +1615,52 @@ loadGlove().then(bundle => {
 
   const cv = $('#glove');
   cv.addEventListener('click', ev => {
+    if (!viewAvailability(S.view).ok) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
     const f = id && viewLayerField()[id];
     if (!f) return;
-    S.step = 3; S.part = f; paint();
+    S.step = 3; S.part = f; draw(); paint();
   });
   cv.addEventListener('pointermove', ev => {
-    if (S.step !== 3) return;
+    if (S.step !== 3 || !viewAvailability(S.view).ok) { cv.style.cursor = 'default'; return; }
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
     cv.style.cursor = id ? 'pointer' : 'default';
   });
 
-  // Which side of the glove. Only offered when the palm view actually
-  // loaded — it is a separate data file, and the page has to work without it.
+  // Which side of the glove. Each view past the back is a separate data file
+  // and is only offered when it loaded; the page has to work without them.
   const vw = $('#stageview');
-  if (R.hasView('palm')) {
+  const views = Object.keys(VIEW_KEYS).filter(id => id === 'back' || R.hasView(id));
+  if (views.length > 1) {
     vw.hidden = false;
-    for (const [id, key] of [['back', 'viewBack'], ['palm', 'viewPalm']]) {
+    for (const id of views) {
       const b = el('button');
       b.type = 'button'; b.dataset.view = id;
-      b.onclick = () => { S.view = id; draw(); paint(); };
+      b.onclick = () => {
+        if (!R.hasView(id)) return;
+        S.view = id; draw(); paint();
+      };
       vw.appendChild(b);
     }
   }
+
+  // Phones: the preview can be made smaller to give the choices room. Only
+  // shown by the stylesheet on narrow screens; nothing else is hidden.
+  const size = el('button', 'btn btn-ghost stage-size');
+  size.type = 'button';
+  size.setAttribute('aria-pressed', 'false');
+  size.dataset.t = 'previewSmaller';
+  size.onclick = () => {
+    const small = document.querySelector('.stage').classList.toggle('is-compact');
+    size.setAttribute('aria-pressed', String(small));
+    size.dataset.t = small ? 'previewLarger' : 'previewSmaller';
+    size.textContent = t(size.dataset.t);
+  };
+  document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
 }).catch(error => {

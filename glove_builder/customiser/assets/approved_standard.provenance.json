@@ -1,0 +1,28 @@
+{
+  "source": "YellowPad1.jpg",
+  "review": "standard-i-reviewed/review-original.json",
+  "transform": [
+    [
+      0.6499999761581421,
+      0.0,
+      80.0
+    ],
+    [
+      0.0,
+      0.6499999761581421,
+      -8.0
+    ]
+  ],
+  "parts": [
+    "web",
+    "web laces"
+  ],
+  "excluded": [
+    "body",
+    "palm",
+    "finger",
+    "pad",
+    "logo"
+  ],
+  "status": "alignment candidate"
+}

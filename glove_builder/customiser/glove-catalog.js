@@ -17,17 +17,20 @@ export const PADS = [
   { id: 'Finger Hood', en: 'Finger hood', nl: 'Vingerkap', img: F + 'finger_pad/Finger_Hood.jpg' }
 ];
 
-// `render` is the slug of a web cut from a photograph (make_web.py). Without
-// one the glove keeps its own web, which is the H-Web the calibration glove
-// was built with — so H-Web previews correctly and everything else previews
-// as an H-Web until it is photographed. The web step says so.
+// The nine orderable webs. `render` is the slug of a back-view web insert in
+// glove-data.json; H-Web is the photographed calibration glove itself. Which
+// sides of the glove can actually show a web is decided in app.js
+// (viewAvailability): a side without a picture of the chosen web shows an
+// explicit notice, never an H-Web standing in for it.
+// SMS, Basket, Sasaki 1 and Sasaki 2 are on SSK's form but are not offered
+// here (Scott, 30 Sep 2026): there is no source to draw them from. See
+// WEB_REFERENCES.
 export const NATIVE_WEB = 'H-Web';
 export const WEBS = [
   { id: 'Spiral I-Web', img: F + 'webs/Spiral_I_Web.png', sizes: ['11.5"', '11.75"'],
     render: 'spiral-i' },
   { id: 'Standard I-Web', img: F + 'webs/Standard_I_Web.jpg', sizes: ['11.5"', '11.75"'],
     render: 'standard-i' },
-  { id: 'SMS-Web', img: F + 'webs/SMS_Web.jpg', sizes: ['11.75"'] },
   { id: 'SMK-Web', img: F + 'webs/SMK_Web.jpg', sizes: ['11.75"'],
     render: 'smk' },
   { id: 'H-Web', img: F + 'webs/H_Web.jpg', sizes: ['11.75"', '12"', '12.25"', '12.5"', '12.75"'] },
@@ -35,16 +38,24 @@ export const WEBS = [
     render: 'smlee' },
   { id: 'Modified Trapeze-Web', img: F + 'webs/Modified_Trapeze_Web.jpg', sizes: ['12"'],
     render: 'modified-trapeze' },
-  { id: 'Basket-Web', img: F + 'webs/Basket_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Em Rocket-Web', img: F + 'webs/Em_Rocket_Web.jpg', sizes: ['12"'],
     render: 'em-rocket' },
-  { id: 'Sasaki 1-Web', img: F + 'webs/Sasaki_1_Web.jpg', sizes: ['12"'] },
-  { id: 'Sasaki 2-Web', img: F + 'webs/Sasaki_2_Web.jpg', sizes: ['12"', '12.25"'] },
   { id: 'Closed Diamond Net-Web', img: F + 'webs/Closed_Diamond_Net_Web.jpg', sizes: ['12.25"'],
     render: 'closed-diamond-net' },
   { id: 'Trapeze-Web', img: F + 'webs/Trapeze_Web.jpg', sizes: ['12.75"'],
     render: 'trapeze' }
 ];
+
+// Webs on SSK's form that cannot be ordered or drawn here yet. Shown as
+// pictures only (SSK's own form photographs), never as choices. Basket is
+// left out entirely until a source photograph arrives.
+export const WEB_REFERENCES = [
+  { id: 'SMS-Web', img: F + 'webs/SMS_Web.jpg' },
+  { id: 'Sasaki 1-Web', img: F + 'webs/Sasaki_1_Web.jpg' },
+  { id: 'Sasaki 2-Web', img: F + 'webs/Sasaki_2_Web.jpg' }
+];
+// Form webs a saved design may still carry from before they were withdrawn.
+export const WITHDRAWN_WEBS = ['SMS-Web', 'Basket-Web', 'Sasaki 1-Web', 'Sasaki 2-Web'];
 
 export const EMB_FONTS = [
   'Block', 'Script', 'Brush', 'Kanji',
@@ -145,11 +156,8 @@ export const STARTERS = [
 
 // The flat build order. One step, one decision — no category inside a category.
 // Colours are all handled in a single step by picking the part on the glove.
-/* Badges seen on gloves at the store (23 Sep 2026) but in neither SSK
-   Europe's order form nor the 2026 Japan logo list (catalogue p.29). They are
-   shown so the picker matches the shelf, and they cannot be ordered until Pim
-   confirms SSK will make them. Kept here, not in the generated asset data, so
-   the rule lives with the rest of the catalogue. */
+/* Scott confirmed these are not builder options. Keep their historical data
+   indices for saved-code compatibility, but hide their cards and reject orders. */
 export const UNCONFIRMED_BULLETS = ['White/Gold', 'Red/Gold'];
 
 export const COLOUR_ORDER = ['web', 'back1', 'back2', 'back3', 'back4', 'back5', 'back6',
@@ -159,7 +167,7 @@ export const COLOUR_ORDER = ['web', 'back1', 'back2', 'back3', 'back4', 'back5',
 export const T = {
   en: {
     builder: 'Custom glove builder', model: 'SSK Pro Custom',
-    start: 'Start', fit: 'Fit', web: 'Web', back: 'Back panels', leather: 'Leather & lacing',
+    start: 'Start', fit: 'Hand, size & finger protection', web: 'Web', back: 'Back panels', leather: 'Leather & lacing',
     logos: 'Logos', personal: 'Personalisation', you: 'Your details',
     hand: 'Hand', size: 'Glove size', pad: 'Finger pad / hood', padColor: 'Pad / hood colour',
     webType: 'Web type', webColor: 'Web colour', palm: 'Palm colour',
@@ -191,7 +199,10 @@ export const T = {
     zoom: 'Zoom', recent: 'Recent', allPanels: 'All back panels',
     pickPart: 'Click any part of the glove', required: 'Still needed',
     sendTitle: 'Your SSK custom glove', sendLead: 'Share the full specification with SSK Europe to confirm availability and your order. The design code saves your options; the design link also keeps embroidery text and numbers. Saving does not place an order.',
-    viewBack: 'Back', viewPalm: 'Palm',
+    viewBack: 'Back', viewPalm: 'Palm', viewThumb: 'Thumb side', viewPinky: 'Pinky side',
+    webNotOnThumb: 'This side was photographed with the standard H-Web. The hatched part is that web, not yours; your web is ordered as chosen.',
+    thumbEstimated: 'Estimated view: this side is a generated render, not a photograph of an SSK glove. Your web and colours are ordered as chosen.',
+    notOnThisSide: 'Not visible from this side.',
     optional: 'optional', chooseSize: 'Pick a size first', filtered: 'available for',
     webNotDrawn: 'This web is ordered exactly as chosen. The picture still shows the standard web.',
     webNotOnPalm: 'Your web is ordered as chosen, but the palm view shows the standard web. Switch to the back view to see it.',
@@ -215,11 +226,30 @@ export const T = {
     invalidDesign: 'This design link or colour code could not be opened.', copyFailed: 'Copy failed. Try download.',
     loadError: 'The glove could not be loaded', loadRetry: 'Check your connection and reload this page.',
     sigSlot: 'Signature slot — attach a real SSK player',
+    flagOther: 'Which flag exactly? (country or region)',
+    flagOtherNeeded: 'Name the flag. An unnamed flag cannot be made.',
+    flagPending: 'Not in the preview or the standard list: SSK Europe must confirm this flag is available. Pending until confirmed.',
+    limitsTitle: 'Preview limitations',
+    limView: 'Picture: %s view.',
+    limWeb: 'Web ordered: %s. This picture shows the standard H-Web in its place.',
+    limWebRef: 'Selected web reference (SSK order form picture)',
+    webRefTitle: 'Other SSK webs: pictures only',
+    webRefNote: 'Not available to order or preview here yet, so these cannot be selected.',
+    webRefBadge: 'Picture only: no preview yet',
+    webWithdrawn: 'Your saved design used the %s, which cannot be ordered here. Choose one of the available webs; the rest of your design is kept.',
+    limPersonal: 'Embroidery text, thumb number and circle colour are specified in the list, not drawn on the picture.',
+    limOtherFlag: 'Other flag (%s) is not drawn on the picture.',
+    limSize: 'Size %s is ordered as chosen; the picture is one representative glove size.',
+    limBack8: 'Back 7 and Back 8 are separate colours; only the Pinky side view shows them apart.',
+    phoneBad: 'Enter a phone number with digits, e.g. +31 6 12345678 or 020 123 4567 ext. 12.',
+    contactReady: 'Contact details complete.',
+    contactMissing: 'Contact details not complete yet. Only needed when you send the design to SSK Europe; saving and sharing work without them, and the design link never contains them.',
+    previewSmaller: 'Smaller preview', previewLarger: 'Larger preview',
     allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom'
   },
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
-    start: 'Start', fit: 'Pasvorm', web: 'Web', back: 'Achterpanelen', leather: 'Leer & veters',
+    start: 'Start', fit: 'Hand, maat & vingerbescherming', web: 'Web', back: 'Achterpanelen', leather: 'Leer & veters',
     logos: "Logo's", personal: 'Personalisatie', you: 'Jouw gegevens',
     hand: 'Hand', size: 'Maat', pad: 'Vingerpad / kap', padColor: 'Kleur pad / kap',
     webType: 'Type web', webColor: 'Kleur web', palm: 'Kleur palm',
@@ -251,7 +281,10 @@ export const T = {
     zoom: 'Zoom', recent: 'Recent', allPanels: 'Alle achterpanelen',
     pickPart: 'Klik een onderdeel van de handschoen', required: 'Nog nodig',
     sendTitle: 'Jouw SSK custom handschoen', sendLead: 'Deel de volledige specificatie met SSK Europe om beschikbaarheid en je bestelling te bevestigen. De ontwerpcode bewaart je keuzes; de ontwerplink bewaart ook borduurtekst en nummers. Opslaan plaatst geen bestelling.',
-    viewBack: 'Achterkant', viewPalm: 'Palm',
+    viewBack: 'Achterkant', viewPalm: 'Palm', viewThumb: 'Duimzijde', viewPinky: 'Pinkzijde',
+    webNotOnThumb: 'Deze kant is gefotografeerd met het standaard H-web. Het gearceerde deel is dat web, niet het jouwe; je web wordt besteld zoals gekozen.',
+    thumbEstimated: 'Geschatte weergave: deze kant is een gegenereerde render, geen foto van een SSK-handschoen. Je web en kleuren worden besteld zoals gekozen.',
+    notOnThisSide: 'Niet zichtbaar vanaf deze kant.',
     optional: 'optioneel', chooseSize: 'Kies eerst een maat', filtered: 'beschikbaar voor',
     webNotDrawn: 'Dit web wordt precies zo besteld. Op de afbeelding staat nog het standaardweb.',
     webNotOnPalm: 'Je web wordt besteld zoals gekozen, maar de binnenkant toont het standaardweb. Kijk op de buitenkant om het te zien.',
@@ -272,6 +305,25 @@ export const T = {
     invalidDesign: 'Deze ontwerplink of kleurcode kon niet worden geopend.', copyFailed: 'Kopiëren mislukt. Download de specificatie.',
     loadError: 'De handschoen kon niet worden geladen', loadRetry: 'Controleer je verbinding en laad deze pagina opnieuw.',
     sigSlot: 'Signature-plek — koppel een echte SSK-speler',
+    flagOther: 'Welke vlag precies? (land of regio)',
+    flagOtherNeeded: 'Geef de naam van de vlag. Een vlag zonder naam kan niet gemaakt worden.',
+    flagPending: 'Niet in de afbeelding of de standaardlijst: SSK Europe moet bevestigen dat deze vlag leverbaar is. In afwachting tot bevestiging.',
+    limitsTitle: 'Beperkingen van de afbeelding',
+    limView: 'Afbeelding: %s.',
+    limWeb: 'Besteld web: %s. Deze afbeelding toont op die plek het standaard H-web.',
+    limWebRef: 'Referentie gekozen web (afbeelding uit SSK-bestelformulier)',
+    webRefTitle: 'Andere SSK-webs: alleen afbeelding',
+    webRefNote: 'Nog niet te bestellen of te bekijken hier, dus niet te kiezen.',
+    webRefBadge: 'Alleen afbeelding: nog geen voorbeeld',
+    webWithdrawn: 'Je opgeslagen ontwerp had het %s, dat hier niet te bestellen is. Kies een van de beschikbare webs; de rest van je ontwerp blijft bewaard.',
+    limPersonal: 'Borduurtekst, duimnummer en cirkelkleur staan in de lijst, maar zijn niet op de afbeelding getekend.',
+    limOtherFlag: 'Andere vlag (%s) is niet op de afbeelding getekend.',
+    limSize: 'Maat %s wordt besteld zoals gekozen; de afbeelding toont één representatieve maat.',
+    limBack8: 'Back 7 en Back 8 zijn aparte kleuren; alleen de pinkzijde toont ze apart.',
+    phoneBad: 'Vul een telefoonnummer met cijfers in, bijv. +31 6 12345678 of 020 123 4567 toestel 12.',
+    contactReady: 'Contactgegevens compleet.',
+    contactMissing: 'Contactgegevens nog niet compleet. Alleen nodig als je het ontwerp naar SSK Europe stuurt; opslaan en delen werken zonder, en de ontwerplink bevat ze nooit.',
+    previewSmaller: 'Kleinere afbeelding', previewLarger: 'Grotere afbeelding',
     allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom'
   }
 };

@@ -1,0 +1,131 @@
+{
+  "smlee": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/smlee-estimated.png",
+    "sha256": "0e443c80b84d144e17675a0e35ffa33cab3621707eb868c88847088f2233164b",
+    "sourceQuad": [
+      [
+        359.0,
+        135.0
+      ],
+      [
+        797.0,
+        329.0
+      ],
+      [
+        500.0,
+        879.0
+      ],
+      [
+        194.0,
+        551.0
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        319.0,
+        723.0
+      ],
+      [
+        150.0,
+        550.0
+      ]
+    ],
+    "closedLeatherChannels": false,
+    "kind": "user-selected estimated thumb insert",
+    "bodyReplaced": false
+  },
+  "smk": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/smk-estimated.png",
+    "sha256": "0d5f3d4af62c6ee5d4012c4e9c6b171313d137f525aa49ad414c1fc902df24a8",
+    "sourceQuad": [
+      [
+        359.0,
+        135.0
+      ],
+      [
+        797.0,
+        329.0
+      ],
+      [
+        500.0,
+        879.0
+      ],
+      [
+        194.0,
+        551.0
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        319.0,
+        723.0
+      ],
+      [
+        150.0,
+        550.0
+      ]
+    ],
+    "closedLeatherChannels": false,
+    "kind": "user-selected estimated thumb insert",
+    "bodyReplaced": false
+  },
+  "closed-diamond-net": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/closed-diamond-net-estimated.png",
+    "sha256": "3c73a7a0db140d2576758390692a3b752c14ba98f881a7e0659ae14f6175cc43",
+    "sourceQuad": [
+      [
+        362.0,
+        126.0
+      ],
+      [
+        814.0,
+        326.0
+      ],
+      [
+        510.0,
+        910.0
+      ],
+      [
+        192.0,
+        550.0
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        718.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "closedLeatherChannels": true,
+    "kind": "user-selected estimated thumb insert",
+    "bodyReplaced": false
+  }
+}
