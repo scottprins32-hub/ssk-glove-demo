@@ -493,7 +493,8 @@ export class GloveRenderer {
 
   // The flag patch on the index finger. SVGs decode asynchronously, so the
   // app hands over a URL and gets a callback once there is something to draw.
-  setFlag(src, onReady) {
+  setFlag(src, onReady, position = 'index') {
+    this.flagPosition = position === 'middle' ? 'middle' : 'index';
     this._flags = this._flags || {};
     this.flagSrc = src || null;
     this.flagImg = src ? (this._flags[src] || null) : null;
@@ -600,8 +601,21 @@ export class GloveRenderer {
   // A rectangular embroidered patch, laid on the index finger the way SSK
   // sews it: a quarter turn, so the stripes run along the finger, with the
   // leather's own shading multiplied back over it.
+  flagMount() {
+    if (!this.DATA.flagMount) return null;
+    return this.flagPosition === 'middle' ? this.DATA.flagMounts?.middle : this.DATA.flagMount;
+  }
+  flagPanelMask(ids, mirror) {
+    const mask = this.panelMask(ids);
+    if (!mirror || this.flagPosition !== 'middle') return mask;
+    const key = 'flag-mask|' + ids.join(',') + '|' + this.flagMount().cx;
+    if (this.cache.has(key)) return this.cache.get(key);
+    const c = document.createElement('canvas'); c.width = mask.width; c.height = mask.height;
+    const g = c.getContext('2d'); g.setTransform(-1, 0, 0, 1, 2 * this.flagMount().cx, 0);
+    g.drawImage(mask, 0, 0); this.cache.set(key, c); return c;
+  }
   drawFlag(ctx, mirror) {
-    const M = this.DATA.flagMount, im = this.flagImg;
+    const M = this.flagMount(), im = this.flagImg;
     if (!M || !im) return;
     // The patch is sewn along the finger, and the finger leans the other way
     // on a left-handed glove. The patch is flipped back about its own centre
@@ -654,13 +668,17 @@ export class GloveRenderer {
     octx.clip();
     octx.setTransform(1, 0, 0, 1, 0, 0);
     octx.globalCompositeOperation = 'multiply';
-    octx.drawImage(this.panelMask(['back3', 'back4']), 0, 0);
+    octx.drawImage(this.flagPanelMask(M.panels || ['back3', 'back4'], mirror), 0, 0);
     octx.restore();
 
     // Clipping does include the welt, or the closed seam slices the patch.
     octx.globalCompositeOperation = 'destination-in';
-    octx.drawImage(this.panelMask(['back3', 'back4', 'welt_index']), 0, 0);
+    octx.drawImage(this.flagPanelMask(M.clip || ['back3', 'back4', 'welt_index'], mirror), 0, 0);
 
+    const cover = this.flagCover || document.createElement('canvas'); cover.width = off.width; cover.height = off.height;
+    const cg = cover.getContext('2d');
+    if (mirror) cg.setTransform(-1, 0, 0, 1, 2 * M.cx, 0);
+    cg.drawImage(off, 0, 0); this.flagCover = cover;
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.45)';
     ctx.shadowBlur = 6; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
@@ -975,8 +993,8 @@ export class GloveRenderer {
     }
     // The index welt stays welting under a flag: same colour, same sheen, from
     // the welting layer itself. Only the flag patch below covers its footprint.
-    if (mergeIndex && D.flagMount) {
-      const M = D.flagMount, r = Math.max(M.w, M.h);
+    if (mergeIndex && this.flagMount()) {
+      const M = this.flagMount(), r = Math.max(M.w, M.h);
       this.unmirror(ctx, M.cx - r, M.cx + r, mirror,
                     () => this.drawFlag(ctx, mirror));
     }
@@ -1048,6 +1066,12 @@ export class GloveRenderer {
       c = this.underPad(c, this.pad === 'pad'
         && ['binding', 'lining'].includes(highlight.id) ? D.padUnder : null);
       ctx.save();
+      if (mergeIndex && this.flagMount() && this.flagImg && this.flagCover) {
+        const clipped = document.createElement('canvas'); clipped.width = D.w; clipped.height = D.h;
+        const g = clipped.getContext('2d'); g.drawImage(c, c._ox, c._oy);
+        g.globalCompositeOperation = 'destination-out'; g.drawImage(this.flagCover, 0, 0);
+        clipped._ox = clipped._oy = 0; c = clipped;
+      }
       ctx.globalCompositeOperation = 'screen';
       ctx.globalAlpha = highlight.amount;
       ctx.drawImage(c, c._ox, c._oy);
@@ -1111,7 +1135,7 @@ export class GloveRenderer {
   backOwners(mirror) {
     const D = this.DATA, [bullet, flag] = this._drawn || [null, false];
     const key = ['own', this.web || '', this.pad || '', mirror ? 1 : 0,
-      flag && D.flagMount && this.flagImg ? this.flagSrc : '', bullet ?? ''].join('|');
+      flag && this.flagMount() && this.flagImg ? this.flagSrc + ':' + this.flagPosition : '', bullet ?? ''].join('|');
     let own = this.cache.get(key);
     if (own) return own;
     const lum = h => { const n = parseInt(h.slice(1), 16);

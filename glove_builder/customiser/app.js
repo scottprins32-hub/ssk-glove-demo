@@ -3,7 +3,7 @@
    custom glove order form. */
 
 import { loadGlove, GloveRenderer } from './glove-engine.js';
-import { encodeV2, decodeV2, decodeV1, isV2 } from './refcode.js';
+import { encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
@@ -12,8 +12,15 @@ import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FL
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
-const BASE_PRICE = '€ 374,95';
-const STOCK_PRICE = '€ 294,95';
+// Pim confirmed the flag surcharge through Scott on 7 October 2026.
+// Integer cents: all UI and order exports use this single calculation.
+const PRICE_CENTS = Object.freeze({ base: 37495, flag: 500 });
+const hasFlag = (s = S) => !!s.flag && s.flag !== 'None';
+const priceBreakdown = (s = S) => ({ base: PRICE_CENTS.base,
+  flag: hasFlag(s) ? PRICE_CENTS.flag : 0,
+  total: PRICE_CENTS.base + (hasFlag(s) ? PRICE_CENTS.flag : 0) });
+const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE',
+  { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
 /* Which render layer each colour field drives. Fields absent from this map
    are real order fields the back view cannot show — see OFFSTAGE. */
@@ -65,7 +72,19 @@ const viewFieldLayer = () => {
 /* A flag is embroidered on one piece of leather, so back3 and back4 stop
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
-const indexIsOnePiece = () => !!S.flag && S.flag !== 'None';
+const indexIsOnePiece = () => hasFlag() && S.flagPosition !== 'middle';
+const middleIsOnePiece = () => hasFlag() && S.flagPosition === 'middle';
+const colourPart = f => indexIsOnePiece() && f === 'back4' ? 'back3'
+  : middleIsOnePiece() && f === 'back6' ? 'back5' : f;
+function coupleFlagPanels(s = S) {
+  if (!hasFlag(s)) return;
+  const [a, b] = s.flagPosition === 'middle' ? ['back5','back6'] : ['back3','back4'];
+  const value = s.colors[a] || s.colors[b];
+  if (value) s.colors[a] = s.colors[b] = value;
+  if (s.part === b) s.part = a;
+}
+const colourLabel = f => f === 'back3' && indexIsOnePiece() ? t('indexOnePiece')
+  : f === 'back5' && middleIsOnePiece() ? t('middleOnePiece') : fieldLabel(f, S.lang);
 
 // What the form calls it, and what the renderer calls the layer.
 const PAD_PART = { 'Finger Pad': 'pad', 'Finger Hood': 'hood' };
@@ -120,7 +139,7 @@ const S = {
   view: 'back',
   colors: {}, hand: null, size: '11.75"', pad: null, webType: NATIVE_WEB,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
-  thumbNumber: '', circle: null, numberColor: null, flag: null, flagOther: '',
+  thumbNumber: '', circle: null, numberColor: null, flag: null, flagPosition: 'index', flagOther: '',
   pinkyText: '',
   name: '', phone: '',
   // A withdrawn web a saved design or link named (WITHDRAWN_WEBS). Kept, so a
@@ -242,6 +261,7 @@ function cleanState(o) {
     webType: byId(WEBS, o.webType),
     thumbFont: byId(EMB_FONTS, o.thumbFont),
     flag: byId(FLAGS, o.flag),
+    flagPosition: o.flagPosition === 'middle' ? 'middle' : 'index',
     // Only meaningful with Other Flag; anywhere else it would be a stray name.
     flagOther: o.flag === 'Other Flag' ? text(o.flagOther).slice(0, 40) : '',
     circle: CIRCLE_COLORS.some((c) => c[0] === o.circle) ? o.circle : null,
@@ -265,6 +285,7 @@ function cleanState(o) {
   // Only carry a starter through if it still exists; otherwise leave whatever
   // the page already set, rather than blanking the highlight to undefined.
   if (STARTERS.some((st) => st.id === o.startId)) clean.startId = o.startId;
+  coupleFlagPanels(clean);
   return clean;
 }
 
@@ -316,7 +337,7 @@ function layerState(D = R ? R.DATA : DATA, map = viewLayerField()) {
   return out;
 }
 // The order's reference: the form's answers, whatever view is on screen.
-const code = () => encodeV2(S, S.bullet == null ? null
+const code = () => encodeV3(S, S.bullet == null ? null
   : (DATA.bullets[S.bullet] || {}).name ?? null);
 
 /* A pasted code, applied through the same validation as a restored draft, so
@@ -325,14 +346,16 @@ const code = () => encodeV2(S, S.bullet == null ? null
    only colours and the badge, so it leaves everything else as it was. A
    badge that is gone, or not orderable, comes back unanswered. */
 function applyPasted(text) {
-  const d = isV2(text) ? decodeV2(text) : decodeV1(text);
+  const current = isV3(text) || isV2(text);
+  const d = isV3(text) ? decodeV3(text) : isV2(text) ? decodeV2(text) : decodeV1(text);
   if (!d) return 'bad';
   if (d.ambiguous) return 'ambiguous';
   const bi = d.bulletName == null ? -1
     : DATA.bullets.findIndex((b) => b.name === d.bulletName);
-  const next = { ...S, colors: isV2(text) ? d.colors : { ...S.colors, ...d.colors },
+  const next = { ...S, colors: current ? d.colors : { ...S.colors, ...d.colors },
                  bullet: bi < 0 ? null : bi };
-  if (isV2(text)) {
+  if (current) {
+    next.flagPosition = isV3(text) ? d.flagPosition : 'index';
     for (const k of ['hand', 'size', 'pad', 'webType', 'flag', 'circle',
                      'thumbFont', 'thumbMain', 'thumbOutline', 'numberColor'])
       next[k] = d[k];
@@ -351,6 +374,7 @@ function applyPasted(text) {
   const { lang, part, view, ...order } = o;
   snapshot();                     // only once the code is known to be good
   Object.assign(S, order);
+  S.part = colourPart(S.part);
   return 'ok';
 }
 const shareLink = () => location.origin + location.pathname + '#' + encodeState(true);
@@ -501,7 +525,7 @@ function draw(target = ctx, highlight = S.step === 3) {
   if (cv.width !== R.DATA.w || cv.height !== R.DATA.h) {
     cv.width = R.DATA.w; cv.height = R.DATA.h;
   }
-  R.setFlag(flagArt(), () => draw());   // redraws once the SVG has decoded
+  R.setFlag(flagArt(), () => draw(), S.flagPosition);   // redraws once the SVG has decoded
   R.setWeb(w && w.render);
   // A side view shows only the web it was photographed with.
   R.setWebMarked(!!w && w.id !== NATIVE_WEB);
@@ -512,7 +536,7 @@ function draw(target = ctx, highlight = S.step === 3) {
   R.draw(target, layerState(), S.bullet,
     highlight && viewFieldLayer()[S.part]
       ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
-    indexIsOnePiece(), isLefty());
+    hasFlag(), isLefty());
 }
 
 /* What the picture cannot show, in words. The same list goes on the Review
@@ -637,13 +661,13 @@ function renderStart(b) {
     // thumbnail rendered from the real compositor, flag and all
     requestAnimationFrame(() => {
       const g = cv.getContext('2d');
-      const prev = { ...S.colors }, pb = S.bullet, pf = S.flag;
+      const prev = { ...S.colors }, pb = S.bullet, pf = S.flag, pp = S.flagPosition, part = S.part;
       applyStarter(st, true);
-      starterR.setFlag(flagArt());
+      starterR.setFlag(flagArt(), null, S.flagPosition);
       starterR.draw(g, layerState(DATA, LAYER_TO_FIELD), S.bullet, null,
-             indexIsOnePiece(), isLefty());
-      S.colors = prev; S.bullet = pb; S.flag = pf;
-      starterR.setFlag(flagArt());          // the renderer holds one flag at a time
+             hasFlag(), isLefty());
+      S.colors = prev; S.bullet = pb; S.flag = pf; S.flagPosition = pp; S.part = part;
+      starterR.setFlag(flagArt(), null, S.flagPosition);          // the renderer holds one flag at a time
     });
   }
   b.appendChild(grid);
@@ -674,7 +698,7 @@ function renderStart(b) {
     inp.removeAttribute('aria-invalid');
     draw(); paint();
     const notice = $('#body [role="status"]');
-    if (notice) notice.textContent = t(isV2(raw) ? 'codeNoText' : 'legacyNotice');
+    if (notice) notice.textContent = t((isV3(raw) || isV2(raw)) ? 'codeNoText' : 'legacyNotice');
   };
   row.append(inp, go);
   f.append(row, feedback);
@@ -702,7 +726,8 @@ function applyStarter(st, quiet) {
   if (st.bullet != null) S.bullet = st.bullet;
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
-  if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
+  S.flagPosition = st.flagPosition === 'middle' ? 'middle' : 'index';
+  coupleFlagPanels();
   // Reset the shared hood/pad colour with the colourway; a later manual
   // choice remains independent until another starter is selected.
   S.colors.pad_color = S.colors.back3;
@@ -759,12 +784,12 @@ const thumbs = new Map();
 function liveThumbs(field, items, box, jobFor) {
   const previewR = new GloveRenderer(R.views.back);
   previewR._flags = R._flags || {};
-  previewR.setFlag(flagArt());
+  previewR.setFlag(flagArt(), null, S.flagPosition);
   const selectedWeb = WEBS.find(w => w.id === S.webType);
   previewR.setWeb(selectedWeb && selectedWeb.render);
   previewR.setPad(PAD_PART[S.pad] || null, S.colors.pad_color ? hexOf('pad_color') : null);
   const cards = field.querySelectorAll('.cards .card');
-  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag,
+  const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag, S.flagPosition,
                               S.webType, box]);
   if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
   const put = (card, cv) => {
@@ -802,7 +827,7 @@ function liveThumbs(field, items, box, jobFor) {
     if (!job) return;
     const [it, card, setUp] = job;
     setUp(previewR);
-    previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, indexIsOnePiece(), isLefty());
+    previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, hasFlag(), isLefty());
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
@@ -979,13 +1004,12 @@ function renderColours(b) {
   const parts = el('div', 'parts');
   for (const f of COLOUR_ORDER) {
     if (f === 'pad_color') continue;
-    if (f === 'back4' && indexIsOnePiece()) continue;   // merged into back3
+    if (colourPart(f) !== f) continue;   // merged into back3
     const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
     p.type = 'button';
     p.dataset.key = 'part|' + f;
     p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
-                  (f === 'back3' && indexIsOnePiece()
-                    ? t('indexOnePiece') : fieldLabel(f, S.lang));
+                  colourLabel(f);
     p.setAttribute('aria-pressed', String(S.part === f));
     p.onclick = () => {
       S.part = f;
@@ -998,6 +1022,7 @@ function renderColours(b) {
   b.appendChild(swatchField(
     S.part,
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
+      : (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
       : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
       : (OFFSTAGE[S.part] || null),
     true));
@@ -1089,10 +1114,17 @@ function renderPersonal(b) {
   })), S.flag, v => {
     snapshot(); S.flag = v;
     // one piece of leather now, so the two halves share a colour
-    if (indexIsOnePiece()) S.colors.back4 = S.colors.back3;
+    coupleFlagPanels();
+    if (hasFlag()) S.view = 'back';
     if (v !== 'Other Flag') S.flagOther = '';
     draw(); paint();
   }, false));
+  b.appendChild(el('p', 'note', t('flagPriceNote').replace('%s', money(PRICE_CENTS.flag))));
+  if (hasFlag()) b.appendChild(choiceField(t('flagPosition'), [
+    { id: 'index', label: t('indexFinger') }, { id: 'middle', label: t('middleFinger') }
+  ], S.flagPosition, v => {
+    snapshot(); S.flagPosition = v; coupleFlagPanels(); S.view = 'back'; draw(); paint();
+  }, true));
   if (S.flag === 'Other Flag') {
     const other = textField(t('flagOther'), S.flagOther, 40,
       v => { const changed = !!S.flagOther.trim() !== !!v.trim(); S.flagOther = v; return changed; }, true);
@@ -1233,12 +1265,15 @@ function swatchGrid(label, pal, value, onPick, required, note) {
   return f;
 }
 function swatchField(field, note, required) {
-  return swatchGrid(fieldLabel(field, S.lang), DATA.palettes[PALETTE_OF(field)],
+  return swatchGrid(colourLabel(field), DATA.palettes[PALETTE_OF(field)],
     S.colors[field], v => {
       snapshot();
       S.colors[field] = v;
       if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
         S.colors.back3 = S.colors.back4 = v;
+      }
+      if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) {
+        S.colors.back5 = S.colors.back6 = v;
       }
       draw(); paint();
     }, required, note);
@@ -1337,9 +1372,8 @@ function specRows() {
   rows.push(['#', t('colours')]);
   for (const f of COLOUR_ORDER) {
     if (f === 'web' || f === 'pad_color' || f === 'ring_emb') continue;
-    if (f === 'back4' && indexIsOnePiece()) continue;
-    push(f === 'back3' && indexIsOnePiece() ? t('indexOnePiece')
-                                            : fieldLabel(f, L), colName(f));
+    if (colourPart(f) !== f) continue;
+    push(colourLabel(f), colName(f));
   }
   rows.push(['#', t('logos')]);
   push(t('bullet'), DATA.bullets[S.bullet] && DATA.bullets[S.bullet].name);
@@ -1356,6 +1390,12 @@ function specRows() {
   push(t('flag'), S.flag === 'Other Flag'
     ? `${S.flag}: ${S.flagOther.trim() || '—'} (${t(S.flagOther.trim() ? 'flagPending' : 'flagOtherNeeded')})`
     : S.flag);
+  if (hasFlag()) push(t('flagPosition'), t(S.flagPosition === 'middle' ? 'middleFinger' : 'indexFinger'));
+  rows.push(['#', t('pricing')]);
+  const price = priceBreakdown();
+  push(t('baseGlove'), money(price.base));
+  if (price.flag) push(t('flagExtra'), money(price.flag));
+  push(t('totalPrice'), money(price.total));
   rows.push(['#', t('you')]);
   push(t('name'), S.name);
   push(t('phone'), S.phone);
@@ -1398,7 +1438,6 @@ function specText() {
   lines.push('');
   for (const [k, v] of specRows())
     lines.push(k === '#' ? `\n[${v}]` : `${k}: ${v}`);
-  if (BASE_PRICE) lines.push('', `${t('basePrice')} ${BASE_PRICE}`);
   lines.push('', t('designLink') + ': ' + shareLink(), '', t('sendLead'));
   return lines.join('\n');
 }
@@ -1524,7 +1563,7 @@ function paint(rebuildBody = true) {
   const tag = $('#stagetag');
   if (S.step === 3) {
     tag.hidden = false;
-    tag.textContent = `${fieldLabel(S.part, L)} · ${colName(S.part) || '—'}`;
+    tag.textContent = `${colourLabel(S.part)} · ${colName(S.part) || '—'}`;
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
@@ -1539,7 +1578,7 @@ function paint(rebuildBody = true) {
 
   // header + bar
   $('#refcode').textContent = code();
-  $('#price').textContent = BASE_PRICE;
+  $('#price').textContent = money(priceBreakdown().total);
   const d = doneCount();
   $('#donecount').textContent = d;
   $('#totalcount').textContent = countedQuestions().length;
@@ -1620,7 +1659,7 @@ loadGlove().then(bundle => {
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
     const f = id && viewLayerField()[id];
     if (!f) return;
-    S.step = 3; S.part = f; draw(); paint();
+    S.step = 3; S.part = colourPart(f); draw(); paint();
   });
   cv.addEventListener('pointermove', ev => {
     if (S.step !== 3 || !viewAvailability(S.view).ok) { cv.style.cursor = 'default'; return; }
