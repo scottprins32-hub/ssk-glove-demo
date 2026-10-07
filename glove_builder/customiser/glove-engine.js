@@ -184,6 +184,7 @@ export class GloveRenderer {
     this.idData = bundle.idData;
     this.cache = new Map();
     this.order = [];
+    this.materialCache = new WeakMap();
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
     this.octx = this.off.getContext('2d');
@@ -299,8 +300,53 @@ export class GloveRenderer {
     return masked;
   }
 
-  tinted(id, hx, sheenOf = id) {
-    const key = id + '|' + hx;
+  // Material response is shared across photographs and estimated inserts.
+  // Normalize illumination only: no blur, resampling, mask or ownership edits.
+  // Embroidery, thread, logos and flags keep their existing render path.
+  materialSurface(id, role) {
+    const zone = this.DATA.zones.find(z => z.id === role);
+    const leather = ['pad', 'hood'].includes(role)
+      || zone && ['leather', 'lace'].includes(zone.group);
+    if (!leather) return null;
+    const img = this.imgs[id], hi = this.imgs[id + '_hi'];
+    let surface = this.materialCache.get(img);
+    if (surface && surface.hi === hi) return surface;
+    const [x0,y0,x1,y1] = this.DATA.bbox[id];
+    const c = document.createElement('canvas'); c.width=x1-x0; c.height=y1-y0;
+    const g = c.getContext('2d', {willReadFrequently:true});
+    g.drawImage(img,-x0,-y0);
+    const base=g.getImageData(0,0,c.width,c.height).data;
+    g.clearRect(0,0,c.width,c.height);
+    if(hi)g.drawImage(hi,-x0,-y0);
+    const light=g.getImageData(0,0,c.width,c.height).data;
+    const tone=new Float32Array(c.width*c.height), hist=new Uint32Array(766);
+    let n=0;
+    for(let i=0,j=0;i<base.length;i+=4,j++){
+      // Source pairs split diffuse and specular at neutral grey. Recombine
+      // for calibration so clipped white diffuse retains its highlight detail.
+      const v=(base[i]+base[i+1]+base[i+2])/3
+        +2*(light[i]+light[i+1]+light[i+2])/3*light[i+3]/255;
+      tone[j]=v;
+      if(base[i+3]>=245){hist[Math.min(765,Math.round(v))]++;n++;}
+    }
+    if(n<64)return null; // no invented texture on empty/tiny masks
+    const quantile=q=>{let total=0;for(let i=0;i<hist.length;i++){total+=hist[i];if(total>=n*q)return i;}return 255;};
+    const lo=quantile(.1),mid=quantile(.5),high=quantile(.9);
+    // A common midtone and highlight headroom. Only compress contrast:
+    // expanding a flat cutout would amplify pores/noise into false relief.
+    const lower=Math.min(1,40/Math.max(1,mid-lo));
+    const upper=Math.min(1,22/Math.max(1,high-mid));
+    for(let j=0;j<tone.length;j++){
+      const v=tone[j];
+      tone[j]=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
+    }
+    surface={hi,tone,base,lo,mid,high,lower,upper};
+    this.materialCache.set(img,surface);
+    return surface;
+  }
+
+  tinted(id, hx, sheenOf = id, materialOf = sheenOf) {
+    const key = id + '|' + hx + '|' + sheenOf + '|' + materialOf;
     const hit = this.cache.get(key);
     if (hit) return hit;
     const [x0, y0, x1, y1] = this.DATA.bbox[id];
@@ -331,6 +377,19 @@ export class GloveRenderer {
     }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(this.imgs[id], -x0, -y0);
+    const surface = this.materialSurface(id, materialOf);
+    if (surface) {
+      // Preserve the original composited alpha, including anti-alias coverage.
+      const pixels=g.getImageData(0,0,c.width,c.height), rgba=pixels.data;
+      const colour=document.createElement('canvas').getContext('2d');
+      colour.canvas.width=colour.canvas.height=1;colour.fillStyle=hx;colour.fillRect(0,0,1,1);
+      const rgb=colour.getImageData(0,0,1,1).data;
+      for(let i=0,j=0;i<rgba.length;i+=4,j++)if(rgba[i+3]){
+        const v=surface.tone[j],diffuse=Math.min(255,v)/255,specular=Math.max(0,v-255)/2;
+        for(let ch=0;ch<3;ch++)rgba[i+ch]=Math.min(255,Math.round(rgb[ch]*diffuse+specular));
+      }
+      g.putImageData(pixels,0,0);
+    }
     c._ox = x0; c._oy = y0;
     this.cache.set(key, c);
     this.order.push(key);
@@ -492,7 +551,7 @@ export class GloveRenderer {
     c = document.createElement('canvas'); c.width = D.w; c.height = D.h;
     const g = c.getContext('2d');
     for (const [part, zone] of Object.entries(P.roles)) {
-      const t = this.tinted(e.parts[part].asset, this.hex(zone, state));
+      const t = this.tinted(e.parts[part].asset, this.hex(zone, state), e.parts[part].asset, zone);
       g.drawImage(t, t._ox, t._oy);
     }
     g.globalCompositeOperation = 'destination-in';
@@ -775,7 +834,7 @@ export class GloveRenderer {
       }
       if (z.id === 'laces') {
         if (!swap && this.imgs.laces_web && D.bbox.laces_web) {
-          const w = this.underPad(this.tinted('laces_web', this.hex('laces', state)));
+          const w = this.underPad(this.tinted('laces_web', this.hex('laces', state), 'laces_web', 'laces'));
           ctx.drawImage(w, w._ox, w._oy);
         }
         // The knotted lace belongs to the web, not the glove: the Standard I
@@ -787,7 +846,7 @@ export class GloveRenderer {
         // that blue knot is different on other gloves." Every web now brings
         // its own, traced off its own photograph, or has none.
         if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
-          const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state)));
+          const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state), 'laces_knot', 'laces'));
           ctx.drawImage(k, k._ox, k._oy);
         }
       }
@@ -797,7 +856,7 @@ export class GloveRenderer {
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.approved_h_common_cut),0,0);ctx.restore();
       for (const [key,zone] of D.approvedH.layers.slice(2)) {
-        const layer=this.underPad(this.tinted(key,this.hex(zone,state)));
+        const layer=this.underPad(this.tinted(key,this.hex(zone,state),key,zone));
         ctx.drawImage(layer,layer._ox,layer._oy);
       }
     }
@@ -806,7 +865,7 @@ export class GloveRenderer {
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.approved_h_cut),0,0);ctx.restore();
       for (const [key,zone] of D.approvedH.layers.slice(0,2)) {
-        const raw=this.tinted(key,this.hex(zone,state));
+        const raw=this.tinted(key,this.hex(zone,state),key,zone);
         const layer=this.underPad(raw);
         ctx.drawImage(layer,layer._ox,layer._oy);
       }
@@ -850,7 +909,7 @@ export class GloveRenderer {
                                  [swap.laceweb, 'laces'],
                                  [swap.webfinger, 'back3']]) {
         if (!key || !this.imgs[key] || !D.bbox[key]) continue;
-        const tinted = this.tinted(key, this.hex(zone, state));
+        const tinted = this.tinted(key, this.hex(zone, state), key, zone);
         const c = this.underPad(tinted);
         ctx.drawImage(c, c._ox, c._oy);
       }
@@ -865,7 +924,7 @@ export class GloveRenderer {
       ctx.globalCompositeOperation = 'source-over';
       for (const [part, zone] of [['palm', 'palm'], ['leather', 'web'], ['laces', 'laces'], ['stitching', 'stitching']]) {
         if (!thumbInsert[part]) continue;
-        const c = this.tinted(thumbInsert[part], this.hex(zone, state));
+        const c = this.tinted(thumbInsert[part], this.hex(zone, state), thumbInsert[part], zone);
         ctx.drawImage(c, c._ox, c._oy);
       }
       ctx.restore();
