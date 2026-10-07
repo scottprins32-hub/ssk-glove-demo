@@ -625,8 +625,10 @@ function renderStart(b) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(S.startId === st.id));
     c.dataset.key = 'starter|' + st.id;
-    const cv = el('canvas'); cv.width = 200; cv.height = 237;
-    cv.style.width = '100%'; cv.style.aspectRatio = '200/237';
+    // Keep the source pixels: a 200px bitmap blurs on Retina and browser zoom.
+    // CSS controls the card size; the backing canvas retains the full render.
+    const cv = el('canvas'); cv.width = DATA.w; cv.height = DATA.h;
+    cv.style.width = '100%'; cv.style.aspectRatio = DATA.w + '/' + DATA.h;
     c.appendChild(cv);
     c.appendChild(el('span', 'cap',
       `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
@@ -638,11 +640,8 @@ function renderStart(b) {
       const prev = { ...S.colors }, pb = S.bullet, pf = S.flag;
       applyStarter(st, true);
       starterR.setFlag(flagArt());
-      const tmp = document.createElement('canvas');
-      tmp.width = DATA.w; tmp.height = DATA.h;
-      starterR.draw(tmp.getContext('2d'), layerState(DATA, LAYER_TO_FIELD), S.bullet, null,
+      starterR.draw(g, layerState(DATA, LAYER_TO_FIELD), S.bullet, null,
              indexIsOnePiece(), isLefty());
-      g.drawImage(tmp, 0, 0, 200, 237);
       S.colors = prev; S.bullet = pb; S.flag = pf;
       starterR.setFlag(flagArt());          // the renderer holds one flag at a time
     });
