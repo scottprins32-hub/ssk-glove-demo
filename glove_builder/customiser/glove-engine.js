@@ -304,6 +304,13 @@ export class GloveRenderer {
   // Normalize illumination only: no blur, resampling, mask or ownership edits.
   // Embroidery, thread, logos and flags keep their existing render path.
   materialSurface(id, role) {
+    // Two ownership pieces cut from one source keep that source's illumination.
+    // Boxes remain identical: a colour-only split must not relight either piece.
+    const source = this.DATA.materialSources?.[id];
+    if (source && source !== id && this.imgs[source]
+        && this.DATA.bbox[source]?.every((v,i) => v === this.DATA.bbox[id][i])) {
+      return this.materialSurface(source, role);
+    }
     const zone = this.DATA.zones.find(z => z.id === role);
     const leather = ['pad', 'hood'].includes(role)
       || zone && ['leather', 'lace'].includes(zone.group);

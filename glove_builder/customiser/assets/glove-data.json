@@ -9,6 +9,12 @@
       "label": "Back 2 - thumb"
     },
     {
+      "id": "palm",
+      "n": 19,
+      "group": "leather",
+      "label": "Palm fold beneath web"
+    },
+    {
       "id": "back78",
       "n": 3,
       "group": "leather",
@@ -804,7 +810,8 @@
         790
       ],
       "knotHeal": {
-        "back2": "smk_body_heal"
+        "back2": "smk_body_heal",
+        "palm": "palm_smk_body_heal"
       }
     },
     "smlee": {
@@ -917,8 +924,8 @@
   ],
   "assets": {
     "glove": "assets/glove.webp",
-    "back2": "assets/back2.webp",
-    "back2_hi": "assets/back2_hi.webp",
+    "back2": "assets/palm-piece-map-r01/back2.png",
+    "back2_hi": "assets/palm-piece-map-r01/back2_hi.png",
     "back78": "assets/back78_refined.png",
     "back78_hi": "assets/back78_hi.webp",
     "back6": "assets/back6_refined.png",
@@ -1019,9 +1026,9 @@
     "webfinger_trapeze_hi": "assets/webfinger_trapeze_hi.webp",
     "webfinger_modified-trapeze": "assets/webfinger_modified-trapeze.webp",
     "webfinger_modified-trapeze_hi": "assets/webfinger_modified-trapeze_hi.webp",
-    "back2_knotheal": "assets/back2_knotheal.webp",
+    "back2_knotheal": "assets/palm-piece-map-r01/back2_knotheal.png",
     "back3_knotheal": "assets/back3_knotheal.webp",
-    "back2_knotheal_hi": "assets/back2_knotheal_hi.webp",
+    "back2_knotheal_hi": "assets/palm-piece-map-r01/back2_knotheal_hi.png",
     "back3_knotheal_hi": "assets/back3_knotheal_hi.webp",
     "webfinger_smlee": "assets/webfinger_smlee.webp",
     "webfinger_smlee_hi": "assets/webfinger_smlee_hi.webp",
@@ -1057,8 +1064,20 @@
     "smk_clean_laces_hi": "assets/smk-user-alignment-r01/laces_hi.png",
     "smk_body_stitching": "assets/smk-user-alignment-r01/body_stitching.png",
     "smk_body_stitching_hi": "assets/smk-user-alignment-r01/body_stitching_hi.png",
-    "smk_body_heal": "assets/smk-user-alignment-r01/body_heal.png",
-    "smk_body_heal_hi": "assets/smk-user-alignment-r01/body_heal_hi.png"
+    "smk_body_heal": "assets/palm-piece-map-r01/smk_body_heal.png",
+    "smk_body_heal_hi": "assets/palm-piece-map-r01/smk_body_heal_hi.png",
+    "palm_bridge_original_back2": "assets/back2.webp",
+    "palm_bridge_original_back2_hi": "assets/back2_hi.webp",
+    "palm": "assets/palm-piece-map-r01/palm.png",
+    "palm_hi": "assets/palm-piece-map-r01/palm_hi.png",
+    "palm_bridge_original_back2_knotheal": "assets/back2_knotheal.webp",
+    "palm_bridge_original_back2_knotheal_hi": "assets/back2_knotheal_hi.webp",
+    "palm_back2_knotheal": "assets/palm-piece-map-r01/palm_back2_knotheal.png",
+    "palm_back2_knotheal_hi": "assets/palm-piece-map-r01/palm_back2_knotheal_hi.png",
+    "palm_bridge_original_smk_body_heal": "assets/smk-user-alignment-r01/body_heal.png",
+    "palm_bridge_original_smk_body_heal_hi": "assets/smk-user-alignment-r01/body_heal_hi.png",
+    "palm_smk_body_heal": "assets/palm-piece-map-r01/palm_smk_body_heal.png",
+    "palm_smk_body_heal_hi": "assets/palm-piece-map-r01/palm_smk_body_heal_hi.png"
   },
   "bbox": {
     "back2": [
@@ -1876,11 +1895,84 @@
       521,
       839,
       768
+    ],
+    "palm_bridge_original_back2": [
+      544,
+      521,
+      839,
+      879
+    ],
+    "palm_bridge_original_back2_hi": [
+      544,
+      521,
+      839,
+      879
+    ],
+    "palm": [
+      544,
+      521,
+      839,
+      879
+    ],
+    "palm_hi": [
+      544,
+      521,
+      839,
+      879
+    ],
+    "palm_bridge_original_back2_knotheal": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_bridge_original_back2_knotheal_hi": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_back2_knotheal": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_back2_knotheal_hi": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_bridge_original_smk_body_heal": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_bridge_original_smk_body_heal_hi": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_smk_body_heal": [
+      574,
+      521,
+      839,
+      768
+    ],
+    "palm_smk_body_heal_hi": [
+      574,
+      521,
+      839,
+      768
     ]
   },
   "knotHeal": {
     "back2": "back2_knotheal",
-    "back3": "back3_knotheal"
+    "back3": "back3_knotheal",
+    "palm": "palm_back2_knotheal"
   },
   "approvedH": {
     "layers": [
@@ -1903,5 +1995,13 @@
     ],
     "sourceHash": "62c94878949ad465ce119da44c7053b327d101e2bef88e305fb8a262bde30199",
     "reviewStatus": "approved"
+  },
+  "materialSources": {
+    "back2": "palm_bridge_original_back2",
+    "palm": "palm_bridge_original_back2",
+    "back2_knotheal": "palm_bridge_original_back2_knotheal",
+    "palm_back2_knotheal": "palm_bridge_original_back2_knotheal",
+    "smk_body_heal": "palm_bridge_original_smk_body_heal",
+    "palm_smk_body_heal": "palm_bridge_original_smk_body_heal"
   }
 }

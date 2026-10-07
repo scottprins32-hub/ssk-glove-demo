@@ -18,7 +18,7 @@ const STOCK_PRICE = '€ 294,95';
 /* Which render layer each colour field drives. Fields absent from this map
    are real order fields the back view cannot show — see OFFSTAGE. */
 const FIELD_TO_LAYER = {
-  web: 'web', back2: 'back2', back3: 'back3', back4: 'back4', back5: 'back5',
+  web: 'web', palm: 'palm', back2: 'back2', back3: 'back3', back4: 'back4', back5: 'back5',
   back6: 'back6', back7: 'back78', belt: 'belt', lining: 'lining',
   binding: 'binding', welting: 'welting', laces: 'laces',
   thumb_loops: 'thumb_loops', pinky_loops: 'pinky_loops',
@@ -60,8 +60,8 @@ const viewFieldLayer = () => {
   return FIELD_TO_LAYER;
 };
 
-/* SSK's order form asks separately for Palm Color and Back 2 (rest of
-   thumb). Keep those choices independent until construction evidence says otherwise. */
+/* Palm leather folds under the web onto the back. That local fold follows
+   Palm Color; Back 2 remains the separate outer thumb panel (SSK parts diagram). */
 /* A flag is embroidered on one piece of leather, so back3 and back4 stop
    being separate choices — see the orange glove, where the Dutch flag sits
    on a single unsplit index-finger panel. */
