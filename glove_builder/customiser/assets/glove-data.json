@@ -818,7 +818,8 @@
       "web": "web_smlee",
       "laceweb": "laceweb_smlee",
       "webfinger": "overlap_smlee",
-      "knot": true
+      "knot": true,
+      "stitching": "precision_smlee_stitching"
     },
     "spiral-i": {
       "web": "web_spiral-i",
@@ -951,8 +952,8 @@
     "laces_hi": "assets/laces_hi.webp",
     "embroidery": "assets/embroidery.webp",
     "embroidery_hi": "assets/embroidery_hi.webp",
-    "stitching": "assets/stitching.webp",
-    "stitching_hi": "assets/stitching_hi.webp",
+    "stitching": "assets/web-precision-r01/back/stitching.png",
+    "stitching_hi": "assets/web-precision-r01/back/stitching_hi.png",
     "laces_web": "assets/laces_web.webp",
     "laces_web_hi": "assets/laces_web_hi.webp",
     "laces_knot": "assets/laces_knot.webp",
@@ -962,28 +963,28 @@
     "stitching_web_hi": "assets/stitching_web_hi.webp",
     "welt_index": "assets/welt_index.webp",
     "web_cut": "assets/web_cut.webp",
-    "web_closed-diamond-net": "assets/web_closed-diamond-net.webp",
-    "web_closed-diamond-net_hi": "assets/web_closed-diamond-net_hi.webp",
-    "laceweb_closed-diamond-net": "assets/laceweb_closed-diamond-net.webp",
-    "laceweb_closed-diamond-net_hi": "assets/laceweb_closed-diamond-net_hi.webp",
-    "web_em-rocket": "assets/web_em-rocket.webp",
-    "web_em-rocket_hi": "assets/web_em-rocket_hi.webp",
-    "laceweb_em-rocket": "assets/laceweb_em-rocket.webp",
-    "laceweb_em-rocket_hi": "assets/laceweb_em-rocket_hi.webp",
+    "web_closed-diamond-net": "assets/web-precision-r01/back/web_closed-diamond-net.png",
+    "web_closed-diamond-net_hi": "assets/web-precision-r01/back/web_closed-diamond-net_hi.png",
+    "laceweb_closed-diamond-net": "assets/web-precision-r01/back/laceweb_closed-diamond-net.png",
+    "laceweb_closed-diamond-net_hi": "assets/web-precision-r01/back/laceweb_closed-diamond-net_hi.png",
+    "web_em-rocket": "assets/web-precision-r01/back/web_em-rocket.png",
+    "web_em-rocket_hi": "assets/web-precision-r01/back/web_em-rocket_hi.png",
+    "laceweb_em-rocket": "assets/web-precision-r01/back/laceweb_em-rocket.png",
+    "laceweb_em-rocket_hi": "assets/web-precision-r01/back/laceweb_em-rocket_hi.png",
     "web_smk": "assets/web_smk.webp",
     "web_smk_hi": "assets/web_smk_hi.webp",
     "laceweb_smk": "assets/laceweb_smk.webp",
     "laceweb_smk_hi": "assets/laceweb_smk_hi.webp",
     "webfinger_smk": "assets/webfinger_smk.webp",
     "webfinger_smk_hi": "assets/webfinger_smk_hi.webp",
-    "web_smlee": "assets/web_smlee.webp",
-    "web_smlee_hi": "assets/web_smlee_hi.webp",
-    "laceweb_smlee": "assets/laceweb_smlee.webp",
-    "laceweb_smlee_hi": "assets/laceweb_smlee_hi.webp",
-    "web_spiral-i": "assets/web_spiral-i.webp",
-    "web_spiral-i_hi": "assets/web_spiral-i_hi.webp",
-    "laceweb_spiral-i": "assets/laceweb_spiral-i.webp",
-    "laceweb_spiral-i_hi": "assets/laceweb_spiral-i_hi.webp",
+    "web_smlee": "assets/web-precision-r01/back/web_smlee.png",
+    "web_smlee_hi": "assets/web-precision-r01/back/web_smlee_hi.png",
+    "laceweb_smlee": "assets/web-precision-r01/back/laceweb_smlee.png",
+    "laceweb_smlee_hi": "assets/web-precision-r01/back/laceweb_smlee_hi.png",
+    "web_spiral-i": "assets/web-precision-r01/back/web_spiral-i.png",
+    "web_spiral-i_hi": "assets/web-precision-r01/back/web_spiral-i_hi.png",
+    "laceweb_spiral-i": "assets/web-precision-r01/back/laceweb_spiral-i.png",
+    "laceweb_spiral-i_hi": "assets/web-precision-r01/back/laceweb_spiral-i_hi.png",
     "webfinger_spiral-i": "assets/webfinger_spiral-i.webp",
     "webfinger_spiral-i_hi": "assets/webfinger_spiral-i_hi.webp",
     "web_standard-i": "assets/web_standard-i.webp",
@@ -1014,14 +1015,14 @@
     "bullet_redgold": "assets/bullet_redgold.webp",
     "bullet_rainbow": "assets/bullet_rainbow.webp",
     "_idmap": "assets/idmap.png",
-    "web_trapeze": "assets/web_trapeze.webp",
-    "laceweb_trapeze": "assets/laceweb_trapeze.webp",
-    "web_trapeze_hi": "assets/web_trapeze_hi.webp",
-    "laceweb_trapeze_hi": "assets/laceweb_trapeze_hi.webp",
-    "web_modified-trapeze": "assets/web_modified-trapeze.webp",
-    "laceweb_modified-trapeze": "assets/laceweb_modified-trapeze.webp",
-    "web_modified-trapeze_hi": "assets/web_modified-trapeze_hi.webp",
-    "laceweb_modified-trapeze_hi": "assets/laceweb_modified-trapeze_hi.webp",
+    "web_trapeze": "assets/web-precision-r01/back/web_trapeze.png",
+    "laceweb_trapeze": "assets/web-precision-r01/back/laceweb_trapeze.png",
+    "web_trapeze_hi": "assets/web-precision-r01/back/web_trapeze_hi.png",
+    "laceweb_trapeze_hi": "assets/web-precision-r01/back/laceweb_trapeze_hi.png",
+    "web_modified-trapeze": "assets/web-precision-r01/back/web_modified-trapeze.png",
+    "laceweb_modified-trapeze": "assets/web-precision-r01/back/laceweb_modified-trapeze.png",
+    "web_modified-trapeze_hi": "assets/web-precision-r01/back/web_modified-trapeze_hi.png",
+    "laceweb_modified-trapeze_hi": "assets/web-precision-r01/back/laceweb_modified-trapeze_hi.png",
     "webfinger_trapeze": "assets/webfinger_trapeze.webp",
     "webfinger_trapeze_hi": "assets/webfinger_trapeze_hi.webp",
     "webfinger_modified-trapeze": "assets/webfinger_modified-trapeze.webp",
@@ -1038,16 +1039,16 @@
     "review_standard_web": "assets/review_standard_web.png",
     "review_standard_laces": "assets/review_standard_laces.png",
     "review_standard_fixed": "assets/review_standard_fixed.png",
-    "approved_standard_web": "assets/approved_standard_web_polished.png",
-    "approved_standard_laces": "assets/approved_standard_laces_polished.png",
+    "approved_standard_web": "assets/web-precision-r01/back/approved_standard_web.png",
+    "approved_standard_laces": "assets/web-precision-r01/back/approved_standard_laces.png",
     "standard_remnants": "assets/standard_remnants.png",
-    "approved_standard_web_hi": "assets/approved_standard_web_hi_polished.png",
-    "approved_standard_laces_hi": "assets/approved_standard_laces_hi_polished.png",
+    "approved_standard_web_hi": "assets/web-precision-r01/back/approved_standard_web_hi.png",
+    "approved_standard_laces_hi": "assets/web-precision-r01/back/approved_standard_laces_hi.png",
     "approved_standard_finger": "assets/approved_standard_finger_polished.png",
     "approved_standard_finger_hi": "assets/approved_standard_finger_hi_polished.png",
     "master_pinky_openings": "assets/master_pinky_openings_refined.png",
-    "approved_h_web": "assets/approved_h_web.png",
-    "approved_h_laces": "assets/approved_h_laces.png",
+    "approved_h_web": "assets/web-precision-r01/back/approved_h_web.png",
+    "approved_h_laces": "assets/web-precision-r01/back/approved_h_laces.png",
     "approved_h_glove_laces": "assets/approved_h_glove_laces.png",
     "approved_h_welting": "assets/approved_h_welting.png",
     "approved_h_cut": "assets/approved_h_cut.png",
@@ -1058,12 +1059,12 @@
     "overlap_smlee": "assets/overlap_smlee_polished.png",
     "overlap_spiral-i": "assets/overlap_spiral-i_polished.png",
     "other_web_notches": "assets/other_web_notches_polished.png",
-    "smk_clean_web": "assets/smk-clean-r01/web.png",
+    "smk_clean_web": "assets/web-precision-r01/back/smk_clean_web.png",
     "smk_clean_stitching": "assets/smk-user-alignment-r01/pattern.png",
-    "smk_clean_laces": "assets/smk-user-alignment-r01/laces.png",
-    "smk_clean_laces_hi": "assets/smk-user-alignment-r01/laces_hi.png",
-    "smk_body_stitching": "assets/smk-user-alignment-r01/body_stitching.png",
-    "smk_body_stitching_hi": "assets/smk-user-alignment-r01/body_stitching_hi.png",
+    "smk_clean_laces": "assets/web-precision-r01/back/smk_clean_laces.png",
+    "smk_clean_laces_hi": "assets/web-precision-r01/back/smk_clean_laces_hi.png",
+    "smk_body_stitching": "assets/web-precision-r01/back/smk_body_stitching.png",
+    "smk_body_stitching_hi": "assets/web-precision-r01/back/smk_body_stitching_hi.png",
     "smk_body_heal": "assets/palm-piece-map-r01/smk_body_heal.png",
     "smk_body_heal_hi": "assets/palm-piece-map-r01/smk_body_heal_hi.png",
     "palm_bridge_original_back2": "assets/back2.webp",
@@ -1077,7 +1078,9 @@
     "palm_bridge_original_smk_body_heal": "assets/smk-user-alignment-r01/body_heal.png",
     "palm_bridge_original_smk_body_heal_hi": "assets/smk-user-alignment-r01/body_heal_hi.png",
     "palm_smk_body_heal": "assets/palm-piece-map-r01/palm_smk_body_heal.png",
-    "palm_smk_body_heal_hi": "assets/palm-piece-map-r01/palm_smk_body_heal_hi.png"
+    "palm_smk_body_heal_hi": "assets/palm-piece-map-r01/palm_smk_body_heal_hi.png",
+    "precision_h_stitching": "assets/web-precision-r01/back/precision_h_stitching.png",
+    "precision_smlee_stitching": "assets/web-precision-r01/back/precision_smlee_stitching.png"
   },
   "bbox": {
     "back2": [
@@ -1243,16 +1246,16 @@
       600
     ],
     "stitching": [
-      549,
-      69,
-      810,
-      974
+      0,
+      0,
+      929,
+      1100
     ],
     "stitching_hi": [
-      549,
-      69,
-      810,
-      974
+      0,
+      0,
+      929,
+      1100
     ],
     "laces_web": [
       511,
@@ -1309,52 +1312,52 @@
       798
     ],
     "web_closed-diamond-net": [
-      577,
-      16,
-      824,
-      723
+      0,
+      0,
+      929,
+      1100
     ],
     "web_closed-diamond-net_hi": [
-      577,
-      16,
-      824,
-      723
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_closed-diamond-net": [
-      578,
-      17,
-      819,
-      844
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_closed-diamond-net_hi": [
-      578,
-      17,
-      819,
-      844
+      0,
+      0,
+      929,
+      1100
     ],
     "web_em-rocket": [
-      577,
-      16,
-      824,
-      722
+      0,
+      0,
+      929,
+      1100
     ],
     "web_em-rocket_hi": [
-      577,
-      16,
-      824,
-      722
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_em-rocket": [
-      606,
-      31,
-      823,
-      733
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_em-rocket_hi": [
-      606,
-      31,
-      823,
-      733
+      0,
+      0,
+      929,
+      1100
     ],
     "web_smk": [
       577,
@@ -1393,40 +1396,40 @@
       697
     ],
     "web_smlee": [
-      577,
-      16,
-      826,
-      737
+      0,
+      0,
+      929,
+      1100
     ],
     "web_smlee_hi": [
-      577,
-      16,
-      826,
-      737
+      0,
+      0,
+      929,
+      1100
     ],
     "web_spiral-i": [
-      577,
-      16,
-      824,
-      723
+      0,
+      0,
+      929,
+      1100
     ],
     "web_spiral-i_hi": [
-      577,
-      16,
-      824,
-      723
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_spiral-i": [
-      582,
-      25,
-      836,
-      762
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_spiral-i_hi": [
-      582,
-      25,
-      836,
-      762
+      0,
+      0,
+      929,
+      1100
     ],
     "webfinger_spiral-i": [
       608,
@@ -1603,52 +1606,52 @@
       1078
     ],
     "web_trapeze": [
-      577,
-      16,
-      824,
-      717
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_trapeze": [
-      545,
-      24,
-      824,
-      712
+      0,
+      0,
+      929,
+      1100
     ],
     "web_trapeze_hi": [
-      577,
-      16,
-      824,
-      717
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_trapeze_hi": [
-      545,
-      24,
-      824,
-      712
+      0,
+      0,
+      929,
+      1100
     ],
     "web_modified-trapeze": [
-      577,
-      16,
-      824,
-      717
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_modified-trapeze": [
-      543,
-      20,
-      823,
-      721
+      0,
+      0,
+      929,
+      1100
     ],
     "web_modified-trapeze_hi": [
-      577,
-      16,
-      824,
-      717
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_modified-trapeze_hi": [
-      543,
-      20,
-      823,
-      721
+      0,
+      0,
+      929,
+      1100
     ],
     "webfinger_trapeze": [
       578,
@@ -1699,16 +1702,16 @@
       629
     ],
     "laceweb_smlee": [
-      456,
-      17,
-      841,
-      796
+      0,
+      0,
+      929,
+      1100
     ],
     "laceweb_smlee_hi": [
-      456,
-      17,
-      841,
-      796
+      0,
+      0,
+      929,
+      1100
     ],
     "webfinger_smlee": [
       553,
@@ -1873,16 +1876,16 @@
       1100
     ],
     "smk_body_stitching": [
-      549,
-      69,
-      810,
-      974
+      0,
+      0,
+      929,
+      1100
     ],
     "smk_body_stitching_hi": [
-      549,
-      69,
-      810,
-      974
+      0,
+      0,
+      929,
+      1100
     ],
     "smk_body_heal": [
       574,
@@ -1967,6 +1970,18 @@
       521,
       839,
       768
+    ],
+    "precision_h_stitching": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "precision_smlee_stitching": [
+      0,
+      0,
+      929,
+      1100
     ]
   },
   "knotHeal": {
@@ -1994,7 +2009,8 @@
       ]
     ],
     "sourceHash": "62c94878949ad465ce119da44c7053b327d101e2bef88e305fb8a262bde30199",
-    "reviewStatus": "approved"
+    "reviewStatus": "approved",
+    "stitching": "precision_h_stitching"
   },
   "materialSources": {
     "back2": "palm_bridge_original_back2",

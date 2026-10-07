@@ -876,6 +876,12 @@ export class GloveRenderer {
         const layer=this.underPad(raw);
         ctx.drawImage(layer,layer._ox,layer._oy);
       }
+      // Approved H thread must survive the late web-leather replacement.
+      const thread = D.approvedH.stitching;
+      if (thread && this.imgs[thread]) {
+        const layer = this.underPad(this.tinted(thread, this.hex('stitching', state), thread, 'stitching'));
+        ctx.drawImage(layer, layer._ox, layer._oy);
+      }
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.approved_h_openings),0,0);ctx.restore();
     }

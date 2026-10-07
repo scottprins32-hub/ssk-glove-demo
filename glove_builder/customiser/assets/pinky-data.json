@@ -1,316 +1,316 @@
 {
- "view": "pinky",
- "w": 737,
- "h": 1100,
- "zones": [
-  {
-   "id": "back4",
-   "n": 1,
-   "group": "leather",
-   "label": "Back 4 - index, 2nd part",
-   "field": "back4"
+  "view": "pinky",
+  "w": 737,
+  "h": 1100,
+  "zones": [
+    {
+      "id": "back4",
+      "n": 1,
+      "group": "leather",
+      "label": "Back 4 - index, 2nd part",
+      "field": "back4"
+    },
+    {
+      "id": "back5",
+      "n": 2,
+      "group": "leather",
+      "label": "Back 5 - middle, 1st part",
+      "field": "back5"
+    },
+    {
+      "id": "back6",
+      "n": 3,
+      "group": "leather",
+      "label": "Back 6 - middle, 2nd part",
+      "field": "back6"
+    },
+    {
+      "id": "back7",
+      "n": 4,
+      "group": "leather",
+      "label": "Back 7 - ring",
+      "field": "back7"
+    },
+    {
+      "id": "back8",
+      "n": 5,
+      "group": "leather",
+      "label": "Back 8 - pinky",
+      "field": "back8"
+    },
+    {
+      "id": "back9",
+      "n": 6,
+      "group": "leather",
+      "label": "Back 9 - pinky wingtip",
+      "field": "back9"
+    },
+    {
+      "id": "palm",
+      "n": 7,
+      "group": "leather",
+      "label": "Palm (seen inside the pocket)",
+      "field": "palm"
+    },
+    {
+      "id": "binding",
+      "n": 8,
+      "group": "lace",
+      "label": "Binding",
+      "field": "binding"
+    },
+    {
+      "id": "welting",
+      "n": 9,
+      "group": "lace",
+      "label": "Welting",
+      "field": "welting"
+    },
+    {
+      "id": "laces",
+      "n": 10,
+      "group": "lace",
+      "label": "Laces",
+      "field": "laces"
+    },
+    {
+      "id": "embroidery",
+      "n": 11,
+      "group": "embroidery",
+      "label": "SSK embroidery",
+      "field": "ring_emb"
+    },
+    {
+      "id": "stitching",
+      "n": 12,
+      "group": "stitching",
+      "label": "Stitching",
+      "field": "stitching"
+    }
+  ],
+  "bbox": {
+    "glove": [
+      60,
+      42,
+      675,
+      989
+    ],
+    "back4": [
+      332,
+      82,
+      629,
+      978
+    ],
+    "back4_hi": [
+      332,
+      82,
+      629,
+      978
+    ],
+    "back5": [
+      348,
+      43,
+      618,
+      767
+    ],
+    "back5_hi": [
+      348,
+      43,
+      618,
+      767
+    ],
+    "back6": [
+      363,
+      42,
+      617,
+      741
+    ],
+    "back6_hi": [
+      363,
+      42,
+      617,
+      741
+    ],
+    "back7": [
+      237,
+      63,
+      554,
+      825
+    ],
+    "back7_hi": [
+      237,
+      63,
+      554,
+      825
+    ],
+    "back8": [
+      144,
+      148,
+      472,
+      977
+    ],
+    "back8_hi": [
+      144,
+      148,
+      472,
+      977
+    ],
+    "back9": [
+      57,
+      160,
+      358,
+      989
+    ],
+    "back9_hi": [
+      57,
+      160,
+      358,
+      989
+    ],
+    "palm": [
+      329,
+      380,
+      370,
+      485
+    ],
+    "palm_hi": [
+      329,
+      380,
+      370,
+      485
+    ],
+    "binding": [
+      417,
+      701,
+      591,
+      933
+    ],
+    "binding_hi": [
+      417,
+      701,
+      591,
+      933
+    ],
+    "welting": [
+      85,
+      42,
+      608,
+      976
+    ],
+    "welting_hi": [
+      85,
+      468,
+      119,
+      608
+    ],
+    "laces": [
+      60,
+      53,
+      675,
+      983
+    ],
+    "laces_hi": [
+      60,
+      170,
+      675,
+      977
+    ],
+    "embroidery": [
+      351,
+      238,
+      514,
+      567
+    ],
+    "stitching": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "embroidery_lht": [
+      369,
+      229,
+      527,
+      565
+    ]
   },
-  {
-   "id": "back5",
-   "n": 2,
-   "group": "leather",
-   "label": "Back 5 - middle, 1st part",
-   "field": "back5"
+  "assets": {
+    "glove": "assets/side/pinky-user-r16/glove.webp",
+    "back4": "assets/side/pinky-user-r16/back4.webp",
+    "back4_hi": "assets/side/pinky-user-r16/back4_hi.webp",
+    "back5": "assets/side/pinky-user-r16/back5.webp",
+    "back5_hi": "assets/side/pinky-user-r16/back5_hi.webp",
+    "back6": "assets/side/pinky-user-r16/back6.webp",
+    "back6_hi": "assets/side/pinky-user-r16/back6_hi.webp",
+    "back7": "assets/side/pinky-user-r16/back7.webp",
+    "back7_hi": "assets/side/pinky-user-r16/back7_hi.webp",
+    "back8": "assets/side/pinky-user-r16/back8.webp",
+    "back8_hi": "assets/side/pinky-user-r16/back8_hi.webp",
+    "back9": "assets/side/pinky-user-r16/back9.webp",
+    "back9_hi": "assets/side/pinky-user-r16/back9_hi.webp",
+    "palm": "assets/side/pinky-user-r16/palm.webp",
+    "palm_hi": "assets/side/pinky-user-r16/palm_hi.webp",
+    "binding": "assets/side/pinky-user-r16/binding.webp",
+    "binding_hi": "assets/side/pinky-user-r16/binding_hi.webp",
+    "welting": "assets/side/pinky-user-r16/welting.webp",
+    "welting_hi": "assets/side/pinky-user-r16/welting_hi.webp",
+    "laces": "assets/side/pinky-user-r16/laces.webp",
+    "laces_hi": "assets/side/pinky-user-r16/laces_hi.webp",
+    "embroidery": "assets/side/pinky-user-r16/embroidery.webp",
+    "stitching": "assets/side/pinky-user-r16/stitching.webp",
+    "embroidery_lht": "assets/side/pinky-user-r16/embroidery_lht.webp",
+    "_idmap": "assets/side/pinky-user-r16/idmap.png",
+    "_idmap_lht": "assets/side/pinky-user-r16/idmap-lht.png"
   },
-  {
-   "id": "back6",
-   "n": 3,
-   "group": "leather",
-   "label": "Back 6 - middle, 2nd part",
-   "field": "back6"
+  "sheen": {
+    "back4": 1.0,
+    "back5": 1.0,
+    "back6": 1.0,
+    "back7": 1.0,
+    "back8": 1.0,
+    "back9": 1.0,
+    "palm": 1.0,
+    "binding": 1.0
   },
-  {
-   "id": "back7",
-   "n": 4,
-   "group": "leather",
-   "label": "Back 7 - ring",
-   "field": "back7"
-  },
-  {
-   "id": "back8",
-   "n": 5,
-   "group": "leather",
-   "label": "Back 8 - pinky",
-   "field": "back8"
-  },
-  {
-   "id": "back9",
-   "n": 6,
-   "group": "leather",
-   "label": "Back 9 - pinky wingtip",
-   "field": "back9"
-  },
-  {
-   "id": "palm",
-   "n": 7,
-   "group": "leather",
-   "label": "Palm (seen inside the pocket)",
-   "field": "palm"
-  },
-  {
-   "id": "binding",
-   "n": 8,
-   "group": "lace",
-   "label": "Binding",
-   "field": "binding"
-  },
-  {
-   "id": "welting",
-   "n": 9,
-   "group": "lace",
-   "label": "Welting",
-   "field": "welting"
-  },
-  {
-   "id": "laces",
-   "n": 10,
-   "group": "lace",
-   "label": "Laces",
-   "field": "laces"
-  },
-  {
-   "id": "embroidery",
-   "n": 11,
-   "group": "embroidery",
-   "label": "SSK embroidery",
-   "field": "ring_emb"
-  },
-  {
-   "id": "stitching",
-   "n": 12,
-   "group": "stitching",
-   "label": "Stitching",
-   "field": "stitching"
+  "source": "DSC05710.ARW",
+  "fieldsShown": [
+    "back4",
+    "back5",
+    "back6",
+    "back7",
+    "back8",
+    "back9",
+    "binding",
+    "laces",
+    "palm",
+    "ring_emb",
+    "stitching",
+    "welting"
+  ],
+  "fieldsNotShown": [
+    "web",
+    "back1",
+    "back2",
+    "back3",
+    "belt",
+    "lining",
+    "thumb_loops",
+    "pinky_loops",
+    "pad_color"
+  ],
+  "embroideryLHT": "embroidery_lht",
+  "idmapLHT": "_idmap_lht",
+  "userContours": {
+    "revision": "PINKY-USER-R16",
+    "sourceSha256": "c2b3ae96457b032fc3c12b8e811697ff316f403b7c7302d90b6dde451ca4642a",
+    "parts": 43,
+    "pending": "16 submitted welting contours have no per-shape approval flag; source geometry supplied directly by Scott",
+    "openingParts": [
+      "user-1790979336973-ece94",
+      "user-1791065433216-a2430"
+    ],
+    "correction": "Palm-reference stronger source-owned leather finish. All primary material alpha, human contours, lace/logo assets and owner maps retained from R15.",
+    "pinkyStitching": "No independently traced stitch route exists; legacy threshold fragments removed rather than presented as real thread. Global stitching remains active in other views.",
+    "materialFinish": "Estimated material finish on fixed photographed user-traced geometry. Inside-palm native-resolution pores <=22RGB with continuous varied UV placement with correlated microhighlight; no random noise; own-panel robust quadratic own-panel source lighting, normalized and capped -0.14/+0.07. Not measured factory leather."
   }
- ],
- "bbox": {
-  "glove": [
-   60,
-   42,
-   675,
-   989
-  ],
-  "back4": [
-   332,
-   82,
-   629,
-   978
-  ],
-  "back4_hi": [
-   332,
-   82,
-   629,
-   978
-  ],
-  "back5": [
-   348,
-   43,
-   618,
-   767
-  ],
-  "back5_hi": [
-   348,
-   43,
-   618,
-   767
-  ],
-  "back6": [
-   363,
-   42,
-   617,
-   741
-  ],
-  "back6_hi": [
-   363,
-   42,
-   617,
-   741
-  ],
-  "back7": [
-   237,
-   63,
-   554,
-   825
-  ],
-  "back7_hi": [
-   237,
-   63,
-   554,
-   825
-  ],
-  "back8": [
-   144,
-   148,
-   472,
-   977
-  ],
-  "back8_hi": [
-   144,
-   148,
-   472,
-   977
-  ],
-  "back9": [
-   57,
-   160,
-   358,
-   989
-  ],
-  "back9_hi": [
-   57,
-   160,
-   358,
-   989
-  ],
-  "palm": [
-   329,
-   380,
-   370,
-   485
-  ],
-  "palm_hi": [
-   329,
-   380,
-   370,
-   485
-  ],
-  "binding": [
-   417,
-   701,
-   591,
-   933
-  ],
-  "binding_hi": [
-   417,
-   701,
-   591,
-   933
-  ],
-  "welting": [
-   85,
-   42,
-   608,
-   976
-  ],
-  "welting_hi": [
-   85,
-   468,
-   119,
-   608
-  ],
-  "laces": [
-   60,
-   53,
-   675,
-   983
-  ],
-  "laces_hi": [
-   60,
-   170,
-   675,
-   977
-  ],
-  "embroidery": [
-   351,
-   238,
-   514,
-   567
-  ],
-  "stitching": [
-   0,
-   0,
-   1,
-   1
-  ],
-  "embroidery_lht": [
-   369,
-   229,
-   527,
-   565
-  ]
- },
- "assets": {
-  "glove": "assets/side/pinky-user-r16/glove.webp",
-  "back4": "assets/side/pinky-user-r16/back4.webp",
-  "back4_hi": "assets/side/pinky-user-r16/back4_hi.webp",
-  "back5": "assets/side/pinky-user-r16/back5.webp",
-  "back5_hi": "assets/side/pinky-user-r16/back5_hi.webp",
-  "back6": "assets/side/pinky-user-r16/back6.webp",
-  "back6_hi": "assets/side/pinky-user-r16/back6_hi.webp",
-  "back7": "assets/side/pinky-user-r16/back7.webp",
-  "back7_hi": "assets/side/pinky-user-r16/back7_hi.webp",
-  "back8": "assets/side/pinky-user-r16/back8.webp",
-  "back8_hi": "assets/side/pinky-user-r16/back8_hi.webp",
-  "back9": "assets/side/pinky-user-r16/back9.webp",
-  "back9_hi": "assets/side/pinky-user-r16/back9_hi.webp",
-  "palm": "assets/side/pinky-user-r16/palm.webp",
-  "palm_hi": "assets/side/pinky-user-r16/palm_hi.webp",
-  "binding": "assets/side/pinky-user-r16/binding.webp",
-  "binding_hi": "assets/side/pinky-user-r16/binding_hi.webp",
-  "welting": "assets/side/pinky-user-r16/welting.webp",
-  "welting_hi": "assets/side/pinky-user-r16/welting_hi.webp",
-  "laces": "assets/side/pinky-user-r16/laces.webp",
-  "laces_hi": "assets/side/pinky-user-r16/laces_hi.webp",
-  "embroidery": "assets/side/pinky-user-r16/embroidery.webp",
-  "stitching": "assets/side/pinky-user-r16/stitching.webp",
-  "embroidery_lht": "assets/side/pinky-user-r16/embroidery_lht.webp",
-  "_idmap": "assets/side/pinky-user-r16/idmap.png",
-  "_idmap_lht": "assets/side/pinky-user-r16/idmap-lht.png"
- },
- "sheen": {
-  "back4": 1.0,
-  "back5": 1.0,
-  "back6": 1.0,
-  "back7": 1.0,
-  "back8": 1.0,
-  "back9": 1.0,
-  "palm": 1.0,
-  "binding": 1.0
- },
- "source": "DSC05710.ARW",
- "fieldsShown": [
-  "back4",
-  "back5",
-  "back6",
-  "back7",
-  "back8",
-  "back9",
-  "binding",
-  "laces",
-  "palm",
-  "ring_emb",
-  "stitching",
-  "welting"
- ],
- "fieldsNotShown": [
-  "web",
-  "back1",
-  "back2",
-  "back3",
-  "belt",
-  "lining",
-  "thumb_loops",
-  "pinky_loops",
-  "pad_color"
- ],
- "embroideryLHT": "embroidery_lht",
- "idmapLHT": "_idmap_lht",
- "userContours": {
-  "revision": "PINKY-USER-R16",
-  "sourceSha256": "c2b3ae96457b032fc3c12b8e811697ff316f403b7c7302d90b6dde451ca4642a",
-  "parts": 43,
-  "pending": "16 submitted welting contours have no per-shape approval flag; source geometry supplied directly by Scott",
-  "openingParts": [
-   "user-1790979336973-ece94",
-   "user-1791065433216-a2430"
-  ],
-  "correction": "Palm-reference stronger source-owned leather finish. All primary material alpha, human contours, lace/logo assets and owner maps retained from R15.",
-  "pinkyStitching": "No independently traced stitch route exists; legacy threshold fragments removed rather than presented as real thread. Global stitching remains active in other views.",
-  "materialFinish": "Estimated material finish on fixed photographed user-traced geometry. Inside-palm native-resolution pores <=22RGB with continuous varied UV placement with correlated microhighlight; no random noise; own-panel robust quadratic own-panel source lighting, normalized and capped -0.14/+0.07. Not measured factory leather."
- }
 }

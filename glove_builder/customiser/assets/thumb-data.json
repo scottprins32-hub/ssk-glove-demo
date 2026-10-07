@@ -837,10 +837,10 @@
       1100
     ],
     "stitch_audit_stitching": [
-      85,
-      67,
-      720,
-      1040
+      0,
+      0,
+      822,
+      1100
     ],
     "stitch_audit_h_detail_stitching": [
       85,
@@ -933,16 +933,16 @@
       747
     ],
     "palm_bridge_h_detail_idmap": [
-      83,
-      59,
-      631,
-      747
+      0,
+      0,
+      822,
+      1100
     ],
     "palm_bridge__idmap": [
-      47,
-      39,
-      761,
-      1049
+      0,
+      0,
+      822,
+      1100
     ]
   },
   "assets": {
@@ -1078,7 +1078,7 @@
     "mid_attachment_h_detail_cut": "assets/side/thumb-mid-attachment-r01/h_detail_cut.png",
     "mid_attachment_h_detail_idmap": "assets/side/thumb-mid-attachment-r01/h_detail_idmap.png",
     "logo_side_cutouts": "assets/side/thumb-logo-side-cut-r01/cutouts.png",
-    "stitch_audit_stitching": "assets/side/thumb-stitch-audit-r01/stitching.png",
+    "stitch_audit_stitching": "assets/web-precision-r01/thumb/stitch_audit_stitching.png",
     "stitch_audit_h_detail_stitching": "assets/side/thumb-stitch-audit-r01/h_detail_stitching.png",
     "stitch_audit_laces": "assets/side/thumb-stitch-audit-r01/laces.png",
     "stitch_audit_laces_hi": "assets/side/thumb-stitch-audit-r01/laces_hi.png",
@@ -1094,8 +1094,8 @@
     "palm_bridge_h_detail_leather": "assets/side/thumb-palm-bridge-r01/h_detail_leather.png",
     "palm_bridge_h_detail_leather_hi": "assets/side/thumb-palm-bridge-r01/h_detail_leather_hi.png",
     "palm_bridge_h_detail_cut": "assets/side/thumb-palm-bridge-r01/h_detail_cut.png",
-    "palm_bridge_h_detail_idmap": "assets/side/thumb-palm-bridge-r01/h_detail_idmap.png",
-    "palm_bridge__idmap": "assets/side/thumb-palm-bridge-r01/_idmap.png"
+    "palm_bridge_h_detail_idmap": "assets/web-precision-r01/thumb/palm_bridge_h_detail_idmap.png",
+    "palm_bridge__idmap": "assets/web-precision-r01/thumb/palm_bridge__idmap.png"
   },
   "sheen": {
     "back1": 0.5
