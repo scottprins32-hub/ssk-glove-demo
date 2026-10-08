@@ -16,8 +16,8 @@
   },
   {
     "file": "MANIFEST.json",
-    "bytes": 10330,
-    "sha256": "89aa70808a7a4c005ebd17b21ead631d301ed53b77c0e28e0d07dad57a47137f"
+    "bytes": 13571,
+    "sha256": "e7e926ccaa0430ad28d67ed368bce7e9b899dd0023c19149beecd4ae1a3d5686"
   },
   {
     "file": "REFERENCES.json",
@@ -26,13 +26,128 @@
   },
   {
     "file": "STATE.md",
-    "bytes": 1232,
-    "sha256": "4a21b7cd75e3128e5536bf0eac9ea55e129319da1e6307eb5068f947749c137d"
+    "bytes": 2057,
+    "sha256": "feb7a61771457aba813ce2617dd967299fe32de3d9b85120683761a91b616776"
+  },
+  {
+    "file": "corrections/EVALUATION-R1.md",
+    "bytes": 1898,
+    "sha256": "7bb05387e25b462e3713a99c29f2603c6c6835668f66576eef1431df8c23aeee"
+  },
+  {
+    "file": "corrections/GENERATIONS.json",
+    "bytes": 11888,
+    "sha256": "454da5dade104a650f27c3716c48e0eee6cf8bc0ffc29f1dd2d15154885ecc62"
+  },
+  {
+    "file": "corrections/comparison/closed-diamond-net-back-after.webp",
+    "bytes": 318280,
+    "sha256": "67c927132c7779a30cd4decfbe18072db2aecb47ee0e9b86fb1160f8df8a1f68"
+  },
+  {
+    "file": "corrections/comparison/closed-diamond-net-back-before.webp",
+    "bytes": 366626,
+    "sha256": "6fa84ca88cae93bcf82adb514f4744e1cb0b6c0e2068abde11dcf3932770eb7e"
+  },
+  {
+    "file": "corrections/comparison/spiral-i-back-after.webp",
+    "bytes": 306986,
+    "sha256": "2501b899f819077891e95abeb341867e91f37a568e1e3266f8ebb305c304b534"
+  },
+  {
+    "file": "corrections/comparison/spiral-i-back-before.webp",
+    "bytes": 341792,
+    "sha256": "6f32132d6a502875d4d8fe305a1900738d5c9339678f6874d9a66de25f7f1cef"
+  },
+  {
+    "file": "corrections/comparison/spiral-i-palm-after.webp",
+    "bytes": 270758,
+    "sha256": "27b20435df8d9b232d72e104166151308571b25fdda64cf698889bec333971e1"
+  },
+  {
+    "file": "corrections/comparison/spiral-i-palm-before.webp",
+    "bytes": 306204,
+    "sha256": "53c22f317d44bba2cd7efe6c5e7b80f9a00b6ec7f3197f942031605d0fe109f2"
+  },
+  {
+    "file": "corrections/comparison/standard-i-back-after.webp",
+    "bytes": 321778,
+    "sha256": "e77952a146fe3be2ed96a4fde2b9af1eb172cc5ff7db6942b5f192c8b26aaa43"
+  },
+  {
+    "file": "corrections/comparison/standard-i-back-before.webp",
+    "bytes": 329030,
+    "sha256": "dd8f62b1b9a964c04edfec30843ed1c113bca686ce1f2d05588917decc00a113"
+  },
+  {
+    "file": "corrections/comparison/standard-i-palm-after.webp",
+    "bytes": 249610,
+    "sha256": "cb8f24e83c747d3a361f6634b2180643c06cfc8f91eb0965dc996068da5ef694"
+  },
+  {
+    "file": "corrections/comparison/standard-i-palm-before.webp",
+    "bytes": 308130,
+    "sha256": "3751787b83099310767c5b4809d21f83cc21601790a4ca9c79f587ff4f8ae7f2"
+  },
+  {
+    "file": "corrections/images/closed-diamond-net-back.png",
+    "bytes": 2035272,
+    "sha256": "8405c9c9fec2894988781aeb3f8786d0c2281eedddfc1e514eb6201721f00b70"
+  },
+  {
+    "file": "corrections/images/spiral-i-back-v2.png",
+    "bytes": 1905264,
+    "sha256": "2728ad1364aea4185dbb4b81c5f09d3cf321e2f764d69cd12cbf50a40dcd7315"
+  },
+  {
+    "file": "corrections/images/spiral-i-palm-v2.png",
+    "bytes": 1850430,
+    "sha256": "4125dc604d2869a6041b70b1f2c97142daf1d5066586e3314b8a3d75ade47e7c"
+  },
+  {
+    "file": "corrections/images/standard-i-back.png",
+    "bytes": 2014064,
+    "sha256": "9eb075b2675e620c36b4e0e0cd528bf504afa9d1fc88346871ed70e4e3353194"
+  },
+  {
+    "file": "corrections/images/standard-i-palm-v2.png",
+    "bytes": 1688292,
+    "sha256": "5314d72b3ee1fac24519667322f646718e39d16731a855185692bc30aa3889d0"
+  },
+  {
+    "file": "corrections/index.html",
+    "bytes": 5252,
+    "sha256": "dd1b94d0041f4655b8f4f6db63094268cb8da6bed846c1b8df68ebaa7ccb1b17"
+  },
+  {
+    "file": "corrections/previews/closed-diamond-net-back.webp",
+    "bytes": 56348,
+    "sha256": "312b7697d21fb783e978fe6019ae38ed7a2ff838e15513d6f5eca36819b3b8fb"
+  },
+  {
+    "file": "corrections/previews/spiral-i-back-v2.webp",
+    "bytes": 58126,
+    "sha256": "6bce2e541a2faab6357be1a4db80fa7951eef645b8aee36e9f9bf2d422610b50"
+  },
+  {
+    "file": "corrections/previews/spiral-i-palm-v2.webp",
+    "bytes": 47346,
+    "sha256": "e07192be1998e2dec7b55fdb99481f98ecd39c54fb105d743e8bc9aef36a523a"
+  },
+  {
+    "file": "corrections/previews/standard-i-back.webp",
+    "bytes": 57496,
+    "sha256": "e327f492fff5fd7166a2ebf46123810be1487e38620e8a05f6e0372e397c50ba"
+  },
+  {
+    "file": "corrections/previews/standard-i-palm-v2.webp",
+    "bytes": 47928,
+    "sha256": "b0200b2a2fbfdfba908a24a228577b86ff4cca0101fd08a498a3e56e3a6c3743"
   },
   {
     "file": "gallery.js",
-    "bytes": 7235,
-    "sha256": "e0d8d7ecb6bb0be383c1d76a26c506657898c3bac613963af5fd24b1af71e6d8"
+    "bytes": 7761,
+    "sha256": "7845187ad77a8d1c747eef2dc694b4873606361ac1358df00ff0f129b5385885"
   },
   {
     "file": "generated/closed-diamond-net-back.png",
@@ -156,8 +271,8 @@
   },
   {
     "file": "index.html",
-    "bytes": 5972,
-    "sha256": "a29fbef09ee27e77f6234bbd85a979677aadf759072a2d10c09d9a4335a92676"
+    "bytes": 6188,
+    "sha256": "d399ace88e73021e9cae9a76b70172e4bcb8dcb7947cf9e9532fc3b6b2bce80f"
   },
   {
     "file": "layers/closed-diamond-net-back.json",

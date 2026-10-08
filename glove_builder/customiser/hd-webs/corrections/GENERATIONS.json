@@ -1,0 +1,74 @@
+[
+  {
+    "key": "closed-diamond-net-back",
+    "prompt": "Use case: precise-object-edit. Edit IMAGE 1 only with ONE tiny construction correction. This is a premium Cardinal red SSK Closed Diamond Net glove in back view, transparent background. IMAGE 2 is the user's close-up of the defect. At the very bottom of the web, immediately BELOW the rounded red lower lip and below the big white knot, there are TWO tiny vertical white U-shaped lace loops sitting on the separate red palm attachment leather. REMOVE BOTH of those tiny white loops completely. Reconstruct continuous clean red leather-on-leather overlap there, with natural subtle contact shading. Keep the red rounded web lip, underlying red stitched U-shaped palm-leather attachment, existing white double stitching, the big white knot and its two long tails exactly as they are. Keep ALL white X laces inside the web, top attachment loops, web diamond stitching, all glove geometry, all panel outlines, finger/wrist embroidered logos, material grain, lighting, camera, pose, crop and scale unchanged. No new knots, holes, seams or loops. Maintain actual transparent background and transparent web cutouts. Deliver one full glove image at the same framing and native dimensions as IMAGE 1. Only two small lace loops removed; do not redesign anything.",
+    "referenceNames": [
+      "closed-diamond-net-back.png",
+      "Screenshot 2026-10-08 at 18.57.00.png"
+    ],
+    "outputName": "closed-diamond-net-back.png"
+  },
+  {
+    "key": "standard-i-back",
+    "prompt": "Use case: precise-object-edit. Correct only the WEB CONSTRUCTION in IMAGE 1 (red/white HD SSK glove back view). IMAGE 2 is the CURRENT BUILDER's Standard I-web, explicitly chosen by Scott as the shape/placement authority. IMAGE 3 is the authentic catalogue Standard I-Web, for construction details only, never its yellow color. The current generated web in image1 is wrong: its oversized forward-facing I and two huge dangling X ties in an empty bottom opening do not match the real web. Replace the web so its physical construction and oblique folded back-view projection match image2 and image3: two horizontal red leather bars, a short red central post between them, TWO small upper windows, then TWO compact WHITE X-lace joins onto the lower red leather palm attachment. The crosses lie closely against and partly in front of the lower attachment leather as in image2, not giant vertical X straps suspended in a tall empty rectangle. Preserve the top and middle bars' exterior horizontal white lace runs with their small center tie points shown in the authentic reference. The web must fit at the same place between index and thumb, with the foreground index finger occluding its left edge as in image2. Keep the distinct red lower palm-leather U-shaped attachment. Keep the exact premium red glove BODY from image1, camera, pose, scale, all other panel seams, texture, logo locations, white welting and all non-web laces unchanged. Red leather and white lace/stitch remain. Do not copy the low-resolution/graininess of image2; keep image1's HD quality. Transparent background and windows, no background/palm showing inside windows, no framing text. ONE full glove, same dimensions and crop as image1.",
+    "referenceNames": [
+      "standard-i-back.png",
+      "standard-i-back.png",
+      "Standard_I_Web.jpg"
+    ],
+    "outputName": "standard-i-back.png"
+  },
+  {
+    "key": "spiral-i-back",
+    "prompt": "Use case: precise-object-edit. Correct only the WEB CONSTRUCTION in IMAGE 1 (red/white HD SSK glove back view). IMAGE 2 is the CURRENT BUILDER's Spiral I-web, explicitly chosen by Scott as the correct construction and fit. IMAGE 3 is the authentic Spiral I-Web catalogue photograph, for construction details only, not orange/yellow colors. CRITICAL ERROR in image1: its white coils currently wrap the OUTER SIDE RAILS below the middle bar, leaving a huge empty lower rectangle. That is NOT Spiral I. REMOVE those false side-rail spiral cuffs and their two bottom knots. Rebuild the web using image2/3: top red horizontal cap + middle red horizontal bar connected by ONE short central leather post, two upper windows; below the middle bar, place TWO small WHITE SPIRAL-LACED attachment columns INSIDE the web opening, inset from the outer rails, spanning down into the red lower palm attachment. Each is a compact white cord/lace bundle with about four close turns, not long cuffs wrapped around side rails. Keep the exterior white horizontal lace runs and small center tie on the top and middle bars as the authentic photo shows. Make the web match the current builder's oblique folding and the foreground index finger overlap, not a huge frontal H shape. Keep the distinct red U-shaped lower palm-leather attachment closely behind/below the compact coils, as image2. Keep ALL other glove body anatomy, pose, camera, crop, scale, logo placement, panel seams, red HD leather, white welting/lacing and stitching from image1 unchanged. Use premium crisp grain and smooth hard leather/lace edges. Don't transfer reference blur or change colors. Transparent background and openings. ONE full glove image same framing/dimensions as image1.",
+    "referenceNames": [
+      "spiral-i-back.png",
+      "spiral-i-back.png",
+      "Spiral_I_Web.png"
+    ],
+    "outputName": "spiral-i-back.png"
+  },
+  {
+    "key": "standard-i-palm",
+    "prompt": "Use case: precise-object-edit. Refine ONLY proportions of the I-web on the LEFT of the palm-view glove in IMAGE1. IMAGE2 is the user's close-up. Scott explicitly requests BOTH horizontal red leather bars thinner: the very top cap under the outer white loops AND the lower/middle bar directly above the two white X attachments. Reduce the visible vertical thickness of each bar by about 30 percent (keep their full left-to-right span and perspective). Keep the short central vertical red post, keeping its connections structurally plausible as the windows get taller. Enlarge BOTH white X-lace attachments under the middle bar by about 35 percent in length and 15 percent in width, filling the larger bottom gap, anchored realistically through the red bar above and red palm leather below. Same TWO crosses, not extra crosses or knots. Preserve the gentle curved/bowl shape, transparent openings, continuous red palm leather up inside the thumb, all finger laces, outer top loops, palm stamps (round S Custom Made with 12 stars and the lower S + SSK), entire glove anatomy and pose, all other seams, HD red leather texture, white lace/welting/stitch color, lighting, crop, dimensions, transparent background. The ONLY edits are thinner two web bars and larger two lower X-lace joins. Do not alter any outside web/body/branding element. ONE full glove image.",
+    "referenceNames": [
+      "standard-i-palm.png",
+      "Screenshot 2026-10-08 at 18.58.21.png"
+    ],
+    "outputName": "standard-i-palm.png"
+  },
+  {
+    "key": "spiral-i-palm",
+    "prompt": "Use case: precise-object-edit. Refine ONLY proportions of the Spiral I-web on the LEFT of the palm-view glove in IMAGE1. IMAGE2 is the user's close-up. Scott explicitly requests BOTH horizontal red leather bars thinner: the very top cap under the outer white loops AND the lower/middle bar directly above the two white spiral lace attachments. Reduce visible vertical thickness of each bar by about 30 percent (keep their full left-to-right span, locations and perspective). Keep the short central vertical red post, with plausible connections as the windows get taller. Enlarge BOTH white spiral-lace attachment columns under the middle bar by about 35 percent in length and 15 percent in width, filling the larger bottom gap; still exactly TWO separate compact spiral bundles, each with four close ivory leather wraps and short legs anchored through the red bar above and red palm leather below. Do not turn them into X crosses and do not put coils on the exterior side rails. No added knots on the inside. Preserve gentle curved/bowl shape, transparent openings, continuous red palm leather up inside the thumb, every finger lace, top outer loops, palm stamps (round S Custom Made with 12 stars and lower S + SSK), full glove body/pose/seams, HD red leather grain, white lace/welting/stitch color, lighting, exact crop/dimensions and transparent background. ONLY thinner two web bars and larger two lower spiral-lace joins. ONE full glove image.",
+    "referenceNames": [
+      "spiral-i-palm.png",
+      "Screenshot 2026-10-08 at 18.58.28.png"
+    ],
+    "outputName": "spiral-i-palm.png"
+  },
+  {
+    "key": "spiral-i-palm-v2",
+    "prompt": "Precise image edit. Change ONLY the two broad red horizontal web bars on the left and the two white spiral lace joins directly underneath them. There must be EXACTLY TWO horizontal leather bars in total: the top bar attached to the outer white loops, and the lower bar just above the two spiral bundles. Make BOTH existing bars about 25 percent thinner in their vertical thickness, by removing a little from their lower edge. Preserve the original central vertical post as ONE continuous short red piece joining those same TWO bars. The upper opening remains split into EXACTLY TWO side-by-side windows by that post. Absolutely no third horizontal bar, no added horizontal seam through the post, no extra full-width opening. Enlarge the two existing lower spiral lace bundles about 25 percent so they fill more of the lower gap; keep each a neat coil of four wraps, attached above and below. The rest of this exact glove image must stay unchanged: red leather texture, palm shape, all stamp symbols and stars, SSK heel mark, all laces outside this web, pose, camera, crop, scale. Smooth clean antialiased contours with no stray colored pixels around silhouette. Transparent background and transparent windows. Deliver same full glove.",
+    "referenceNames": [
+      "spiral-i-palm.png"
+    ],
+    "outputName": "spiral-i-palm-v2.png"
+  },
+  {
+    "key": "standard-i-palm-v2",
+    "prompt": "Precise tiny object edit to this full glove. Correct ONLY the center vertical red leather post in the I-web on the left: REMOVE the horizontal cut/join halfway down that post. It must be ONE clean, uninterrupted strip of red leather, with continuous white double stitch lines along both long edges. Preserve exactly TWO existing slim horizontal bars, the two large white X joins below, every other shape and proportion. Keep glove palm stamps, all anatomy, leather texture, colors, camera, crop, full glove framing, transparency unchanged. Additionally clean isolated floating specks on transparent background outside the glove; crisp antialiased physical edges. No added bars or seams.",
+    "referenceNames": [
+      "exec-d38b9b2b-a47d-444d-be9c-c83a06c6a60a.png"
+    ],
+    "outputName": "standard-i-palm-v2.png"
+  },
+  {
+    "key": "spiral-i-back-v2",
+    "prompt": "Precise localized edit of IMAGE1 only, using IMAGE2 authentic Spiral I construction reference. On EACH of the TWO red horizontal web bars on the upper right, make the exterior ivory-white horizontal lace run visible across the width of the bar, with a small neat center tie, like image2. Currently image1 has only a tiny center tie and no full horizontal lace run. Add the missing flat white lace run on both bars, keeping its small center tie. Preserve exactly two red bars, one short vertical red post, two upper windows, and the two compact white spiral bundles INSIDE the lower opening. DO NOT move coils to outside rails. Do not add crosses. Preserve the whole glove body, existing wrist and finger logos and their colors, leather, other laces, scale, camera, crop. Clean isolated floating pixels outside silhouette without changing physical edges. Transparent background/windows. Same full glove.",
+    "referenceNames": [
+      "spiral-i-back.png",
+      "Spiral_I_Web.png"
+    ],
+    "outputName": "spiral-i-back-v2.png"
+  }
+]
