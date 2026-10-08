@@ -1,0 +1,11 @@
+{
+  "source": "glove_builder/source/rainbow_back_4x.png",
+  "size": [
+    929,
+    1100
+  ],
+  "white_threshold": 205,
+  "max_channel_spread": 30,
+  "opening_pixels": 1086,
+  "scope": "three finger-to-web gaps only"
+}

@@ -136,6 +136,49 @@ export function decodeV2(code) {
 
 export const isV2 = (code) => /^\s*#?SSK2-?/i.test(String(code));
 
+// V3 adds flag placement without changing a single V2 slot or issued code.
+const RC_V3_SLOTS = [...RC_SLOTS, ['flagPosition', ['index', 'middle'], 'scalar', 4]];
+export function encodeV3(S, bulletName) {
+  S = { ...S, flagPosition: S.flagPosition === 'middle' ? 'middle' : 'index' };
+  let n = 0n;
+  for (const [key, table, kind, cap] of RC_V3_SLOTS) {
+    const v = kind === 'colour' ? (S.colors || {})[key]
+      : key === 'bullet' ? bulletName : S[key];
+    const i = v == null ? -1 : table.indexOf(v);
+    n = n * BigInt(cap) + BigInt(i + 1);
+  }
+  let body = '';
+  do { body = RC_ALPHA[Number(n % RC_B)] + body; n /= RC_B; } while (n > 0n);
+  body += rcCheck(body);
+  return 'SSK3-' + body.match(/.{1,4}/g).join('-');
+}
+
+/** A code back into answers: {colors, hand, size, …, bulletName}, or null
+    when it is not a version-3 code or its check character is wrong. */
+export function decodeV3(code) {
+  const s = String(code).toUpperCase().trim().replace(/^#?SSK3-?/, '')
+    .replace(/[\s-]/g, '');
+  if (s.length < 2 || [...s].some((ch) => RC_ALPHA.indexOf(ch) < 0)) return null;
+  const body = s.slice(0, -1);
+  if (rcCheck(body) !== s.slice(-1)) return null;
+  let n = 0n;
+  for (const ch of body) n = n * RC_B + BigInt(RC_ALPHA.indexOf(ch));
+  const out = { colors: {} };
+  for (const [key, table, kind, cap] of [...RC_V3_SLOTS].reverse()) {
+    const r = BigInt(cap);
+    const i = Number(n % r); n /= r;
+    if (i > table.length) return null;      // a slot value no table holds
+    const v = i === 0 ? null : table[i - 1];
+    if (kind === 'colour') { if (v) out.colors[key] = v; }
+    else if (key === 'bullet') out.bulletName = v;
+    else out[key] = v;
+  }
+  if (n !== 0n) return null;          // more digits than a code can hold
+  return out;
+}
+
+export const isV3 = (code) => /^\s*#?SSK3-?/i.test(String(code));
+
 /* Version 1, decode only. Every "SSK-…" code issued before 23 Sep 2026 was
    packed against this zone list (read off the build of that time: the only
    layout the assets had from 25 Jul to 23 Sep). The palettes above are
@@ -182,3 +225,50 @@ export function decodeV1(code) {
   }
   return { colors, bulletName: RC_V1_BULLETS[bullet] ?? null };
 }
+
+// V4 adds the permitted large-panel materials; earlier codes remain valid.
+const RC_MATERIAL_FIELDS = ["back1", "back2", "back3", "back4", "back5", "back6", "back7", "back8", "back9", "belt"];
+const RC_V4_SLOTS = [...RC_V3_SLOTS, ...RC_MATERIAL_FIELDS.map(k=>[k,['standard','snakeskin'],'material',4])];
+export function encodeV4(S, bulletName) {
+  S = { ...S, flagPosition: S.flagPosition === 'middle' ? 'middle' : 'index' };
+  let n = 0n;
+  for (const [key, table, kind, cap] of RC_V4_SLOTS) {
+    const v = kind === 'colour' ? (S.colors || {})[key]
+      : kind === 'material' ? (S.materials?.[key] || 'standard')
+      : key === 'bullet' ? bulletName : S[key];
+    const i = v == null ? -1 : table.indexOf(v);
+    n = n * BigInt(cap) + BigInt(i + 1);
+  }
+  let body = '';
+  do { body = RC_ALPHA[Number(n % RC_B)] + body; n /= RC_B; } while (n > 0n);
+  body += rcCheck(body);
+  return 'SSK4-' + body.match(/.{1,4}/g).join('-');
+}
+
+/** A code back into answers: {colors, hand, size, …, bulletName}, or null
+    when it is not a version-3 code or its check character is wrong. */
+export function decodeV4(code) {
+  const s = String(code).toUpperCase().trim().replace(/^#?SSK4-?/, '')
+    .replace(/[\s-]/g, '');
+  if (s.length < 2 || [...s].some((ch) => RC_ALPHA.indexOf(ch) < 0)) return null;
+  const body = s.slice(0, -1);
+  if (rcCheck(body) !== s.slice(-1)) return null;
+  let n = 0n;
+  for (const ch of body) n = n * RC_B + BigInt(RC_ALPHA.indexOf(ch));
+  const out = { colors: {}, materials: {} };
+  for (const [key, table, kind, cap] of [...RC_V4_SLOTS].reverse()) {
+    const r = BigInt(cap);
+    const i = Number(n % r); n /= r;
+    if (i > table.length) return null;      // a slot value no table holds
+    const v = i === 0 ? null : table[i - 1];
+    if (kind === 'colour') { if (v) out.colors[key] = v; }
+    else if (kind === 'material') { if (v === 'snakeskin') out.materials[key] = v; }
+    else if (key === 'bullet') out.bulletName = v;
+    else out[key] = v;
+  }
+  if (n !== 0n) return null;          // more digits than a code can hold
+  return out;
+}
+
+export const isV4 = (code) => /^\s*#?SSK4-?/i.test(String(code));
+

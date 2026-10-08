@@ -147,3 +147,48 @@ Scott explicitly redirected work to the September 23 photos in Google Drive SSK 
 
 - Overall independent visual review NEEDS_WORK: StandardI/SpiralI disconnected pale window remnants RHTx671–744/y259–375; seven swaps (all exceptHweb/SMLEE) flat grey lower patches/straight cuts RHTx660–780/y666–765, ClosedDiamondNet detached hanging lace. Both hands affected. Four unconfirmed catalogue identities accepted scope limitation, not blockers. Coverage documentation stale finding already corrected in68a9128.
 - Resumed exactClaude same session READ-ONLY diagnosis, ACTIVE exec62654, taskwork/claude-all-web-joins.jsonl and prompt.txt. First relative prompt write failed before dispatch; corrected absolute path, only one actual job started. Expected isolated ALL-WEB-JOIN-DIAGNOSIS.md. Root owns implementation. Codex32percentweekly ordinaryallowed; no purchases/bypasses. Nextwake read diagnosis and fix shared/source joins before final overall approval. Automation remains active; glove goal not complete.
+
+## 06:10 stitching candidate and active lower-join implementation
+- Opened completed Claude ALL-WEB-JOIN-DIAGNOSIS.md. Pale window outlines belong to stock stitching alpha1–90 left by split>90; straight lower cuts belong to nonlattice below-row718 exemption; remaining flat patch is knotHeal low texture. No fixes installed from diagnosis.
+- Claude exactOpus5.5 resumed implementing nonrigid/nonlattice knot-footprint trim and source-texture knotHeal in isolated checkout. ACTIVEexec20005 taskwork/claude-join-fix.jsonl and .txt. Root owns stitching block; Claude owns other pipeline blocks, must preserve68a9128. No duplicate cloud/app dispatch; Mac UI remains unavailable while locked.
+- Root one-line build_assets stitching split>0 UNCOMMITTED; backup preserved. Full scratch buildwork/stitch-rim-candidate/assets; narrowwork/stitch-rim-override has only four stitching assets plus unchanged live metadata. First matrixwork/stitch-rim-matrix recomputed sheen; finalwork/stitch-rim-fixedscale-matrix preserves live sheen. Both18testsPASS. Windowfaintpixels483→66StandardI,483→22SpiralI,bothhands. NativeHweb still22230changedpixels,max33,14271>1: proposed≤1gateFAIL; likely source/reencoding differences, not yet attributed. Independent evaluate_glove_studio reviewing visible effect; DO NOT promote until evaluated/resolved. Liveassetsunchanged at68a9128.
+- Codex32percentweekly ordinaryallowed. No purchases/bypasses/mainmerge/publish. Nextwake inspect evaluator and activeClaude log before further edits.
+
+## 06:40 reviewed join and stitching fixes integrated
+- Independent evaluate_palm_candidate PASS45aa9eb: five olderwebs lose artificialrowcut/detachedstrip, CDNlacecontinuous; bothhands consistent, nativeHzerochanges in opened validation. Lowheelpatchtonalboundary remains; unknownunder-knottexture reconstructedfromnearbyphoto. Cherry-pickedasa74ba81afterbackups.
+- Rejected stitchingasset rebuild due nativeHdifferences. Reverteduncommittedbuildsplit; instead engineoutsideWeb masks stockstitching byexistingweb_cut ONLYwhenreplacementactive. Allassetsunchangedforthisfix. Independent evaluate_glove_studioPASS, independentlynativeHbothhandszerochangedchannels. Committed0b2e664withrebuilt180asset4.74MBbundle.
+- CombinedverificationPASS: work/integrated-join-stitch-matrix18web/handmaterialalpha/mirrorcases; pad36casesandnopadidentical; studiocompletefourwidths. StandaloneTrapezesmokeexec42897pending. Finaloverallindependentevaluationrequestedfromevaluate_glove_studio; donotdeclarecomplete/pauseuntilitsverdict.
+- Claudejoin-fixjobcomplete, noactiveCLIjob; appUIstillunavailablelocked, nocloudduplicate. Codex33percentweeklyordinaryallowed. No mainmerge/publish. Sourcephotosunchanged,backupspreserved.
+
+## Final bounded glove acceptance — September 24 06:45
+- Independent overall evaluator PASS after opening all18combinedrenders, results andsourcecoverage. No blockingfindings. Lowheelcompositingboundary onTrapeze/ModifiedTrapeze andsmallSMLEEtop-loopclip remain. Fourunconfirmedwebreferences explicitlyexcludedfromrenderapproval. Priorapprovedpalm unchanged.
+- Deterministic combined18matrix/36pad/fullstudiofourwidths/standaloneTrapezesmoke allPASS. Finalstandalone180assets4.74MB copiedchecksum-identicallytotaskoutputs/SSK-Glove-Preview.html. Thisislocalphoto-glovephasecompletion, notlivecheckout/publishingorproof ofsuperiorityto44Pro.
+- Automationssk-configurator-overnight-build PAUSED throughapptool afteroverallPASS, asrequested. NoactiveClaudejob. Originalphotos/userworkpreserved; no mainmerge/publish. Bags/clothing/CCV remainfuturework.
+
+## September24 user rejected overnight visual quality; new architecture study
+
+
+Scott heeft het nachtresultaat visueel afgekeurd. De oude PASS was te beperkt en is geen productgoedkeuring.
+
+## Uitgevoerd
+- Actuele 44 Pro Signature PRO44-infieldcustomizer geopend en visuele nulmeting vastgelegd. De beelden tonen consistente lace-dikte, duidelijke overlapping en doorlopende body-aansluitingen; er is nog geen gelijkwaardige kleur/schaalbenchmark.
+- Drie onafhankelijke proeven gebouwd: vaste rechthoekpassing, behoud van bronverticalen en handmatig gekozen hoekpunten. Alle drie renderen technisch, maar zijn onafhankelijk afgekeurd: dichtgetrokken opening, losstaande aansluiting of uitgerekte onderste kruisveter. Geen ervan geïnstalleerd.
+- Een vierde werkende proef gebruikt de complete eigen bronvorm van Standard I, zonder vervorming of opvullen. De kleurknoppen werken; wit/zwart en navy/tan zijn daadwerkelijk in de browser bekeken.
+- Onafhankelijke beoordeling: deze architectuur is duidelijk kansrijker. Bronopeningen, verhoudingen en duimaansluiting blijven intact. Alleen de richting is goedgekeurd, niet het eindproduct.
+
+## Volgende bouwstap
+Splits de bronvorm in echte bestelonderdelen: pad apart van veters, piping apart, badge/embroidery beschermd, webgrens langs de echte constructienaad. Gebruik één consistente lichtnormalisatie voor de aaneengesloten leerdelen. Daarna beide handen, de drie afgesproken kleurcombinaties en mobiel vergelijken. Pas na beoordeling dezelfde methode voor andere webs inzetten.
+
+Claude bezit Modified Trapeze in zijn eigen checkout; Astra blijft eigenaar van Standard I en integratie. De hoofdconfigurator en eerdere assets zijn in deze proefronde niet gewijzigd. Geen publicatie.
+
+Open standard-i-study/index.html voor de werkende proef. De blauw/witte overgang en slechts drie grove kleurgebieden zijn expliciete resterende gebreken.
+
+Reproduction: glove_builder/experiments/standard_source_study.py --out <directory>; diagnostic only. Failed3warp experiments inwork/standard-{source,landmark,corner}-matrix. Live44reference taskwork/44pro-infield-baseline.png; fourthproof screenshots taskwork/standard-native-study.png andstandard-native-white-black.png. No providerjobdispatched: user sentClaude prompt himself. Oldovernightautomation remains paused.
+
+## Native web review/tracer delivered after Scott requested editable proposals
+- Scott establishes StandardI native-source proof as minimumquality; onlyexistingHweb alreadygood. Usercorrectsanatomy: under-web piece abovebinding/rightofpad belongs to palm material. Noautomaticproductapproval.
+- Newexperiments/build_web_review.py builds9reviewitems: read-only unchangedHreference +8native-source draftwebs,204editablepolygons total. Fulloriginalgeometry, no warped inserts. StandardI contains explicitprovisionalpalmshape; exportmaterialKeypalm. Fourunconfirmedcatalogueidentities remainoutside mappedrender scope.
+- Reusedexistingtracer concepts innewreview_tracer_template.html: Dutchsource/preview, vertexdrag,newpolygon,roles,undo/redo,per-sourcehashlocaldrafts,explicitapprovalresetonedit,transactionalJSONimportvalidation,export. Previewstaticwarningexplains editsprocessedafterexport. No productionassetschanged.
+- Foundoldrelitstorecrops/fullglovemasks unsuitable forfullbodyrecolouring. Store4reviewsinstead retainoriginalcamera body/background withdraftwebcolours; no claimall8colourpreviews meetnewvisualstandard. Originalframes16/20/23JPEGand15ARWdevelopedwithsips; sourcecrop same1650,150,5100,3860 at1725x1855,provisionalsourcecoordinatemasks.
+- Operational testsPASS nineimagesdimensions/allbounds,approvalreset/deleteundo/importtransactionalrejection/persistence/Hprotection/newpolygon. Independentevaluatorcaughtoverlappingpolygonblockingvertex; fixedhandleslast, regressionactualpointerdrag+undoPASS. IndependentrealStandardIvertexrecheckPASS coord1009,371→1060.4,422.4,approvalreset,undorestores. Assetqualitynotapproved.
+- Deliverabletaskoutputs/web-review/index.html servedhttp://127.0.0.1:8772/web-review/index.html; LEESMIJ.md explains Scottworkflow. Serverexec69745. OriginalHprotected; no publication/mainmerge. Claudeuser-dispatchedModifiedTrapeze tasknotduplicated.

@@ -1,0 +1,217 @@
+{
+  "standard-i": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/standard-i-fit-v5.png",
+    "sha256": "1331bc71afaf59ecab16468352e0f0b852b786e4dfbba269527524366dc49186",
+    "sourceQuad": [
+      [
+        370,
+        126
+      ],
+      [
+        824,
+        328
+      ],
+      [
+        465,
+        913
+      ],
+      [
+        160,
+        630
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        720.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "knotScale": 1.22,
+    "bodyReplaced": false,
+    "kind": "user-selected estimated thumb web"
+  },
+  "spiral-i": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/spiral-i-fit-v5.png",
+    "sha256": "5504e3234055158ab736e16d811866acfb83b80fdd148244db3da0e70b9367fb",
+    "sourceQuad": [
+      [
+        367,
+        130
+      ],
+      [
+        818,
+        325
+      ],
+      [
+        482,
+        882
+      ],
+      [
+        180,
+        615
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        720.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "knotScale": 1.5,
+    "bodyReplaced": false,
+    "kind": "user-selected estimated thumb web"
+  },
+  "modified-trapeze": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/modified-trapeze-fit-v5.png",
+    "sha256": "aa1ff85a002e85cb0274301c8544c52a16334603c50a03b22e6540e3fb0ef8f2",
+    "sourceQuad": [
+      [
+        369,
+        93
+      ],
+      [
+        830,
+        321
+      ],
+      [
+        398,
+        1014
+      ],
+      [
+        148,
+        630
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        720.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "knotScale": 1.35,
+    "bodyReplaced": false,
+    "kind": "user-selected estimated thumb web"
+  },
+  "em-rocket": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/em-rocket-axis-v7.png",
+    "sha256": "4a4cab63927180f318698072ae77275a0f09627a26a2ec01cab085f4c4d70648",
+    "sourceQuad": [
+      [
+        400,
+        112
+      ],
+      [
+        818,
+        330
+      ],
+      [
+        432,
+        931
+      ],
+      [
+        160,
+        548
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        720.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "knotScale": 1,
+    "bodyReplaced": false,
+    "kind": "user-selected estimated thumb web"
+  },
+  "trapeze": {
+    "source": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/thumb-web-studies/trapeze-alpha-v6.png",
+    "sha256": "407b94c37a03ebda016bf38b0b64331a97cc5abb6b4bec0c54b9e329e349f8ec",
+    "sourceQuad": [
+      [
+        364,
+        83
+      ],
+      [
+        813,
+        207
+      ],
+      [
+        430,
+        981
+      ],
+      [
+        170,
+        601
+      ]
+    ],
+    "targetQuad": [
+      [
+        278.0,
+        125.0
+      ],
+      [
+        584.0,
+        280.0
+      ],
+      [
+        280.0,
+        720.0
+      ],
+      [
+        141.0,
+        550.0
+      ]
+    ],
+    "knotScale": 1.2,
+    "bodyReplaced": false,
+    "kind": "user-selected estimated thumb web"
+  }
+}
