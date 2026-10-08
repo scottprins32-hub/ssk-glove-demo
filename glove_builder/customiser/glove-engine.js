@@ -70,11 +70,14 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         if (!DATA) { v.absent = true; throw new Error('View data is unavailable'); }
         DATA.palettes = backData.palettes; v.DATA = DATA; v.error = null;
         const keys = renderAssets(DATA);
+        // Hosted HTTPS benefits from HTTP/2 multiplexing. Keep the tighter
+        // bound for local HTTP servers, where excessive sockets caused resets.
+        const parallelImages = location.protocol === 'https:' ? 24 : 8;
         // Optional failed inserts/badges must not take the base glove down.
         // The existing palm SHA gate excludes missing/incorrect insert parts.
         // Core body/ID map/alias failures remain explicit and retryable.
         let next = 0;
-        await Promise.all(Array.from({length: Math.min(8, keys.length)}, async () => {
+        await Promise.all(Array.from({length: Math.min(parallelImages, keys.length)}, async () => {
           while (next < keys.length) {
             const key = keys[next++];
             try {
