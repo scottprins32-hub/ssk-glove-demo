@@ -31,8 +31,8 @@
   },
   {
     "file": "gallery.js",
-    "bytes": 6861,
-    "sha256": "99a4d69a9156ce85c3e235c52f79838b387744cb20bf7e34ac86051e3594af36"
+    "bytes": 7226,
+    "sha256": "861211c12b855694570c323bc64866ffd8298cfc08077120ca02fece52cc83fc"
   },
   {
     "file": "generated/closed-diamond-net-back.png",
@@ -156,8 +156,8 @@
   },
   {
     "file": "index.html",
-    "bytes": 5927,
-    "sha256": "376103a3245ef9e215c280db083470ec01620dc9a38b21e6b0fcf1224347999e"
+    "bytes": 5972,
+    "sha256": "a29fbef09ee27e77f6234bbd85a979677aadf759072a2d10c09d9a4335a92676"
   },
   {
     "file": "layers/closed-diamond-net-back.json",
