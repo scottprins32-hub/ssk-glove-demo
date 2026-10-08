@@ -522,13 +522,13 @@ function drawUnavailable(target, reason) {
 
 /* The selection tint is an editing aid, not part of the glove: only the
    Colours step shows it, and a proof never does (see proofImage). */
-const viewLoadMessage = () => S.lang === 'nl'
+const viewLoadMessage = () => R.views[S.view]?.absent ? vt('viewNotLoaded') : S.lang === 'nl'
   ? 'Deze weergave kon niet laden. Kies de weergave opnieuw om het nog eens te proberen.'
   : 'This view could not load. Select it again to retry.';
 function draw(target = ctx, highlight = S.step === 3) {
   if (!R) return;
   const pendingView = R.views[S.view];
-  if (pendingView && pendingView.ready === false) {
+  if (pendingView && pendingView.ready === false && !pendingView.absent) {
     if (target !== ctx) throw new Error('View is still loading');
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     $('#glove').setAttribute('aria-busy','true');
@@ -1548,7 +1548,7 @@ function specText() {
 let sheetReturnFocus;
 async function openSheet() {
   if (flushText()) paint();
-  while (R.views[S.view]?.ready === false) {
+  while (R.views[S.view]?.ready === false && !R.views[S.view].absent) {
     try { await R.views[S.view].load(); draw(); }
     catch { return; }
   }
