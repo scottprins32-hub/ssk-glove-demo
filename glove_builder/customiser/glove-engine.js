@@ -382,8 +382,9 @@ export class GloveRenderer {
     const img = this.imgs[id], hi = this.imgs[id + '_hi'];
     let surfaces = this.materialCache.get(img);
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
+    const response = this.DATA.materialResponse?.[id];
     const surfaceKey = JSON.stringify([role, this.materials?.[role] || 'standard',
-      this.DATA.h, this.DATA.bbox[id]]);
+      this.DATA.h, this.DATA.bbox[id], response]);
     let surface = surfaces.get(surfaceKey);
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
         && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
@@ -410,7 +411,7 @@ export class GloveRenderer {
     const lo=quantile(.1),mid=quantile(.5),high=quantile(.9);
     // A common midtone and highlight headroom. Only compress contrast:
     // expanding a flat cutout would amplify pores/noise into false relief.
-    const lower=Math.min(1,40/Math.max(1,mid-lo));
+    const lower=Math.min(1,(response?.shadowRange ?? 40)/Math.max(1,mid-lo));
     const upper=Math.min(1,22/Math.max(1,high-mid));
     for(let j=0;j<tone.length;j++){
       const v=tone[j];
@@ -444,7 +445,7 @@ export class GloveRenderer {
         // suppress only the noisy high-frequency illumination around them.
         const retained=detail < -9 ? detail : detail*.24;
         const grain=tex.values[ty[y]+tx[x]];
-        tone[j]=Math.max(0,Math.min(298,(snake||lace?246:248)+(macro-248)*(snake||lace?1.2:1.35)+retained+grain*strength));
+        tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
     surface={hi,tone,base,lo,mid,high,lower,upper,role,
@@ -735,7 +736,23 @@ export class GloveRenderer {
     return this.flagPosition === 'middle' ? this.DATA.flagMounts?.middle : this.DATA.flagMount;
   }
   flagPanelMask(ids, mirror) {
-    const mask = this.panelMask(ids);
+    // Cloth bridges the split finger. Keep the exterior antialiasing, but
+    // make each interior row opaque so a photographed welt groove cannot
+    // turn into transparency inside the embroidered patch.
+    const solidKey='flag-solid|'+ids.join(',');
+    let mask=this.cache.get(solidKey);
+    if(!mask){
+      const source=this.panelMask(ids);
+      mask=document.createElement('canvas');mask.width=source.width;mask.height=source.height;
+      const g=mask.getContext('2d');g.drawImage(source,0,0);
+      const pixels=g.getImageData(0,0,mask.width,mask.height),a=pixels.data;
+      for(let y=0;y<mask.height;y++){
+        let first=-1,last=-1;
+        for(let x=0;x<mask.width;x++)if(a[(y*mask.width+x)*4+3]>=192){if(first<0)first=x;last=x;}
+        for(let x=first+1;first>=0&&x<last;x++)a[(y*mask.width+x)*4+3]=255;
+      }
+      g.putImageData(pixels,0,0);this.cache.set(solidKey,mask);
+    }
     if (!mirror || this.flagPosition !== 'middle') return mask;
     const key = 'flag-mask|' + ids.join(',') + '|' + this.flagMount().cx;
     if (this.cache.has(key)) return this.cache.get(key);
@@ -783,21 +800,31 @@ export class GloveRenderer {
     octx.stroke();
     octx.restore();
 
-    // Shading. A multiply onto empty canvas paints the source rather than
-    // doing nothing, so the panel would flood the whole finger — clip to the
-    // patch first. The welt is left out on purpose: its groove is exactly what
-    // the merge erases, and multiplying it back draws the seam through the
-    // flag. The clip is fixed in device space, so resetting the transform
-    // underneath it is safe.
+    // The embroidery covers the seam. Give the patch its own continuous
+    // cylindrical shading, so the split finger's welt/groove cannot show
+    // through its fabric as a vertical stripe.
     octx.save();
     octx.translate(M.cx, M.cy);
     octx.rotate(ang);
     octx.beginPath();
     octx.rect(-M.w / 2, -L / 2, M.w, L);
     octx.clip();
-    octx.setTransform(1, 0, 0, 1, 0, 0);
     octx.globalCompositeOperation = 'multiply';
-    octx.drawImage(this.flagPanelMask(M.panels || ['back3', 'back4'], mirror), 0, 0);
+    const shade = octx.createLinearGradient(-M.w/2,0,M.w/2,0);
+    shade.addColorStop(0,'#b9b9b9');shade.addColorStop(.32,'#fff');
+    shade.addColorStop(.68,'#f9f9f9');shade.addColorStop(1,'#c8c8c8');
+    octx.fillStyle=shade;octx.fillRect(-M.w/2,-L/2,M.w,L);
+    octx.globalCompositeOperation='source-atop';
+    octx.strokeStyle='rgba(255,255,255,.34)';octx.lineWidth=.55;
+    octx.beginPath();
+    for(let y=-L/2;y<L/2;y+=2){octx.moveTo(-M.w/2,y);octx.lineTo(M.w/2,y+.8);}
+    octx.stroke();
+    // A tightly stitched perimeter, kept inside the finger footprint.
+    octx.strokeStyle='rgba(20,20,20,.25)';octx.lineWidth=1.4;
+    octx.strokeRect(-M.w/2+1.1,-L/2+1.1,M.w-2.2,L-2.2);
+    octx.strokeStyle='rgba(255,255,255,.75)';octx.lineWidth=1.05;
+    octx.setLineDash([1.2,1.35]);
+    octx.strokeRect(-M.w/2+2,-L/2+2,M.w-4,L-4);octx.setLineDash([]);
     octx.restore();
 
     // Clipping does include the welt, or the closed seam slices the patch.
@@ -813,6 +840,30 @@ export class GloveRenderer {
     ctx.shadowBlur = 6; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
     ctx.drawImage(off, 0, 0);
     ctx.restore();
+  }
+
+  // The official palm artwork is a deboss in the leather, not embroidery.
+  // Keep the two marks readable on either hand, without mirroring their glyphs.
+  drawPalmStamps(ctx, mirror) {
+    for (const mark of this.DATA.palmStamps || []) {
+      const im = this.imgs[mark.asset];
+      if (!im) continue;
+      const [x0,y0,x1,y1] = mark.box, w=x1-x0, h=y1-y0;
+      this.unmirror(ctx,x0,x1,mirror,()=>{
+        ctx.save();ctx.translate((x0+x1)/2,(y0+y1)/2);
+        ctx.rotate((mirror?-1:1)*(mark.angle||0));
+        // A narrow light lip and dark recess retain the selected leather hue.
+        const key='stamp-lip|'+mark.asset;
+        let lip=this.cache.get(key);
+        if(!lip){lip=document.createElement('canvas');lip.width=im.width;lip.height=im.height;
+          const g=lip.getContext('2d');g.drawImage(im,0,0);g.globalCompositeOperation='source-in';
+          g.fillStyle='#fff';g.fillRect(0,0,lip.width,lip.height);this.cache.set(key,lip);}
+        ctx.globalCompositeOperation='screen';ctx.globalAlpha=.16;
+        ctx.drawImage(lip,-w/2+.7,-h/2+1,w,h);
+        ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.53;
+        ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore();
+      });
+    }
   }
 
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
@@ -889,7 +940,14 @@ export class GloveRenderer {
         lg.clearRect(0,0,local.width,local.height);lg.drawImage(patch,patch._ox-tinted._ox,patch._oy-tinted._oy);lg.restore();
         local._ox=tinted._ox;local._oy=tinted._oy;tinted=local;
       }
-      const c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
+      let c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
+      if (z.id === 'stitching' && D.thumbBadgeThread) {
+        const original=c;c=document.createElement('canvas');c.width=original.width;c.height=original.height;
+        c._ox=original._ox;c._oy=original._oy;const g=c.getContext('2d');g.drawImage(original,0,0);
+        const b=D.thumbBadgeThread;
+        g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#fff';
+        g.beginPath();g.ellipse(b.cx-c._ox,b.cy-c._oy,b.rx+5,b.ry+5,b.angle,0,Math.PI*2);g.fill();g.restore();
+      }
       if (z.id === 'embroidery' && mirror && D.embroideryLHT
           && this.imgs[D.embroideryLHT]) {
         const e = this.tinted(D.embroideryLHT, this.hex(z.id, state), z.id);
@@ -933,6 +991,7 @@ export class GloveRenderer {
         // it on the mirrored side of the glove, still reading forwards, with
         // nothing but the letters having moved.
         const mk = D.marks;
+        if (z.id === 'palm' && D.palmStamps) this.drawPalmStamps(ctx, mirror);
         if (mk && mk.zone === z.id && this.imgs.marks) {
           ctx.save();
           ctx.globalCompositeOperation = 'multiply';
@@ -1064,13 +1123,17 @@ export class GloveRenderer {
     // And only now the web itself, on top of a glove with nothing of the
     // calibration glove's web left anywhere on it.
     if (swap) {
+      if (swap.cut && this.imgs[swap.cut]) {
+        ctx.save();ctx.globalCompositeOperation='destination-out';
+        ctx.drawImage(this.sparePad(this.imgs[swap.cut]),0,0);ctx.restore();
+      }
       // webfinger is the index finger's own edge, carried in the same cutout
       // so the join comes from one photograph. It is finger leather, so it
       // takes back3's colour, not the web's — and it goes on last, over the
       // web: its alpha is feathered to hide the join between two
       // photographs, and under the web that feather had nothing but page to
       // ramp onto, which was a pale hairline down the whole seam.
-      for (const [key, zone] of [[swap.web, 'web'],
+      for (const [key, zone] of [[swap.palm, 'palm'], [swap.web, 'web'],
                                  [swap.stitching, 'stitching'],
                                  [swap.laceweb, 'laces'],
                                  [swap.webfinger, 'back3']]) {
@@ -1136,12 +1199,23 @@ export class GloveRenderer {
     if (mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
       const badge = D.thumbCircle;
       ctx.save();
-      // Undo the glove reflection for the artwork only, then point it wristward.
+      // Keep glyphs readable while aligning the badge plane with the
+      // mirrored ellipse, rather than leaving its tilt right-handed.
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.translate(D.w - badge.cx, badge.cy);
-      ctx.rotate(badge.leftRotation);
+      ctx.rotate(badge.leftRotation - 2 * (D.thumbBadgeThread?.angle || 0));
+      // circle-art is a full source photograph; only its badge is artwork.
+      // Without this clip the left-handed thumb was overwritten in tan.
+      ctx.beginPath();ctx.ellipse(0,0,64,51,.33,0,Math.PI*2);ctx.clip();
       ctx.drawImage(this.imgs.thumb_circle_art, -badge.cx, -badge.cy);
       ctx.restore();
+    }
+    if (D.thumbBadgeThread) {
+      const b=D.thumbBadgeThread;
+      ctx.save();ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);
+      ctx.beginPath();ctx.ellipse(0,0,b.rx,b.ry,0,0,Math.PI*2);
+      ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=1.55;
+      ctx.lineCap='round';ctx.setLineDash([2.65,3.5]);ctx.stroke();ctx.restore();
     }
     const bb = D.bulletBox;
     if (bb) {

@@ -827,8 +827,10 @@
       "webfinger": "approved_standard_finger"
     },
     "trapeze": {
-      "web": "web_trapeze",
-      "laceweb": "laceweb_trapeze",
+      "web": "trapeze_hd_web",
+      "laceweb": "trapeze_hd_laces",
+      "palm": "trapeze_hd_palm",
+      "cut": "trapeze_hd_cut",
       "webfinger": "webfinger_trapeze",
       "knot": true
     },
@@ -1011,7 +1013,6 @@
     "web_trapeze": "assets/web-precision-r01/back/web_trapeze.png",
     "laceweb_trapeze": "assets/web-precision-r01/back/laceweb_trapeze.png",
     "web_trapeze_hi": "assets/web-precision-r01/back/web_trapeze_hi.png",
-    "laceweb_trapeze_hi": "assets/web-precision-r01/back/laceweb_trapeze_hi.png",
     "web_modified-trapeze": "assets/web-precision-r01/back/web_modified-trapeze.png",
     "laceweb_modified-trapeze": "assets/web-precision-r01/back/laceweb_modified-trapeze.png",
     "web_modified-trapeze_hi": "assets/web-precision-r01/back/web_modified-trapeze_hi.png",
@@ -1077,7 +1078,11 @@
     "_hdLeather": "assets/hd-material-r02/leather-texture.webp",
     "_snakeLeather": "assets/hd-material-r02/snakeskin.webp",
     "_hdLace": "assets/hd-material-r02/lace-texture.webp",
-    "hood_stitching": "assets/hood-thread-r01/hood-stitching.png"
+    "hood_stitching": "assets/hood-thread-r01/hood-stitching.png",
+    "trapeze_hd_web": "assets/web-refinement-r03/trapeze-hd-web.png",
+    "trapeze_hd_laces": "assets/web-refinement-r03/trapeze-hd-laces.png",
+    "trapeze_hd_palm": "assets/web-refinement-r03/trapeze-hd-palm.png",
+    "trapeze_hd_cut": "assets/web-refinement-r03/trapeze-hd-cut.png"
   },
   "bbox": {
     "back2": [
@@ -1985,6 +1990,30 @@
       435,
       564,
       820
+    ],
+    "trapeze_hd_web": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "trapeze_hd_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "trapeze_hd_palm": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "trapeze_hd_cut": [
+      0,
+      0,
+      929,
+      1100
     ]
   },
   "knotHeal": {
@@ -2049,5 +2078,12 @@
   },
   "fingerThread": {
     "hood": "hood_stitching"
+  },
+  "materialResponse": {
+    "trapeze_hd_laces": {
+      "midtone": 237,
+      "shadowRange": 62,
+      "relief": 1.4
+    }
   }
 }
