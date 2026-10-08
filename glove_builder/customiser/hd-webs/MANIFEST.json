@@ -1,5 +1,5 @@
 {
-  "revision": "HD-WEBS-R01",
+  "revision": "HD-WEBS-R02",
   "generator": "built-in imagegen",
   "nativeMasksRegistered": false,
   "activeWebs": 8,
@@ -13,27 +13,35 @@
       "key": "standard-i/back",
       "web": "standard-i",
       "view": "back",
-      "image": "generated-r3/standard-i-back.png",
-      "preview": "previews/standard-i-back.webp",
-      "parts": "layers/standard-i-back.json",
-      "status": "candidate",
+      "image": "corrections/images/standard-i-back.png",
+      "preview": "corrections/previews/standard-i-back.webp",
+      "parts": null,
+      "status": "corrected-image-review",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "previousImage": "generated-r3/standard-i-back.png",
+      "mapDisabled": true,
+      "visualApproval": "awaiting-user-review",
+      "correctionNote": "Compactere onderste kruisverbindingen en horizontale veterbanen volgens de webreferentie."
     },
     {
       "key": "spiral-i/back",
       "web": "spiral-i",
       "view": "back",
-      "image": "generated-r02/spiral-i-back.png",
-      "preview": "previews/spiral-i-back.webp",
-      "parts": "layers/spiral-i-back.json",
-      "status": "candidate",
+      "image": "corrections/images/spiral-i-back-v2.png",
+      "preview": "corrections/previews/spiral-i-back-v2.webp",
+      "parts": null,
+      "status": "corrected-image-review",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "previousImage": "generated-r02/spiral-i-back.png",
+      "mapDisabled": true,
+      "visualApproval": "awaiting-user-review",
+      "correctionNote": "Twee spiraalverbindingen binnen de onderste opening; geen spiralen rond de buitenste stijlen."
     },
     {
       "key": "smk/back",
@@ -42,11 +50,16 @@
       "image": "generated/smk-back.png",
       "preview": "previews/smk-back.webp",
       "parts": "layers/smk-back.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "smlee/back",
@@ -55,14 +68,19 @@
       "image": "generated/smlee-back.png",
       "preview": "previews/smlee-back.webp",
       "parts": "layers/smlee-back.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [
         "Web/palm-masker volgt de naden nog niet exact",
         "Patroon wijkt af van goedgekeurde duimweergave"
       ],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "em-rocket/back",
@@ -71,24 +89,33 @@
       "image": "generated/em-rocket-back.png",
       "preview": "previews/em-rocket-back.webp",
       "parts": "layers/em-rocket-back.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "closed-diamond-net/back",
       "web": "closed-diamond-net",
       "view": "back",
-      "image": "generated/closed-diamond-net-back.png",
-      "preview": "previews/closed-diamond-net-back.webp",
-      "parts": "layers/closed-diamond-net-back.json",
-      "status": "candidate",
+      "image": "corrections/images/closed-diamond-net-back.png",
+      "preview": "corrections/previews/closed-diamond-net-back.webp",
+      "parts": null,
+      "status": "corrected-image-review",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "previousImage": "generated/closed-diamond-net-back.png",
+      "mapDisabled": true,
+      "visualApproval": "awaiting-user-review",
+      "correctionNote": "De twee kleine lusjes onder de onderste webrand zijn verwijderd. De grote knoop blijft."
     },
     {
       "key": "modified-trapeze/back",
@@ -97,11 +124,16 @@
       "image": "generated-r02/modified-trapeze-back.png",
       "preview": "previews/modified-trapeze-back.webp",
       "parts": "layers/modified-trapeze-back.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "trapeze/back",
@@ -110,39 +142,50 @@
       "image": "generated/trapeze-back.png",
       "preview": "previews/trapeze-back.webp",
       "parts": "layers/trapeze-back.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "standard-i/palm",
       "web": "standard-i",
       "view": "palm",
-      "image": "generated/standard-i-palm.png",
-      "preview": "previews/standard-i-palm.webp",
-      "parts": "layers/standard-i-palm.json",
-      "status": "candidate",
+      "image": "corrections/images/standard-i-palm-v2.png",
+      "preview": "corrections/previews/standard-i-palm-v2.webp",
+      "parts": null,
+      "status": "corrected-image-review",
       "productionReady": false,
-      "reviewNotes": [
-        "Binnenkant duim valt deels onder Web in de conceptkaart"
-      ],
+      "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "previousImage": "generated/standard-i-palm.png",
+      "mapDisabled": true,
+      "visualApproval": "awaiting-user-review",
+      "correctionNote": "Beide horizontale leerbalken smaller; twee grotere kruisverbindingen."
     },
     {
       "key": "spiral-i/palm",
       "web": "spiral-i",
       "view": "palm",
-      "image": "generated/spiral-i-palm.png",
-      "preview": "previews/spiral-i-palm.webp",
-      "parts": "layers/spiral-i-palm.json",
-      "status": "candidate",
+      "image": "corrections/images/spiral-i-palm-v2.png",
+      "preview": "corrections/previews/spiral-i-palm-v2.webp",
+      "parts": null,
+      "status": "corrected-image-review",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "previousImage": "generated/spiral-i-palm.png",
+      "mapDisabled": true,
+      "visualApproval": "awaiting-user-review",
+      "correctionNote": "Beide horizontale leerbalken smaller; twee grotere spiraalverbindingen."
     },
     {
       "key": "smk/palm",
@@ -151,11 +194,16 @@
       "image": "generated/smk-palm.png",
       "preview": "previews/smk-palm.webp",
       "parts": "layers/smk-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "smlee/palm",
@@ -164,11 +212,16 @@
       "image": "generated/smlee-palm.png",
       "preview": "previews/smlee-palm.webp",
       "parts": "layers/smlee-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "em-rocket/palm",
@@ -177,11 +230,16 @@
       "image": "generated/em-rocket-palm.png",
       "preview": "previews/em-rocket-palm.webp",
       "parts": "layers/em-rocket-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "closed-diamond-net/palm",
@@ -190,13 +248,18 @@
       "image": "generated/closed-diamond-net-palm.png",
       "preview": "previews/closed-diamond-net-palm.webp",
       "parts": "layers/closed-diamond-net-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [
         "Centraal ruitvormig stikpatroon ontbreekt"
       ],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "modified-trapeze/palm",
@@ -205,11 +268,16 @@
       "image": "generated/modified-trapeze-palm.png",
       "preview": "previews/modified-trapeze-palm.webp",
       "parts": "layers/modified-trapeze-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "trapeze/palm",
@@ -218,11 +286,16 @@
       "image": "generated/trapeze-palm.png",
       "preview": "previews/trapeze-palm.webp",
       "parts": "layers/trapeze-palm.json",
-      "status": "candidate",
+      "status": "approved-image",
       "productionReady": false,
       "reviewNotes": [],
       "materialReview": "PASS_BOUNDED_STUDY",
-      "maskReview": "NEEDS_WORK"
+      "maskReview": "NEEDS_WORK",
+      "visualApproval": {
+        "by": "Scott",
+        "date": "2026-10-08",
+        "scope": "Generated back/palm image only. Exact recolouring masks are not approved."
+      }
     },
     {
       "key": "standard-i/thumb",
