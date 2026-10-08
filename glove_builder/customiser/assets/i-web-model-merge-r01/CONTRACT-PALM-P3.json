@@ -1,0 +1,342 @@
+{
+  "revision": "PALM-P3",
+  "status": "ASSET_REVIEWED_INTEGRATION_PENDING",
+  "view": "palm",
+  "nativeBody": "DSC05706 photographed H palm retained; no full-glove replacement",
+  "dimensions": [
+    1534,
+    1400
+  ],
+  "acceptedWebs": [
+    "smlee",
+    "smk",
+    "em-rocket",
+    "closed-diamond-net",
+    "modified-trapeze",
+    "trapeze",
+    "standard-i",
+    "spiral-i"
+  ],
+  "excludedEstimates": [],
+  "withdrawnOptions": [
+    "sms",
+    "basket",
+    "sasaki-1",
+    "sasaki-2"
+  ],
+  "unaffected": [
+    "back",
+    "thumb",
+    "pinky",
+    "C3.3 thumb family activation (still off)"
+  ],
+  "sourcePlaneType": "Reviewed generated I-web inserts on photographed native body; six other estimates unchanged",
+  "commonMasks": {
+    "replacement-footprint": {
+      "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/replacement-footprint.png",
+      "sha256": "ac2530572536613413ed62dfe76193f73970a8c2d466f9ef8cae97d9da78ccfd",
+      "format": "L8; convert luminance to alpha for drawing/picking"
+    },
+    "protected": {
+      "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/protected.png",
+      "sha256": "8bc0dd8a99bf55fd0040efe12227429f724d97560ec665ac19b0dce71b210004",
+      "format": "L8; convert luminance to alpha for drawing/picking"
+    }
+  },
+  "zones": {
+    "leather": {
+      "id": "web",
+      "n": 2,
+      "palette": "leather"
+    },
+    "laces": {
+      "id": "laces",
+      "n": 7,
+      "palette": "lace"
+    },
+    "stitching": {
+      "id": "stitching",
+      "n": 8,
+      "palette": "stitching",
+      "nativeBaseAsset": "transparent; does not promise native palm-body thread recolouring"
+    }
+  },
+  "dataTable": "palmWebs; separate from webs/thumbWebs/estimatedBody",
+  "drawRule": "Draw native base and readable LH marks; replace only footprint with engine-tinted candidate parts; original foreground and every outside pixel remain native. No extra backing in holes.",
+  "pickRule": "Original source foreground wins; strongest visible eligible role thread8/lace7/web2; uncovered footprint and actual source windows return null; otherwise native zone. Use actual pixel alpha, not fake invisible idmap hits.",
+  "activationRule": "The six PALM-P2 non-I entries retain their exact pins. The two I entries use independently reviewed I-WEB-MODEL-MERGE-R01 layers. The optional continuous Palm return must match its compiled hash and native Palm zone. Invalid bytes, role maps, bounds, metadata or review pins fail closed.",
+  "tests": [
+    "36 actual installed white/black/contrast x RH/LH frames; outside/foreground zero changes vs same native palette",
+    "native H6/back/thumb source beforeafter regression byteexact where unchanged",
+    "actual source windows alpha0 and zoneAt null for bothhands, solidbacking insideface kept",
+    "real installed role picks and tint codes, thread palette state, readable LH marks",
+    "select/switch all9webs; eightmatchedpalms,Hnative; no wrongH/oldthumbfallback",
+    "bundle rebuild+offline smoke if sourcepasses; no deploy/merge in this milestone",
+    "malicious registry: wrong contract revision/sha, unknown web slug, missing role, modified layer hash/bytes, I entry pinned to P1 evidence all fail closed",
+    "all P1 six-web outputs pixel/pick-identical to pre-P2 renderer"
+  ],
+  "packages": [
+    {
+      "web": "smlee",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smlee",
+      "manifestSHA256": "f60af8605645206776fc239169c5eb9330bc84f1b2d6f467a6afa0f7fa9889d9",
+      "sourceSHA256": "ee1a6cd156921a46c2fc932ab7bee5b4f3508aa34f6a19c796a94d18e2e1d58e",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smlee/layers/leather.png",
+          "sha256": "d767b08c4f76925a83c2b019df92ad79e19683b850033df915fe5b8171bf9b13"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smlee/layers/laces.png",
+          "sha256": "3bd7c4628ecf91b83f9e31a335a9dd5ae76cd5c13bb91f2f015e0274a9fe080c"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smlee/layers/stitching.png",
+          "sha256": "3489f4a59af150e244cb0613b83c00b6fe5dd248f619fd79381b754d0677a4c4"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    },
+    {
+      "web": "smk",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smk",
+      "manifestSHA256": "0e1ef566fbd2b824322b2f08a1851b116713113995fc2346c98868c1885a51dc",
+      "sourceSHA256": "f7414dd5a2138f035b501c2979d4b7a5eac55ae89904424d309c37da7d89ff1d",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smk/layers/leather.png",
+          "sha256": "518f55bab9fe717bb671701b584f518939c1c71726f6db9da9178040645218fe"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smk/layers/laces.png",
+          "sha256": "3bd7c4628ecf91b83f9e31a335a9dd5ae76cd5c13bb91f2f015e0274a9fe080c"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/smk/layers/stitching.png",
+          "sha256": "df5d24be00087683129dc03a151a595bd74821594da585a62d6a65f542334a65"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    },
+    {
+      "web": "em-rocket",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/em-rocket",
+      "manifestSHA256": "d4da5aa85c51160c22ddeb5066ff89e0326bd5742c7293cb1368ea08f49060eb",
+      "sourceSHA256": "ddc2239dc737b7f4593a048d1f7c72432da07e09eab025cbf273f667bd3a5082",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/em-rocket/layers/leather.png",
+          "sha256": "feb6af7ff7bd56354dcdfbfa15ebd75b1a8f4265e97a2eb84a51f0ab3009f35b"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/em-rocket/layers/laces.png",
+          "sha256": "1e6979bb1972947bb5f1b85e1ae35aeb9cbbb9ae6f66171fb7ba3f526f523075"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/em-rocket/layers/stitching.png",
+          "sha256": "527a7a19bc57eb0497187497670ed6e08df2291dceb15ebe90d2afd06707ce3a"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    },
+    {
+      "web": "closed-diamond-net",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/closed-diamond-net",
+      "manifestSHA256": "21f16b8ae459a53978353f3e499c67f320f8e91c1e6dfacefdc8b6a2cb37ae21",
+      "sourceSHA256": "a79ad42540f26e554c7a8a1c0e23e312d872bd31b8d40c19ac70212718272764",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/closed-diamond-net/layers/leather.png",
+          "sha256": "e23455b1e110365018bcb61ac583cb2d5e466997d20245879a874a725bc57319"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/closed-diamond-net/layers/laces.png",
+          "sha256": "7002cd343e9620b65ac6aa2f0185fb803a3463db5ee8c9f060e08fcc19166940"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/closed-diamond-net/layers/stitching.png",
+          "sha256": "cbde9fe2f35935d518cb5134bac84c7178439c0f9b0ccdc8fe14a95ca02a393f"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    },
+    {
+      "web": "modified-trapeze",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/modified-trapeze",
+      "manifestSHA256": "bb9959f42b72cea8b9a234d4b9a6b89490bb88051a025e8887647e9dc0a9823c",
+      "sourceSHA256": "3a66480b16270f95791d288de6eee981b1123479264392045fba5dcd504b9407",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/modified-trapeze/layers/leather.png",
+          "sha256": "85aa5a1109a7d1683529ec1b828c995668c75f3057c9c0809413abba5e0d5456"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/modified-trapeze/layers/laces.png",
+          "sha256": "470175ac781e3bf041d505f74f11ba7cf32358f6014dfaf5c59a9609c17dedcb"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/modified-trapeze/layers/stitching.png",
+          "sha256": "d76c4c42aae0a99097cdfa1669f92a42fed8ceadd4d317b1431cc5562807113c"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    },
+    {
+      "web": "trapeze",
+      "candidate": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/trapeze",
+      "manifestSHA256": "e6067a0071dfc15e364f924b36c0b791b98bdcdb4a9ccd0c140e11dfa30f3699",
+      "sourceSHA256": "734e29aa47e6be73341f67d19463ca2362dc11fd9a4a7f6a30adf54ca6398225",
+      "layers": {
+        "leather": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/trapeze/layers/leather.png",
+          "sha256": "5ec509373453d36945e8b99cd68cffc99f14f491aeff60ce2276dc3cc0b5d8b6"
+        },
+        "laces": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/trapeze/layers/laces.png",
+          "sha256": "1f8ebb5f8f0cd59079842ae8d4e0b2d15db79743f60f1ed6e9bc5c4d5af8ab39"
+        },
+        "stitching": {
+          "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/trapeze/layers/stitching.png",
+          "sha256": "48bbaef61ddca0454e8ffe8eb56a9f5dadc7679d369ba1c594a2a8f5aeedc7a5"
+        }
+      },
+      "assetReview": {
+        "verdict": "PASS",
+        "scope": "estimated anatomy/fit/material asset only",
+        "reviewer": "/root/active_palm_evaluation",
+        "evidence": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/palm-all-active/r02/EVALUATION-R2.md",
+        "evidenceSHA256": "93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489"
+      }
+    }
+  ],
+  "held": [
+    "No changes to blocked thumbmaterial families; C3 thumb activation still off",
+    "No global clean-material pipeline",
+    "Commercial/fit/manufacturing claims remain unverified",
+    "Spiral I minor isolated mark nonblocking, unverified source classification"
+  ],
+  "extends": {
+    "revision": "PALM-P1",
+    "file": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-finish-plan/CONTRACT-PALM-P1.json",
+    "sha256": "100e8e361242d4dc038e6520fc9505a0f98a3d712157cd0c921740f851b39b70",
+    "acceptance": "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-finish-plan/PALM-P1-INTEGRATION-ACCEPTANCE.json",
+    "acceptanceSHA256": "16e7f932a4584b9aeafb0bb83e882e2c4fc649d6ae116915d3c20e6188def350",
+    "retained": "every PALM-P1 field, safeguard, common mask, draw/pick rule and the six P1 packages byte-for-byte; P2 only adds two estimated I packages"
+  },
+  "optionalPalmSupport": {
+    "zone": "palm",
+    "n": 1,
+    "group": "leather",
+    "webs": [
+      "standard-i",
+      "spiral-i"
+    ]
+  },
+  "iWebEntries": [
+    {
+      "web": "standard-i",
+      "view": "palm",
+      "W": 1534,
+      "H": 1400,
+      "source": "sources/standard-i-palm.png",
+      "sourceSHA256": "d79decf75aab9c215d43a061ef91aa2d66c71e674c08aa6793861da8bdfb5707",
+      "transform": [
+        1.1683168316831682,
+        0,
+        0,
+        1.1686143572621035,
+        0,
+        0
+      ],
+      "outline": null,
+      "foldSource": null,
+      "files": {
+        "leather": {
+          "file": "layers/standard-i-palm-leather.png",
+          "sha256": "165db51c60f30c2b642bda357d702fe9570f07782f9b64f24fb3ba257d1613bf"
+        },
+        "palm": {
+          "file": "layers/standard-i-palm-palm.png",
+          "sha256": "9df277dda0e3cbf701ec07148273d2d800fe6a4e695608b6b1a78c92f2bf3381"
+        },
+        "laces": {
+          "file": "layers/standard-i-palm-laces.png",
+          "sha256": "c3b02db336374a649340c70141ff68b74eb9bb2dfe2bded9a2205fa16fa8a3d8"
+        },
+        "stitching": {
+          "file": "layers/standard-i-palm-stitching.png",
+          "sha256": "29bc5e7f299f6e6fe88bee407afaa36e658a4738dfd6d82e8a063866feef5e7e"
+        }
+      },
+      "status": "candidate-awaiting-review"
+    },
+    {
+      "web": "spiral-i",
+      "view": "palm",
+      "W": 1534,
+      "H": 1400,
+      "source": "sources/spiral-i-palm.png",
+      "sourceSHA256": "0392b4fbf14124048e3391debdd91f0b038b1f97a32777e0f09f1c04205f6e7a",
+      "transform": [
+        1.1683168316831682,
+        0,
+        0,
+        1.1686143572621035,
+        0,
+        0
+      ],
+      "outline": null,
+      "foldSource": null,
+      "files": {
+        "leather": {
+          "file": "layers/spiral-i-palm-leather.png",
+          "sha256": "91db7ffa2588c2c87b6a66f0ff736f95f663f23ba9b47fa2a68998ebba5b7a52"
+        },
+        "palm": {
+          "file": "layers/spiral-i-palm-palm.png",
+          "sha256": "0cc1bf3e7de14a3483b3ae5a9ca5d04bf9b7ff60623492fed7f6a442b0b20395"
+        },
+        "laces": {
+          "file": "layers/spiral-i-palm-laces.png",
+          "sha256": "cd0a5a63e7f5936b8aa8a453009500a0474c1e5d90b7c62ecc42b65955897d67"
+        },
+        "stitching": {
+          "file": "layers/spiral-i-palm-stitching.png",
+          "sha256": "805ff52e851e0c57faed9c51399b52c1330c536cfff45e0d4ff37b4e8e35b1e5"
+        }
+      },
+      "status": "candidate-awaiting-review"
+    }
+  ],
+  "assetReviewSHA256": "d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1"
+}

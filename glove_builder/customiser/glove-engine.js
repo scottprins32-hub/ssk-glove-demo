@@ -124,8 +124,8 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
 // and nowhere else.
 const P1_REVIEW = '93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489';
 const I_REVIEW = '2e8d7c4f524f9af62759e29ce9bc7e376d044cf763a820ea5ba12cf456d0e95e';
-const PALM_P2 = {
-  contract: '883b6441a848c71411311c5f5df42fa5fc153574f523f531f17ab0eb118eac72',
+const PALM_P3 = {
+  contract: '58041d2eb94edd6be7299a4668f08d32178409c6d5446757835af4485e9daeb7',
   footprint: 'ac2530572536613413ed62dfe76193f73970a8c2d466f9ef8cae97d9da78ccfd',
   protected: '8bc0dd8a99bf55fd0040efe12227429f724d97560ec665ac19b0dce71b210004',
   roles: { leather: ['web', 2, 'leather'], laces: ['laces', 7, 'lace'], stitching: ['stitching', 8, 'stitching'] },
@@ -143,19 +143,17 @@ const PALM_P2 = {
       '85aa5a1109a7d1683529ec1b828c995668c75f3057c9c0809413abba5e0d5456', '470175ac781e3bf041d505f74f11ba7cf32358f6014dfaf5c59a9609c17dedcb', 'd76c4c42aae0a99097cdfa1669f92a42fed8ceadd4d317b1431cc5562807113c'],
     trapeze: ['e6067a0071dfc15e364f924b36c0b791b98bdcdb4a9ccd0c140e11dfa30f3699', '734e29aa47e6be73341f67d19463ca2362dc11fd9a4a7f6a30adf54ca6398225', P1_REVIEW,
       '5ec509373453d36945e8b99cd68cffc99f14f491aeff60ce2276dc3cc0b5d8b6', '1f8ebb5f8f0cd59079842ae8d4e0b2d15db79743f60f1ed6e9bc5c4d5af8ab39', '48bbaef61ddca0454e8ffe8eb56a9f5dadc7679d369ba1c594a2a8f5aeedc7a5'],
-    'standard-i': ['faa5f08384a4de9873c82a7d1076930cbcf6a7e674d5bada8f1095500916fec5', '7c797861d674aa81069264425bb583028eb1ffa44e8681bfea1e3c038c2fd63e', I_REVIEW,
-      'fbfac9351aae8ce478c5374c2ced4f1538d815c9c348de472f6926e8a0510583', 'cfef4c983ca2cb3b8fd32ac0cfcc8d23e332222baea6b52c95fa495dede3f272', 'bccdd38b33ea4efc40c2c2d2d383713fcf94632d2a58f57a24356573532e1c85'],
-    'spiral-i': ['a79d8fc7740fdb183f2d7b01f549f575767aeeefbc12140cbf5d11de40bc6fdf', 'a7263c0eb128c66efe3b62870d934200778dc4bb959a5c8402e16e5804120b07', I_REVIEW,
-      '6dbff152f178a1e065270184b08119c1e5eb8750d053d223dd5d0119f4ac492a', '0f1a4cbf0ad0304d2892d5c82bea3f0cf389637fae30aa801a42489f023247df', '2fbfa37a8dca581a9de43e6441fdd3daffef43e246e7d5afaf1c15bfe20d2ff8'],
+    'standard-i': ["142bb7d7460a185b313ebb828c462e0c7131d19ddc038d94a73dd58bd83d6ab5","d79decf75aab9c215d43a061ef91aa2d66c71e674c08aa6793861da8bdfb5707","d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1","165db51c60f30c2b642bda357d702fe9570f07782f9b64f24fb3ba257d1613bf","c3b02db336374a649340c70141ff68b74eb9bb2dfe2bded9a2205fa16fa8a3d8","29bc5e7f299f6e6fe88bee407afaa36e658a4738dfd6d82e8a063866feef5e7e","9df277dda0e3cbf701ec07148273d2d800fe6a4e695608b6b1a78c92f2bf3381"],
+    'spiral-i': ["03d57b94f7003ced4436d01542031df331dfc6a0ed906d7364570a79271a5f02","0392b4fbf14124048e3391debdd91f0b038b1f97a32777e0f09f1c04205f6e7a","d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1","91db7ffa2588c2c87b6a66f0ff736f95f663f23ba9b47fa2a68998ebba5b7a52","cd0a5a63e7f5936b8aa8a453009500a0474c1e5d90b7c62ecc42b65955897d67","805ff52e851e0c57faed9c51399b52c1330c536cfff45e0d4ff37b4e8e35b1e5","0cc1bf3e7de14a3483b3ae5a9ca5d04bf9b7ff60623492fed7f6a442b0b20395"],
   },
 };
 async function verifyPalmWebs(v) {
   const P = v.DATA.palmWebs;
   if (!P) return;
   v.DATA.palmWebs = null;
-  const { DATA, imgs } = v, W = DATA.w, H = DATA.h, T = PALM_P2;
+  const { DATA, imgs } = v, W = DATA.w, H = DATA.h, T = PALM_P3;
   const same = (a, b) => JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b).sort());
-  if (P.view !== 'palm' || P.contract?.revision !== 'PALM-P2' || P.contract?.sha256 !== T.contract
+  if (P.view !== 'palm' || P.contract?.revision !== 'PALM-P3' || P.contract?.sha256 !== T.contract
       || P.dimensions?.[0] !== W || P.dimensions?.[1] !== H || W !== 1534 || H !== 1400 || !crypto?.subtle) return;
   if (!same(P.roles, T.roles)) return;
   for (const [role, [id, n, group]] of Object.entries(T.roles)) {
@@ -206,8 +204,17 @@ async function verifyPalmWebs(v) {
         || !same(e.parts, T.roles)) continue;
     const roles = Object.keys(T.roles);
     if (!(await Promise.all(roles.map((k, i) => ok(e.parts[k], layers[i])))).every(Boolean)) continue;
+    // Only a compiled, reviewed fourth layer may extend the continuous palm
+    // beneath an I-web. Arbitrary metadata cannot introduce a new role.
+    const supportHash = layers[3];
+    if (supportHash) {
+      const palms = DATA.zones.filter(z => z.id === 'palm' || z.n === 1);
+      if (palms.length !== 1 || palms[0].id !== 'palm' || palms[0].n !== 1
+          || palms[0].group !== 'leather' || !(await ok(e.palmSupport, supportHash))) continue;
+    } else if (e.palmSupport) continue;
     entries[web] = { status: 'estimated', manifestSHA256: manifest, sourceSHA256: source,
       assetReview: { verdict: 'PASS', scope: e.assetReview.scope, evidenceSHA256: evidence },
+      ...(supportHash ? { palmSupport: { asset: e.palmSupport.asset, sha256: supportHash } } : {}),
       parts: Object.fromEntries(roles.map((k, i) => [k, { asset: e.parts[k].asset, sha256: layers[i] }])) };
   }
   v.DATA.palmWebs = { ...P, contract: { ...P.contract, sha256: T.contract },
@@ -683,11 +690,16 @@ export class GloveRenderer {
   palmInsertLayer(e, state) {
     const D = this.DATA, P = D.palmWebs;
     const hx = Object.values(P.roles).map(z => this.hex(z, state));
+    if (e.palmSupport) hx.push(this.hex('palm', state));
     const key = 'palm-insert|' + this.web + '|' + hx.join();
     let c = this.cache.get(key);
     if (c) return c;
     c = document.createElement('canvas'); c.width = D.w; c.height = D.h;
     const g = c.getContext('2d');
+    if (e.palmSupport) {
+      const t = this.tinted(e.palmSupport.asset, this.hex('palm', state), e.palmSupport.asset, 'palm');
+      g.drawImage(t, t._ox, t._oy);
+    }
     for (const [part, zone] of Object.entries(P.roles)) {
       const t = this.tinted(e.parts[part].asset, this.hex(zone, state), e.parts[part].asset, zone);
       g.drawImage(t, t._ox, t._oy);
@@ -1254,9 +1266,11 @@ export class GloveRenderer {
           g.globalCompositeOperation = 'destination-out';
           g.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
           const part = Object.keys(P.roles).find(k => P.roles[k] === highlight.id);
-          if (part) {
+          const asset = highlight.id === 'palm' && palmInsert.palmSupport
+            ? palmInsert.palmSupport.asset : part && palmInsert.parts[part].asset;
+          if (asset) {
             const s = document.createElement('canvas'); s.width = D.w; s.height = D.h;
-            const gs = s.getContext('2d'), l = this.tinted(palmInsert.parts[part].asset, '#ffffff');
+            const gs = s.getContext('2d'), l = this.tinted(asset, '#ffffff');
             gs.drawImage(l, l._ox, l._oy);
             gs.globalCompositeOperation = 'destination-in';
             gs.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
@@ -1478,11 +1492,13 @@ export class GloveRenderer {
         if (f >= 0.5) {
           const a = k => this.palmAlpha(pe.parts[k].asset)[j] / 255;
           const s = a('stitching'), l = a('laces'), w = a('leather');
-          const vis = [['stitching', s], ['laces', l * (1 - s)], ['leather', w * (1 - l) * (1 - s)]];
-          if (f * (1 - (1 - s) * (1 - l) * (1 - w)) < 0.5) return null;
+          const p = pe.palmSupport ? this.palmAlpha(pe.palmSupport.asset)[j] / 255 : 0;
+          const vis = [['stitching', s], ['laces', l * (1 - s)], ['leather', w * (1 - l) * (1 - s)],
+            ['palm', p * (1 - w) * (1 - l) * (1 - s)]];
+          if (f * (1 - (1 - s) * (1 - l) * (1 - w) * (1 - p)) < 0.5) return null;
           let best = vis[0];
           for (const v of vis) if (v[1] > best[1]) best = v;
-          return P.roles[best[0]];
+          return best[0] === 'palm' ? 'palm' : P.roles[best[0]];
         }
       }
     }

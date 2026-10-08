@@ -815,16 +815,22 @@
       "stitching": "precision_smlee_stitching"
     },
     "spiral-i": {
-      "web": "web_spiral-i",
-      "laceweb": "laceweb_spiral-i",
+      "web": "i_merge_spiral_i_web",
+      "palm": "i_merge_spiral_i_palm",
+      "laceweb": "i_merge_spiral_i_laces",
+      "stitching": "i_merge_spiral_i_stitching",
+      "cut": "i_merge_spiral_i_cut",
       "webfinger": "overlap_spiral-i",
-      "knot": true
+      "knot": false
     },
     "standard-i": {
-      "web": "approved_standard_web",
-      "laceweb": "approved_standard_laces",
-      "knot": false,
-      "webfinger": "approved_standard_finger"
+      "web": "i_merge_standard_i_web",
+      "palm": "i_merge_standard_i_palm",
+      "laceweb": "i_merge_standard_i_laces",
+      "stitching": "i_merge_standard_i_stitching",
+      "cut": "i_merge_standard_i_cut",
+      "webfinger": "approved_standard_finger",
+      "knot": false
     },
     "trapeze": {
       "web": "trapeze_hd_web",
@@ -1082,7 +1088,17 @@
     "trapeze_hd_web": "assets/web-refinement-r03/trapeze-hd-web.png",
     "trapeze_hd_laces": "assets/web-refinement-r03/trapeze-hd-laces.png",
     "trapeze_hd_palm": "assets/web-refinement-r03/trapeze-hd-palm.png",
-    "trapeze_hd_cut": "assets/web-refinement-r03/trapeze-hd-cut.png"
+    "trapeze_hd_cut": "assets/web-refinement-r03/trapeze-hd-cut.png",
+    "i_merge_standard_i_web": "assets/i-web-model-merge-r01/standard-i-back-web.png",
+    "i_merge_standard_i_palm": "assets/i-web-model-merge-r01/standard-i-back-palm.png",
+    "i_merge_standard_i_laces": "assets/i-web-model-merge-r01/standard-i-back-laces.png",
+    "i_merge_standard_i_stitching": "assets/i-web-model-merge-r01/standard-i-back-stitching.png",
+    "i_merge_standard_i_cut": "assets/i-web-model-merge-r01/standard-i-back-cut.png",
+    "i_merge_spiral_i_web": "assets/i-web-model-merge-r01/spiral-i-back-web.png",
+    "i_merge_spiral_i_palm": "assets/i-web-model-merge-r01/spiral-i-back-palm.png",
+    "i_merge_spiral_i_laces": "assets/i-web-model-merge-r01/spiral-i-back-laces.png",
+    "i_merge_spiral_i_stitching": "assets/i-web-model-merge-r01/spiral-i-back-stitching.png",
+    "i_merge_spiral_i_cut": "assets/i-web-model-merge-r01/spiral-i-back-cut.png"
   },
   "bbox": {
     "back2": [
@@ -2010,6 +2026,66 @@
       1100
     ],
     "trapeze_hd_cut": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_standard_i_web": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_standard_i_palm": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_standard_i_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_standard_i_stitching": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_standard_i_cut": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_spiral_i_web": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_spiral_i_palm": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_spiral_i_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_spiral_i_stitching": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "i_merge_spiral_i_cut": [
       0,
       0,
       929,
