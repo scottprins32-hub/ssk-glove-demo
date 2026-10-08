@@ -68,6 +68,9 @@ def embedded_fonts() -> str:
 def main():
     html = (HERE / "index.html").read_text()
 
+    # Hosted module preloads have no external counterpart in the offline file.
+    html = re.sub(r'<link rel="modulepreload" href="[^"]+">\s*', "", html)
+
     # ---- CSS: token files then app.css, with the @import swapped for real fonts
     css_parts = []
     for m in re.finditer(r'<link rel="stylesheet" href="([^"]+)">', html):

@@ -400,6 +400,7 @@ function paintView() {
   const vw = $('#stageview');
   if (!vw || vw.hidden) return;
   for (const b of vw.children) {
+    b.hidden = !R.hasView(b.dataset.view);
     b.textContent = t(VIEW_KEYS[b.dataset.view]);
     b.classList.toggle('is-on', b.dataset.view === S.view);
     b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
@@ -521,8 +522,36 @@ function drawUnavailable(target, reason) {
 
 /* The selection tint is an editing aid, not part of the glove: only the
    Colours step shows it, and a proof never does (see proofImage). */
+const viewLoadMessage = () => S.lang === 'nl'
+  ? 'Deze weergave kon niet laden. Kies de weergave opnieuw om het nog eens te proberen.'
+  : 'This view could not load. Select it again to retry.';
 function draw(target = ctx, highlight = S.step === 3) {
   if (!R) return;
+  const pendingView = R.views[S.view];
+  if (pendingView && pendingView.ready === false) {
+    if (target !== ctx) throw new Error('View is still loading');
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    $('#glove').setAttribute('aria-busy','true');
+    $('#stagehint').textContent = S.lang === 'nl' ? 'Weergave laden…' : 'Loading view…';
+    if (!pendingView.redrawPending) {
+      pendingView.redrawPending = true;
+      const requested = S.view;
+      pendingView.load().then(() => {
+        const est = estimatedThumbViews(R.views.thumb);
+        if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
+        if (S.view === requested) { draw(); paint(); }
+      }).catch(() => {
+        if (S.view === requested) {
+          $('#glove').removeAttribute('aria-busy');
+          drawUnavailable(ctx, 'viewNotLoaded');
+          $('#stagehint').textContent = viewLoadMessage();
+          paintView();
+        }
+      }).finally(() => { pendingView.redrawPending = false; });
+    }
+    return;
+  }
+  if (target === ctx) $('#glove').removeAttribute('aria-busy');
   // The palm is a second view of the same glove. Everything the back view
   // hangs on the glove — a swapped web, the flag, the bullet, the pad — has
   // no asset on this side, and the engine skips each of them on that basis.
@@ -649,12 +678,20 @@ function stepOpen(i) {
 }
 
 /* ------------------------------------------------------------- 1. start */
+// Full-resolution starter renders survive UI repaint. Render only visible
+// cards, one idle task at a time; a detached grid cannot queue more work.
+const starterImages = new Map();
+let starterRenderer, starterObserver;
+const previewTask = callback => window.requestIdleCallback
+  ? requestIdleCallback(callback, { timeout: 350 }) : setTimeout(callback, 32);
 function renderStart(b) {
+  starterObserver?.disconnect();
   // Starter cards always show the back and never mutate the active view.
-  const starterR = new GloveRenderer(R.views.back);
+  const starterR = starterRenderer || (starterRenderer = new GloveRenderer(R.views.back));
   // Reuse decoded flag images; thumbnail draws are synchronous.
   starterR._flags = R._flags || {};
   const grid = el('div', 'cards starter-cards');
+  const pendingStarters = [], showWhenMounted = [];
   const groups = { built: t('built'), national: t('national'),
                    signature: t('signature'), blank: t('blankTag') };
   for (const st of STARTERS) {
@@ -671,19 +708,52 @@ function renderStart(b) {
       `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
     c.onclick = () => { applyStarter(st); paint(); };
     grid.appendChild(c);
-    // thumbnail rendered from the real compositor, flag and all
-    requestAnimationFrame(() => {
-      const g = cv.getContext('2d');
-      const prev = { ...S.colors }, pb = S.bullet, pf = S.flag, pp = S.flagPosition, part = S.part, materials = S.materials;
-      applyStarter(st, true);
-      starterR.setFlag(flagArt(), null, S.flagPosition);
-      starterR.draw(g, layerState(DATA, LAYER_TO_FIELD), S.bullet, null,
-             hasFlag(), isLefty());
-      S.colors = prev; S.bullet = pb; S.flag = pf; S.flagPosition = pp; S.part = part; S.materials = materials;
-      starterR.setFlag(flagArt(), null, S.flagPosition);          // the renderer holds one flag at a time
-    });
+    const key = st.id + '|' + isLefty() + '|' + Object.keys(R._flags || {}).length;
+    const show = () => {
+      if (!cv.isConnected) return;
+      let image = starterImages.get(key);
+      if (!image) {
+        image = document.createElement('canvas'); image.width = DATA.w; image.height = DATA.h;
+        const prev = { colors: S.colors, bullet:S.bullet, flag:S.flag,
+          flagPosition:S.flagPosition, part:S.part, materials:S.materials };
+        // applyStarter fills colours in place; never lend it the live object.
+        S.colors = { ...S.colors };
+        try {
+          applyStarter(st, true);
+          starterR.setFlag(flagArt(), null, S.flagPosition);
+          starterR.draw(image.getContext('2d'), layerState(DATA, LAYER_TO_FIELD),
+            S.bullet, null, hasFlag(), isLefty());
+        } finally { Object.assign(S, prev); }
+        starterImages.set(key, image);
+        // At most one full-resolution set per hand plus a pending flag set.
+        if (starterImages.size > STARTERS.length * 3) starterImages.delete(starterImages.keys().next().value);
+      }
+      cv.getContext('2d').drawImage(image, 0, 0);
+    };
+    if (starterImages.has(key)) showWhenMounted.push(show);
+    else pendingStarters.push([cv, show]);
   }
   b.appendChild(grid);
+  // paint() attaches b after renderStart returns.
+  requestAnimationFrame(() => {
+    showWhenMounted.forEach(show => show());
+    const jobs = [];
+    let running = false;
+    const run = () => {
+      const next = jobs.shift();
+      if (next) { next(); previewTask(run); } else running = false;
+    };
+    const observer = starterObserver = new IntersectionObserver(entries => {
+      if (!grid.isConnected) { observer.disconnect(); return; }
+      for (const entry of entries) if (entry.isIntersecting) {
+        observer.unobserve(entry.target);
+        const job = pendingStarters.find(([cv]) => cv === entry.target)?.[1];
+        if (job) jobs.push(job);
+      }
+      if (jobs.length && !running) { running = true; previewTask(run); }
+    }, {rootMargin:'150px'});
+    pendingStarters.forEach(([cv]) => observer.observe(cv));
+  });
 
   const f = el('div', 'field');
   f.appendChild(el('span', 'field-lab', t('open')));
@@ -838,7 +908,7 @@ function liveThumbs(field, items, box, jobFor) {
   // the cards fill in one after another and nothing blocks.
   const step = () => {
     const job = todo.shift();
-    if (!job) return;
+    if (!job || !field.isConnected || key !== thumbKey) return;
     const [it, card, setUp] = job;
     setUp(previewR);
     previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, hasFlag(), isLefty());
@@ -953,7 +1023,7 @@ const C3_FAMILIES = Object.freeze({
 /* {slug -> viewName}. Populated at load once the C3 bodies decode. */
 const C3_ROUTE = {};
 function estimatedThumbViews(v) {
-  const B = v && v.DATA.estimatedBody;
+  const B = v && v.ready !== false && v.DATA.estimatedBody;
   if (!B || B.contractRevision !== 'C3' || B.status !== 'REVIEWED'
       || B.label !== 'estimated' || !B.bodies) return null;
   const views = {}, bodyOfWeb = {}, inserts = (B.inserts && typeof B.inserts === 'object') ? B.inserts : {};
@@ -1476,8 +1546,12 @@ function specText() {
 
 /* ---------------------------------------------------------------- sheet */
 let sheetReturnFocus;
-function openSheet() {
+async function openSheet() {
   if (flushText()) paint();
+  while (R.views[S.view]?.ready === false) {
+    try { await R.views[S.view].load(); draw(); }
+    catch { return; }
+  }
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
   $('#shot').src = proofImage().toDataURL('image/png');
@@ -1616,7 +1690,9 @@ function paint(rebuildBody = true) {
   const palmNote = [STAGE_NOTES.includes(wn) ? (wn === 'thumbEstimated' ? t(wn) : vt(wn)) : '',
     off.length ? vt('anglesUnavailable').replace('%s', off.join(', ')) : '',
     withdrawnNote()].filter(Boolean).join(' ');
-  $('#stagehint').textContent = S.step === 3
+  $('#stagehint').textContent = R.views[S.view]?.error ? viewLoadMessage()
+    : R.views[S.view]?.ready === false
+    ? (S.lang === 'nl' ? 'Weergave laden…' : 'Loading view…') : S.step === 3
     ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
     : palmNote;
 
@@ -1672,7 +1748,9 @@ $('#redo').onclick = () => {
   restore(redoStack.pop()); paint();
 };
 
-loadGlove().then(bundle => {
+const requestedInitialView = (decodeState(location.hash.slice(1)) || load())?.view;
+loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedInitialView)
+  ? requestedInitialView : 'back' }).then(bundle => {
   DATA = bundle.DATA;
   // The catalogue decides what can be ordered; the asset data only draws it.
   for (const b of DATA.bullets) {
@@ -1701,7 +1779,7 @@ loadGlove().then(bundle => {
 
   const cv = $('#glove');
   cv.addEventListener('click', ev => {
-    if (!viewAvailability(S.view).ok) return;
+    if (!viewAvailability(S.view).ok || R.views[S.view]?.ready === false) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
@@ -1710,7 +1788,7 @@ loadGlove().then(bundle => {
     S.step = 3; S.part = colourPart(f); draw(); paint();
   });
   cv.addEventListener('pointermove', ev => {
-    if (S.step !== 3 || !viewAvailability(S.view).ok) { cv.style.cursor = 'default'; return; }
+    if (S.step !== 3 || !viewAvailability(S.view).ok || R.views[S.view]?.ready === false) { cv.style.cursor = 'default'; return; }
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
@@ -1750,6 +1828,21 @@ loadGlove().then(bundle => {
   document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
+  performance.mark('ssk-ready');
+  // Only after the selected glove has painted, warm the other angles without
+  // holding up the initial screen. A click can call the same load() immediately.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const remaining = Object.values(bundle.views).filter(v => v && !v.ready);
+    const warm = () => {
+      const v = remaining.shift();
+      if (!v) return;
+      v.load().then(() => {
+        const est = estimatedThumbViews(R.views.thumb);
+        if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
+      }).catch(() => {}).finally(() => { paintView(); previewTask(warm); });
+    };
+    previewTask(warm);
+  }));
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');

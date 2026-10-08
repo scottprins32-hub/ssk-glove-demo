@@ -2,60 +2,110 @@
 // Assets and palettes come from assets/glove-data.json, extracted verbatim
 // from glove_builder/customiser/index.html in scottprins32-hub/ssk-glove-demo.
 
-let _p = null;
+const gloveLoads = new Map();
+const decodedImages = new Map();
+const materialSurfaces = new WeakMap();
+const materialColours = new Map();
 
-export function loadGlove() {
-  if (_p) return _p;
-  _p = (async () => {
-    // bundle.py inlines the same object as window.__GLOVE_DATA__, so the
-    // single-file build needs no fetch
-    const decode = async (DATA) => {
-      const imgs = {};
-      await Promise.all(Object.entries(DATA.assets).map(([n, src]) =>
-        new Promise(res => {
-          const im = new Image();
-          im.onload = () => { imgs[n] = im; res(); };
-          im.onerror = () => { res(); };
-          im.src = src;
-        })));
-      const ic = document.createElement('canvas');
-      ic.width = DATA.w; ic.height = DATA.h;
-      const ictx = ic.getContext('2d', { willReadFrequently: true });
-      ictx.drawImage(imgs._idmap, 0, 0);
-      const idData = ictx.getImageData(0, 0, DATA.w, DATA.h).data;
-      return { DATA, imgs, idData };
-    };
-    const DATA = window.__GLOVE_DATA__
-      || await (await fetch('assets/glove-data.json')).json();
-    const back = await decode(DATA);
-    // The palm is a second view of the same glove, cut from the same
-    // calibration photograph's other side (build_palm.py). It shares the
-    // palettes and the colour fields — the two wingtips are only visible from
-    // here — so it is loaded alongside rather than as a separate page. It may
-    // legitimately be absent; the view switcher hides itself if it is.
-    let palm = null;
-    try {
-      const PD = window.__PALM_DATA__
-        || await (await fetch('assets/palm-data.json')).json();
-      PD.palettes = DATA.palettes;
-      palm = await decode(PD);
-    } catch { palm = null; }
-    if (palm) await verifyPalmWebs(palm);
-    // The thumb and pinky sides: two more views of the same glove, cut from
-    // the store shoot's frames of the calibration glove (build_side_views.py).
-    // Optional in the same way as the palm.
-    const side = async (name, inlined) => {
+// Retain render dependencies, not superseded tracing/review exports. Metadata
+// references (including aliases, web inserts and material sources) are followed
+// recursively; each diffuse layer brings its highlight partner with it.
+function renderAssets(DATA) {
+  const keys = new Set();
+  const take = name => {
+    if (typeof name !== 'string' || !DATA.assets[name] || keys.has(name)) return;
+    keys.add(name); take(name + '_hi');
+  };
+  const walk = value => {
+    if (typeof value === 'string') take(value);
+    else if (Array.isArray(value)) value.forEach(walk);
+    else if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
+      if (key !== 'bbox') walk(child);
+    }
+  };
+  for (const [key, value] of Object.entries(DATA)) {
+    if (!['assets','bbox','source','presets','palettes'].includes(key) && !key.startsWith('user')) walk(value);
+  }
+  for (const key of ['glove','_idmap','_hdLeather','_hdLace','_snakeLeather',
+    'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
+    'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
+    'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']) take(key);
+  return [...keys];
+}
+function decodeImage(src) {
+  if (!decodedImages.has(src)) decodedImages.set(src, new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => { decodedImages.delete(src); reject(new Error('Image could not be loaded')); };
+    im.src = src;
+  }));
+  return decodedImages.get(src);
+}
+export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
+  const mode = progressive ? 'progressive|' + initialView : 'complete';
+  if (gloveLoads.has(mode)) return gloveLoads.get(mode);
+  const pending = (async () => {
+    const names = ['back','palm','thumb','pinky'];
+    // Start metadata requests together, but never put an optional side's
+    // metadata on the critical path of the back view.
+    const metadata = names.map(async name => {
+      const key = name === 'back' ? 'glove' : name;
       try {
-        const SD = inlined || await (await fetch(`assets/${name}-data.json`)).json();
-        SD.palettes = DATA.palettes;
-        return await decode(SD);
-      } catch { return null; }
-    };
-    const thumb = await side('thumb', window.__THUMB_DATA__);
-    const pinky = await side('pinky', window.__PINKY_DATA__);
-    return { ...back, views: { back, palm, thumb, pinky } };
+        const inlined = window['__' + key.toUpperCase() + '_DATA__'];
+        if (inlined) return structuredClone(inlined);
+        const response = await fetch('assets/' + key + '-data.json');
+        if (!response.ok) throw new Error('Glove data could not be loaded');
+        return await response.json();
+      } catch (error) { if (name === 'back') throw error; return null; }
+    });
+    const backData = await metadata[0], views = {};
+    for (let i = 0; i < names.length; i++) {
+      const v = { DATA: i === 0 ? backData : { w:backData.w, h:backData.h,
+        zones:[], fieldsShown:[], fieldsNotShown:[], palettes:backData.palettes },
+        imgs:{}, idData:null, ready:false, assetErrors:{} };
+      let loading;
+      v.load = () => loading || (loading = (async () => {
+        const DATA = await metadata[i];
+        if (!DATA) { v.absent = true; throw new Error('View data is unavailable'); }
+        DATA.palettes = backData.palettes; v.DATA = DATA; v.error = null;
+        const keys = renderAssets(DATA);
+        // Optional failed inserts/badges must not take the base glove down.
+        // The existing palm SHA gate excludes missing/incorrect insert parts.
+        // Core body/ID map/alias failures remain explicit and retryable.
+        let next = 0;
+        await Promise.all(Array.from({length: Math.min(8, keys.length)}, async () => {
+          while (next < keys.length) {
+            const key = keys[next++];
+            try {
+              v.imgs[key] = await decodeImage(DATA.assets[key]);
+              delete v.assetErrors[key];
+            } catch (error) { v.assetErrors[key] = error; }
+          }
+        }));
+        const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
+          ...Object.values(DATA.nativeHContour?.assets || {})];
+        if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded');
+        const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
+        const g = ic.getContext('2d', { willReadFrequently: true });
+        g.drawImage(v.imgs._idmap, 0, 0);
+        v.idData = g.getImageData(0, 0, DATA.w, DATA.h).data;
+        if (names[i] === 'palm') await verifyPalmWebs(v);
+        v.ready = true; v.error = null;
+        return v;
+      })().catch(error => { loading = null; v.error = error; throw error; }));
+      views[names[i]] = v;
+    }
+    await Promise.all((progressive ? [...new Set(['back', initialView])] : names)
+      .map(name => views[name]?.load().catch(error => {
+        if (name === 'back') throw error;
+        if (!progressive) views[name] = null;
+      })));
+    return { ...views.back, views };
   })();
-  return _p;
+  gloveLoads.set(mode, pending);
+  pending.catch(() => gloveLoads.delete(mode));
+  return pending;
 }
 
 // PALM-P2 (outputs/2d-finish-plan/CONTRACT-PALM-P2.json): the six PALM-P1
@@ -184,7 +234,7 @@ export class GloveRenderer {
     this.idData = bundle.idData;
     this.cache = new Map();
     this.order = [];
-    this.materialCache = new WeakMap();
+    this.materialCache = materialSurfaces;
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
     this.octx = this.off.getContext('2d');
@@ -201,7 +251,7 @@ export class GloveRenderer {
     const key=JSON.stringify(next);
     if(key===this.materialSelectionKey)return;
     this.materialSelectionKey=key;this.materials=next;
-    this.cache.clear();this.order=[];this.materialCache=new WeakMap();
+    this.cache.clear();this.order=[];
   }
 
   setView(name) {
@@ -242,7 +292,7 @@ export class GloveRenderer {
     this.nativeContourKey=key; this.cache.clear(); this.order=[];
   }
 
-  hasView(name) { return !!this.views[name]; }
+  hasView(name) { return !!this.views[name] && !this.views[name].absent; }
 
   hex(zoneId, state) {
     const z = this.DATA.zones.find(z => z.id === zoneId);
@@ -327,8 +377,13 @@ export class GloveRenderer {
       || zone && ['leather', 'lace'].includes(zone.group);
     if (!leather) return null;
     const img = this.imgs[id], hi = this.imgs[id + '_hi'];
-    let surface = this.materialCache.get(img);
-    if (surface && surface.hi === hi && surface.role === role) return surface;
+    let surfaces = this.materialCache.get(img);
+    if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
+    const surfaceKey = JSON.stringify([role, this.materials?.[role] || 'standard',
+      this.DATA.h, this.DATA.bbox[id]]);
+    let surface = surfaces.get(surfaceKey);
+    if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
+        && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
     const [x0,y0,x1,y1] = this.DATA.bbox[id];
     const c = document.createElement('canvas'); c.width=x1-x0; c.height=y1-y0;
     const g = c.getContext('2d', {willReadFrequently:true});
@@ -375,18 +430,23 @@ export class GloveRenderer {
       const snake=this.materials?.[role]==='snakeskin' && !!this.imgs._snakeLeather;
       const blur=box(weighted),weight=box(weights),tex=this.leatherGrain(snake,zone?.group==='lace');
       const lace=zone?.group==='lace',strength=snake?17:lace?2.2:8.5;
+      // The material coordinates are separable: wrap each row/column once,
+      // not twice per pixel. This preserves the exact same texture samples.
+      const tx=Int32Array.from({length:w},(_,x)=>tex.wrap(x+x0));
+      const ty=Int32Array.from({length:h},(_,y)=>tex.wrap(y+y0)*tex.size);
       for(let y=0;y<h;y++)for(let x=0;x<w;x++){
         const j=y*w+x;if(!weights[j])continue;
         const macro=weight[j]>0?blur[j]/weight[j]:tone[j],detail=tone[j]-macro;
         // Keep dark stitch/crease edges that remain in photographed leather;
         // suppress only the noisy high-frequency illumination around them.
         const retained=detail < -9 ? detail : detail*.24;
-        const grain=tex.sample(x+x0,y+y0);
+        const grain=tex.values[ty[y]+tx[x]];
         tone[j]=Math.max(0,Math.min(298,(snake||lace?246:248)+(macro-248)*(snake||lace?1.2:1.35)+retained+grain*strength));
       }
     }
-    surface={hi,tone,base,lo,mid,high,lower,upper,role};
-    this.materialCache.set(img,surface);
+    surface={hi,tone,base,lo,mid,high,lower,upper,role,
+      texture:this.imgs._hdLeather, laceTexture:this.imgs._hdLace, snakeTexture:this.imgs._snakeLeather};
+    surfaces.set(surfaceKey,surface);
     return surface;
   }
 
@@ -404,7 +464,7 @@ export class GloveRenderer {
     // Mirrored repeat has no edge discontinuity, even if generated tile edges
     // are not exactly periodic. Coordinates follow the view, never a panel bbox.
     const wrap=v=>{v=((v%(2*size))+2*size)%(2*size);return v<size?v:2*size-1-v;};
-    const result={sample:(x,y)=>values[wrap(y)*size+wrap(x)]};this.cache.set(key,result);return result;
+    const result={values,size,wrap,sample:(x,y)=>values[wrap(y)*size+wrap(x)]};this.cache.set(key,result);return result;
   }
 
   tinted(id, hx, sheenOf = id, materialOf = sheenOf) {
@@ -414,7 +474,7 @@ export class GloveRenderer {
     const [x0, y0, x1, y1] = this.DATA.bbox[id];
     const c = document.createElement('canvas');
     c.width = Math.max(1, x1 - x0); c.height = Math.max(1, y1 - y0);
-    const g = c.getContext('2d');
+    const g = c.getContext('2d', {willReadFrequently:true});
     g.drawImage(this.imgs[id], -x0, -y0);
     g.globalCompositeOperation = 'multiply';
     g.fillStyle = hx;
@@ -443,12 +503,23 @@ export class GloveRenderer {
     if (surface) {
       // Preserve the original composited alpha, including anti-alias coverage.
       const pixels=g.getImageData(0,0,c.width,c.height), rgba=pixels.data;
-      const colour=document.createElement('canvas').getContext('2d');
-      colour.canvas.width=colour.canvas.height=1;colour.fillStyle=hx;colour.fillRect(0,0,1,1);
-      const rgb=colour.getImageData(0,0,1,1).data;
+      let rgb=materialColours.get(hx);
+      if (!rgb) {
+        if (/^#[0-9a-f]{6}$/i.test(hx)) {
+          const value=parseInt(hx.slice(1),16); rgb=[value>>16,(value>>8)&255,value&255];
+        } else {
+          const colour=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+          colour.canvas.width=colour.canvas.height=1;colour.fillStyle=hx;colour.fillRect(0,0,1,1);
+          rgb=colour.getImageData(0,0,1,1).data;
+        }
+        materialColours.set(hx,rgb);
+      }
+      const [red,green,blue]=rgb;
       for(let i=0,j=0;i<rgba.length;i+=4,j++)if(rgba[i+3]){
         const v=surface.tone[j],diffuse=Math.min(255,v)/255,specular=Math.max(0,v-255)/2;
-        for(let ch=0;ch<3;ch++)rgba[i+ch]=Math.min(255,Math.round(rgb[ch]*diffuse+specular));
+        rgba[i]=Math.min(255,Math.round(red*diffuse+specular));
+        rgba[i+1]=Math.min(255,Math.round(green*diffuse+specular));
+        rgba[i+2]=Math.min(255,Math.round(blue*diffuse+specular));
       }
       g.putImageData(pixels,0,0);
     }
