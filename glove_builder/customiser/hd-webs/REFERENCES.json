@@ -1,0 +1,245 @@
+{
+  "scope": "Existing renderer comparison exports; source web coverage is reported per view.",
+  "rows": [
+    {
+      "web": "Spiral I-Web",
+      "slug": "spiral-i",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/spiral-i-back.png",
+      "actualView": "back",
+      "actualWeb": "spiral-i"
+    },
+    {
+      "web": "Standard I-Web",
+      "slug": "standard-i",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/standard-i-back.png",
+      "actualView": "back",
+      "actualWeb": "standard-i"
+    },
+    {
+      "web": "SMK-Web",
+      "slug": "smk",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/smk-back.png",
+      "actualView": "back",
+      "actualWeb": "smk"
+    },
+    {
+      "web": "SMLEE-Web",
+      "slug": "smlee",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/smlee-back.png",
+      "actualView": "back",
+      "actualWeb": "smlee"
+    },
+    {
+      "web": "Modified Trapeze-Web",
+      "slug": "modified-trapeze",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/modified-trapeze-back.png",
+      "actualView": "back",
+      "actualWeb": "modified-trapeze"
+    },
+    {
+      "web": "Em Rocket-Web",
+      "slug": "em-rocket",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/em-rocket-back.png",
+      "actualView": "back",
+      "actualWeb": "em-rocket"
+    },
+    {
+      "web": "Closed Diamond Net-Web",
+      "slug": "closed-diamond-net",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/closed-diamond-net-back.png",
+      "actualView": "back",
+      "actualWeb": "closed-diamond-net"
+    },
+    {
+      "web": "Trapeze-Web",
+      "slug": "trapeze",
+      "view": "back",
+      "width": 929,
+      "height": 1100,
+      "file": "references/trapeze-back.png",
+      "actualView": "back",
+      "actualWeb": "trapeze"
+    },
+    {
+      "web": "Spiral I-Web",
+      "slug": "spiral-i",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/spiral-i-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": null
+    },
+    {
+      "web": "Standard I-Web",
+      "slug": "standard-i",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/standard-i-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": null
+    },
+    {
+      "web": "SMK-Web",
+      "slug": "smk",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/smk-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": "smk"
+    },
+    {
+      "web": "SMLEE-Web",
+      "slug": "smlee",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/smlee-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": "smlee"
+    },
+    {
+      "web": "Modified Trapeze-Web",
+      "slug": "modified-trapeze",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/modified-trapeze-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": null
+    },
+    {
+      "web": "Em Rocket-Web",
+      "slug": "em-rocket",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/em-rocket-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": null
+    },
+    {
+      "web": "Closed Diamond Net-Web",
+      "slug": "closed-diamond-net",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/closed-diamond-net-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": "closed-diamond-net"
+    },
+    {
+      "web": "Trapeze-Web",
+      "slug": "trapeze",
+      "view": "thumb",
+      "width": 822,
+      "height": 1100,
+      "file": "references/trapeze-thumb.png",
+      "actualView": "thumb",
+      "actualWeb": null
+    },
+    {
+      "web": "Spiral I-Web",
+      "slug": "spiral-i",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/spiral-i-palm.png",
+      "actualView": "palm",
+      "actualWeb": "spiral-i"
+    },
+    {
+      "web": "Standard I-Web",
+      "slug": "standard-i",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/standard-i-palm.png",
+      "actualView": "palm",
+      "actualWeb": "standard-i"
+    },
+    {
+      "web": "SMK-Web",
+      "slug": "smk",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/smk-palm.png",
+      "actualView": "palm",
+      "actualWeb": "smk"
+    },
+    {
+      "web": "SMLEE-Web",
+      "slug": "smlee",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/smlee-palm.png",
+      "actualView": "palm",
+      "actualWeb": "smlee"
+    },
+    {
+      "web": "Modified Trapeze-Web",
+      "slug": "modified-trapeze",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/modified-trapeze-palm.png",
+      "actualView": "palm",
+      "actualWeb": "modified-trapeze"
+    },
+    {
+      "web": "Em Rocket-Web",
+      "slug": "em-rocket",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/em-rocket-palm.png",
+      "actualView": "palm",
+      "actualWeb": "em-rocket"
+    },
+    {
+      "web": "Closed Diamond Net-Web",
+      "slug": "closed-diamond-net",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/closed-diamond-net-palm.png",
+      "actualView": "palm",
+      "actualWeb": "closed-diamond-net"
+    },
+    {
+      "web": "Trapeze-Web",
+      "slug": "trapeze",
+      "view": "palm",
+      "width": 1534,
+      "height": 1400,
+      "file": "references/trapeze-palm.png",
+      "actualView": "palm",
+      "actualWeb": "trapeze"
+    }
+  ]
+}

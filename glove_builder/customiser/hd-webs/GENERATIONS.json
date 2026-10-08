@@ -1,0 +1,297 @@
+[
+  {
+    "web": "standard-i",
+    "view": "back",
+    "prompt": "Use case: precise-object-edit. Create ONE premium photorealistic Cardinal red / white SSK glove in BACK VIEW. FIRST image is the exact pose/geometry and Standard I web placement to improve. SECOND provides the user-approved material quality, body appearance and studio lighting ONLY; do NOT copy its H web. THIRD is authoritative Standard I web construction, NOT its yellow/orange colour or different camera. Standard I web: two horizontal leather crossbars joined by ONE short vertical center post; two upper windows and lower open space; the lower attachments have simple crossed X laces, NOT spirals. Keep perspective of first image, web at RIGHT, thumb foreground occluding correct outside edge. Red panels and web, white leather laces/welting/thread, red wrist binding and red lining, white SSK ring-finger embroidery, red wrist double-S badge outlined green. Replace noisy angular texture with rich supple fine natural leather pores, clear rounded leather edge thickness and restrained broad sheen. Lace flat straps with clean cut sides, subtle leather texture, no hairs or blobs; separate consistent individual stitches. Preserve body panel boundaries, exact relative web dimensions, knots only where visible on outside, bottom palm leather bridge remains distinct and matches palm red. Preserve transparent holes; full glove with all tips and tails in frame, matching first silhouette as closely as possible, no widening or stretching. Transparent background and windows, no text labels or collage. Highest available image resolution.",
+    "referenceNames": [
+      "standard-i-back.png",
+      "cardinal-white-back.png",
+      "Standard_I_Web.jpg"
+    ],
+    "outputName": "standard-i-back.png"
+  },
+  {
+    "web": "spiral-i",
+    "view": "back",
+    "prompt": "Use case: precise-object-edit. Create ONE premium photorealistic Cardinal red / white SSK glove in BACK VIEW. FIRST image is the exact pose/geometry and Spiral I web placement to improve. SECOND provides the user-approved material quality, body appearance and studio lighting ONLY; do NOT copy its H web. THIRD is authoritative Spiral I web construction, NOT its yellow/orange colour or different camera. Spiral I web: two horizontal leather crossbars joined by ONE short vertical center post; two upper windows, lower opening with TWO distinct coiled spiral lace attachments below lower crossbar, not simple Xs. Keep perspective of first image, web at RIGHT, thumb foreground occluding correct outside edge. Red panels and web, white leather laces/welting/thread, red wrist binding and red lining, white SSK ring-finger embroidery, red wrist double-S badge outlined green. Replace noisy angular texture with rich supple fine natural leather pores, clear rounded leather edge thickness and restrained broad sheen. Lace flat straps with clean cut sides, subtle leather texture, no hairs or blobs; separate consistent individual stitches. Preserve body panel boundaries, exact relative web dimensions, knots only where visible on outside, bottom palm leather bridge remains distinct and matches palm red. Preserve transparent holes; full glove with all tips and tails in frame, matching first silhouette as closely as possible, no widening or stretching. Transparent background and windows, no text labels or collage. Highest available image resolution.",
+    "referenceNames": [
+      "spiral-i-back.png",
+      "cardinal-white-back.png",
+      "Spiral_I_Web.png"
+    ],
+    "outputName": "spiral-i-back.png"
+  },
+  {
+    "web": "smk",
+    "view": "back",
+    "prompt": "Precise product-render edit. FIRST image is the smk back view pose, outline and panel map. SECOND is approved HD leather/style only; never copy its H web. THIRD establishes the exact web design. Closed SMK web with its exact stylised stitched dragon/animal pattern, as THIRD reference. Retain visible seam motif, not random curves or a generic lion. Produce the same full cardinal red glove, web on RIGHT, all other body pieces and camera preserved. Red web/panels/lining/binding, white laces/welting/stitches and ring finger SSK embroidery, red wrist emblem outlined green. Premium fine-grain leather with natural connected pores, soft dimensional edges and even lighting, not grainy noise/diamond patterns. The outside web bottom is ONE curved U-shaped edge, cleanly joined ABOVE a SEPARATE palm-leather bridge. One compact white leather knot at that join, a clean lace tail leaves EACH side of knot; no black block or extra leather flap. Defined smooth flat laces with thickness, no hairs, beautiful individually visible white stitches following real seams/pattern. Preserve scale/placement and all physical panels, full glove uncut, no new logos/text. Transparent background, clean alpha. Highest resolution.",
+    "referenceNames": [
+      "smk-back.png",
+      "cardinal-white-back.png",
+      "SMK_Web.jpg"
+    ],
+    "outputName": "smk-back.png"
+  },
+  {
+    "web": "smlee",
+    "view": "back",
+    "prompt": "Precise product-render edit. FIRST image is the smlee back view pose, outline and panel map. SECOND is approved HD leather/style only; never copy its H web. THIRD establishes the exact web design. Closed SMLEE web with its exact stylised stitched lion pattern as THIRD reference; keep the distinct horizontal top leather strip with its twin stitched edges. Produce the same full cardinal red glove, web on RIGHT, all other body pieces and camera preserved. Red web/panels/lining/binding, white laces/welting/stitches and ring finger SSK embroidery, red wrist emblem outlined green. Premium fine-grain leather with natural connected pores, soft dimensional edges and even lighting, not grainy noise/diamond patterns. The outside web bottom is ONE curved U-shaped edge, cleanly joined ABOVE a SEPARATE palm-leather bridge. One compact white leather knot at that join, a clean lace tail leaves EACH side of knot; no black block or extra leather flap. Defined smooth flat laces with thickness, no hairs, beautiful individually visible white stitches following real seams/pattern. Preserve scale/placement and all physical panels, full glove uncut, no new logos/text. Transparent background, clean alpha. Highest resolution.",
+    "referenceNames": [
+      "smlee-back.png",
+      "cardinal-white-back.png",
+      "SMLEE_Web.jpg"
+    ],
+    "outputName": "smlee-back.png"
+  },
+  {
+    "web": "em-rocket",
+    "view": "back",
+    "prompt": "Precise product-render edit: FIRST input exact back camera, em-rocket web placement and glove geometry. SECOND material/body/style reference ONLY, do not copy its H-web. THIRD actual em-rocket construction reference ONLY, ignore its colors/view. Closed EM Rocket solid leather web: two parallel vertical columns of baseball-seam-like looped laces flanking a narrow stitched center leather strip, exactly from photo. Top horizontal rim, one shallow U lower edge and outside compact bottom knot with tail from both sides. Generate one premium Cardinal red/white glove BACK VIEW, web on RIGHT, keep original full glove framing and all tails. All body panels/web/palm bridge red, white laces/welting/stitching/ring SSK embroidery, red lining/binding, red wrist emblem outlined green. Rich photoreal fine-grained supple leather, natural connected pores, restrained soft sheen not grainy noise or diamond embossing; dimensional smooth flat white leather laces, crisp individual white stitches. Keep all body seam positions and appropriate physical overlaps; thumb in front of web edge, bottom web above separate palm-leather bridge. No stretched leather or invented flaps. All open holes must be genuine transparent background. No flags, extra logos or captions. Transparent backdrop, clean alpha, full glove. Highest available resolution.",
+    "referenceNames": [
+      "em-rocket-back.png",
+      "cardinal-white-back.png",
+      "Em_Rocket_Web.jpg"
+    ],
+    "outputName": "em-rocket-back.png"
+  },
+  {
+    "web": "closed-diamond-net",
+    "view": "back",
+    "prompt": "Precise product-render edit: FIRST input exact back camera, closed-diamond-net web placement and glove geometry. SECOND material/body/style reference ONLY, do not copy its H-web. THIRD actual closed-diamond-net construction reference ONLY, ignore its colors/view. Closed Diamond Net solid leather web: two vertical columns of X crossing laces and central elongated diamond-shaped stitching, exactly from photo. This is not an open net. Top horizontal rim and ONE shallow U bottom, outside compact bottom knot with tail from both sides. Generate one premium Cardinal red/white glove BACK VIEW, web on RIGHT, keep original full glove framing and all tails. All body panels/web/palm bridge red, white laces/welting/stitching/ring SSK embroidery, red lining/binding, red wrist emblem outlined green. Rich photoreal fine-grained supple leather, natural connected pores, restrained soft sheen not grainy noise or diamond embossing; dimensional smooth flat white leather laces, crisp individual white stitches. Keep all body seam positions and appropriate physical overlaps; thumb in front of web edge, bottom web above separate palm-leather bridge. No stretched leather or invented flaps. All open holes must be genuine transparent background. No flags, extra logos or captions. Transparent backdrop, clean alpha, full glove. Highest available resolution.",
+    "referenceNames": [
+      "closed-diamond-net-back.png",
+      "cardinal-white-back.png",
+      "Closed_Diamond_Net_Web.jpg"
+    ],
+    "outputName": "closed-diamond-net-back.png"
+  },
+  {
+    "web": "modified-trapeze",
+    "view": "back",
+    "prompt": "Precise product-render edit: FIRST input exact back camera, modified-trapeze web placement and glove geometry. SECOND material/body/style reference ONLY, do not copy its H-web. THIRD actual modified-trapeze construction reference ONLY, ignore its colors/view. Modified Trapeze web: ONE broad vertical center leather spine, solid horizontal leather top cap, open lace-net panels either side with thin interlaced diagonal straps and clean transparent holes, exactly from photo. Preserve trapeze geometry, no extra H crossbars. Generate one premium Cardinal red/white glove BACK VIEW, web on RIGHT, keep original full glove framing and all tails. All body panels/web/palm bridge red, white laces/welting/stitching/ring SSK embroidery, red lining/binding, red wrist emblem outlined green. Rich photoreal fine-grained supple leather, natural connected pores, restrained soft sheen not grainy noise or diamond embossing; dimensional smooth flat white leather laces, crisp individual white stitches. Keep all body seam positions and appropriate physical overlaps; thumb in front of web edge, bottom web above separate palm-leather bridge. No stretched leather or invented flaps. All open holes must be genuine transparent background. No flags, extra logos or captions. Transparent backdrop, clean alpha, full glove. Highest available resolution.",
+    "referenceNames": [
+      "modified-trapeze-back.png",
+      "cardinal-white-back.png",
+      "Modified_Trapeze_Web.jpg"
+    ],
+    "outputName": "modified-trapeze-back.png"
+  },
+  {
+    "web": "trapeze",
+    "view": "back",
+    "prompt": "Precise product-render edit: FIRST input exact back camera, trapeze web placement and glove geometry. SECOND material/body/style reference ONLY, do not copy its H-web. THIRD actual trapeze construction reference ONLY, ignore its colors/view. Trapeze web: ONE broad vertical center leather spine and TWO open ladder/net columns of crossed thin flat laces, exactly from photo. No thick horizontal leather top cap: top is a horizontal lace stretched between thumb and index. Preserve transparent open lattice. Generate one premium Cardinal red/white glove BACK VIEW, web on RIGHT, keep original full glove framing and all tails. All body panels/web/palm bridge red, white laces/welting/stitching/ring SSK embroidery, red lining/binding, red wrist emblem outlined green. Rich photoreal fine-grained supple leather, natural connected pores, restrained soft sheen not grainy noise or diamond embossing; dimensional smooth flat white leather laces, crisp individual white stitches. Keep all body seam positions and appropriate physical overlaps; thumb in front of web edge, bottom web above separate palm-leather bridge. No stretched leather or invented flaps. All open holes must be genuine transparent background. No flags, extra logos or captions. Transparent backdrop, clean alpha, full glove. Highest available resolution.",
+    "referenceNames": [
+      "trapeze-back.png",
+      "cardinal-white-back.png",
+      "Trapeze_Web.jpg"
+    ],
+    "outputName": "trapeze-back.png"
+  },
+  {
+    "web": "standard-i",
+    "view": "palm",
+    "prompt": "Precise edit. FIRST is authoritative standard-i palm-facing geometry; SECOND is approved HD rendering/material and round stamp reference, not its H web. Produce a full PALM INSIDE view of same Cardinal red glove with web at LEFT. Inside Standard I web: two horizontal red crossbars and one short red vertical central post, exactly TWO upper transparent rectangular openings, lower attachment space with the two white X laces shown in the first reference. No big external web-bottom knot or hanging web knot tails and no inner knots on crossbar faces. All thumb/body parts must stay IN FRONT of the web. Bottom web curves gently as a shallow bowl, joins separate palm leather with no crescent gap or stretched leather; inside thumb face is continuous palm leather with same hue/shading as main palm. Top loop laces wrap the whole upper web edge as physical straps. Keep correct first input web structure, panel widths, exact camera and silhouette. Premium supple red fine-grain leather, even soft sheen; smooth white dimensional leather laces/welting/thread, red lower binding. Replace old central Sasaki PRO/Japanese stamp by the SECOND input's exact S emblem and Custom Made surrounded by TWELVE five-point stars, tone-on-tone debossed dark red. Keep the small lower S-emblem plus SSK wordmark at the heel between bottom binding and first horizontal lace row, as in first input; it is debossed too. No white ink/embroidery in palm. Clean crisp edges, no hairs/noise. Transparent background and any physical open holes. Entire glove and tails in frame. Highest resolution.",
+    "referenceNames": [
+      "standard-i-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "standard-i-palm.png"
+  },
+  {
+    "web": "spiral-i",
+    "view": "palm",
+    "prompt": "Precise edit. FIRST is authoritative spiral-i palm-facing geometry; SECOND is approved HD rendering/material and round stamp reference, not its H web. Produce a full PALM INSIDE view of same Cardinal red glove with web at LEFT. Inside Spiral I web: two horizontal red crossbars connected by one short red central post, exactly TWO upper transparent rectangular openings, lower attachment space with TWO neatly coiled white spiral lace wraps. No big external web-bottom knot or hanging web knot tails and no inner knots on crossbar faces. All thumb/body parts must stay IN FRONT of the web. Bottom web curves gently as a shallow bowl, joins separate palm leather with no crescent gap or stretched leather; inside thumb face is continuous palm leather with same hue/shading as main palm. Top loop laces wrap the whole upper web edge as physical straps. Keep correct first input web structure, panel widths, exact camera and silhouette. Premium supple red fine-grain leather, even soft sheen; smooth white dimensional leather laces/welting/thread, red lower binding. Replace old central Sasaki PRO/Japanese stamp by the SECOND input's exact S emblem and Custom Made surrounded by TWELVE five-point stars, tone-on-tone debossed dark red. Keep the small lower S-emblem plus SSK wordmark at the heel between bottom binding and first horizontal lace row, as in first input; it is debossed too. No white ink/embroidery in palm. Clean crisp edges, no hairs/noise. Transparent background and any physical open holes. Entire glove and tails in frame. Highest resolution.",
+    "referenceNames": [
+      "spiral-i-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "spiral-i-palm.png"
+  },
+  {
+    "web": "smk",
+    "view": "palm",
+    "prompt": "Precise edit. FIRST is authoritative smk palm-facing geometry; SECOND is approved HD rendering/material and round stamp reference, not its H web. Produce a full PALM INSIDE view of same Cardinal red glove with web at LEFT. Inside SMK web: SOLID curved leather web, no transparent web windows; reverse of the source's SMK motif as subtle stitch-through outlines only, not raised exterior applique on inside. No external big knot or dangling web tails. All thumb/body parts must stay IN FRONT of the web. Bottom web curves gently as a shallow bowl, joins separate palm leather with no crescent gap or stretched leather; inside thumb face is continuous palm leather with same hue/shading as main palm. Top loop laces wrap the whole upper web edge as physical straps. Keep correct first input web structure, panel widths, exact camera and silhouette. Premium supple red fine-grain leather, even soft sheen; smooth white dimensional leather laces/welting/thread, red lower binding. Replace old central Sasaki PRO/Japanese stamp by the SECOND input's exact S emblem and Custom Made surrounded by TWELVE five-point stars, tone-on-tone debossed dark red. Keep the small lower S-emblem plus SSK wordmark at the heel between bottom binding and first horizontal lace row, as in first input; it is debossed too. No white ink/embroidery in palm. Clean crisp edges, no hairs/noise. Transparent background and any physical open holes. Entire glove and tails in frame. Highest resolution.",
+    "referenceNames": [
+      "smk-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "smk-palm.png"
+  },
+  {
+    "web": "smlee",
+    "view": "palm",
+    "prompt": "Precise edit. FIRST is authoritative smlee palm-facing geometry; SECOND is approved HD rendering/material and round stamp reference, not its H web. Produce a full PALM INSIDE view of same Cardinal red glove with web at LEFT. Inside SMLEE web: SOLID leather web, no web windows; retain separate top strip and reverse stitch-through of lion motif shown on first reference, not raised exterior applique. No external big web knot or dangling web tails. All thumb/body parts must stay IN FRONT of the web. Bottom web curves gently as a shallow bowl, joins separate palm leather with no crescent gap or stretched leather; inside thumb face is continuous palm leather with same hue/shading as main palm. Top loop laces wrap the whole upper web edge as physical straps. Keep correct first input web structure, panel widths, exact camera and silhouette. Premium supple red fine-grain leather, even soft sheen; smooth white dimensional leather laces/welting/thread, red lower binding. Replace old central Sasaki PRO/Japanese stamp by the SECOND input's exact S emblem and Custom Made surrounded by TWELVE five-point stars, tone-on-tone debossed dark red. Keep the small lower S-emblem plus SSK wordmark at the heel between bottom binding and first horizontal lace row, as in first input; it is debossed too. No white ink/embroidery in palm. Clean crisp edges, no hairs/noise. Transparent background and any physical open holes. Entire glove and tails in frame. Highest resolution.",
+    "referenceNames": [
+      "smlee-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "smlee-palm.png"
+  },
+  {
+    "web": "em-rocket",
+    "view": "palm",
+    "prompt": "Precise image edit. FIRST input is authoritative em-rocket inside PALM geometry. SECOND is HD material and round stamp quality only, NOT its H web. Output same full palm view, web at LEFT. Solid closed EM Rocket panel. Preserve TWO columns of white curved baseball-seam lace loops and the slim central stitched leather strip. No exterior giant knot. Thumb and inside body leather occlude web correctly. Web bottom shallow bowl and joins palm with no gap or stretched strips. Inside thumb and main palm share same Cardinal red leather. Retain exact first input panel construction and camera. High quality supple RED leather with fine natural grain, smooth crisp edges, soft even material sheen without noise. WHITE dimensional lace, welting and stitching; RED bottom binding. Central stamp: genuine S emblem over Custom Made surrounded by exactly TWELVE stars, dark tone-on-tone debossed, matching second reference. Retain the separate small lower S emblem followed by SSK wordmark at heel between bottom binding and first horizontal lace row. No white ink or embroidered palm marks, no old PRO or Japanese writing. No exterior large web knot or hanging tails inside. Full glove and all tails in frame. Transparent background and actual open gaps. Highest resolution.",
+    "referenceNames": [
+      "em-rocket-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "em-rocket-palm.png"
+  },
+  {
+    "web": "closed-diamond-net",
+    "view": "palm",
+    "prompt": "Precise image edit. FIRST input is authoritative closed-diamond-net inside PALM geometry. SECOND is HD material and round stamp quality only, NOT its H web. Output same full palm view, web at LEFT. Solid closed Diamond panel. Preserve TWO columns of white X lacing and the slim central elongated diamond stitch pattern. No exterior giant knot. Thumb and inside body leather occlude web correctly. Web bottom shallow bowl and joins palm with no gap or stretched strips. Inside thumb and main palm share same Cardinal red leather. Retain exact first input panel construction and camera. High quality supple RED leather with fine natural grain, smooth crisp edges, soft even material sheen without noise. WHITE dimensional lace, welting and stitching; RED bottom binding. Central stamp: genuine S emblem over Custom Made surrounded by exactly TWELVE stars, dark tone-on-tone debossed, matching second reference. Retain the separate small lower S emblem followed by SSK wordmark at heel between bottom binding and first horizontal lace row. No white ink or embroidered palm marks, no old PRO or Japanese writing. No exterior large web knot or hanging tails inside. Full glove and all tails in frame. Transparent background and actual open gaps. Highest resolution.",
+    "referenceNames": [
+      "closed-diamond-net-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "closed-diamond-net-palm.png"
+  },
+  {
+    "web": "modified-trapeze",
+    "view": "palm",
+    "prompt": "Precise image edit. FIRST input is authoritative modified-trapeze inside PALM geometry. SECOND is HD material and round stamp quality only, NOT its H web. Output same full palm view, web at LEFT. Open Modified Trapeze: RED leather top cap and RED central vertical spine; WHITE crossing leather lace lattice on either side, ALL diagonals are white lace. Open gaps transparent. No H bars. Thumb and inside body leather occlude web correctly. Web bottom shallow bowl and joins palm with no gap or stretched strips. Inside thumb and main palm share same Cardinal red leather. Retain exact first input panel construction and camera. High quality supple RED leather with fine natural grain, smooth crisp edges, soft even material sheen without noise. WHITE dimensional lace, welting and stitching; RED bottom binding. Central stamp: genuine S emblem over Custom Made surrounded by exactly TWELVE stars, dark tone-on-tone debossed, matching second reference. Retain the separate small lower S emblem followed by SSK wordmark at heel between bottom binding and first horizontal lace row. No white ink or embroidered palm marks, no old PRO or Japanese writing. No exterior large web knot or hanging tails inside. Full glove and all tails in frame. Transparent background and actual open gaps. Highest resolution.",
+    "referenceNames": [
+      "modified-trapeze-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "modified-trapeze-palm.png"
+  },
+  {
+    "web": "trapeze",
+    "view": "palm",
+    "prompt": "Precise image edit. FIRST input is authoritative trapeze inside PALM geometry. SECOND is HD material and round stamp quality only, NOT its H web. Output same full palm view, web at LEFT. Open Trapeze: RED central leather spine, WHITE crossing lace lattice on either side, top edge is WHITE lacing with NO solid horizontal leather cap. Open gaps transparent. No H bars. Thumb and inside body leather occlude web correctly. Web bottom shallow bowl and joins palm with no gap or stretched strips. Inside thumb and main palm share same Cardinal red leather. Retain exact first input panel construction and camera. High quality supple RED leather with fine natural grain, smooth crisp edges, soft even material sheen without noise. WHITE dimensional lace, welting and stitching; RED bottom binding. Central stamp: genuine S emblem over Custom Made surrounded by exactly TWELVE stars, dark tone-on-tone debossed, matching second reference. Retain the separate small lower S emblem followed by SSK wordmark at heel between bottom binding and first horizontal lace row. No white ink or embroidered palm marks, no old PRO or Japanese writing. No exterior large web knot or hanging tails inside. Full glove and all tails in frame. Transparent background and actual open gaps. Highest resolution.",
+    "referenceNames": [
+      "trapeze-palm.png",
+      "cardinal-white-palm.png"
+    ],
+    "outputName": "trapeze-palm.png"
+  },
+  {
+    "web": "standard-i",
+    "view": "thumb",
+    "prompt": "Image edit. FIRST input sets exact full-glove THUMB SIDE camera angle, Cardinal red/white colors, material quality and body. Replace only H-web with Standard I WEB, exact SECOND photo construction in FIRST side-view perspective: red top and middle horizontal bars, short central vertical post ONLY BETWEEN them, TWO upper square windows, then a WIDE lower opening with TWO WHITE X lace attachments and a THIN curved U bottom leather rim. No vertical post continuing into lower opening. No broad bottom flap. Side attachment laces go IN/OUT of finger leather directly, no protruding leather loops beside web. SECOND input establishes web anatomy, not material quality. Keep thumb and long thumb edge in front of web. Separate palm-leather bridge below web, never stretch lower leather or fill body with new gaps. Fine natural real-leather pores, even studio light, smooth crisp cut edges, beautiful WHITE dimensional laces and fine WHITE stitchwork, white welting. Circular black thumb S badge: WHITE actual S emblem and perfectly even WHITE stitch ring around full 360 degrees, not an elongated oval. Preserve full body silhouette and all original body components. Opaque glove, transparent exterior and genuinely open web windows. No checkerboard or white mist inside openings. Entire glove and lace ends in frame. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Standard_I_Web.jpg"
+    ],
+    "outputName": "standard-i-thumb.png"
+  },
+  {
+    "web": "spiral-i",
+    "view": "thumb",
+    "prompt": "Image edit. FIRST input sets exact full-glove THUMB SIDE camera angle, Cardinal red/white colors, material quality and body. Replace only H-web with Spiral I WEB, exact SECOND photo construction in FIRST side-view perspective: red top and middle horizontal bars, short central vertical post ONLY BETWEEN them, TWO upper windows, a WIDE lower opening with TWO WHITE spiral wrapped vertical lace attachments and a THIN curved U bottom leather rim. No vertical post in lower opening. No broad bottom flap. Side attachment laces go IN/OUT of finger leather directly, no protruding leather loops beside web. SECOND input establishes web anatomy, not material quality. Keep thumb and long thumb edge in front of web. Separate palm-leather bridge below web, never stretch lower leather or fill body with new gaps. Fine natural real-leather pores, even studio light, smooth crisp cut edges, beautiful WHITE dimensional laces and fine WHITE stitchwork, white welting. Circular black thumb S badge: WHITE actual S emblem and perfectly even WHITE stitch ring around full 360 degrees, not an elongated oval. Preserve full body silhouette and all original body components. Opaque glove, transparent exterior and genuinely open web windows. No checkerboard or white mist inside openings. Entire glove and lace ends in frame. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Spiral_I_Web.png"
+    ],
+    "outputName": "spiral-i-thumb.png"
+  },
+  {
+    "web": "smk",
+    "view": "thumb",
+    "prompt": "Image edit. FIRST input sets exact full-glove THUMB SIDE camera angle, Cardinal red/white colors, material quality and body. Replace only H-web with Closed solid RED SMK panel, exactly trace second image's curved dragon/animal stitched motif with white fine thread; no holes in panel. Same exterior large white bottom knot as reference, with one lace tail from both sides, one rounded U bottom web piece. SECOND input establishes web anatomy, not material quality. Keep thumb and long thumb edge in front of web. Separate palm-leather bridge below web, never stretch lower leather or fill body with new gaps. Fine natural real-leather pores, even studio light, smooth crisp cut edges, beautiful WHITE dimensional laces and fine WHITE stitchwork, white welting. Circular black thumb S badge: WHITE actual S emblem and perfectly even WHITE stitch ring around full 360 degrees, not an elongated oval. Preserve full body silhouette and all original body components. Opaque glove, transparent exterior and genuinely open web windows. No checkerboard or white mist inside openings. Entire glove and lace ends in frame. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "smk-thumb.png"
+    ],
+    "outputName": "smk-thumb.png"
+  },
+  {
+    "web": "smlee",
+    "view": "thumb",
+    "prompt": "Image edit. FIRST input sets exact full-glove THUMB SIDE camera angle, Cardinal red/white colors, material quality and body. Replace only H-web with Closed solid RED SMLEE panel, exactly trace second image's curved lion-style stitched motif with white fine thread; keep distinct top leather piece and its stitch rows. No holes in panel. White bottom exterior knot with two tails on single U bottom web piece. SECOND input establishes web anatomy, not material quality. Keep thumb and long thumb edge in front of web. Separate palm-leather bridge below web, never stretch lower leather or fill body with new gaps. Fine natural real-leather pores, even studio light, smooth crisp cut edges, beautiful WHITE dimensional laces and fine WHITE stitchwork, white welting. Circular black thumb S badge: WHITE actual S emblem and perfectly even WHITE stitch ring around full 360 degrees, not an elongated oval. Preserve full body silhouette and all original body components. Opaque glove, transparent exterior and genuinely open web windows. No checkerboard or white mist inside openings. Entire glove and lace ends in frame. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "smlee-thumb.png"
+    ],
+    "outputName": "smlee-thumb.png"
+  },
+  {
+    "web": "em-rocket",
+    "view": "thumb",
+    "prompt": "Precise edit. FIRST image gives full THUMB SIDE pose, entire body, colors, premium leather quality. Replace H web ONLY with SECOND image's web construction seen from same side angle: Closed solid RED EM Rocket web, TWO long columns of WHITE curved baseball-seam lace loops with thin central stitched red strip, no holes in solid panel. Thin white stitches, one shallow rounded bottom U, white exterior big knot with tail leaving BOTH sides. RED glove leather, WHITE dimensional lace/welting/stitching, red binding. Body thumb in FRONT of web where overlapping. Palm bridge below web is independent palm leather, keep same red color and smooth natural texture. Exact remaining body anatomy and silhouette unchanged. Thumb black round S emblem with white real S and a full circular WHITE stitched perimeter. Realistic fine leather pores and soft broad highlights, no grainy noise, no jagged edges, no photographic stray pieces. Whole glove in frame with ends of lace. Opaque glove, true transparent background. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Em_Rocket_Web.jpg"
+    ],
+    "outputName": "em-rocket-thumb.png"
+  },
+  {
+    "web": "closed-diamond-net",
+    "view": "thumb",
+    "prompt": "Precise edit. FIRST image gives full THUMB SIDE pose, entire body, colors, premium leather quality. Replace H web ONLY with SECOND image's web construction seen from same side angle: Closed solid RED Diamond web, TWO long columns of WHITE X laces on surface with elongated diamond outline of stitches between, no holes in panel. One shallow rounded bottom U leather piece and white exterior knot with tail leaving BOTH sides. RED glove leather, WHITE dimensional lace/welting/stitching, red binding. Body thumb in FRONT of web where overlapping. Palm bridge below web is independent palm leather, keep same red color and smooth natural texture. Exact remaining body anatomy and silhouette unchanged. Thumb black round S emblem with white real S and a full circular WHITE stitched perimeter. Realistic fine leather pores and soft broad highlights, no grainy noise, no jagged edges, no photographic stray pieces. Whole glove in frame with ends of lace. Opaque glove, true transparent background. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Closed_Diamond_Net_Web.jpg"
+    ],
+    "outputName": "closed-diamond-net-thumb.png"
+  },
+  {
+    "web": "modified-trapeze",
+    "view": "thumb",
+    "prompt": "Precise edit. FIRST image gives full THUMB SIDE pose, entire body, colors, premium leather quality. Replace H web ONLY with SECOND image's web construction seen from same side angle: Open Modified Trapeze web: RED horizontal leather cap, RED broad center vertical spine, OPEN lattice of WHITE lace on both sides, BOTH diagonals of EVERY X are WHITE, all gaps genuinely transparent. No H bars. Thin white stitching along red spine and cap. Curved shallow bottom rim fitted directly against palm bridge without an extra gap. RED glove leather, WHITE dimensional lace/welting/stitching, red binding. Body thumb in FRONT of web where overlapping. Palm bridge below web is independent palm leather, keep same red color and smooth natural texture. Exact remaining body anatomy and silhouette unchanged. Thumb black round S emblem with white real S and a full circular WHITE stitched perimeter. Realistic fine leather pores and soft broad highlights, no grainy noise, no jagged edges, no photographic stray pieces. Whole glove in frame with ends of lace. Opaque glove, true transparent background. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Modified_Trapeze_Web.jpg"
+    ],
+    "outputName": "modified-trapeze-thumb.png"
+  },
+  {
+    "web": "trapeze",
+    "view": "thumb",
+    "prompt": "Precise edit. FIRST image gives full THUMB SIDE pose, entire body, colors, premium leather quality. Replace H web ONLY with SECOND image's web construction seen from same side angle: Open Trapeze web: RED broad center vertical spine, OPEN lattice of WHITE lace on both sides. Top is WHITE lace joining fingers WITHOUT a broad solid leather cap. BOTH diagonals of every X WHITE. Transparent open holes, no white veil. No H bars. Curved shallow bottom fitted directly against palm bridge without an extra gap. RED glove leather, WHITE dimensional lace/welting/stitching, red binding. Body thumb in FRONT of web where overlapping. Palm bridge below web is independent palm leather, keep same red color and smooth natural texture. Exact remaining body anatomy and silhouette unchanged. Thumb black round S emblem with white real S and a full circular WHITE stitched perimeter. Realistic fine leather pores and soft broad highlights, no grainy noise, no jagged edges, no photographic stray pieces. Whole glove in frame with ends of lace. Opaque glove, true transparent background. Highest resolution.",
+    "referenceNames": [
+      "cardinal-white-thumb.png",
+      "Trapeze_Web.jpg"
+    ],
+    "outputName": "trapeze-thumb.png"
+  },
+  {
+    "web": "standard-i",
+    "view": "back",
+    "prompt": "Surgical correction to first image. Replace ONLY the upper-right web with the exact I construction in second photo. TWO horizontal RED leather crossbars, one at top and one at MID-height. A SHORT central RED vertical post connects JUST these two bars, creating two square upper windows. BELOW the middle crossbar there is a WIDE TRANSPARENT opening with only TWO WHITE X-shaped lace attachments from the middle bar down to a small curved lower U leather rim. NO central vertical leather continuing below middle bar. NO solid red flap filling lower opening. Two top windows and one wide lower window. Keep white stitched rim around the opening. Preserve entire glove body, back fingers, lettering, thumb panel, wrist S emblem, leather material, angle, framing and colors of first input. Background and holes transparent, glove itself fully opaque. Very high resolution photoreal premium leather with precise seams. Do not change body shape.",
+    "referenceNames": [
+      "standard-i-back.png",
+      "Standard_I_Web.jpg"
+    ],
+    "outputName": "standard-i-back.png"
+  },
+  {
+    "web": "spiral-i",
+    "view": "back",
+    "prompt": "Surgical correction to first image. Replace ONLY upper-right web with exact Spiral I construction in second photo. TWO horizontal RED leather crossbars: top and MID-height. ONE SHORT central RED vertical post ONLY connects these two bars creating two square upper windows. BELOW middle crossbar a WIDE TRANSPARENT opening. Two small vertical WHITE wrapped spiral lace connections descend from middle crossbar to thin curved bottom U rim. NO central red post below middle bar. NO broad flap below middle. Two square upper windows and one wide lower window with two white coils. Preserve entire glove body, back fingers, lettering, thumb panel, wrist S emblem, leather material, angle, framing and colors of first input. Background and holes transparent, glove itself fully opaque. Very high resolution photoreal premium leather with precise seams. Do not change body shape.",
+    "referenceNames": [
+      "spiral-i-back.png",
+      "Spiral_I_Web.png"
+    ],
+    "outputName": "spiral-i-back.png"
+  },
+  {
+    "web": "modified-trapeze",
+    "view": "back",
+    "prompt": "Surgical correction to first image. Change ALL the RED DIAGONAL crisscross strips in upper-right open web into the same WHITE leather material as the other diagonals. Both diagonals of EVERY X are WHITE laces. Keep central broad vertical leather spine and broad upper cap Cardinal RED. Preserve exact geometry, camera, silhouette and every other pixel's appearance. Preserve entire glove body, back fingers, lettering, thumb panel, wrist S emblem, leather material, angle, framing and colors of first input. Background and holes transparent, glove itself fully opaque. Very high resolution photoreal premium leather with precise seams. Do not change body shape.",
+    "referenceNames": [
+      "modified-trapeze-back.png"
+    ],
+    "outputName": "modified-trapeze-back.png"
+  },
+  {
+    "web": "standard-i",
+    "view": "back",
+    "prompt": "Surgical local image correction. Fill ONLY the large empty black/transparent crescent BELOW the lowest curved web rim at the upper-right, between that rim and the U-shaped stitching on the thumb/palm transition, with the SAME Cardinal red palm leather as its surrounding region. This lower gap is NOT a web opening. Keep the two square upper web windows and the lower rectangular opening WITH TWO WHITE X LACES ABOVE this crescent entirely open and unchanged. Red palm leather must meet underside of bottom rim, no gap. Keep every other part unchanged. Opaque material, transparent outer background and retained genuine web openings. Same high-quality fine-grain leather and original image resolution.",
+    "referenceNames": [
+      "standard-i-back.png"
+    ],
+    "outputName": "standard-i-back.png"
+  },
+  {
+    "web": "spiral-i",
+    "view": "thumb",
+    "prompt": "Surgical local image correction. Fill ONLY the long thin triangular transparent GAP immediately BELOW the curved red lowest rim holding the two white spiral lace columns and ABOVE the red stitched leather bridge with big lower knot. Fill that one gap with continuous Cardinal red PALM leather matching surrounding palm. Preserve the two upper square windows and wide middle opening WITH TWO WHITE COILS as true open holes. Do not change them. Do not change any knot, lace, lettering, body, material, lighting, framing or silhouette. Opaque material, transparent outer background and retained genuine web openings. Same high-quality fine-grain leather and original image resolution.",
+    "referenceNames": [
+      "spiral-i-thumb.png"
+    ],
+    "outputName": "spiral-i-thumb.png"
+  }
+]

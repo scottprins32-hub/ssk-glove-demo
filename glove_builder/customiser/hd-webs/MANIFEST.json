@@ -1,0 +1,340 @@
+{
+  "revision": "HD-WEBS-R01",
+  "generator": "built-in imagegen",
+  "nativeMasksRegistered": false,
+  "activeWebs": 8,
+  "views": [
+    "back",
+    "palm",
+    "thumb"
+  ],
+  "entries": [
+    {
+      "key": "standard-i/back",
+      "web": "standard-i",
+      "view": "back",
+      "image": "generated-r3/standard-i-back.png",
+      "preview": "previews/standard-i-back.webp",
+      "parts": "layers/standard-i-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "spiral-i/back",
+      "web": "spiral-i",
+      "view": "back",
+      "image": "generated-r02/spiral-i-back.png",
+      "preview": "previews/spiral-i-back.webp",
+      "parts": "layers/spiral-i-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smk/back",
+      "web": "smk",
+      "view": "back",
+      "image": "generated/smk-back.png",
+      "preview": "previews/smk-back.webp",
+      "parts": "layers/smk-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smlee/back",
+      "web": "smlee",
+      "view": "back",
+      "image": "generated/smlee-back.png",
+      "preview": "previews/smlee-back.webp",
+      "parts": "layers/smlee-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Web/palm-masker volgt de naden nog niet exact",
+        "Patroon wijkt af van goedgekeurde duimweergave"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "em-rocket/back",
+      "web": "em-rocket",
+      "view": "back",
+      "image": "generated/em-rocket-back.png",
+      "preview": "previews/em-rocket-back.webp",
+      "parts": "layers/em-rocket-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "closed-diamond-net/back",
+      "web": "closed-diamond-net",
+      "view": "back",
+      "image": "generated/closed-diamond-net-back.png",
+      "preview": "previews/closed-diamond-net-back.webp",
+      "parts": "layers/closed-diamond-net-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "modified-trapeze/back",
+      "web": "modified-trapeze",
+      "view": "back",
+      "image": "generated-r02/modified-trapeze-back.png",
+      "preview": "previews/modified-trapeze-back.webp",
+      "parts": "layers/modified-trapeze-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "trapeze/back",
+      "web": "trapeze",
+      "view": "back",
+      "image": "generated/trapeze-back.png",
+      "preview": "previews/trapeze-back.webp",
+      "parts": "layers/trapeze-back.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "standard-i/palm",
+      "web": "standard-i",
+      "view": "palm",
+      "image": "generated/standard-i-palm.png",
+      "preview": "previews/standard-i-palm.webp",
+      "parts": "layers/standard-i-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Binnenkant duim valt deels onder Web in de conceptkaart"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "spiral-i/palm",
+      "web": "spiral-i",
+      "view": "palm",
+      "image": "generated/spiral-i-palm.png",
+      "preview": "previews/spiral-i-palm.webp",
+      "parts": "layers/spiral-i-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smk/palm",
+      "web": "smk",
+      "view": "palm",
+      "image": "generated/smk-palm.png",
+      "preview": "previews/smk-palm.webp",
+      "parts": "layers/smk-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smlee/palm",
+      "web": "smlee",
+      "view": "palm",
+      "image": "generated/smlee-palm.png",
+      "preview": "previews/smlee-palm.webp",
+      "parts": "layers/smlee-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "em-rocket/palm",
+      "web": "em-rocket",
+      "view": "palm",
+      "image": "generated/em-rocket-palm.png",
+      "preview": "previews/em-rocket-palm.webp",
+      "parts": "layers/em-rocket-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "closed-diamond-net/palm",
+      "web": "closed-diamond-net",
+      "view": "palm",
+      "image": "generated/closed-diamond-net-palm.png",
+      "preview": "previews/closed-diamond-net-palm.webp",
+      "parts": "layers/closed-diamond-net-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Centraal ruitvormig stikpatroon ontbreekt"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "modified-trapeze/palm",
+      "web": "modified-trapeze",
+      "view": "palm",
+      "image": "generated/modified-trapeze-palm.png",
+      "preview": "previews/modified-trapeze-palm.webp",
+      "parts": "layers/modified-trapeze-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "trapeze/palm",
+      "web": "trapeze",
+      "view": "palm",
+      "image": "generated/trapeze-palm.png",
+      "preview": "previews/trapeze-palm.webp",
+      "parts": "layers/trapeze-palm.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "standard-i/thumb",
+      "web": "standard-i",
+      "view": "thumb",
+      "image": "generated/standard-i-thumb.png",
+      "preview": "previews/standard-i-thumb.webp",
+      "parts": "layers/standard-i-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "spiral-i/thumb",
+      "web": "spiral-i",
+      "view": "thumb",
+      "image": "generated-r2/spiral-i-thumb.png",
+      "preview": "previews/spiral-i-thumb.webp",
+      "parts": "layers/spiral-i-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smk/thumb",
+      "web": "smk",
+      "view": "thumb",
+      "image": "generated/smk-thumb.png",
+      "preview": "previews/smk-thumb.webp",
+      "parts": "layers/smk-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Grenzen nog handmatig te controleren"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "smlee/thumb",
+      "web": "smlee",
+      "view": "thumb",
+      "image": "generated/smlee-thumb.png",
+      "preview": "previews/smlee-thumb.webp",
+      "parts": "layers/smlee-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Linker steunleer wordt nog met Web meegekleurd"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "em-rocket/thumb",
+      "web": "em-rocket",
+      "view": "thumb",
+      "image": "generated/em-rocket-thumb.png",
+      "preview": "previews/em-rocket-thumb.webp",
+      "parts": "layers/em-rocket-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Extra onderste knopen corrigeren"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "closed-diamond-net/thumb",
+      "web": "closed-diamond-net",
+      "view": "thumb",
+      "image": "generated/closed-diamond-net-thumb.png",
+      "preview": "previews/closed-diamond-net-thumb.webp",
+      "parts": "layers/closed-diamond-net-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [
+        "Extra onderste knopen corrigeren"
+      ],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "modified-trapeze/thumb",
+      "web": "modified-trapeze",
+      "view": "thumb",
+      "image": "generated/modified-trapeze-thumb.png",
+      "preview": "previews/modified-trapeze-thumb.webp",
+      "parts": "layers/modified-trapeze-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    },
+    {
+      "key": "trapeze/thumb",
+      "web": "trapeze",
+      "view": "thumb",
+      "image": "generated/trapeze-thumb.png",
+      "preview": "previews/trapeze-thumb.webp",
+      "parts": "layers/trapeze-thumb.json",
+      "status": "candidate",
+      "productionReady": false,
+      "reviewNotes": [],
+      "materialReview": "PASS_BOUNDED_STUDY",
+      "maskReview": "NEEDS_WORK"
+    }
+  ]
+}
