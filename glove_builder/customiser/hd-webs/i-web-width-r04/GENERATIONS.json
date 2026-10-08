@@ -1,0 +1,38 @@
+[
+  {
+    "key": "standard-i/palm",
+    "file": "generated/standard-i-palm-v2.png",
+    "source": "/Users/scottprins/.codex/generated_images/01a0d028-75da-7412-a64a-f4aeb60a66b8/exec-cfaef34b-8095-40e6-a09a-9770ea66dc3a.png",
+    "refs": [
+      "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/i-web-width-r03/generated/standard-i-palm-v2.png"
+    ],
+    "prompt": "Use case: precise-object-edit. Edit target: the attached latest standard-i/palm red/white SSK glove image. User asks: \"horizontal bars a little thicker\". Increase the VISIBLE LEATHER BAND HEIGHT of BOTH horizontal red I-web bars by a small but noticeable amount, about 12 percent relative to this target. The two bars are the upper cap immediately below the outer white lacing and the middle red crossbar directly above the two large white X-shaped lace joins. Do not lengthen them or widen the entire web. Keep exactly two bars and the single continuous central vertical post; keep both upper windows visibly open. Make the change restrained, not bulky. Follow the existing oblique angles and side attachments. Preserve the two large white X-shaped lace joins at their existing size and position. Preserve stitching cleanly inset from the adjusted leather edges. Preserve the entire glove body outside this small web edit, all logos, the exact camera pose, framing, scale, colors, leather grain, lighting, other laces and welting. Keep both original debossed palm marks unchanged: S symbol surrounded by twelve stars with 'Custom Made', plus the separate lower S + SSK mark. No Sasaki, Shokunin or alternative logo. Preserve real alpha transparency in the background and all openings. Same full-image dimensions as the input. Output one full glove; change only both horizontal leather bars to slightly thicker."
+  },
+  {
+    "key": "standard-i/back",
+    "file": "generated/standard-i-back.png",
+    "source": "/Users/scottprins/.codex/generated_images/01a0d028-75da-7412-a64a-f4aeb60a66b8/exec-1a966b2d-6383-4b28-9627-6ae38437c902.png",
+    "refs": [
+      "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/i-web-width-r03/generated/standard-i-back.png"
+    ],
+    "prompt": "Use case: precise-object-edit. Edit target: the attached latest standard-i/back red/white SSK glove image. User asks: \"horizontal bars a little thicker\". Increase the VISIBLE LEATHER BAND HEIGHT of BOTH horizontal red I-web bars by a small but noticeable amount, about 12 percent relative to this target. The two bars are the upper cap immediately below the outer white lacing and the middle red crossbar directly above the two large white X-shaped lace joins. Do not lengthen them or widen the entire web. Keep exactly two bars and the single continuous central vertical post; keep both upper windows visibly open. Make the change restrained, not bulky. Follow the existing oblique angles and side attachments. Preserve the two large white X-shaped lace joins at their existing size and position. Preserve stitching cleanly inset from the adjusted leather edges. Preserve the entire glove body outside this small web edit, all logos, the exact camera pose, framing, scale, colors, leather grain, lighting, other laces and welting. Keep all embroidered SSK body logos and the two horizontal white lace straps with center loops unchanged. Preserve real alpha transparency in the background and all openings. Same full-image dimensions as the input. Output one full glove; change only both horizontal leather bars to slightly thicker."
+  },
+  {
+    "key": "spiral-i/palm",
+    "file": "generated/spiral-i-palm-v2.png",
+    "source": "/Users/scottprins/.codex/generated_images/01a0d028-75da-7412-a64a-f4aeb60a66b8/exec-d8dd599f-be0c-4597-b3e3-fcf29dd84f15.png",
+    "refs": [
+      "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/i-web-width-r03/generated/spiral-i-palm-v2.png"
+    ],
+    "prompt": "Use case: precise-object-edit. Edit target: the attached latest spiral-i/palm red/white SSK glove image. User asks: \"horizontal bars a little thicker\". Increase the VISIBLE LEATHER BAND HEIGHT of BOTH horizontal red I-web bars by a small but noticeable amount, about 12 percent relative to this target. The two bars are the upper cap immediately below the outer white lacing and the middle red crossbar directly above the two large white spiral-coil lace joins. Do not lengthen them or widen the entire web. Keep exactly two bars and the single continuous central vertical post; keep both upper windows visibly open. Make the change restrained, not bulky. Follow the existing oblique angles and side attachments. Preserve the two large white spiral-coil lace joins at their existing size and position. Preserve stitching cleanly inset from the adjusted leather edges. Preserve the entire glove body outside this small web edit, all logos, the exact camera pose, framing, scale, colors, leather grain, lighting, other laces and welting. Keep both original debossed palm marks unchanged: S symbol surrounded by twelve stars with 'Custom Made', plus the separate lower S + SSK mark. No Sasaki, Shokunin or alternative logo. Preserve real alpha transparency in the background and all openings. Same full-image dimensions as the input. Output one full glove; change only both horizontal leather bars to slightly thicker."
+  },
+  {
+    "key": "spiral-i/back",
+    "file": "generated/spiral-i-back.png",
+    "source": "/Users/scottprins/.codex/generated_images/01a0d028-75da-7412-a64a-f4aeb60a66b8/exec-7480006b-e4fc-4e69-abb9-6fdf65aa7d34.png",
+    "refs": [
+      "/Users/scottprins/Documents/Codex/2026-09-23/files-pasted-by-the-user-set/outputs/2d-glove-candidates/i-web-width-r03/generated/spiral-i-back.png"
+    ],
+    "prompt": "Use case: precise-object-edit. Edit target: the attached latest spiral-i/back red/white SSK glove image. User asks: \"horizontal bars a little thicker\". Increase the VISIBLE LEATHER BAND HEIGHT of BOTH horizontal red I-web bars by a small but noticeable amount, about 12 percent relative to this target. The two bars are the upper cap immediately below the outer white lacing and the middle red crossbar directly above the two large white spiral-coil lace joins. Do not lengthen them or widen the entire web. Keep exactly two bars and the single continuous central vertical post; keep both upper windows visibly open. Make the change restrained, not bulky. Follow the existing oblique angles and side attachments. Preserve the two large white spiral-coil lace joins at their existing size and position. Preserve stitching cleanly inset from the adjusted leather edges. Preserve the entire glove body outside this small web edit, all logos, the exact camera pose, framing, scale, colors, leather grain, lighting, other laces and welting. Keep all embroidered SSK body logos and the two horizontal white lace straps with center loops unchanged. Preserve real alpha transparency in the background and all openings. Same full-image dimensions as the input. Output one full glove; change only both horizontal leather bars to slightly thicker."
+  }
+]
