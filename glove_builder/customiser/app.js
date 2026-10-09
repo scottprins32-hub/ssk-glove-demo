@@ -323,10 +323,12 @@ function cleanSharedState(raw) {
    Every read and write is wrapped — a private window or blocked site data
    makes these throw, and losing the draft is not worth breaking the page. */
 const SAVE_KEY = 'ssk-glove-v1';
+let pendingDraft = null;
 
 function save() {
+  if (pendingDraft) return; // Preserve the previous design until its owner chooses.
   try {
-    const o = { ...S, schemaVersion: 1 }; delete o.step;
+    const o = { ...S, schemaVersion: 1 };
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }
@@ -1748,7 +1750,8 @@ $('#redo').onclick = () => {
   restore(redoStack.pop()); paint();
 };
 
-const requestedInitialView = (decodeState(location.hash.slice(1)) || load())?.view;
+const savedDraft = load();
+const requestedInitialView = decodeState(location.hash.slice(1))?.view;
 loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedInitialView)
   ? requestedInitialView : 'back' }).then(bundle => {
   DATA = bundle.DATA;
@@ -1767,14 +1770,49 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
 
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;
-  // A link someone was sent wins over whatever this device had saved; failing
-  // that, pick the draft back up. Then clear the hash — leaving it in the bar
-  // would go stale the moment anything changed, which is how it came to look
-  // like the address was following you around.
+  // Shared links open directly; local drafts require an explicit choice.
   const h = location.hash.slice(1);
   const shared = h ? cleanSharedState(decodeState(h)) : null;
-  const o = cleanState(shared || load());
+  S.size = '11.75"'; S.webType = NATIVE_WEB; S.pad = 'None';
+  for (const field of COLOUR_ORDER) {
+    if (DATA.palettes[PALETTE_OF(field)].some(c => c[0] === '10')) S.colors[field] = '10';
+  }
+  const o = cleanState(shared);
   if (o) Object.assign(S, o, { step: 0 });
+  else {
+    const draft = cleanState(savedDraft);
+    const defaultDraft = cleanState(S);
+    const changedDraft = draft && Object.keys(draft).some(key => {
+      if (key === 'lang') return false;
+      return JSON.stringify(draft[key]) !== JSON.stringify(defaultDraft[key]);
+    });
+    if (draft && (changedDraft || savedDraft.step > 0)) {
+      pendingDraft = { ...draft, step: Number.isInteger(savedDraft.step) &&
+        savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 };
+      const dialog = document.createElement('dialog');
+      dialog.className = 'resume-dialog';
+      const en = draft.lang === 'en';
+      dialog.setAttribute('aria-labelledby', 'resume-title');
+      const title = document.createElement('h2'); title.id = 'resume-title';
+      title.textContent = en ? 'Continue your glove?' : 'Verder met je handschoen?';
+      const desc = document.createElement('p');
+      desc.textContent = en ? 'Your previous design is saved on this device.' : 'Je vorige ontwerp is op dit apparaat bewaard.';
+      dialog.append(title, desc);
+      for (const resume of [true, false]) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'btn';
+        button.textContent = resume ? (en ? 'Continue my design' : 'Verder met mijn ontwerp') : (en ? 'Start fresh' : 'Opnieuw beginnen');
+        button.onclick = () => {
+          if (resume) Object.assign(S, pendingDraft);
+          pendingDraft = null; dialog.close(); dialog.remove(); draw(); paint();
+          $('#next').focus();
+        };
+        dialog.append(button);
+      }
+      // Escape must not discard or silently restore the saved design.
+      dialog.addEventListener('cancel', event => event.preventDefault());
+      document.body.append(dialog); dialog.showModal();
+    }
+  }
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');

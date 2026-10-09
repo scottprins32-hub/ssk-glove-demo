@@ -476,3 +476,8 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .material-picker .opt-btn.is-on { background: var(--navy-900); color: var(--white); }
 .material-picker .opt-btn small { color: inherit; font-size: 12px; margin-top: 4px; }
 @media (max-width: 900px) and (max-height: 740px) { .stage.is-compact #glove { max-height: 10vh; } }
+
+.resume-dialog { width: min(460px, calc(100vw - 32px)); box-sizing: border-box; border: 0; border-radius: 16px; padding: 28px; background: #fff; color: #202020; box-shadow: 0 20px 80px #0004; }
+.resume-dialog::backdrop { background: #0008; }
+.resume-dialog h2 { margin-top: 0; }
+.resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
