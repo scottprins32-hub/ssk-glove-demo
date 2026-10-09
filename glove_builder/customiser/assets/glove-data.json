@@ -821,7 +821,22 @@
       "stitching": "i_merge_spiral_i_stitching",
       "cut": "i_merge_spiral_i_cut",
       "webfinger": "overlap_spiral-i",
-      "knot": false
+      "knot": false,
+      "attachment": {
+        "asset": "smk_clean_laces",
+        "source": [
+          475,
+          500,
+          380,
+          262
+        ],
+        "target": [
+          622,
+          570,
+          247,
+          170.3
+        ]
+      }
     },
     "standard-i": {
       "web": "i_merge_standard_i_web",
@@ -830,7 +845,22 @@
       "stitching": "i_merge_standard_i_stitching",
       "cut": "i_merge_standard_i_cut",
       "webfinger": "approved_standard_finger",
-      "knot": false
+      "knot": false,
+      "attachment": {
+        "asset": "smk_clean_laces",
+        "source": [
+          475,
+          500,
+          380,
+          262
+        ],
+        "target": [
+          632,
+          527,
+          247,
+          170.3
+        ]
+      }
     },
     "trapeze": {
       "web": "trapeze_hd_web",

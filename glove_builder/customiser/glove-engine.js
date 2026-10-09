@@ -685,6 +685,23 @@ export class GloveRenderer {
       || this.DATA.palmWebs?.entries?.[slug]) ? slug : null;
   }
 
+  // Reuse a photographed, cleaned lace knot at the attachment point of a
+  // replacement web. Source/target rectangles are native view coordinates;
+  // the normal draw transform mirrors this together with the glove.
+  webAttachment(hx) {
+    const p = this.DATA.webs?.[this.web]?.attachment;
+    if (!p || !this.imgs[p.asset] || !this.DATA.bbox[p.asset]) return null;
+    const key = 'web-attachment|' + this.web + '|' + hx;
+    if (this.cache.has(key)) return this.cache.get(key);
+    const c = document.createElement('canvas'); c.width = this.DATA.w; c.height = this.DATA.h;
+    const g = c.getContext('2d'), t = this.tinted(p.asset, hx, p.asset, 'laces');
+    const [sx, sy, sw, sh] = p.source, [dx, dy, dw, dh] = p.target;
+    g.drawImage(t, sx - t._ox, sy - t._oy, sw, sh, dx, dy, dw, dh);
+    c._ox = c._oy = 0;
+    this.cache.set(key, c);
+    return c;
+  }
+
   // The insert's own parts, tinted, cut to the footprint: right-handed layer
   // space, like every other layer.
   palmInsertLayer(e, state) {
@@ -1068,14 +1085,9 @@ export class GloveRenderer {
           const w = this.underPad(this.tinted('laces_web', this.hex('laces', state), 'laces_web', 'laces'));
           ctx.drawImage(w, w._ox, w._oy);
         }
-        // The knotted lace belongs to the web, not the glove: the Standard I
-        // has none. Any web that does not declare knot:false keeps it.
-        // No knot at all under a swapped web. It used to be drawn over every
-        // one of them, because it lives on the outside of the glove and
-        // passes over whatever is fitted — but it is the CALIBRATION glove's
-        // knot. Scott: "this big ass knot on the bottom with the blue lace...
-        // that blue knot is different on other gloves." Every web now brings
-        // its own, traced off its own photograph, or has none.
+        // The calibration knot belongs only to the native web. Replacement
+        // webs supply their lace layers; the I-webs additionally position a
+        // cleaned shared knot through attachment metadata after the web cut.
         if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
           const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state), 'laces_knot', 'laces'));
           ctx.drawImage(k, k._ox, k._oy);
@@ -1154,6 +1166,8 @@ export class GloveRenderer {
         const c = this.underPad(tinted);
         ctx.drawImage(c, c._ox, c._oy);
       }
+      const attachment = this.webAttachment(this.hex('laces', state));
+      if (attachment) ctx.drawImage(this.underPad(attachment), 0, 0);
     }
     // Selected thumb inserts replace only their registered panel footprint.
     // Native finger, thumb, rim and external laces remain the photographed body.
@@ -1283,6 +1297,18 @@ export class GloveRenderer {
           this.cache.set(key, fitted);
         }
         c = fitted;
+      }
+      // A new web attachment hides the underlying leather's selection and
+      // participates in the lace selection at its actual rendered position.
+      const attachment = this.webAttachment('#ffffff');
+      if (attachment) {
+        const fitted = document.createElement('canvas'); fitted.width = D.w; fitted.height = D.h;
+        const g = fitted.getContext('2d'); g.drawImage(c, c._ox, c._oy);
+        g.globalCompositeOperation = 'destination-out'; g.drawImage(attachment, 0, 0);
+        if (highlight.id === 'laces') {
+          g.globalCompositeOperation = 'source-over'; g.drawImage(attachment, 0, 0);
+        }
+        fitted._ox = fitted._oy = 0; c = fitted;
       }
       // Selection feedback follows the same visible overlap as the leather.
       // Preserve the pad's binding/lining overlap; the hood covers both.
