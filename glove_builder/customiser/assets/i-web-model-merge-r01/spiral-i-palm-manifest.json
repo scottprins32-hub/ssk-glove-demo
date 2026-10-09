@@ -1,0 +1,37 @@
+{
+  "web": "spiral-i",
+  "view": "palm",
+  "W": 1534,
+  "H": 1400,
+  "source": "sources/spiral-i-palm.png",
+  "sourceSHA256": "0392b4fbf14124048e3391debdd91f0b038b1f97a32777e0f09f1c04205f6e7a",
+  "transform": [
+    1.1683168316831682,
+    0,
+    0,
+    1.1686143572621035,
+    0,
+    0
+  ],
+  "outline": null,
+  "foldSource": null,
+  "files": {
+    "leather": {
+      "file": "layers/spiral-i-palm-leather.png",
+      "sha256": "91db7ffa2588c2c87b6a66f0ff736f95f663f23ba9b47fa2a68998ebba5b7a52"
+    },
+    "palm": {
+      "file": "layers/spiral-i-palm-palm.png",
+      "sha256": "0cc1bf3e7de14a3483b3ae5a9ca5d04bf9b7ff60623492fed7f6a442b0b20395"
+    },
+    "laces": {
+      "file": "layers/spiral-i-palm-laces.png",
+      "sha256": "cd0a5a63e7f5936b8aa8a453009500a0474c1e5d90b7c62ecc42b65955897d67"
+    },
+    "stitching": {
+      "file": "layers/spiral-i-palm-stitching.png",
+      "sha256": "805ff52e851e0c57faed9c51399b52c1330c536cfff45e0d4ff37b4e8e35b1e5"
+    }
+  },
+  "status": "candidate-awaiting-review"
+}

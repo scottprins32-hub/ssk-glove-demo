@@ -1,0 +1,30 @@
+[
+  {
+    "key": "standard-i/palm",
+    "label": "Standard I · Palm",
+    "view": "palm",
+    "before": "comparison/standard-i-palm-before.png",
+    "after": "generated/standard-i-palm-v2.png"
+  },
+  {
+    "key": "standard-i/back",
+    "label": "Standard I · Achterkant",
+    "view": "back",
+    "before": "comparison/standard-i-back-before.png",
+    "after": "generated/standard-i-back.png"
+  },
+  {
+    "key": "spiral-i/palm",
+    "label": "Spiral I · Palm",
+    "view": "palm",
+    "before": "comparison/spiral-i-palm-before.png",
+    "after": "generated/spiral-i-palm-v2.png"
+  },
+  {
+    "key": "spiral-i/back",
+    "label": "Spiral I · Achterkant",
+    "view": "back",
+    "before": "comparison/spiral-i-back-before.png",
+    "after": "generated/spiral-i-back.png"
+  }
+]

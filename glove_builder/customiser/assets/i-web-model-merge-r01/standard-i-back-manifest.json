@@ -1,0 +1,139 @@
+{
+  "web": "standard-i",
+  "view": "back",
+  "W": 929,
+  "H": 1100,
+  "source": "sources/standard-i-back.png",
+  "sourceSHA256": "50507310e8f651c3b032fefa6556e0f72bb47ad2b824c61a8dde6da9ba11896d",
+  "transform": [
+    0.75,
+    0,
+    0,
+    0.88,
+    72,
+    0
+  ],
+  "outline": [
+    [
+      616,
+      0
+    ],
+    [
+      750,
+      0
+    ],
+    [
+      869,
+      146
+    ],
+    [
+      929,
+      305
+    ],
+    [
+      929,
+      615
+    ],
+    [
+      834,
+      628
+    ],
+    [
+      800,
+      740
+    ],
+    [
+      770,
+      802
+    ],
+    [
+      674,
+      790
+    ],
+    [
+      620,
+      744
+    ],
+    [
+      551,
+      655
+    ],
+    [
+      589,
+      567
+    ],
+    [
+      604,
+      484
+    ],
+    [
+      616,
+      397
+    ],
+    [
+      622,
+      287
+    ],
+    [
+      627,
+      168
+    ]
+  ],
+  "foldSource": [
+    [
+      0,
+      538
+    ],
+    [
+      720,
+      538
+    ],
+    [
+      818,
+      590
+    ],
+    [
+      925,
+      665
+    ],
+    [
+      1050,
+      705
+    ],
+    [
+      2000,
+      705
+    ],
+    [
+      2000,
+      1500
+    ],
+    [
+      0,
+      1500
+    ]
+  ],
+  "files": {
+    "web": {
+      "file": "layers/standard-i-back-web.png",
+      "sha256": "dfd0063551d5221e20f134ade6ab7d9dfd1cdd068a9627ba09d8df2dec689e1a"
+    },
+    "palm": {
+      "file": "layers/standard-i-back-palm.png",
+      "sha256": "5d532e828858eb52da565b080bc6dcb1b27b1b8814549e4c070e59d3c207f388"
+    },
+    "laces": {
+      "file": "layers/standard-i-back-laces.png",
+      "sha256": "1a282591d2295395fdaae200c8d4be03afb7f48b90c0fc0b3a884316e93a88c1"
+    },
+    "stitching": {
+      "file": "layers/standard-i-back-stitching.png",
+      "sha256": "689738325a685946f2e4c90d08428db0d70d7efd03c6b7d95195539db956c9cf"
+    },
+    "cut": {
+      "file": "layers/standard-i-back-cut.png",
+      "sha256": "f73f44fc470e35dd13d5f327be8a14ccebfe0160420d713e8143faad742625ef"
+    }
+  },
+  "status": "candidate-awaiting-review"
+}

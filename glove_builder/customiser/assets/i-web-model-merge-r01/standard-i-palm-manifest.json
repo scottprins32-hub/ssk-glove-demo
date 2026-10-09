@@ -1,0 +1,37 @@
+{
+  "web": "standard-i",
+  "view": "palm",
+  "W": 1534,
+  "H": 1400,
+  "source": "sources/standard-i-palm.png",
+  "sourceSHA256": "d79decf75aab9c215d43a061ef91aa2d66c71e674c08aa6793861da8bdfb5707",
+  "transform": [
+    1.1683168316831682,
+    0,
+    0,
+    1.1686143572621035,
+    0,
+    0
+  ],
+  "outline": null,
+  "foldSource": null,
+  "files": {
+    "leather": {
+      "file": "layers/standard-i-palm-leather.png",
+      "sha256": "165db51c60f30c2b642bda357d702fe9570f07782f9b64f24fb3ba257d1613bf"
+    },
+    "palm": {
+      "file": "layers/standard-i-palm-palm.png",
+      "sha256": "9df277dda0e3cbf701ec07148273d2d800fe6a4e695608b6b1a78c92f2bf3381"
+    },
+    "laces": {
+      "file": "layers/standard-i-palm-laces.png",
+      "sha256": "c3b02db336374a649340c70141ff68b74eb9bb2dfe2bded9a2205fa16fa8a3d8"
+    },
+    "stitching": {
+      "file": "layers/standard-i-palm-stitching.png",
+      "sha256": "29bc5e7f299f6e6fe88bee407afaa36e658a4738dfd6d82e8a063866feef5e7e"
+    }
+  },
+  "status": "candidate-awaiting-review"
+}

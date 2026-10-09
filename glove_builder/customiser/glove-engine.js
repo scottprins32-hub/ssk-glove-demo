@@ -124,8 +124,8 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
 // and nowhere else.
 const P1_REVIEW = '93acc944140f730716dccb2f3a27885bd07d68fd51ec7def140c923e35a74489';
 const I_REVIEW = '2e8d7c4f524f9af62759e29ce9bc7e376d044cf763a820ea5ba12cf456d0e95e';
-const PALM_P2 = {
-  contract: '883b6441a848c71411311c5f5df42fa5fc153574f523f531f17ab0eb118eac72',
+const PALM_P3 = {
+  contract: '58041d2eb94edd6be7299a4668f08d32178409c6d5446757835af4485e9daeb7',
   footprint: 'ac2530572536613413ed62dfe76193f73970a8c2d466f9ef8cae97d9da78ccfd',
   protected: '8bc0dd8a99bf55fd0040efe12227429f724d97560ec665ac19b0dce71b210004',
   roles: { leather: ['web', 2, 'leather'], laces: ['laces', 7, 'lace'], stitching: ['stitching', 8, 'stitching'] },
@@ -143,19 +143,17 @@ const PALM_P2 = {
       '85aa5a1109a7d1683529ec1b828c995668c75f3057c9c0809413abba5e0d5456', '470175ac781e3bf041d505f74f11ba7cf32358f6014dfaf5c59a9609c17dedcb', 'd76c4c42aae0a99097cdfa1669f92a42fed8ceadd4d317b1431cc5562807113c'],
     trapeze: ['e6067a0071dfc15e364f924b36c0b791b98bdcdb4a9ccd0c140e11dfa30f3699', '734e29aa47e6be73341f67d19463ca2362dc11fd9a4a7f6a30adf54ca6398225', P1_REVIEW,
       '5ec509373453d36945e8b99cd68cffc99f14f491aeff60ce2276dc3cc0b5d8b6', '1f8ebb5f8f0cd59079842ae8d4e0b2d15db79743f60f1ed6e9bc5c4d5af8ab39', '48bbaef61ddca0454e8ffe8eb56a9f5dadc7679d369ba1c594a2a8f5aeedc7a5'],
-    'standard-i': ['faa5f08384a4de9873c82a7d1076930cbcf6a7e674d5bada8f1095500916fec5', '7c797861d674aa81069264425bb583028eb1ffa44e8681bfea1e3c038c2fd63e', I_REVIEW,
-      'fbfac9351aae8ce478c5374c2ced4f1538d815c9c348de472f6926e8a0510583', 'cfef4c983ca2cb3b8fd32ac0cfcc8d23e332222baea6b52c95fa495dede3f272', 'bccdd38b33ea4efc40c2c2d2d383713fcf94632d2a58f57a24356573532e1c85'],
-    'spiral-i': ['a79d8fc7740fdb183f2d7b01f549f575767aeeefbc12140cbf5d11de40bc6fdf', 'a7263c0eb128c66efe3b62870d934200778dc4bb959a5c8402e16e5804120b07', I_REVIEW,
-      '6dbff152f178a1e065270184b08119c1e5eb8750d053d223dd5d0119f4ac492a', '0f1a4cbf0ad0304d2892d5c82bea3f0cf389637fae30aa801a42489f023247df', '2fbfa37a8dca581a9de43e6441fdd3daffef43e246e7d5afaf1c15bfe20d2ff8'],
+    'standard-i': ["142bb7d7460a185b313ebb828c462e0c7131d19ddc038d94a73dd58bd83d6ab5","d79decf75aab9c215d43a061ef91aa2d66c71e674c08aa6793861da8bdfb5707","d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1","165db51c60f30c2b642bda357d702fe9570f07782f9b64f24fb3ba257d1613bf","c3b02db336374a649340c70141ff68b74eb9bb2dfe2bded9a2205fa16fa8a3d8","29bc5e7f299f6e6fe88bee407afaa36e658a4738dfd6d82e8a063866feef5e7e","9df277dda0e3cbf701ec07148273d2d800fe6a4e695608b6b1a78c92f2bf3381"],
+    'spiral-i': ["03d57b94f7003ced4436d01542031df331dfc6a0ed906d7364570a79271a5f02","0392b4fbf14124048e3391debdd91f0b038b1f97a32777e0f09f1c04205f6e7a","d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1","91db7ffa2588c2c87b6a66f0ff736f95f663f23ba9b47fa2a68998ebba5b7a52","cd0a5a63e7f5936b8aa8a453009500a0474c1e5d90b7c62ecc42b65955897d67","805ff52e851e0c57faed9c51399b52c1330c536cfff45e0d4ff37b4e8e35b1e5","0cc1bf3e7de14a3483b3ae5a9ca5d04bf9b7ff60623492fed7f6a442b0b20395"],
   },
 };
 async function verifyPalmWebs(v) {
   const P = v.DATA.palmWebs;
   if (!P) return;
   v.DATA.palmWebs = null;
-  const { DATA, imgs } = v, W = DATA.w, H = DATA.h, T = PALM_P2;
+  const { DATA, imgs } = v, W = DATA.w, H = DATA.h, T = PALM_P3;
   const same = (a, b) => JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b).sort());
-  if (P.view !== 'palm' || P.contract?.revision !== 'PALM-P2' || P.contract?.sha256 !== T.contract
+  if (P.view !== 'palm' || P.contract?.revision !== 'PALM-P3' || P.contract?.sha256 !== T.contract
       || P.dimensions?.[0] !== W || P.dimensions?.[1] !== H || W !== 1534 || H !== 1400 || !crypto?.subtle) return;
   if (!same(P.roles, T.roles)) return;
   for (const [role, [id, n, group]] of Object.entries(T.roles)) {
@@ -206,8 +204,17 @@ async function verifyPalmWebs(v) {
         || !same(e.parts, T.roles)) continue;
     const roles = Object.keys(T.roles);
     if (!(await Promise.all(roles.map((k, i) => ok(e.parts[k], layers[i])))).every(Boolean)) continue;
+    // Only a compiled, reviewed fourth layer may extend the continuous palm
+    // beneath an I-web. Arbitrary metadata cannot introduce a new role.
+    const supportHash = layers[3];
+    if (supportHash) {
+      const palms = DATA.zones.filter(z => z.id === 'palm' || z.n === 1);
+      if (palms.length !== 1 || palms[0].id !== 'palm' || palms[0].n !== 1
+          || palms[0].group !== 'leather' || !(await ok(e.palmSupport, supportHash))) continue;
+    } else if (e.palmSupport) continue;
     entries[web] = { status: 'estimated', manifestSHA256: manifest, sourceSHA256: source,
       assetReview: { verdict: 'PASS', scope: e.assetReview.scope, evidenceSHA256: evidence },
+      ...(supportHash ? { palmSupport: { asset: e.palmSupport.asset, sha256: supportHash } } : {}),
       parts: Object.fromEntries(roles.map((k, i) => [k, { asset: e.parts[k].asset, sha256: layers[i] }])) };
   }
   v.DATA.palmWebs = { ...P, contract: { ...P.contract, sha256: T.contract },
@@ -382,8 +389,9 @@ export class GloveRenderer {
     const img = this.imgs[id], hi = this.imgs[id + '_hi'];
     let surfaces = this.materialCache.get(img);
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
+    const response = this.DATA.materialResponse?.[id];
     const surfaceKey = JSON.stringify([role, this.materials?.[role] || 'standard',
-      this.DATA.h, this.DATA.bbox[id]]);
+      this.DATA.h, this.DATA.bbox[id], response]);
     let surface = surfaces.get(surfaceKey);
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
         && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
@@ -410,7 +418,7 @@ export class GloveRenderer {
     const lo=quantile(.1),mid=quantile(.5),high=quantile(.9);
     // A common midtone and highlight headroom. Only compress contrast:
     // expanding a flat cutout would amplify pores/noise into false relief.
-    const lower=Math.min(1,40/Math.max(1,mid-lo));
+    const lower=Math.min(1,(response?.shadowRange ?? 40)/Math.max(1,mid-lo));
     const upper=Math.min(1,22/Math.max(1,high-mid));
     for(let j=0;j<tone.length;j++){
       const v=tone[j];
@@ -444,7 +452,7 @@ export class GloveRenderer {
         // suppress only the noisy high-frequency illumination around them.
         const retained=detail < -9 ? detail : detail*.24;
         const grain=tex.values[ty[y]+tx[x]];
-        tone[j]=Math.max(0,Math.min(298,(snake||lace?246:248)+(macro-248)*(snake||lace?1.2:1.35)+retained+grain*strength));
+        tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
     surface={hi,tone,base,lo,mid,high,lower,upper,role,
@@ -677,16 +685,38 @@ export class GloveRenderer {
       || this.DATA.palmWebs?.entries?.[slug]) ? slug : null;
   }
 
+  // Reuse a photographed, cleaned lace knot at the attachment point of a
+  // replacement web. Source/target rectangles are native view coordinates;
+  // the normal draw transform mirrors this together with the glove.
+  webAttachment(hx) {
+    const p = this.DATA.webs?.[this.web]?.attachment;
+    if (!p || !this.imgs[p.asset] || !this.DATA.bbox[p.asset]) return null;
+    const key = 'web-attachment|' + this.web + '|' + hx;
+    if (this.cache.has(key)) return this.cache.get(key);
+    const c = document.createElement('canvas'); c.width = this.DATA.w; c.height = this.DATA.h;
+    const g = c.getContext('2d'), t = this.tinted(p.asset, hx, p.asset, 'laces');
+    const [sx, sy, sw, sh] = p.source, [dx, dy, dw, dh] = p.target;
+    g.drawImage(t, sx - t._ox, sy - t._oy, sw, sh, dx, dy, dw, dh);
+    c._ox = c._oy = 0;
+    this.cache.set(key, c);
+    return c;
+  }
+
   // The insert's own parts, tinted, cut to the footprint: right-handed layer
   // space, like every other layer.
   palmInsertLayer(e, state) {
     const D = this.DATA, P = D.palmWebs;
     const hx = Object.values(P.roles).map(z => this.hex(z, state));
+    if (e.palmSupport) hx.push(this.hex('palm', state));
     const key = 'palm-insert|' + this.web + '|' + hx.join();
     let c = this.cache.get(key);
     if (c) return c;
     c = document.createElement('canvas'); c.width = D.w; c.height = D.h;
     const g = c.getContext('2d');
+    if (e.palmSupport) {
+      const t = this.tinted(e.palmSupport.asset, this.hex('palm', state), e.palmSupport.asset, 'palm');
+      g.drawImage(t, t._ox, t._oy);
+    }
     for (const [part, zone] of Object.entries(P.roles)) {
       const t = this.tinted(e.parts[part].asset, this.hex(zone, state), e.parts[part].asset, zone);
       g.drawImage(t, t._ox, t._oy);
@@ -735,7 +765,23 @@ export class GloveRenderer {
     return this.flagPosition === 'middle' ? this.DATA.flagMounts?.middle : this.DATA.flagMount;
   }
   flagPanelMask(ids, mirror) {
-    const mask = this.panelMask(ids);
+    // Cloth bridges the split finger. Keep the exterior antialiasing, but
+    // make each interior row opaque so a photographed welt groove cannot
+    // turn into transparency inside the embroidered patch.
+    const solidKey='flag-solid|'+ids.join(',');
+    let mask=this.cache.get(solidKey);
+    if(!mask){
+      const source=this.panelMask(ids);
+      mask=document.createElement('canvas');mask.width=source.width;mask.height=source.height;
+      const g=mask.getContext('2d');g.drawImage(source,0,0);
+      const pixels=g.getImageData(0,0,mask.width,mask.height),a=pixels.data;
+      for(let y=0;y<mask.height;y++){
+        let first=-1,last=-1;
+        for(let x=0;x<mask.width;x++)if(a[(y*mask.width+x)*4+3]>=192){if(first<0)first=x;last=x;}
+        for(let x=first+1;first>=0&&x<last;x++)a[(y*mask.width+x)*4+3]=255;
+      }
+      g.putImageData(pixels,0,0);this.cache.set(solidKey,mask);
+    }
     if (!mirror || this.flagPosition !== 'middle') return mask;
     const key = 'flag-mask|' + ids.join(',') + '|' + this.flagMount().cx;
     if (this.cache.has(key)) return this.cache.get(key);
@@ -783,21 +829,31 @@ export class GloveRenderer {
     octx.stroke();
     octx.restore();
 
-    // Shading. A multiply onto empty canvas paints the source rather than
-    // doing nothing, so the panel would flood the whole finger — clip to the
-    // patch first. The welt is left out on purpose: its groove is exactly what
-    // the merge erases, and multiplying it back draws the seam through the
-    // flag. The clip is fixed in device space, so resetting the transform
-    // underneath it is safe.
+    // The embroidery covers the seam. Give the patch its own continuous
+    // cylindrical shading, so the split finger's welt/groove cannot show
+    // through its fabric as a vertical stripe.
     octx.save();
     octx.translate(M.cx, M.cy);
     octx.rotate(ang);
     octx.beginPath();
     octx.rect(-M.w / 2, -L / 2, M.w, L);
     octx.clip();
-    octx.setTransform(1, 0, 0, 1, 0, 0);
     octx.globalCompositeOperation = 'multiply';
-    octx.drawImage(this.flagPanelMask(M.panels || ['back3', 'back4'], mirror), 0, 0);
+    const shade = octx.createLinearGradient(-M.w/2,0,M.w/2,0);
+    shade.addColorStop(0,'#b9b9b9');shade.addColorStop(.32,'#fff');
+    shade.addColorStop(.68,'#f9f9f9');shade.addColorStop(1,'#c8c8c8');
+    octx.fillStyle=shade;octx.fillRect(-M.w/2,-L/2,M.w,L);
+    octx.globalCompositeOperation='source-atop';
+    octx.strokeStyle='rgba(255,255,255,.34)';octx.lineWidth=.55;
+    octx.beginPath();
+    for(let y=-L/2;y<L/2;y+=2){octx.moveTo(-M.w/2,y);octx.lineTo(M.w/2,y+.8);}
+    octx.stroke();
+    // A tightly stitched perimeter, kept inside the finger footprint.
+    octx.strokeStyle='rgba(20,20,20,.25)';octx.lineWidth=1.4;
+    octx.strokeRect(-M.w/2+1.1,-L/2+1.1,M.w-2.2,L-2.2);
+    octx.strokeStyle='rgba(255,255,255,.75)';octx.lineWidth=1.05;
+    octx.setLineDash([1.2,1.35]);
+    octx.strokeRect(-M.w/2+2,-L/2+2,M.w-4,L-4);octx.setLineDash([]);
     octx.restore();
 
     // Clipping does include the welt, or the closed seam slices the patch.
@@ -813,6 +869,30 @@ export class GloveRenderer {
     ctx.shadowBlur = 6; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
     ctx.drawImage(off, 0, 0);
     ctx.restore();
+  }
+
+  // The official palm artwork is a deboss in the leather, not embroidery.
+  // Keep the two marks readable on either hand, without mirroring their glyphs.
+  drawPalmStamps(ctx, mirror) {
+    for (const mark of this.DATA.palmStamps || []) {
+      const im = this.imgs[mark.asset];
+      if (!im) continue;
+      const [x0,y0,x1,y1] = mark.box, w=x1-x0, h=y1-y0;
+      this.unmirror(ctx,x0,x1,mirror,()=>{
+        ctx.save();ctx.translate((x0+x1)/2,(y0+y1)/2);
+        ctx.rotate((mirror?-1:1)*(mark.angle||0));
+        // A narrow light lip and dark recess retain the selected leather hue.
+        const key='stamp-lip|'+mark.asset;
+        let lip=this.cache.get(key);
+        if(!lip){lip=document.createElement('canvas');lip.width=im.width;lip.height=im.height;
+          const g=lip.getContext('2d');g.drawImage(im,0,0);g.globalCompositeOperation='source-in';
+          g.fillStyle='#fff';g.fillRect(0,0,lip.width,lip.height);this.cache.set(key,lip);}
+        ctx.globalCompositeOperation='screen';ctx.globalAlpha=.16;
+        ctx.drawImage(lip,-w/2+.7,-h/2+1,w,h);
+        ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.53;
+        ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore();
+      });
+    }
   }
 
   // highlight: { id, amount } brightens one zone (hover / selection feedback)
@@ -889,7 +969,14 @@ export class GloveRenderer {
         lg.clearRect(0,0,local.width,local.height);lg.drawImage(patch,patch._ox-tinted._ox,patch._oy-tinted._oy);lg.restore();
         local._ox=tinted._ox;local._oy=tinted._oy;tinted=local;
       }
-      const c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
+      let c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
+      if (z.id === 'stitching' && D.thumbBadgeThread) {
+        const original=c;c=document.createElement('canvas');c.width=original.width;c.height=original.height;
+        c._ox=original._ox;c._oy=original._oy;const g=c.getContext('2d');g.drawImage(original,0,0);
+        const b=D.thumbBadgeThread;
+        g.save();g.globalCompositeOperation='destination-out';g.fillStyle='#fff';
+        g.beginPath();g.ellipse(b.cx-c._ox,b.cy-c._oy,b.rx+5,b.ry+5,b.angle,0,Math.PI*2);g.fill();g.restore();
+      }
       if (z.id === 'embroidery' && mirror && D.embroideryLHT
           && this.imgs[D.embroideryLHT]) {
         const e = this.tinted(D.embroideryLHT, this.hex(z.id, state), z.id);
@@ -933,6 +1020,7 @@ export class GloveRenderer {
         // it on the mirrored side of the glove, still reading forwards, with
         // nothing but the letters having moved.
         const mk = D.marks;
+        if (z.id === 'palm' && D.palmStamps) this.drawPalmStamps(ctx, mirror);
         if (mk && mk.zone === z.id && this.imgs.marks) {
           ctx.save();
           ctx.globalCompositeOperation = 'multiply';
@@ -997,14 +1085,9 @@ export class GloveRenderer {
           const w = this.underPad(this.tinted('laces_web', this.hex('laces', state), 'laces_web', 'laces'));
           ctx.drawImage(w, w._ox, w._oy);
         }
-        // The knotted lace belongs to the web, not the glove: the Standard I
-        // has none. Any web that does not declare knot:false keeps it.
-        // No knot at all under a swapped web. It used to be drawn over every
-        // one of them, because it lives on the outside of the glove and
-        // passes over whatever is fitted — but it is the CALIBRATION glove's
-        // knot. Scott: "this big ass knot on the bottom with the blue lace...
-        // that blue knot is different on other gloves." Every web now brings
-        // its own, traced off its own photograph, or has none.
+        // The calibration knot belongs only to the native web. Replacement
+        // webs supply their lace layers; the I-webs additionally position a
+        // cleaned shared knot through attachment metadata after the web cut.
         if (this.imgs.laces_knot && D.bbox.laces_knot && !swap) {
           const k = this.underPad(this.tinted('laces_knot', this.hex('laces', state), 'laces_knot', 'laces'));
           ctx.drawImage(k, k._ox, k._oy);
@@ -1064,13 +1147,17 @@ export class GloveRenderer {
     // And only now the web itself, on top of a glove with nothing of the
     // calibration glove's web left anywhere on it.
     if (swap) {
+      if (swap.cut && this.imgs[swap.cut]) {
+        ctx.save();ctx.globalCompositeOperation='destination-out';
+        ctx.drawImage(this.sparePad(this.imgs[swap.cut]),0,0);ctx.restore();
+      }
       // webfinger is the index finger's own edge, carried in the same cutout
       // so the join comes from one photograph. It is finger leather, so it
       // takes back3's colour, not the web's — and it goes on last, over the
       // web: its alpha is feathered to hide the join between two
       // photographs, and under the web that feather had nothing but page to
       // ramp onto, which was a pale hairline down the whole seam.
-      for (const [key, zone] of [[swap.web, 'web'],
+      for (const [key, zone] of [[swap.palm, 'palm'], [swap.web, 'web'],
                                  [swap.stitching, 'stitching'],
                                  [swap.laceweb, 'laces'],
                                  [swap.webfinger, 'back3']]) {
@@ -1079,6 +1166,8 @@ export class GloveRenderer {
         const c = this.underPad(tinted);
         ctx.drawImage(c, c._ox, c._oy);
       }
+      const attachment = this.webAttachment(this.hex('laces', state));
+      if (attachment) ctx.drawImage(this.underPad(attachment), 0, 0);
     }
     // Selected thumb inserts replace only their registered panel footprint.
     // Native finger, thumb, rim and external laces remain the photographed body.
@@ -1136,12 +1225,23 @@ export class GloveRenderer {
     if (mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
       const badge = D.thumbCircle;
       ctx.save();
-      // Undo the glove reflection for the artwork only, then point it wristward.
+      // Keep glyphs readable while aligning the badge plane with the
+      // mirrored ellipse, rather than leaving its tilt right-handed.
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.translate(D.w - badge.cx, badge.cy);
-      ctx.rotate(badge.leftRotation);
+      ctx.rotate(badge.leftRotation - 2 * (D.thumbBadgeThread?.angle || 0));
+      // circle-art is a full source photograph; only its badge is artwork.
+      // Without this clip the left-handed thumb was overwritten in tan.
+      ctx.beginPath();ctx.ellipse(0,0,64,51,.33,0,Math.PI*2);ctx.clip();
       ctx.drawImage(this.imgs.thumb_circle_art, -badge.cx, -badge.cy);
       ctx.restore();
+    }
+    if (D.thumbBadgeThread) {
+      const b=D.thumbBadgeThread;
+      ctx.save();ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);
+      ctx.beginPath();ctx.ellipse(0,0,b.rx,b.ry,0,0,Math.PI*2);
+      ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=1.55;
+      ctx.lineCap='round';ctx.setLineDash([2.65,3.5]);ctx.stroke();ctx.restore();
     }
     const bb = D.bulletBox;
     if (bb) {
@@ -1180,9 +1280,11 @@ export class GloveRenderer {
           g.globalCompositeOperation = 'destination-out';
           g.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
           const part = Object.keys(P.roles).find(k => P.roles[k] === highlight.id);
-          if (part) {
+          const asset = highlight.id === 'palm' && palmInsert.palmSupport
+            ? palmInsert.palmSupport.asset : part && palmInsert.parts[part].asset;
+          if (asset) {
             const s = document.createElement('canvas'); s.width = D.w; s.height = D.h;
-            const gs = s.getContext('2d'), l = this.tinted(palmInsert.parts[part].asset, '#ffffff');
+            const gs = s.getContext('2d'), l = this.tinted(asset, '#ffffff');
             gs.drawImage(l, l._ox, l._oy);
             gs.globalCompositeOperation = 'destination-in';
             gs.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
@@ -1195,6 +1297,18 @@ export class GloveRenderer {
           this.cache.set(key, fitted);
         }
         c = fitted;
+      }
+      // A new web attachment hides the underlying leather's selection and
+      // participates in the lace selection at its actual rendered position.
+      const attachment = this.webAttachment('#ffffff');
+      if (attachment) {
+        const fitted = document.createElement('canvas'); fitted.width = D.w; fitted.height = D.h;
+        const g = fitted.getContext('2d'); g.drawImage(c, c._ox, c._oy);
+        g.globalCompositeOperation = 'destination-out'; g.drawImage(attachment, 0, 0);
+        if (highlight.id === 'laces') {
+          g.globalCompositeOperation = 'source-over'; g.drawImage(attachment, 0, 0);
+        }
+        fitted._ox = fitted._oy = 0; c = fitted;
       }
       // Selection feedback follows the same visible overlap as the leather.
       // Preserve the pad's binding/lining overlap; the hood covers both.
@@ -1404,11 +1518,13 @@ export class GloveRenderer {
         if (f >= 0.5) {
           const a = k => this.palmAlpha(pe.parts[k].asset)[j] / 255;
           const s = a('stitching'), l = a('laces'), w = a('leather');
-          const vis = [['stitching', s], ['laces', l * (1 - s)], ['leather', w * (1 - l) * (1 - s)]];
-          if (f * (1 - (1 - s) * (1 - l) * (1 - w)) < 0.5) return null;
+          const p = pe.palmSupport ? this.palmAlpha(pe.palmSupport.asset)[j] / 255 : 0;
+          const vis = [['stitching', s], ['laces', l * (1 - s)], ['leather', w * (1 - l) * (1 - s)],
+            ['palm', p * (1 - w) * (1 - l) * (1 - s)]];
+          if (f * (1 - (1 - s) * (1 - l) * (1 - w) * (1 - p)) < 0.5) return null;
           let best = vis[0];
           for (const v of vis) if (v[1] > best[1]) best = v;
-          return P.roles[best[0]];
+          return best[0] === 'palm' ? 'palm' : P.roles[best[0]];
         }
       }
     }

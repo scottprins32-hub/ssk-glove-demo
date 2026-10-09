@@ -1,3 +1,11 @@
+## 2026-10-08 — I-web R04
+
+Both horizontal bars are slightly thicker in four Standard I / Spiral I images. Local image studies only; [comparison](i-web-width-r04/) and [review](i-web-width-r04/EVALUATION-R1.md). Alpha cleanup and recolorable masks remain pending.
+
+## 2026-10-08 — I-web horizontal bar width R03
+
+Four Standard I / Spiral I palm/back image studies now have thicker horizontal leather bars. Independent proportion review passed; alpha cutout cleanup and recolorable masks remain pending. See [comparison](i-web-width-r03/) and [scoped evidence](i-web-width-r03/STATE.md). Other twenty image entries are unchanged. Local only.
+
 # HD webatelier — public image studies
 
 24 generated material studies: eight webs, each from the back, palm and thumb.

@@ -1,0 +1,139 @@
+{
+  "web": "spiral-i",
+  "view": "back",
+  "W": 929,
+  "H": 1100,
+  "source": "sources/spiral-i-back.png",
+  "sourceSHA256": "42a3f221973698d502894ce7a3e6bfb16d5fdf92d6fb603a009b195f23074d9b",
+  "transform": [
+    0.75,
+    0,
+    0,
+    0.88,
+    72,
+    0
+  ],
+  "outline": [
+    [
+      616,
+      0
+    ],
+    [
+      750,
+      0
+    ],
+    [
+      869,
+      146
+    ],
+    [
+      929,
+      305
+    ],
+    [
+      929,
+      615
+    ],
+    [
+      834,
+      628
+    ],
+    [
+      800,
+      740
+    ],
+    [
+      770,
+      802
+    ],
+    [
+      674,
+      790
+    ],
+    [
+      620,
+      744
+    ],
+    [
+      551,
+      655
+    ],
+    [
+      589,
+      567
+    ],
+    [
+      604,
+      484
+    ],
+    [
+      616,
+      397
+    ],
+    [
+      622,
+      287
+    ],
+    [
+      627,
+      168
+    ]
+  ],
+  "foldSource": [
+    [
+      0,
+      579
+    ],
+    [
+      710,
+      579
+    ],
+    [
+      831,
+      665
+    ],
+    [
+      978,
+      742
+    ],
+    [
+      1050,
+      725
+    ],
+    [
+      2000,
+      725
+    ],
+    [
+      2000,
+      1500
+    ],
+    [
+      0,
+      1500
+    ]
+  ],
+  "files": {
+    "web": {
+      "file": "layers/spiral-i-back-web.png",
+      "sha256": "42ae197f5db4ba1640d137e8ca99efc891e1c6886d3f4b1acd26d77e7ab53083"
+    },
+    "palm": {
+      "file": "layers/spiral-i-back-palm.png",
+      "sha256": "5398a6348fa4f6d9db62f315ed8678cbb0a4212a299ec373e5838edd610ebeb8"
+    },
+    "laces": {
+      "file": "layers/spiral-i-back-laces.png",
+      "sha256": "43ce460b81fa15e02f276ca1c82ba2a5b17daac662e5897bd6b14d211843795e"
+    },
+    "stitching": {
+      "file": "layers/spiral-i-back-stitching.png",
+      "sha256": "8a5a35ef49ef84bf0c2b0c7d61e12d52609efd95272e7c165831faf2d7f58461"
+    },
+    "cut": {
+      "file": "layers/spiral-i-back-cut.png",
+      "sha256": "f73f44fc470e35dd13d5f327be8a14ccebfe0160420d713e8143faad742625ef"
+    }
+  },
+  "status": "candidate-awaiting-review"
+}
