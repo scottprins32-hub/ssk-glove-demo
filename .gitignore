@@ -19,3 +19,6 @@ REVIEW.md
 /.cross-review/
 *.bak
 *.bak.[0-9]*
+
+# GitHub Pages build output
+/_site/

@@ -415,7 +415,7 @@ export class GloveRenderer {
     }
     if(n<64)return null; // no invented texture on empty/tiny masks
     const quantile=q=>{let total=0;for(let i=0;i<hist.length;i++){total+=hist[i];if(total>=n*q)return i;}return 255;};
-    const lo=quantile(.1),mid=quantile(.5),high=quantile(.9);
+    const lo=response?.calibration?.lo ?? quantile(.1),mid=response?.calibration?.mid ?? quantile(.5),high=response?.calibration?.high ?? quantile(.9);
     // A common midtone and highlight headroom. Only compress contrast:
     // expanding a flat cutout would amplify pores/noise into false relief.
     const lower=Math.min(1,(response?.shadowRange ?? 40)/Math.max(1,mid-lo));
@@ -440,7 +440,7 @@ export class GloveRenderer {
       };
       const snake=this.materials?.[role]==='snakeskin' && !!this.imgs._snakeLeather;
       const blur=box(weighted),weight=box(weights),tex=this.leatherGrain(snake,zone?.group==='lace');
-      const lace=zone?.group==='lace',strength=snake?17:lace?2.2:8.5;
+      const lace=zone?.group==='lace',strength=snake?17:(response?.grainStrength ?? (lace?2.2:8.5));
       // The material coordinates are separable: wrap each row/column once,
       // not twice per pixel. This preserves the exact same texture samples.
       const tx=Int32Array.from({length:w},(_,x)=>tex.wrap(x+x0));
@@ -450,9 +450,18 @@ export class GloveRenderer {
         const macro=weight[j]>0?blur[j]/weight[j]:tone[j],detail=tone[j]-macro;
         // Keep dark stitch/crease edges that remain in photographed leather;
         // suppress only the noisy high-frequency illumination around them.
-        const retained=detail < -9 ? detail : detail*.24;
+        const retained=detail < -9 ? detail : detail*(response?.detailRetention ?? .24);
         const grain=tex.values[ty[y]+tx[x]];
         tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
+      }
+    }
+    const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
+    if(blend?.role===role && this.imgs[blend.mask]) {
+      const original=this.materialSurface(blend.source,role);
+      if(original && original.tone.length===tone.length) {
+        g.clearRect(0,0,c.width,c.height);g.drawImage(this.imgs[blend.mask],-x0,-y0);
+        const mask=g.getImageData(0,0,c.width,c.height).data;
+        for(let j=0;j<tone.length;j++) {const t=mask[j*4]/255;tone[j]=tone[j]*t+original.tone[j]*(1-t);}
       }
     }
     surface={hi,tone,base,lo,mid,high,lower,upper,role,
@@ -683,6 +692,15 @@ export class GloveRenderer {
   setWeb(slug) {
     this.web = slug && (this.DATA.webs?.[slug] || this.DATA.thumbWebs?.[slug]
       || this.DATA.palmWebs?.entries?.[slug]) ? slug : null;
+  }
+
+  // A web-specific refinement can replace only its visible shared lace portions.
+  refinedLaceBase(layer, swap) {
+    const mask=swap?.laceBaseErase;
+    if(!mask || !this.imgs[mask]) return layer;
+    const c=document.createElement('canvas');c.width=layer.width;c.height=layer.height;
+    const g=c.getContext('2d');g.drawImage(layer,0,0);g.globalCompositeOperation='destination-out';
+    g.drawImage(this.imgs[mask],-layer._ox,-layer._oy);c._ox=layer._ox;c._oy=layer._oy;return c;
   }
 
   // Reuse a photographed, cleaned lace knot at the attachment point of a
@@ -969,6 +987,7 @@ export class GloveRenderer {
         lg.clearRect(0,0,local.width,local.height);lg.drawImage(patch,patch._ox-tinted._ox,patch._oy-tinted._oy);lg.restore();
         local._ox=tinted._ox;local._oy=tinted._oy;tinted=local;
       }
+      if(z.id === 'laces') tinted=this.refinedLaceBase(tinted,swap);
       let c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
       if (z.id === 'stitching' && D.thumbBadgeThread) {
         const original=c;c=document.createElement('canvas');c.width=original.width;c.height=original.height;
@@ -1099,7 +1118,8 @@ export class GloveRenderer {
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.approved_h_common_cut),0,0);ctx.restore();
       for (const [key,zone] of D.approvedH.layers.slice(2)) {
-        const layer=this.underPad(this.tinted(key,this.hex(zone,state),key,zone));
+        const raw=this.tinted(key,this.hex(zone,state),key,zone);
+        const layer=this.underPad(zone==='laces'?this.refinedLaceBase(raw,swap):raw);
         ctx.drawImage(layer,layer._ox,layer._oy);
       }
     }
@@ -1160,11 +1180,21 @@ export class GloveRenderer {
       for (const [key, zone] of [[swap.palm, 'palm'], [swap.web, 'web'],
                                  [swap.stitching, 'stitching'],
                                  [swap.laceweb, 'laces'],
-                                 [swap.webfinger, 'back3']]) {
+                                 [swap.webfinger, 'back3'],
+                                 [swap.webLoopRoots, 'web'], [swap.loopLaces, 'laces'], [swap.webLoops, 'web']]) {
         if (!key || !this.imgs[key] || !D.bbox[key]) continue;
+        if (key===swap.laceweb && swap.laceSeats && this.imgs[swap.laceSeats]) {
+          const cacheKey='lace-seats|'+swap.laceSeats;
+          let seats=this.cache.get(cacheKey);
+          if(!seats){seats=document.createElement('canvas');seats.width=D.w;seats.height=D.h;
+            seats.getContext('2d').drawImage(this.imgs[swap.laceSeats],0,0);seats._ox=0;seats._oy=0;this.cache.set(cacheKey,seats);}
+          ctx.drawImage(this.underPad(seats),0,0);
+        }
         const tinted = this.tinted(key, this.hex(zone, state), key, zone);
         const c = this.underPad(tinted);
-        ctx.drawImage(c, c._ox, c._oy);
+        ctx.save();
+        if(key===swap.webLoops||key===swap.webLoopRoots)ctx.globalCompositeOperation='source-over';
+        ctx.drawImage(c, c._ox, c._oy);ctx.restore();
       }
       const attachment = this.webAttachment(this.hex('laces', state));
       if (attachment) ctx.drawImage(this.underPad(attachment), 0, 0);
@@ -1310,6 +1340,25 @@ export class GloveRenderer {
         }
         fitted._ox = fitted._oy = 0; c = fitted;
       }
+      // Broad folded web tabs cover the threaded lace and use web ownership.
+      if (swap?.webLoops && this.imgs[swap.webLoops]) {
+        const fitted=document.createElement('canvas');fitted.width=D.w;fitted.height=D.h;
+        const g=fitted.getContext('2d');g.drawImage(c,c._ox,c._oy);
+        g.globalCompositeOperation='destination-out';g.drawImage(this.imgs[swap.webLoopFootprint],0,0);
+        if(highlight.id==='web') {g.globalCompositeOperation='source-over';
+          for(const key of[swap.webLoops,swap.webLoopRoots])if(key){const loops=this.tinted(key,'#ffffff',key,'web');g.drawImage(loops,loops._ox,loops._oy);}}
+        if(highlight.id==='laces') {
+          const lace=document.createElement('canvas');lace.width=D.w;lace.height=D.h;
+          const l=lace.getContext('2d'),layer=this.tinted(swap.laceweb,'#ffffff',swap.laceweb,'laces');l.drawImage(layer,layer._ox,layer._oy);
+          l.globalCompositeOperation='destination-in';l.drawImage(this.imgs[swap.webLoopFootprint],0,0);
+          l.globalCompositeOperation='destination-out';if(swap.webfinger)l.drawImage(this.imgs[swap.webfinger],0,0);
+          if(swap.loopLaces){l.globalCompositeOperation='source-over';const ends=this.tinted(swap.loopLaces,'#ffffff',swap.loopLaces,'laces');l.drawImage(ends,ends._ox,ends._oy);l.globalCompositeOperation='destination-out';}
+          l.drawImage(this.imgs[swap.webLoops],0,0);
+          if(swap.webLoopRoots)l.drawImage(this.imgs[swap.webLoopRoots],0,0);
+          g.globalCompositeOperation='source-over';g.drawImage(lace,0,0);
+        }
+        fitted._ox=fitted._oy=0;c=fitted;
+      }
       // Selection feedback follows the same visible overlap as the leather.
       // Preserve the pad's binding/lining overlap; the hood covers both.
       c = this.underPad(c, this.pad === 'pad'
@@ -1329,7 +1378,8 @@ export class GloveRenderer {
         g.globalCompositeOperation = 'destination-out'; g.drawImage(this.flagCover, 0, 0);
         clipped._ox = clipped._oy = 0; c = clipped;
       }
-      ctx.globalCompositeOperation = 'screen';
+      // A highlight may recolour this fitted web, but cannot grow its alpha fringe.
+      ctx.globalCompositeOperation = swap?.webLoops ? 'source-atop' : 'screen';
       ctx.globalAlpha = highlight.amount;
       ctx.drawImage(c, c._ox, c._oy);
       ctx.restore();

@@ -809,10 +809,16 @@
     },
     "smlee": {
       "web": "web_smlee",
-      "laceweb": "laceweb_smlee",
+      "laceweb": "smlee_r10_lace_surround",
       "webfinger": "overlap_smlee",
       "knot": true,
-      "stitching": "precision_smlee_stitching"
+      "stitching": "smlee_r02_thread",
+      "laceBaseErase": "smlee_clean_r01_erase",
+      "laceSeats": "smlee_r03_seats",
+      "webLoops": "smlee_r10_web_folds",
+      "webLoopRoots": "smlee_r10_web_roots",
+      "webLoopFootprint": "smlee_r10_selection",
+      "loopLaces": "smlee_r10_lace_ends"
     },
     "spiral-i": {
       "web": "i_merge_spiral_i_web",
@@ -1128,7 +1134,18 @@
     "i_merge_spiral_i_palm": "assets/i-web-model-merge-r01/spiral-i-back-palm.png",
     "i_merge_spiral_i_laces": "assets/i-web-model-merge-r01/spiral-i-back-laces.png",
     "i_merge_spiral_i_stitching": "assets/i-web-model-merge-r01/spiral-i-back-stitching.png",
-    "i_merge_spiral_i_cut": "assets/i-web-model-merge-r01/spiral-i-back-cut.png"
+    "i_merge_spiral_i_cut": "assets/i-web-model-merge-r01/spiral-i-back-cut.png",
+    "smlee_r10_lace_surround": "assets/smlee-curved-loops-r10/lace-surround.png",
+    "smlee_r03_laces": "assets/smlee-upper-loops-r03/laces.png",
+    "smlee_r02_laces": "assets/smlee-stitch-loop-r02/laces.png",
+    "smlee_r03_material_region": "assets/smlee-upper-loops-r03/material-region.png",
+    "smlee_r02_thread": "assets/smlee-stitch-loop-r02/stitching.png",
+    "smlee_clean_r01_erase": "assets/smlee-lace-clean-r01/base-erase.png",
+    "smlee_r03_seats": "assets/smlee-upper-loops-r03/seats.png",
+    "smlee_r10_web_folds": "assets/smlee-curved-loops-r10/web-folds.png",
+    "smlee_r10_web_roots": "assets/smlee-curved-loops-r10/web-roots.png",
+    "smlee_r10_selection": "assets/smlee-curved-loops-r10/selection.png",
+    "smlee_r10_lace_ends": "assets/smlee-curved-loops-r10/lace-ends.png"
   },
   "bbox": {
     "back2": [
@@ -2120,6 +2137,72 @@
       0,
       929,
       1100
+    ],
+    "smlee_r10_lace_surround": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r03_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r02_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r03_material_region": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r02_thread": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_clean_r01_erase": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r03_seats": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r10_web_folds": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r10_web_roots": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r10_selection": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "smlee_r10_lace_ends": [
+      0,
+      0,
+      929,
+      1100
     ]
   },
   "knotHeal": {
@@ -2155,7 +2238,8 @@
     "back2_knotheal": "palm_bridge_original_back2_knotheal",
     "palm_back2_knotheal": "palm_bridge_original_back2_knotheal",
     "smk_body_heal": "palm_bridge_original_smk_body_heal",
-    "palm_smk_body_heal": "palm_bridge_original_smk_body_heal"
+    "palm_smk_body_heal": "palm_bridge_original_smk_body_heal",
+    "smlee_r10_lace_surround": "smlee_r03_laces"
   },
   "flagMounts": {
     "middle": {
@@ -2190,6 +2274,62 @@
       "midtone": 237,
       "shadowRange": 62,
       "relief": 1.4
+    },
+    "smlee_r10_lace_surround": {
+      "midtone": 239,
+      "shadowRange": 62,
+      "relief": 1.22,
+      "detailRetention": 0.85,
+      "grainStrength": 0.6,
+      "calibration": {
+        "lo": 161,
+        "mid": 220,
+        "high": 239
+      },
+      "edgeBlend": {
+        "role": "laces",
+        "source": "smlee_r02_laces",
+        "mask": "smlee_r03_material_region"
+      }
+    },
+    "smlee_r03_laces": {
+      "midtone": 239,
+      "shadowRange": 62,
+      "relief": 1.22,
+      "detailRetention": 0.85,
+      "grainStrength": 0.6,
+      "calibration": {
+        "lo": 161,
+        "mid": 220,
+        "high": 239
+      },
+      "edgeBlend": {
+        "role": "laces",
+        "source": "smlee_r02_laces",
+        "mask": "smlee_r03_material_region"
+      }
+    },
+    "smlee_r02_laces": {
+      "midtone": 239,
+      "shadowRange": 62,
+      "relief": 1.22,
+      "detailRetention": 0.85,
+      "grainStrength": 0.6
+    },
+    "smlee_r10_web_folds": {
+      "midtone": 247,
+      "shadowRange": 45,
+      "relief": 1.25,
+      "detailRetention": 0.8,
+      "grainStrength": 2.4
+    },
+    "smlee_r10_web_roots": {},
+    "smlee_r10_lace_ends": {
+      "midtone": 239,
+      "shadowRange": 62,
+      "relief": 1.22,
+      "detailRetention": 0.85,
+      "grainStrength": 0.6
     }
   }
 }

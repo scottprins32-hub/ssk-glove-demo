@@ -323,3 +323,12 @@ stable alpha, both-hand hit targets and mirrored geometry outside readable stamp
 boxes. Set PALM_ASSETS to test an isolated candidate. The September 24 visual
 review found no blocking source/mask regressions; small dark marks inside the
 thumb panel remain a minor refinement.
+
+### GitHub Pages
+
+The configurator is published from `main` by `.github/workflows/pages.yml`.
+The workflow packages the hosted files with `python3 scripts/build-pages.py`,
+checks the four views' asset references, and deploys `_site` to GitHub Pages.
+Relative paths support the `/ssk-glove-demo/` project URL. The hosted source
+remains `glove_builder/customiser`; the separate offline `dist` bundle is not
+part of this Pages package.
