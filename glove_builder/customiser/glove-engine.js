@@ -450,8 +450,11 @@ export class GloveRenderer {
         const macro=weight[j]>0?blur[j]/weight[j]:tone[j],detail=tone[j]-macro;
         // Keep dark stitch/crease edges that remain in photographed leather;
         // suppress only the noisy high-frequency illumination around them.
-        const retained=detail < -9 ? detail : detail*(response?.detailRetention ?? .24);
-        const grain=tex.values[ty[y]+tx[x]];
+        // A quiet microtexture keeps pale leather clean while broad light and
+        // shadow still describe the glove. Crocodile relief stays unchanged.
+        const retained=detail < -9 ? detail*(snake?1:.72)
+          : detail*(response?.detailRetention ?? .24)*(snake?1:.55);
+        const grain=tex.values[ty[y]+tx[x]]*(snake?1:.30);
         tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
