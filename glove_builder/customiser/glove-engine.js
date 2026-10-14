@@ -6,6 +6,11 @@ const gloveLoads = new Map();
 const decodedImages = new Map();
 const materialSurfaces = new WeakMap();
 const materialColours = new Map();
+// These photographed side panels carry unusually coarse source grain. Smooth
+// their normal leather while keeping full-resolution masks and separate trims.
+const SMOOTH_SIDE_LEATHER = Object.freeze({
+  blurScale: 3.5, darkDetail: .10, softDetail: .04, grainScale: .025
+});
 
 // Retain render dependencies, not superseded tracing/review exports. Metadata
 // references (including aliases, web inserts and material sources) are followed
@@ -398,8 +403,11 @@ export class GloveRenderer {
     let surfaces = this.materialCache.get(img);
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
+    const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
+      && (this.DATA.view === 'pinky' || this.DATA.view === 'thumb' && role === 'back1')
+      ? SMOOTH_SIDE_LEATHER : null;
     const surfaceKey = JSON.stringify([role, this.materials?.[role] || 'standard',
-      this.DATA.h, this.DATA.bbox[id], response]);
+      this.DATA.h, this.DATA.bbox[id], response, finish]);
     let surface = surfaces.get(surfaceKey);
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
         && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
@@ -435,7 +443,8 @@ export class GloveRenderer {
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.
     if (this.imgs._hdLeather) {
-      const w=c.width,h=c.height,radius=Math.max(1,Math.round(this.DATA.h/550));
+      const w=c.width,h=c.height,
+        radius=Math.max(1,Math.round(this.DATA.h/550*(finish?.blurScale ?? 1)));
       const weights=new Float32Array(tone.length), weighted=new Float32Array(tone.length);
       for(let j=0;j<tone.length;j++){weights[j]=base[j*4+3]/255;weighted[j]=tone[j]*weights[j];}
       const box=(src)=>{
@@ -460,9 +469,9 @@ export class GloveRenderer {
         // suppress only the noisy high-frequency illumination around them.
         // A quiet microtexture keeps pale leather clean while broad light and
         // shadow still describe the glove. Crocodile relief stays unchanged.
-        const retained=detail < -9 ? detail*(snake?1:.72)
-          : detail*(response?.detailRetention ?? .24)*(snake?1:.55);
-        const grain=tex.values[ty[y]+tx[x]]*(snake?1:.30);
+        const retained=detail < -9 ? detail*(snake?1:(finish?.darkDetail ?? .72))
+          : detail*(finish?.softDetail ?? (response?.detailRetention ?? .24)*(snake?1:.55));
+        const grain=tex.values[ty[y]+tx[x]]*(snake?1:(finish?.grainScale ?? .30));
         tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
