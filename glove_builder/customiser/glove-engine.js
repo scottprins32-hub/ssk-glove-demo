@@ -21,6 +21,8 @@ function assetDependencies(DATA, values, fixed = []) {
   const take = name => {
     if (typeof name !== 'string' || !DATA.assets[name] || keys.has(name)) return;
     keys.add(name); take(name + '_hi');
+    walk(DATA.materialSources?.[name]);
+    walk(DATA.materialResponse?.[name]);
   };
   const walk = value => {
     if (typeof value === 'string') take(value);
@@ -34,7 +36,7 @@ function assetDependencies(DATA, values, fixed = []) {
 }
 function renderAssets(DATA, baseOnly = false) {
   const values = Object.entries(DATA).filter(([key]) =>
-    !['assets','bbox','source','presets','palettes'].includes(key) && !key.startsWith('user')
+    !['assets','bbox','source','presets','palettes','materialSources','materialResponse'].includes(key) && !key.startsWith('user')
     && !(baseOnly && ['webs','_snakeLeather'].includes(key))).map(([, value]) => value);
   return assetDependencies(DATA, values, [...FIRST_ASSETS, ...(baseOnly ? [] : ['_snakeLeather']),
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
@@ -451,7 +453,12 @@ export class GloveRenderer {
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
       && (this.DATA.view === 'pinky' || this.DATA.view === 'thumb' && role === 'back1')
       ? SMOOTH_SIDE_LEATHER : null;
-    const surfaceKey = JSON.stringify([role, this.materials?.[role] || 'standard',
+    // The split ring/side masks share one photographed light field when their
+    // material recipes match. Their colours and ownership stay independent.
+    const cacheRole = ['back78_edge_original','back78_heal_original'].includes(id)
+      && ['back78','back8'].includes(role) && zone?.group === 'leather'
+      && !response?.edgeBlend && !response?.webBlend ? 'shared-back78-back8' : role;
+    const surfaceKey = JSON.stringify([cacheRole, this.materials?.[role] || 'standard',
       this.DATA.h, this.DATA.bbox[id], response, finish]);
     let surface = surfaces.get(surfaceKey);
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
@@ -468,6 +475,7 @@ export class GloveRenderer {
     const tone=new Float32Array(width*height), hist=new Uint32Array(766);
     let n=0, rx0=width, ry0=height, rx1=0, ry1=0;
     for(let i=0,j=0;i<base.length;i+=4,j++){
+      if (!base[i+3] && !light[i+3]) continue;
       if(base[i+3]) {
         const x=j%width,y=Math.floor(j/width);
         if(x<rx0)rx0=x;if(x>=rx1)rx1=x+1;
@@ -555,6 +563,8 @@ export class GloveRenderer {
     if(this.cache.has(key))return this.cache.get(key);
     const c=document.createElement('canvas');c.width=c.height=size;
     const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0,size,size);
+    // Only red carries height data. The lossless lace-height asset preserves
+    // every red/alpha sample of the original colour photograph at full size.
     const p=g.getImageData(0,0,size,size).data,values=new Float32Array(size*size);
     let sum=0,sum2=0;
     for(let j=0;j<values.length;j++){const v=p[j*4];values[j]=v;sum+=v;sum2+=v*v;}
@@ -574,31 +584,35 @@ export class GloveRenderer {
     const c = document.createElement('canvas');
     c.width = Math.max(1, x1 - x0); c.height = Math.max(1, y1 - y0);
     const g = c.getContext('2d', {willReadFrequently:true});
-    g.drawImage(this.imgs[id], -x0, -y0);
-    g.globalCompositeOperation = 'multiply';
-    g.fillStyle = hx;
-    g.fillRect(0, 0, c.width, c.height);
-    // A multiply can only darken, so the leather's sheen has to be added
-    // rather than tinted — that is what keeps highlights on a white glove
-    // and stops a black one flattening into a silhouette.
-    //
-    // How MUCH sheen is not the layer's to decide. Every highlight was cut
-    // from one photograph and carries that glove's own lighting: unscaled,
-    // the belt adds 38 per channel where the middle finger adds 5, so a
-    // customer who picks Navy everywhere gets a grey belt. DATA.sheen holds
-    // the per-layer scale that evens them out — measured by
-    // glove_builder/sheen.py, not tuned by eye.
-    const hi = this.imgs[id + '_hi'];
-    if (hi) {
-      const k = (this.DATA.sheen || {})[sheenOf];
-      g.globalCompositeOperation = 'lighter';
-      if (k != null) g.globalAlpha = k;
-      g.drawImage(hi, -x0, -y0);
-      g.globalAlpha = 1;
-    }
-    g.globalCompositeOperation = 'destination-in';
-    g.drawImage(this.imgs[id], -x0, -y0);
     const surface = this.materialSurface(id, materialOf);
+    g.drawImage(this.imgs[id], -x0, -y0);
+    // Opaque material tint replaces RGB below. Its alpha is the source mask;
+    // retain the composite path for translucent colours and non-material art.
+    if (!surface || !/^#[0-9a-f]{6}$/i.test(hx)) {
+      g.globalCompositeOperation = 'multiply';
+      g.fillStyle = hx;
+      g.fillRect(0, 0, c.width, c.height);
+      // A multiply can only darken, so the leather's sheen has to be added
+      // rather than tinted — that is what keeps highlights on a white glove
+      // and stops a black one flattening into a silhouette.
+      //
+      // How MUCH sheen is not the layer's to decide. Every highlight was cut
+      // from one photograph and carries that glove's own lighting: unscaled,
+      // the belt adds 38 per channel where the middle finger adds 5, so a
+      // customer who picks Navy everywhere gets a grey belt. DATA.sheen holds
+      // the per-layer scale that evens them out — measured by
+      // glove_builder/sheen.py, not tuned by eye.
+      const hi = this.imgs[id + '_hi'];
+      if (hi) {
+        const k = (this.DATA.sheen || {})[sheenOf];
+        g.globalCompositeOperation = 'lighter';
+        if (k != null) g.globalAlpha = k;
+        g.drawImage(hi, -x0, -y0);
+        g.globalAlpha = 1;
+      }
+      g.globalCompositeOperation = 'destination-in';
+      g.drawImage(this.imgs[id], -x0, -y0);
+    }
     if (surface) {
       // Preserve the original composited alpha, including anti-alias coverage.
       const pixels=g.getImageData(0,0,c.width,c.height), rgba=pixels.data;

@@ -317,7 +317,7 @@
     "_idmap_lht": "assets/side/pinky-user-r16/idmap-lht.png",
     "_hdLeather": "assets/hd-material-r02/leather-texture.webp",
     "_snakeLeather": "assets/hd-material-r02/snakeskin.webp",
-    "_hdLace": "assets/hd-material-r02/lace-texture.webp",
+    "_hdLace": "assets/hd-material-r02/lace-height.webp",
     "welting_edge_original": "assets/side/pinky-user-r16/welting.webp",
     "welting_edge_original_hi": "assets/side/pinky-user-r16/welting_hi.webp",
     "clean_edge_heal_back5": "assets/clean-edges-r01/pinky-heal-back5.png",
@@ -384,7 +384,8 @@
     "texture": "Generated premium-leather microstructure; source geometry and masks unchanged",
     "textureSha256": "2d81f641f75cdd71e17ad08fedc624e4ab183d30207ef8716534182f201d46d0",
     "snakeskinSha256": "62b6ce0adb70b56533186f0413b89be14960aa71cf7a28ec357229163f4225c6",
-    "laceSha256": "d6c2abfb25c5c584d680adcc4376e868fa587f895f66bbf55302ab4eeb06fcd3"
+    "laceSha256": "edc4a7b8e49788e7f407b54a88660bac8169b2ffec943bc6654968c108a97813",
+    "laceSourceSha256": "d6c2abfb25c5c584d680adcc4376e868fa587f895f66bbf55302ab4eeb06fcd3"
   },
   "materialResponse": {
     "welting": {

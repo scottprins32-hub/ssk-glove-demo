@@ -158,19 +158,26 @@ test('progressive back defers only web roots and crocodile, with priority core a
   assert.equal(h.images.get('snake.png'), 1);
 });
 
-test('real back metadata base closure requests 97 URLs and keeps every non-web dependency', async () => {
+test('real back metadata follows selected material dependencies without loading optional webs', async () => {
   const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json', import.meta.url)));
   const h = await harness({ metadata });
   const bundle = await h.loadGlove({ progressive: true });
-  assert.equal(Object.keys(bundle.imgs).length, 100);
+  assert.equal(Object.keys(bundle.imgs).length, 99);
   assert.equal(h.images.size, 97);
+  const deferred = ['palm_bridge_original_smk_body_heal', 'palm_bridge_original_smk_body_heal_hi',
+    'smlee_r03_laces', 'smlee_r02_laces', 'smlee_r03_material_region'];
+  for (const key of deferred) assert.equal(bundle.imgs[key], undefined, key);
+  await bundle.views.back.loadSelection('smk');
+  assert.ok(bundle.imgs.palm_bridge_original_smk_body_heal);
+  await bundle.views.back.loadSelection('smlee');
+  for (const key of deferred) assert.ok(bundle.imgs[key], key);
   for (const web of Object.keys(metadata.webs)) {
     await bundle.views.back.loadSelection(web);
     assert.equal(bundle.views.back.selectionReady(web), true);
   }
   await bundle.views.back.loadSelection(null, true);
-  assert.equal(Object.keys(bundle.imgs).length, 154);
-  assert.equal(h.images.size, 151);
+  assert.equal(Object.keys(bundle.imgs).length, 158);
+  assert.equal(h.images.size, 156);
 });
 
 test('concurrent options and repeated selection share in-flight image decodes', async () => {

@@ -12,7 +12,13 @@
       "id": "back78",
       "n": 3,
       "group": "leather",
-      "label": "Back 7+8 - ring & pinky"
+      "label": "Back 7 - whole ring finger"
+    },
+    {
+      "id": "back8",
+      "n": 20,
+      "group": "leather",
+      "label": "Back 8 - pinky side panel"
     },
     {
       "id": "back6",
@@ -923,7 +929,8 @@
     "approved_standard_finger": 0.5,
     "smk_clean_laces": 0.5,
     "smk_body_stitching": 0.889,
-    "smk_body_heal": 0.8
+    "smk_body_heal": 0.8,
+    "back8": 0.308
   },
   "cavity": {
     "lining": 0.62
@@ -964,8 +971,8 @@
     "glove": "assets/glove.webp",
     "back2": "assets/palm-piece-map-r01/back2.png",
     "back2_hi": "assets/palm-piece-map-r01/back2_hi.png",
-    "back78": "assets/clean-edges-r01/back78.png",
-    "back78_hi": "assets/back78_hi.webp",
+    "back78": "assets/back8-split-r01/back78.png",
+    "back78_hi": "assets/back8-split-r01/back78_hi.png",
     "back6": "assets/back6_refined.png",
     "back6_hi": "assets/back6_hi.webp",
     "back5": "assets/back5_refined.png",
@@ -1051,7 +1058,7 @@
     "bullet_whitegold": "assets/bullet_whitegold.webp",
     "bullet_redgold": "assets/bullet_redgold.webp",
     "bullet_rainbow": "assets/bullet_rainbow.webp",
-    "_idmap": "assets/idmap.png",
+    "_idmap": "assets/back8-split-r01/idmap.png",
     "web_trapeze": "assets/web-precision-r01/back/web_trapeze.png",
     "laceweb_trapeze": "assets/web-precision-r01/back/laceweb_trapeze.png",
     "web_trapeze_hi": "assets/web-precision-r01/back/web_trapeze_hi.png",
@@ -1119,7 +1126,7 @@
     "precision_smlee_stitching": "assets/web-precision-r01/back/precision_smlee_stitching.png",
     "_hdLeather": "assets/hd-material-r02/leather-texture.webp",
     "_snakeLeather": "assets/hd-material-r02/snakeskin.webp",
-    "_hdLace": "assets/hd-material-r02/lace-texture.webp",
+    "_hdLace": "assets/hd-material-r02/lace-height.webp",
     "hood_stitching": "assets/hood-thread-r01/hood-stitching.png",
     "trapeze_hd_web": "assets/web-refinement-r03/trapeze-hd-web.png",
     "trapeze_hd_laces": "assets/web-refinement-r03/trapeze-hd-laces.png",
@@ -1157,13 +1164,17 @@
     "clean_edge_heal_back4": "assets/clean-edges-r01/back-heal-back4.png",
     "clean_edge_heal_back5": "assets/clean-edges-r01/back-heal-back5.png",
     "clean_edge_heal_back6": "assets/clean-edges-r01/back-heal-back6.png",
-    "clean_edge_heal_back78": "assets/clean-edges-r01/back-heal-back78.png",
+    "clean_edge_heal_back78": "assets/back8-split-r01/clean_edge_heal_back78.png",
     "clean_edge_heal_palm": "assets/clean-edges-r01/back-heal-palm.png",
     "clean_edge_heal_binding": "assets/clean-edges-r01/back-heal-binding.png",
     "clean_edge_heal_lining": "assets/clean-edges-r01/back-heal-lining.png",
     "clean_edge_heal_belt": "assets/clean-edges-r01/back-heal-belt.png",
     "clean_standard_i_knot": "assets/clean-edges-r01/standard-i-centred-knot.png",
-    "clean_spiral_i_knot": "assets/clean-edges-r01/spiral-i-centred-knot.png"
+    "clean_spiral_i_knot": "assets/clean-edges-r01/spiral-i-centred-knot.png",
+    "back8": "assets/back8-split-r01/back8.png",
+    "back8_hi": "assets/back8-split-r01/back8_hi.png",
+    "clean_edge_heal_back8": "assets/back8-split-r01/clean_edge_heal_back8.png",
+    "back78_heal_original": "assets/clean-edges-r01/back-heal-back78.png"
   },
   "bbox": {
     "back2": [
@@ -1179,22 +1190,22 @@
       879
     ],
     "back78": [
-      0,
-      0,
-      929,
-      1100
+      124,
+      96,
+      338,
+      895
     ],
     "back78_hi": [
-      130,
-      102,
-      332,
-      889
-    ],
-    "back6": [
       0,
       0,
       929,
       1100
+    ],
+    "back6": [
+      250,
+      72,
+      377,
+      805
     ],
     "back6_hi": [
       256,
@@ -1203,10 +1214,10 @@
       799
     ],
     "back5": [
-      0,
-      0,
-      929,
-      1100
+      295,
+      40,
+      471,
+      797
     ],
     "back5_hi": [
       301,
@@ -1215,10 +1226,10 @@
       791
     ],
     "back4": [
-      0,
-      0,
-      929,
-      1100
+      402,
+      34,
+      550,
+      794
     ],
     "back4_hi": [
       408,
@@ -1227,10 +1238,10 @@
       788
     ],
     "back3": [
-      0,
-      0,
-      929,
-      1100
+      485,
+      9,
+      647,
+      807
     ],
     "back3_hi": [
       493,
@@ -1263,16 +1274,16 @@
       1076
     ],
     "lining": [
-      0,
-      0,
-      929,
-      1100
+      253,
+      799,
+      629,
+      920
     ],
     "binding": [
-      0,
-      0,
-      929,
-      1100
+      214,
+      780,
+      661,
+      1004
     ],
     "binding_hi": [
       0,
@@ -1329,10 +1340,10 @@
       600
     ],
     "stitching": [
-      0,
-      0,
-      929,
-      1100
+      544,
+      615,
+      755,
+      980
     ],
     "stitching_hi": [
       0,
@@ -1881,28 +1892,28 @@
       1100
     ],
     "approved_h_web": [
-      0,
-      0,
-      929,
-      1100
+      588,
+      21,
+      831,
+      754
     ],
     "approved_h_laces": [
-      0,
-      0,
-      929,
-      1100
+      508,
+      11,
+      829,
+      800
     ],
     "approved_h_glove_laces": [
-      0,
-      0,
-      929,
-      1100
+      11,
+      16,
+      924,
+      1029
     ],
     "approved_h_welting": [
-      0,
-      0,
-      929,
-      1100
+      129,
+      28,
+      685,
+      1089
     ],
     "binding_thread_detail": [
       0,
@@ -2241,10 +2252,10 @@
       1100
     ],
     "back78_edge_original": [
-      0,
-      0,
-      929,
-      1100
+      124,
+      96,
+      338,
+      895
     ],
     "back78_edge_original_hi": [
       130,
@@ -2253,70 +2264,70 @@
       889
     ],
     "clean_left_lace": [
-      0,
-      0,
-      929,
-      1100
+      93,
+      197,
+      204,
+      507
     ],
     "clean_edge_heal_back3": [
-      0,
-      0,
-      929,
-      1100
+      488,
+      26,
+      600,
+      807
     ],
     "clean_edge_heal_laces": [
-      0,
-      0,
-      929,
-      1100
+      515,
+      28,
+      553,
+      45
     ],
     "clean_edge_heal_back4": [
-      0,
-      0,
-      929,
-      1100
+      405,
+      40,
+      546,
+      780
     ],
     "clean_edge_heal_back5": [
-      0,
-      0,
-      929,
-      1100
+      299,
+      45,
+      465,
+      790
     ],
     "clean_edge_heal_back6": [
-      0,
-      0,
-      929,
-      1100
+      254,
+      78,
+      373,
+      799
     ],
     "clean_edge_heal_back78": [
-      0,
-      0,
-      929,
-      1100
+      138,
+      105,
+      308,
+      811
     ],
     "clean_edge_heal_palm": [
-      0,
-      0,
-      929,
-      1100
+      562,
+      788,
+      643,
+      832
     ],
     "clean_edge_heal_binding": [
-      0,
-      0,
-      929,
-      1100
+      243,
+      798,
+      642,
+      895
     ],
     "clean_edge_heal_lining": [
-      0,
-      0,
-      929,
-      1100
+      254,
+      800,
+      628,
+      883
     ],
     "clean_edge_heal_belt": [
-      0,
-      0,
-      929,
-      1100
+      452,
+      1027,
+      683,
+      1079
     ],
     "clean_standard_i_knot": [
       0,
@@ -2329,6 +2340,30 @@
       0,
       929,
       1100
+    ],
+    "back8": [
+      124,
+      96,
+      338,
+      895
+    ],
+    "back8_hi": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back8": [
+      138,
+      105,
+      308,
+      811
+    ],
+    "back78_heal_original": [
+      138,
+      105,
+      308,
+      811
     ]
   },
   "knotHeal": {
@@ -2366,7 +2401,10 @@
     "smk_body_heal": "palm_bridge_original_smk_body_heal",
     "palm_smk_body_heal": "palm_bridge_original_smk_body_heal",
     "smlee_r10_lace_surround": "smlee_r03_laces",
-    "back78": "back78_edge_original"
+    "back78": "back78_edge_original",
+    "back8": "back78_edge_original",
+    "clean_edge_heal_back78": "back78_heal_original",
+    "clean_edge_heal_back8": "back78_heal_original"
   },
   "flagMounts": {
     "middle": {
@@ -2391,7 +2429,8 @@
     "texture": "Generated premium-leather microstructure; source geometry and masks unchanged",
     "textureSha256": "2d81f641f75cdd71e17ad08fedc624e4ab183d30207ef8716534182f201d46d0",
     "snakeskinSha256": "62b6ce0adb70b56533186f0413b89be14960aa71cf7a28ec357229163f4225c6",
-    "laceSha256": "d6c2abfb25c5c584d680adcc4376e868fa587f895f66bbf55302ab4eeb06fcd3"
+    "laceSha256": "edc4a7b8e49788e7f407b54a88660bac8169b2ffec943bc6654968c108a97813",
+    "laceSourceSha256": "d6c2abfb25c5c584d680adcc4376e868fa587f895f66bbf55302ab4eeb06fcd3"
   },
   "fingerThread": {
     "hood": "hood_stitching"
@@ -2576,6 +2615,13 @@
         "mid": 241,
         "high": 242
       }
+    },
+    "back78_heal_original": {
+      "calibration": {
+        "lo": 141,
+        "mid": 255,
+        "high": 353
+      }
     }
   },
   "cleanLeftLace": "clean_left_lace",
@@ -2603,6 +2649,10 @@
     [
       "clean_edge_heal_back78",
       "back78"
+    ],
+    [
+      "clean_edge_heal_back8",
+      "back8"
     ],
     [
       "clean_edge_heal_palm",
