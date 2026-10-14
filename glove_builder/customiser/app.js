@@ -2,7 +2,7 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import { loadGlove, GloveRenderer } from './glove-engine.js';
+import { loadGlove, GloveRenderer, assetURL } from './glove-engine.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
@@ -457,6 +457,9 @@ const selectedWeb = () => WEBS.find(w => w.id === S.webType);
 function viewAvailability(view, w = selectedWeb()) {
   if (S.withdrawnWeb && !S.webType) return { ok: false, reason: 'webWithdrawn' };
   if (!R || (view !== 'back' && !R.hasView(view))) return { ok: false, reason: 'viewNotLoaded' };
+  // A deferred angle has not yet verified its inserts. Keep it selectable
+  // without falsely declaring that its web picture does not exist.
+  if (R.views[view]?.ready === false) return { ok: true, pending: true, note: null };
   const native = !w || w.id === NATIVE_WEB;
   if (view === 'pinky') return { ok: true, note: native ? null : 'pinkyNoWeb' };
   if (native) return { ok: true, note: null };
@@ -527,8 +530,58 @@ function drawUnavailable(target, reason) {
 const viewLoadMessage = () => R.views[S.view]?.absent ? vt('viewNotLoaded') : S.lang === 'nl'
   ? 'Deze weergave kon niet laden. Kies de weergave opnieuw om het nog eens te proberen.'
   : 'This view could not load. Select it again to retry.';
+let selectionRequest = null, initialRendered = false;
+const selectedAssets = () => {
+  const web = selectedWeb()?.render || null;
+  const snake = Object.values(S.materials || {}).includes('snakeskin');
+  return { view: R.views[S.view], web, snake, key: JSON.stringify([S.view, web, snake]) };
+};
+const selectionIsReady = () => {
+  const { view, web, snake } = selectedAssets();
+  return !!view?.selectionReady(web, snake);
+};
+const selectionMessage = failed => S.lang === 'nl'
+  ? (failed ? 'Deze optie kon niet laden. Probeer het opnieuw.' : 'Gekozen optie laden…')
+  : (failed ? 'This option could not load. Please retry.' : 'Loading selected option…');
+function selectionRetry(show) {
+  let button = $('#option-retry');
+  if (!button && show) {
+    button = el('button', 'btn btn-ghost'); button.id = 'option-retry'; button.type = 'button';
+    button.onclick = () => { selectionRequest = null; draw(); paint(); };
+    document.querySelector('.stage').appendChild(button);
+  }
+  if (button) {
+    button.hidden = !show;
+    button.textContent = S.lang === 'nl' ? 'Opnieuw proberen' : 'Retry';
+  }
+}
+function gateSelection(target) {
+  const selected = selectedAssets();
+  if (selected.view.selectionReady(selected.web, selected.snake)) return false;
+  if (target !== ctx) throw new Error('Selected option is still loading');
+  if (selectionRequest?.key !== selected.key) selectionRequest = { key: selected.key };
+  const request = selectionRequest;
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  $('#glove').setAttribute('aria-busy', String(!request.error));
+  $('#stagehint').textContent = selectionMessage(!!request.error);
+  selectionRetry(!!request.error);
+  if (!request.pending && !request.error) {
+    request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+    }).catch(error => {
+      request.error = error;
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+    });
+  }
+  return true;
+}
+function registerThumbViews() {
+  const est = estimatedThumbViews(R.views.thumb);
+  if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
+}
 function draw(target = ctx, highlight = S.step === 3) {
   if (!R) return;
+  selectionRetry(false);
   const pendingView = R.views[S.view];
   if (pendingView && pendingView.ready === false && !pendingView.absent) {
     if (target !== ctx) throw new Error('View is still loading');
@@ -539,8 +592,7 @@ function draw(target = ctx, highlight = S.step === 3) {
       pendingView.redrawPending = true;
       const requested = S.view;
       pendingView.load().then(() => {
-        const est = estimatedThumbViews(R.views.thumb);
-        if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
+        registerThumbViews();
         if (S.view === requested) { draw(); paint(); }
       }).catch(() => {
         if (S.view === requested) {
@@ -560,6 +612,8 @@ function draw(target = ctx, highlight = S.step === 3) {
   const w = WEBS.find(w => w.id === S.webType);
   const avail = viewAvailability(S.view, w);
   if (!avail.ok) { drawUnavailable(target, avail.reason); return; }
+  if (gateSelection(target)) return;
+  if (target === ctx) $('#glove').removeAttribute('aria-busy');
   // The webs C3 covers are drawn on the estimated body of their family, not the
   // photograph. Each family has its own view name so I-webs stay off the EM body.
   const view = S.view === 'thumb' && thumbEstimatedViewOf(w) || S.view;
@@ -581,6 +635,10 @@ function draw(target = ctx, highlight = S.step === 3) {
     highlight && viewFieldLayer()[S.part]
       ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
     hasFlag(), isLefty());
+  if (target === ctx && !initialRendered) {
+    initialRendered = true;
+    performance.mark('ssk-ready');
+  }
 }
 
 /* What the picture cannot show, in words. The same list goes on the Review
@@ -642,7 +700,7 @@ function limitsBlock() {
   const w = WEBS.find(w => w.id === S.webType);
   if (w && w.id !== NATIVE_WEB && w.img) {
     const f = el('figure', 'refshot webref');
-    const img = el('img'); img.src = w.img; img.alt = w.id; img.loading = 'lazy';
+    const img = el('img'); img.src = assetURL(w.img); img.alt = w.id; img.loading = 'lazy';
     const cap = el('figcaption'); cap.textContent = `${t('limWebRef')}: ${w.id}`;
     f.append(img, cap);
     box.appendChild(f);
@@ -871,12 +929,13 @@ function liveThumbs(field, items, box, jobFor) {
   const previewR = new GloveRenderer(R.views.back);
   previewR._flags = R._flags || {};
   previewR.setFlag(flagArt(), null, S.flagPosition);
+  previewR.setMaterials(layerMaterials(DATA, LAYER_TO_FIELD));
   const selectedWeb = WEBS.find(w => w.id === S.webType);
   previewR.setWeb(selectedWeb && selectedWeb.render);
   previewR.setPad(PAD_PART[S.pad] || null, S.colors.pad_color ? hexOf('pad_color') : null);
   const cards = field.querySelectorAll('.cards .card');
   const key = JSON.stringify([S.colors, S.hand, S.pad, S.bullet, S.flag, S.flagPosition,
-                              S.webType, box]);
+                              S.webType, S.materials, box]);
   if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
   const put = (card, cv) => {
     const shown = el('canvas');
@@ -908,11 +967,24 @@ function liveThumbs(field, items, box, jobFor) {
   // One per frame. Four full-canvas composites in a single frame is half a
   // second of locked-up page on a laptop and worse on a phone; spread out,
   // the cards fill in one after another and nothing blocks.
-  const step = () => {
+  const step = async () => {
     const job = todo.shift();
     if (!job || !field.isConnected || key !== thumbKey) return;
     const [it, card, setUp] = job;
     setUp(previewR);
+    try {
+      await R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'));
+    } catch {
+      if (field.isConnected && key === thumbKey) {
+        if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
+          S.lang === 'nl' ? 'Voorbeeld niet geladen. Kies deze optie om opnieuw te proberen.'
+            : 'Preview unavailable. Choose this option to retry.'));
+        requestAnimationFrame(step);
+      }
+      return;
+    }
+    if (!field.isConnected || key !== thumbKey) return;
+    card.querySelector('.preview-error')?.remove();
     previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, hasFlag(), isLefty());
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
@@ -968,7 +1040,7 @@ function renderWeb(b) {
   const grid = el('div', 'web-refs-grid');
   for (const r of WEB_REFERENCES) {
     const fig = el('figure', 'web-ref');
-    const img = el('img'); img.src = r.img; img.alt = `${r.id}: ${t('webRefBadge')}`; img.loading = 'lazy';
+    const img = el('img'); img.src = assetURL(r.img); img.alt = `${r.id}: ${t('webRefBadge')}`; img.loading = 'lazy';
     const cap = el('figcaption');
     cap.append(el('strong', null, r.id), el('span', 'web-ref-badge', t('webRefBadge')));
     fig.append(img, cap); grid.appendChild(fig);
@@ -1153,7 +1225,7 @@ function renderLogos(b) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(i === S.bullet));
     c.dataset.key = 'bullet|' + i;
-    c.innerHTML = `<img src="${bl.thumb}" alt="" loading="lazy">` +
+    c.innerHTML = `<img src="${assetURL(bl.thumb)}" alt="" loading="lazy">` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
       (bl.active === false
         ? `<span class="sub">${t(bl.pending ? 'askPim' : 'notShown')}</span>` : '') + `</span>`;
@@ -1240,7 +1312,7 @@ function refStrip(items) {
   const wrap = el('div', 'refs');
   for (const [src, cap] of items) {
     const f = el('figure', 'refshot');
-    f.innerHTML = `<img src="${src}" alt="" loading="lazy">` +
+    f.innerHTML = `<img src="${assetURL(src)}" alt="" loading="lazy">` +
                   `<figcaption>${cap}</figcaption>`;
     wrap.appendChild(f);
   }
@@ -1339,7 +1411,7 @@ function cardField(label, opts, value, onPick, required, shape) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(value === o.id));
     c.dataset.key = `${label}|${o.id}`;
-    c.innerHTML = (o.img ? `<img src="${o.img}" alt="" loading="lazy">` : '') +
+    c.innerHTML = (o.img ? `<img src="${assetURL(o.img)}" alt="" loading="lazy">` : '') +
       `<span class="cap"><span class="nm">${o.label}</span></span>`;
     c.onclick = () => onPick(o.id);
     grid.appendChild(c);
@@ -1550,9 +1622,21 @@ function specText() {
 let sheetReturnFocus;
 async function openSheet() {
   if (flushText()) paint();
-  while (R.views[S.view]?.ready === false && !R.views[S.view].absent) {
-    try { await R.views[S.view].load(); draw(); }
-    catch { return; }
+  // A selection may change while an angle or optional insert is decoding.
+  // Export only after the current selection, not a stale request, is ready.
+  for (;;) {
+    const selected = selectedAssets();
+    try {
+      await selected.view.load();
+      registerThumbViews();
+      if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
+    } catch (error) {
+      if (selectedAssets().key === selected.key) {
+        selectionRequest = { key: selected.key, error }; draw(); paint();
+      }
+      return;
+    }
+    if (selectedAssets().key === selected.key) break;
   }
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
@@ -1692,9 +1776,11 @@ function paint(rebuildBody = true) {
   const palmNote = [STAGE_NOTES.includes(wn) ? (wn === 'thumbEstimated' ? t(wn) : vt(wn)) : '',
     off.length ? vt('anglesUnavailable').replace('%s', off.join(', ')) : '',
     withdrawnNote()].filter(Boolean).join(' ');
+  const optionWaiting = viewAvailability(S.view).ok && !selectionIsReady();
   $('#stagehint').textContent = R.views[S.view]?.error ? viewLoadMessage()
     : R.views[S.view]?.ready === false
-    ? (S.lang === 'nl' ? 'Weergave laden…' : 'Loading view…') : S.step === 3
+    ? (S.lang === 'nl' ? 'Weergave laden…' : 'Loading view…')
+    : optionWaiting ? selectionMessage(selectionRequest?.key === selectedAssets().key && !!selectionRequest.error) : S.step === 3
     ? [t('pickPart'), palmNote].filter(Boolean).join(' ')
     : palmNote;
 
@@ -1766,7 +1852,11 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   const est = estimatedThumbViews(R.views.thumb);
   if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
   ctx = $('#glove').getContext('2d');
-  R.preloadFlags(FLAGS.map(f => f.art)).then(() => { draw(); paint(); });
+  R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
+    // Flag selection keeps its own decoded callback; only starter cards need
+    // refreshing when the complete flag set becomes available.
+    if (S.step === 0) paint();
+  });
 
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;
@@ -1817,7 +1907,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
 
   const cv = $('#glove');
   cv.addEventListener('click', ev => {
-    if (!viewAvailability(S.view).ok || R.views[S.view]?.ready === false) return;
+    if (!viewAvailability(S.view).ok || !selectionIsReady()) return;
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
@@ -1826,7 +1916,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     S.step = 3; S.part = colourPart(f); draw(); paint();
   });
   cv.addEventListener('pointermove', ev => {
-    if (S.step !== 3 || !viewAvailability(S.view).ok || R.views[S.view]?.ready === false) { cv.style.cursor = 'default'; return; }
+    if (S.step !== 3 || !viewAvailability(S.view).ok || !selectionIsReady()) { cv.style.cursor = 'default'; return; }
     const r = cv.getBoundingClientRect();
     const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
                         (ev.clientY - r.top) * cv.height / r.height, isLefty());
@@ -1846,6 +1936,14 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
         if (!R.hasView(id)) return;
         S.view = id; draw(); paint();
       };
+      // Warm an angle on intent. Avoid competing with the selected web by
+      // immediately downloading all side views after the first frame.
+      const warmView = () => {
+        if (!selectionIsReady()) return;
+        R.views[id].load().then(() => { registerThumbViews(); paintView(); }).catch(() => {});
+      };
+      b.addEventListener('pointerenter', warmView);
+      b.addEventListener('focus', warmView);
       vw.appendChild(b);
     }
   }
@@ -1866,21 +1964,6 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
-  performance.mark('ssk-ready');
-  // Only after the selected glove has painted, warm the other angles without
-  // holding up the initial screen. A click can call the same load() immediately.
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const remaining = Object.values(bundle.views).filter(v => v && !v.ready);
-    const warm = () => {
-      const v = remaining.shift();
-      if (!v) return;
-      v.load().then(() => {
-        const est = estimatedThumbViews(R.views.thumb);
-        if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
-      }).catch(() => {}).finally(() => { paintView(); previewTask(warm); });
-    };
-    previewTask(warm);
-  }));
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');

@@ -2,6 +2,7 @@
 import json
 import pathlib
 import shutil
+from version_site import version_site
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'glove_builder' / 'customiser'
@@ -32,7 +33,8 @@ def build():
                 raise FileNotFoundError(f'{filename}: {asset}')
             count += 1
     assert 'src="app.js"' in index
-    print(f'Pages package ready; {count} asset references checked.')
+    versions = version_site(OUTPUT)
+    print(f'Pages package ready; {count} asset references checked; {len(versions)} content-versioned assets.')
 
 
 if __name__ == '__main__':
