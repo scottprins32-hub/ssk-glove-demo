@@ -28,3 +28,4 @@ REVIEW.md
 /_base44-manifest.json
 /.base44-build-*/
 /base44/.app.jsonc
+base44/.app.jsonc
