@@ -697,6 +697,14 @@ export class GloveRenderer {
       || this.DATA.palmWebs?.entries?.[slug]) ? slug : null;
   }
 
+  // Fill only slivers vacated by a refined welt with their adjacent panel.
+  drawWeltEdgeHealing(ctx,state){
+    for(const[id,role]of this.DATA.weltEdgeHealing||[]){
+      const p=this.underPad(this.tinted(id,this.hex(role,state),id,role));
+      ctx.drawImage(p,p._ox,p._oy);
+    }
+  }
+
   // A web-specific refinement can replace only its visible shared lace portions.
   refinedLaceBase(layer, swap) {
     const mask=swap?.laceBaseErase;
@@ -970,6 +978,7 @@ export class GloveRenderer {
       // glove's knotted lace has to be punched away first, and a web that
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
+      if(z.id==='welting')this.drawWeltEdgeHealing(ctx,state);
       let tinted = this.tinted(z.id, this.hex(z.id, state));
       // H thumb windows show a fixed white backing, independent of palm colour.
       // This is a display backing, not additional web leather or lace ownership.
@@ -1120,6 +1129,7 @@ export class GloveRenderer {
     if (D.approvedH && this.imgs.approved_h_common_cut) {
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.approved_h_common_cut),0,0);ctx.restore();
+      this.drawWeltEdgeHealing(ctx,state);
       for (const [key,zone] of D.approvedH.layers.slice(2)) {
         const raw=this.tinted(key,this.hex(zone,state),key,zone);
         const layer=this.underPad(zone==='laces'?this.refinedLaceBase(raw,swap):raw);
@@ -1202,6 +1212,8 @@ export class GloveRenderer {
       const attachment = this.webAttachment(this.hex('laces', state));
       if (attachment) ctx.drawImage(this.underPad(attachment), 0, 0);
     }
+    // The left tied lace is one Laces-owned piece, including its shaded returns.
+    if(D.cleanLeftLace&&this.imgs[D.cleanLeftLace]){const lace=this.underPad(this.tinted(D.cleanLeftLace,this.hex('laces',state),D.cleanLeftLace,'laces'));ctx.drawImage(lace,lace._ox,lace._oy);}
     // Selected thumb inserts replace only their registered panel footprint.
     // Native finger, thumb, rim and external laces remain the photographed body.
     const thumbInsert = D.thumbWebs?.[this.web];
@@ -1362,6 +1374,7 @@ export class GloveRenderer {
         }
         fitted._ox=fitted._oy=0;c=fitted;
       }
+      if(highlight.id==='laces'&&D.cleanLeftLace){const fitted=document.createElement('canvas');fitted.width=D.w;fitted.height=D.h;const g=fitted.getContext('2d');g.drawImage(c,c._ox,c._oy);const lace=this.tinted(D.cleanLeftLace,'#ffffff',D.cleanLeftLace,'laces');g.drawImage(lace,lace._ox,lace._oy);fitted._ox=fitted._oy=0;c=fitted;}
       // Selection feedback follows the same visible overlap as the leather.
       // Preserve the pad's binding/lining overlap; the hood covers both.
       c = this.underPad(c, this.pad === 'pad'
@@ -1595,7 +1608,11 @@ export class GloveRenderer {
         this.cache.set(key, idData);
       }
     }
-    const n = idData[((y | 0) * D.w + (x | 0)) * 4];
+    const j=(y|0)*D.w+(x|0);
+    if(D.weltEdgeHealing?.length && this.palmAlpha('welting')[j]<128){
+      for(const[id,role]of D.weltEdgeHealing)if(this.palmAlpha(id)[j]>=128)return role;
+    }
+    const n = idData[j * 4];
     const z = D.zones.find(z => z.n === n);
     return z ? z.id : null;
   }

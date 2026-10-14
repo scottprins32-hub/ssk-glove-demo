@@ -829,18 +829,18 @@
       "webfinger": "overlap_spiral-i",
       "knot": false,
       "attachment": {
-        "asset": "smk_clean_laces",
+        "asset": "clean_spiral_i_knot",
         "source": [
-          475,
-          500,
-          380,
-          262
+          0,
+          0,
+          929,
+          1100
         ],
         "target": [
-          622,
-          570,
-          247,
-          170.3
+          0,
+          0,
+          929,
+          1100
         ]
       }
     },
@@ -853,18 +853,18 @@
       "webfinger": "approved_standard_finger",
       "knot": false,
       "attachment": {
-        "asset": "smk_clean_laces",
+        "asset": "clean_standard_i_knot",
         "source": [
-          475,
-          500,
-          380,
-          262
+          0,
+          0,
+          929,
+          1100
         ],
         "target": [
-          632,
-          527,
-          247,
-          170.3
+          0,
+          0,
+          929,
+          1100
         ]
       }
     },
@@ -964,7 +964,7 @@
     "glove": "assets/glove.webp",
     "back2": "assets/palm-piece-map-r01/back2.png",
     "back2_hi": "assets/palm-piece-map-r01/back2_hi.png",
-    "back78": "assets/back78_refined.png",
+    "back78": "assets/clean-edges-r01/back78.png",
     "back78_hi": "assets/back78_hi.webp",
     "back6": "assets/back6_refined.png",
     "back6_hi": "assets/back6_hi.webp",
@@ -981,7 +981,7 @@
     "lining": "assets/lining_refined.png",
     "binding": "assets/binding_polished.png",
     "binding_hi": "assets/binding_hi_polished.png",
-    "welting": "assets/welting.png",
+    "welting": "assets/clean-edges-r01/back-welting.png",
     "welting_hi": "assets/welting_hi.webp",
     "pinky_loops": "assets/pinky_loops.webp",
     "pinky_loops_hi": "assets/pinky_loops_hi.webp",
@@ -1086,7 +1086,7 @@
     "approved_h_web": "assets/web-precision-r01/back/approved_h_web.png",
     "approved_h_laces": "assets/web-precision-r01/back/approved_h_laces.png",
     "approved_h_glove_laces": "assets/approved_h_glove_laces.png",
-    "approved_h_welting": "assets/approved_h_welting.png",
+    "approved_h_welting": "assets/clean-edges-r01/back-approved_h_welting.png",
     "approved_h_cut": "assets/approved_h_cut.png",
     "approved_h_openings": "assets/approved_h_openings.png",
     "approved_h_common_cut": "assets/approved_h_common_cut.png",
@@ -1095,8 +1095,8 @@
     "overlap_smlee": "assets/overlap_smlee_polished.png",
     "overlap_spiral-i": "assets/overlap_spiral-i_polished.png",
     "other_web_notches": "assets/other_web_notches_polished.png",
-    "smk_clean_web": "assets/web-precision-r01/back/smk_clean_web.png",
-    "smk_clean_stitching": "assets/smk-user-alignment-r01/pattern.png",
+    "smk_clean_web": "assets/clean-edges-r01/smk-tapered-web.png",
+    "smk_clean_stitching": "assets/clean-edges-r01/smk-tapered-thread.png",
     "smk_clean_laces": "assets/web-precision-r01/back/smk_clean_laces.png",
     "smk_clean_laces_hi": "assets/web-precision-r01/back/smk_clean_laces_hi.png",
     "smk_body_stitching": "assets/web-precision-r01/back/smk_body_stitching.png",
@@ -1131,9 +1131,9 @@
     "i_merge_standard_i_stitching": "assets/i-web-model-merge-r01/standard-i-back-stitching.png",
     "i_merge_standard_i_cut": "assets/i-web-model-merge-r01/standard-i-back-cut.png",
     "i_merge_spiral_i_web": "assets/i-web-model-merge-r01/spiral-i-back-web.png",
-    "i_merge_spiral_i_palm": "assets/i-web-model-merge-r01/spiral-i-back-palm.png",
+    "i_merge_spiral_i_palm": "assets/clean-edges-r01/spiral-palm-support.png",
     "i_merge_spiral_i_laces": "assets/i-web-model-merge-r01/spiral-i-back-laces.png",
-    "i_merge_spiral_i_stitching": "assets/i-web-model-merge-r01/spiral-i-back-stitching.png",
+    "i_merge_spiral_i_stitching": "assets/clean-edges-r01/spiral-support-thread.png",
     "i_merge_spiral_i_cut": "assets/i-web-model-merge-r01/spiral-i-back-cut.png",
     "smlee_r10_lace_surround": "assets/smlee-curved-loops-r10/lace-surround.png",
     "smlee_r03_laces": "assets/smlee-upper-loops-r03/laces.png",
@@ -1145,7 +1145,25 @@
     "smlee_r10_web_folds": "assets/smlee-curved-loops-r10/web-folds.png",
     "smlee_r10_web_roots": "assets/smlee-curved-loops-r10/web-roots.png",
     "smlee_r10_selection": "assets/smlee-curved-loops-r10/selection.png",
-    "smlee_r10_lace_ends": "assets/smlee-curved-loops-r10/lace-ends.png"
+    "smlee_r10_lace_ends": "assets/smlee-curved-loops-r10/lace-ends.png",
+    "welting_edge_original": "assets/welting.png",
+    "welting_edge_original_hi": "assets/welting_hi.webp",
+    "approved_h_welting_edge_original": "assets/approved_h_welting.png",
+    "back78_edge_original": "assets/back78_refined.png",
+    "back78_edge_original_hi": "assets/back78_hi.webp",
+    "clean_left_lace": "assets/clean-edges-r01/left-lace.png",
+    "clean_edge_heal_back3": "assets/clean-edges-r01/back-heal-back3.png",
+    "clean_edge_heal_laces": "assets/clean-edges-r01/back-heal-laces.png",
+    "clean_edge_heal_back4": "assets/clean-edges-r01/back-heal-back4.png",
+    "clean_edge_heal_back5": "assets/clean-edges-r01/back-heal-back5.png",
+    "clean_edge_heal_back6": "assets/clean-edges-r01/back-heal-back6.png",
+    "clean_edge_heal_back78": "assets/clean-edges-r01/back-heal-back78.png",
+    "clean_edge_heal_palm": "assets/clean-edges-r01/back-heal-palm.png",
+    "clean_edge_heal_binding": "assets/clean-edges-r01/back-heal-binding.png",
+    "clean_edge_heal_lining": "assets/clean-edges-r01/back-heal-lining.png",
+    "clean_edge_heal_belt": "assets/clean-edges-r01/back-heal-belt.png",
+    "clean_standard_i_knot": "assets/clean-edges-r01/standard-i-centred-knot.png",
+    "clean_spiral_i_knot": "assets/clean-edges-r01/spiral-i-centred-knot.png"
   },
   "bbox": {
     "back2": [
@@ -2203,6 +2221,114 @@
       0,
       929,
       1100
+    ],
+    "welting_edge_original": [
+      99,
+      30,
+      682,
+      1086
+    ],
+    "welting_edge_original_hi": [
+      99,
+      30,
+      682,
+      1086
+    ],
+    "approved_h_welting_edge_original": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "back78_edge_original": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "back78_edge_original_hi": [
+      130,
+      102,
+      332,
+      889
+    ],
+    "clean_left_lace": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back3": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_laces": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back4": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back5": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back6": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_back78": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_palm": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_binding": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_lining": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_edge_heal_belt": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_standard_i_knot": [
+      0,
+      0,
+      929,
+      1100
+    ],
+    "clean_spiral_i_knot": [
+      0,
+      0,
+      929,
+      1100
     ]
   },
   "knotHeal": {
@@ -2239,7 +2365,8 @@
     "palm_back2_knotheal": "palm_bridge_original_back2_knotheal",
     "smk_body_heal": "palm_bridge_original_smk_body_heal",
     "palm_smk_body_heal": "palm_bridge_original_smk_body_heal",
-    "smlee_r10_lace_surround": "smlee_r03_laces"
+    "smlee_r10_lace_surround": "smlee_r03_laces",
+    "back78": "back78_edge_original"
   },
   "flagMounts": {
     "middle": {
@@ -2330,6 +2457,168 @@
       "relief": 1.22,
       "detailRetention": 0.85,
       "grainStrength": 0.6
+    },
+    "welting": {
+      "calibration": {
+        "lo": 179,
+        "mid": 258,
+        "high": 313
+      }
+    },
+    "approved_h_welting": {
+      "calibration": {
+        "lo": 183,
+        "mid": 253,
+        "high": 255
+      }
+    },
+    "clean_left_lace": {
+      "midtone": 246,
+      "shadowRange": 40,
+      "relief": 1.2,
+      "detailRetention": 0.24,
+      "grainStrength": 2.2
+    },
+    "clean_edge_heal_back3": {
+      "calibration": {
+        "lo": 233,
+        "mid": 255,
+        "high": 289
+      }
+    },
+    "clean_edge_heal_laces": {
+      "calibration": {
+        "lo": 203,
+        "mid": 253,
+        "high": 309
+      }
+    },
+    "clean_edge_heal_back4": {
+      "calibration": {
+        "lo": 234,
+        "mid": 255,
+        "high": 283
+      }
+    },
+    "clean_edge_heal_back5": {
+      "calibration": {
+        "lo": 238,
+        "mid": 255,
+        "high": 267
+      }
+    },
+    "clean_edge_heal_back6": {
+      "calibration": {
+        "lo": 233,
+        "mid": 256,
+        "high": 273
+      }
+    },
+    "clean_edge_heal_back78": {
+      "calibration": {
+        "lo": 141,
+        "mid": 255,
+        "high": 353
+      }
+    },
+    "clean_edge_heal_palm": {
+      "calibration": {
+        "lo": 146,
+        "mid": 256,
+        "high": 289
+      }
+    },
+    "clean_edge_heal_binding": {
+      "calibration": {
+        "lo": 199,
+        "mid": 257,
+        "high": 297
+      }
+    },
+    "clean_edge_heal_lining": {
+      "calibration": {
+        "lo": 255,
+        "mid": 255,
+        "high": 255
+      }
+    },
+    "clean_edge_heal_belt": {
+      "calibration": {
+        "lo": 228,
+        "mid": 254,
+        "high": 295
+      }
+    },
+    "clean_standard_i_knot": {
+      "calibration": {
+        "lo": 188,
+        "mid": 256,
+        "high": 307
+      }
+    },
+    "clean_spiral_i_knot": {
+      "calibration": {
+        "lo": 188,
+        "mid": 256,
+        "high": 307
+      }
+    },
+    "i_merge_spiral_i_palm": {
+      "calibration": {
+        "lo": 136,
+        "mid": 155,
+        "high": 162
+      }
+    },
+    "smk_clean_web": {
+      "calibration": {
+        "lo": 240,
+        "mid": 241,
+        "high": 242
+      }
     }
-  }
+  },
+  "cleanLeftLace": "clean_left_lace",
+  "weltEdgeHealing": [
+    [
+      "clean_edge_heal_back3",
+      "back3"
+    ],
+    [
+      "clean_edge_heal_laces",
+      "laces"
+    ],
+    [
+      "clean_edge_heal_back4",
+      "back4"
+    ],
+    [
+      "clean_edge_heal_back5",
+      "back5"
+    ],
+    [
+      "clean_edge_heal_back6",
+      "back6"
+    ],
+    [
+      "clean_edge_heal_back78",
+      "back78"
+    ],
+    [
+      "clean_edge_heal_palm",
+      "palm"
+    ],
+    [
+      "clean_edge_heal_binding",
+      "binding"
+    ],
+    [
+      "clean_edge_heal_lining",
+      "lining"
+    ],
+    [
+      "clean_edge_heal_belt",
+      "belt"
+    ]
+  ]
 }
