@@ -15,7 +15,8 @@ const SMOOTH_SIDE_LEATHER = Object.freeze({
 // Retain render dependencies, not superseded tracing/review exports. Metadata
 // references (including aliases, web inserts and material sources) are followed
 // recursively; each diffuse layer brings its highlight partner with it.
-function renderAssets(DATA) {
+const FIRST_ASSETS = ['glove','_idmap','_hdLeather','_hdLace'];
+function assetDependencies(DATA, values, fixed = []) {
   const keys = new Set();
   const take = name => {
     if (typeof name !== 'string' || !DATA.assets[name] || keys.has(name)) return;
@@ -28,17 +29,31 @@ function renderAssets(DATA) {
       if (key !== 'bbox') walk(child);
     }
   };
-  for (const [key, value] of Object.entries(DATA)) {
-    if (!['assets','bbox','source','presets','palettes'].includes(key) && !key.startsWith('user')) walk(value);
-  }
-  for (const key of ['glove','_idmap','_hdLeather','_hdLace','_snakeLeather',
+  values.forEach(walk); fixed.forEach(take);
+  return [...FIRST_ASSETS.filter(key => keys.has(key)), ...[...keys].filter(key => !FIRST_ASSETS.includes(key))];
+}
+function renderAssets(DATA, baseOnly = false) {
+  const values = Object.entries(DATA).filter(([key]) =>
+    !['assets','bbox','source','presets','palettes'].includes(key) && !key.startsWith('user')
+    && !(baseOnly && ['webs','_snakeLeather'].includes(key))).map(([, value]) => value);
+  return assetDependencies(DATA, values, [...FIRST_ASSETS, ...(baseOnly ? [] : ['_snakeLeather']),
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
-    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']) take(key);
-  return [...keys];
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']);
 }
-function decodeImage(src) {
+function selectionAssets(DATA, web, snake) {
+  return assetDependencies(DATA, [DATA.webs?.[web]], snake ? ['_snakeLeather'] : []);
+}
+// Build-time hashes change cache keys without changing metadata or image bytes.
+// Offline data URLs and external catalogue links keep their original source.
+export function assetURL(src) {
+  if (typeof src !== 'string' || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) return src;
+  const hash = window.__SSK_ASSET_VERSIONS__?.[src];
+  return hash ? src + (src.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(hash) : src;
+}
+function decodeImage(source) {
+  const src = assetURL(source);
   if (!decodedImages.has(src)) decodedImages.set(src, new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);
@@ -56,7 +71,7 @@ function viewMetadata(name) {
   return () => pending || (pending = (async () => {
     const inlined = window['__' + key.toUpperCase() + '_DATA__'];
     if (inlined) return structuredClone(inlined);
-    const response = await fetch('assets/' + key + '-data.json');
+    const response = await fetch(assetURL('assets/' + key + '-data.json'));
     if (!response.ok) throw new Error('Glove data could not be loaded');
     return response.json();
   })().catch(error => { pending = null; throw error; }));
@@ -79,27 +94,45 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         zones:[], fieldsShown:[], fieldsNotShown:[], palettes:backData.palettes },
         imgs:{}, idData:null, ready:false, assetErrors:{} };
       let loading;
-      v.load = () => loading || (loading = (async () => {
-        v.error = null;
-        const DATA = await metadata[i]();
-        DATA.palettes = backData.palettes; v.DATA = DATA;
-        const keys = renderAssets(DATA);
-        // Hosted HTTPS benefits from HTTP/2 multiplexing. Keep the tighter
-        // bound for local HTTP servers, where excessive sockets caused resets.
+      const selections = new Map();
+      const loadAssets = async keys => {
+        // Explicit selections share in-flight decodes with the base and previews.
         const parallelImages = location.protocol === 'https:' ? 24 : 8;
-        // Optional failed inserts/badges must not take the base glove down.
-        // The existing palm SHA gate excludes missing/incorrect insert parts.
-        // Core body/ID map/alias failures remain explicit and retryable.
         let next = 0;
         await Promise.all(Array.from({length: Math.min(parallelImages, keys.length)}, async () => {
           while (next < keys.length) {
             const key = keys[next++];
+            if (v.imgs[key]) continue;
             try {
-              v.imgs[key] = await decodeImage(DATA.assets[key]);
+              v.imgs[key] = await decodeImage(v.DATA.assets[key]);
               delete v.assetErrors[key];
             } catch (error) { v.assetErrors[key] = error; }
           }
         }));
+      };
+      v.selectionReady = (web, snake = false) => v.ready
+        && selectionAssets(v.DATA, web, snake).every(key => !!v.imgs[key]);
+      v.loadSelection = (web, snake = false) => {
+        const key = JSON.stringify([web || null, !!snake]);
+        if (selections.has(key)) return selections.get(key);
+        const pending = (async () => {
+          await v.load();
+          const keys = selectionAssets(v.DATA, web, snake);
+          await loadAssets(keys);
+          if (keys.some(key => !v.imgs[key])) throw new Error('Selected option could not be loaded');
+          return v;
+        })();
+        selections.set(key, pending);
+        pending.finally(() => selections.delete(key)).catch(() => {});
+        return pending;
+      };
+      v.load = () => loading || (loading = (async () => {
+        v.error = null;
+        const DATA = await metadata[i]();
+        DATA.palettes = backData.palettes; v.DATA = DATA;
+        // Only the progressive back defers alternate webs and crocodile texture.
+        // Every other dependency and the default complete API stay unchanged.
+        await loadAssets(renderAssets(DATA, progressive && names[i] === 'back'));
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
           ...Object.values(DATA.nativeHContour?.assets || {})];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded');
@@ -189,7 +222,7 @@ async function verifyPalmWebs(v) {
     if (!im || typeof url !== 'string' || im.naturalWidth !== W || im.naturalHeight !== H) return false;
     if (!hashes.has(url)) hashes.set(url, (async () => {
       try {
-        const buf = await (await fetch(url)).arrayBuffer();
+        const buf = await (await fetch(assetURL(url))).arrayBuffer();
         return [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))]
           .map(b => b.toString(16).padStart(2, '0')).join('');
       } catch { return null; }
@@ -257,6 +290,8 @@ export class GloveRenderer {
     this.idData = bundle.idData;
     this.cache = new Map();
     this.order = [];
+    this.ownerMaps = new Map();
+    this.maskedPadLayers = new WeakMap();
     this.materialCache = materialSurfaces;
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
@@ -331,6 +366,15 @@ export class GloveRenderer {
   underPad(c, keep) {
     const pad = this.pad && this.imgs[this.pad];
     if (!pad) return c;
+    // A tinted layer is immutable. Reuse its pad mask on hover/redraw without
+    // retaining the layer after the bounded tint cache releases it.
+    let variants = this.maskedPadLayers.get(c);
+    if (!variants || variants.pad !== pad) {
+      variants = { pad, masks: new Map() };
+      this.maskedPadLayers.set(c, variants);
+    }
+    const key = keep ? keep.join(',') : '';
+    if (variants.masks.has(key)) return variants.masks.get(key);
     const masked = document.createElement('canvas');
     masked.width = c.width; masked.height = c.height;
     const g = masked.getContext('2d');
@@ -349,6 +393,7 @@ export class GloveRenderer {
       g.restore();
     }
     masked._ox = c._ox; masked._oy = c._oy;
+    variants.masks.set(key, masked);
     return masked;
   }
 
@@ -412,16 +457,22 @@ export class GloveRenderer {
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
         && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
     const [x0,y0,x1,y1] = this.DATA.bbox[id];
-    const c = document.createElement('canvas'); c.width=x1-x0; c.height=y1-y0;
+    const width=x1-x0,height=y1-y0;
+    const c = document.createElement('canvas'); c.width=width; c.height=height;
     const g = c.getContext('2d', {willReadFrequently:true});
     g.drawImage(img,-x0,-y0);
-    const base=g.getImageData(0,0,c.width,c.height).data;
-    g.clearRect(0,0,c.width,c.height);
+    const base=g.getImageData(0,0,width,height).data;
+    g.clearRect(0,0,width,height);
     if(hi)g.drawImage(hi,-x0,-y0);
-    const light=g.getImageData(0,0,c.width,c.height).data;
-    const tone=new Float32Array(c.width*c.height), hist=new Uint32Array(766);
-    let n=0;
+    const light=g.getImageData(0,0,width,height).data;
+    const tone=new Float32Array(width*height), hist=new Uint32Array(766);
+    let n=0, rx0=width, ry0=height, rx1=0, ry1=0;
     for(let i=0,j=0;i<base.length;i+=4,j++){
+      if(base[i+3]) {
+        const x=j%width,y=Math.floor(j/width);
+        if(x<rx0)rx0=x;if(x>=rx1)rx1=x+1;
+        if(y<ry0)ry0=y;if(y>=ry1)ry1=y+1;
+      }
       // Source pairs split diffuse and specular at neutral grey. Recombine
       // for calibration so clipped white diffuse retains its highlight detail.
       const v=(base[i]+base[i+1]+base[i+2])/3
@@ -443,10 +494,17 @@ export class GloveRenderer {
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.
     if (this.imgs._hdLeather) {
-      const w=c.width,h=c.height,
+      // Outside this alpha rectangle every weighted term is zero. Keep the
+      // complete calibrated tone array for edge blends, but omit those zero
+      // terms from the box buffers and grain work. Sum order/Float32 storage
+      // within the rectangle is identical to the full-frame calculation.
+      const w=rx1-rx0,h=ry1-ry0,
         radius=Math.max(1,Math.round(this.DATA.h/550*(finish?.blurScale ?? 1)));
-      const weights=new Float32Array(tone.length), weighted=new Float32Array(tone.length);
-      for(let j=0;j<tone.length;j++){weights[j]=base[j*4+3]/255;weighted[j]=tone[j]*weights[j];}
+      const weights=new Float32Array(w*h), weighted=new Float32Array(w*h);
+      for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        const j=y*w+x,full=(y+ry0)*width+x+rx0;
+        weights[j]=base[full*4+3]/255;weighted[j]=tone[full]*weights[j];
+      }
       const box=(src)=>{
         const tmp=new Float32Array(src.length),out=new Float32Array(src.length);
         for(let y=0;y<h;y++){let sum=0;for(let x=0;x<=radius&&x<w;x++)sum+=src[y*w+x];
@@ -460,11 +518,12 @@ export class GloveRenderer {
       const lace=zone?.group==='lace',strength=snake?17:(response?.grainStrength ?? (lace?2.2:8.5));
       // The material coordinates are separable: wrap each row/column once,
       // not twice per pixel. This preserves the exact same texture samples.
-      const tx=Int32Array.from({length:w},(_,x)=>tex.wrap(x+x0));
-      const ty=Int32Array.from({length:h},(_,y)=>tex.wrap(y+y0)*tex.size);
+      const tx=Int32Array.from({length:w},(_,x)=>tex.wrap(x+x0+rx0));
+      const ty=Int32Array.from({length:h},(_,y)=>tex.wrap(y+y0+ry0)*tex.size);
       for(let y=0;y<h;y++)for(let x=0;x<w;x++){
         const j=y*w+x;if(!weights[j])continue;
-        const macro=weight[j]>0?blur[j]/weight[j]:tone[j],detail=tone[j]-macro;
+        const full=(y+ry0)*width+x+rx0;
+        const macro=weight[j]>0?blur[j]/weight[j]:tone[full],detail=tone[full]-macro;
         // Keep dark stitch/crease edges that remain in photographed leather;
         // suppress only the noisy high-frequency illumination around them.
         // A quiet microtexture keeps pale leather clean while broad light and
@@ -472,15 +531,15 @@ export class GloveRenderer {
         const retained=detail < -9 ? detail*(snake?1:(finish?.darkDetail ?? .72))
           : detail*(finish?.softDetail ?? (response?.detailRetention ?? .24)*(snake?1:.55));
         const grain=tex.values[ty[y]+tx[x]]*(snake?1:(finish?.grainScale ?? .30));
-        tone[j]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
+        tone[full]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
     const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
     if(blend?.role===role && this.imgs[blend.mask]) {
       const original=this.materialSurface(blend.source,role);
       if(original && original.tone.length===tone.length) {
-        g.clearRect(0,0,c.width,c.height);g.drawImage(this.imgs[blend.mask],-x0,-y0);
-        const mask=g.getImageData(0,0,c.width,c.height).data;
+        g.clearRect(0,0,width,height);g.drawImage(this.imgs[blend.mask],-x0,-y0);
+        const mask=g.getImageData(0,0,width,height).data;
         for(let j=0;j<tone.length;j++) {const t=mask[j*4]/255;tone[j]=tone[j]*t+original.tone[j]*(1-t);}
       }
     }
@@ -821,11 +880,12 @@ export class GloveRenderer {
       const source=this.panelMask(ids);
       mask=document.createElement('canvas');mask.width=source.width;mask.height=source.height;
       const g=mask.getContext('2d');g.drawImage(source,0,0);
-      const pixels=g.getImageData(0,0,mask.width,mask.height),a=pixels.data;
-      for(let y=0;y<mask.height;y++){
+      const width=mask.width,height=mask.height;
+      const pixels=g.getImageData(0,0,width,height),a=pixels.data;
+      for(let y=0;y<height;y++){
         let first=-1,last=-1;
-        for(let x=0;x<mask.width;x++)if(a[(y*mask.width+x)*4+3]>=192){if(first<0)first=x;last=x;}
-        for(let x=first+1;first>=0&&x<last;x++)a[(y*mask.width+x)*4+3]=255;
+        for(let x=0;x<width;x++)if(a[(y*width+x)*4+3]>=192){if(first<0)first=x;last=x;}
+        for(let x=first+1;first>=0&&x<last;x++)a[(y*width+x)*4+3]=255;
       }
       g.putImageData(pixels,0,0);this.cache.set(solidKey,mask);
     }
@@ -1475,10 +1535,15 @@ export class GloveRenderer {
   // canvas space: the mirrored render is read as drawn, nothing is folded.
   backOwners(mirror) {
     const D = this.DATA, [bullet, flag] = this._drawn || [null, false];
-    const key = ['own', this.web || '', this.pad || '', mirror ? 1 : 0,
+    // These compact maps survive view/colour changes, unlike full RGBA tint
+    // surfaces. Bound to eight maps (~8 MB) and invalidate on source changes.
+    if (this.ownerData !== D || this.ownerImages !== this.imgs) {
+      this.ownerMaps.clear(); this.ownerData = D; this.ownerImages = this.imgs;
+    }
+    const key = ['own', this.materialSelectionKey || '{}', this.web || '', this.pad || '', mirror ? 1 : 0,
       flag && this.flagMount() && this.flagImg ? this.flagSrc + ':' + this.flagPosition : '', bullet ?? ''].join('|');
-    let own = this.cache.get(key);
-    if (own) return own;
+    let own = this.ownerMaps.get(key);
+    if (own) { this.ownerMaps.delete(key); this.ownerMaps.set(key, own); return own; }
     const lum = h => { const n = parseInt(h.slice(1), 16);
       return 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255); };
     const ends = {};
@@ -1505,7 +1570,8 @@ export class GloveRenderer {
         if (v >= 2 && v > best[j]) { best[j] = v; own[j] = z.n; }
       }
     }
-    this.cache.set(key, own);
+    this.ownerMaps.set(key, own);
+    if (this.ownerMaps.size > 8) this.ownerMaps.delete(this.ownerMaps.keys().next().value);
     return own;
   }
 
