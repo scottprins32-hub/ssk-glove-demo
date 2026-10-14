@@ -18,13 +18,13 @@
       "id": "back1",
       "n": 3,
       "group": "leather",
-      "label": "Back 1 — Wingtip thumb"
+      "label": "Back 1 \u2014 Wingtip thumb"
     },
     {
       "id": "back9",
       "n": 4,
       "group": "leather",
-      "label": "Back 9 — Wingtip pinky"
+      "label": "Back 9 \u2014 Wingtip pinky"
     },
     {
       "id": "welting",
@@ -52,26 +52,26 @@
     }
   ],
   "assets": {
-    "glove": "assets/palm-pinky-opening-r01/glove.png",
-    "palm": "assets/palm-tail-r01/palm.png",
-    "palm_hi": "assets/palm-tail-r01/palm_hi.png",
-    "web": "assets/quality-audit-r01/palm/web.png",
-    "web_hi": "assets/quality-audit-r01/palm/web_hi.png",
+    "glove": "assets/side-lossless-r01/palm-glove.png",
+    "palm": "assets/side-lossless-r01/palm-palm.png",
+    "palm_hi": "assets/side-lossless-r01/palm-palm_hi.png",
+    "web": "assets/side-lossless-r01/palm-web.png",
+    "web_hi": "assets/side-lossless-r01/palm-web_hi.png",
     "back1": "assets/palm-boundary-r01/back1.png",
     "back1_hi": "assets/palm-boundary-r01/back1_hi.png",
-    "back9": "assets/palm-pinky-opening-r01/back9.png",
-    "back9_hi": "assets/palm-pinky-opening-r01/back9_hi.png",
-    "welting": "assets/clean-edges-r01/palm-welting.png",
-    "welting_hi": "assets/quality-audit-r01/palm/welting_hi.png",
-    "binding": "assets/quality-audit-r01/palm/binding.png",
-    "binding_hi": "assets/quality-audit-r01/palm/binding_hi.png",
-    "laces": "assets/palm-pinky-upper-r01/laces.png",
-    "laces_hi": "assets/palm-pinky-upper-r01/laces_hi.png",
-    "_idmap": "assets/palm-pinky-opening-r01/_idmap.png",
+    "back9": "assets/side-lossless-r01/palm-back9.png",
+    "back9_hi": "assets/side-lossless-r01/palm-back9_hi.png",
+    "welting": "assets/side-lossless-r01/palm-welting.png",
+    "welting_hi": "assets/side-lossless-r01/palm-welting_hi.png",
+    "binding": "assets/side-lossless-r01/palm-binding.png",
+    "binding_hi": "assets/side-lossless-r01/palm-binding_hi.png",
+    "laces": "assets/side-lossless-r01/palm-laces.png",
+    "laces_hi": "assets/side-lossless-r01/palm-laces_hi.png",
+    "_idmap": "assets/side-lossless-r01/palm-_idmap.webp",
     "marks": "assets/palm/marks.webp",
     "p1_replacement_footprint": "assets/palm-p1/replacement-footprint.png",
     "p1_protected": "assets/palm-p1/protected.png",
-    "stitching": "assets/web-precision-r01/palm/stitching.png",
+    "stitching": "assets/side-lossless-r01/palm-stitching.png",
     "p1_smlee_leather": "assets/palm-p1/smlee-leather.png",
     "p1_smlee_laces": "assets/palm-p1/smlee-laces.png",
     "p1_smlee_stitching": "assets/palm-p1/smlee-stitching.png",
@@ -99,8 +99,8 @@
     "_hdLeather": "assets/hd-material-r02/leather-texture.webp",
     "_snakeLeather": "assets/hd-material-r02/snakeskin.webp",
     "_hdLace": "assets/hd-material-r02/lace-height.webp",
-    "_back9_opening_material": "assets/quality-audit-r01/palm/back9.png",
-    "_back9_opening_material_hi": "assets/quality-audit-r01/palm/back9_hi.png",
+    "_back9_opening_material": "assets/side-lossless-r01/palm-_back9_opening_material.png",
+    "_back9_opening_material_hi": "assets/side-lossless-r01/palm-_back9_opening_material_hi.png",
     "round_stamp": "assets/web-refinement-r03/palm-round-stamp.svg",
     "heel_stamp": "assets/web-refinement-r03/palm-ssk-stamp.svg",
     "i_merge_standard_i_leather": "assets/i-web-model-merge-r01/standard-i-palm-leather.png",
@@ -125,10 +125,10 @@
       1400
     ],
     "palm": [
-      0,
-      0,
-      1534,
-      1400
+      149,
+      56,
+      1286,
+      1307
     ],
     "palm_hi": [
       0,
@@ -137,10 +137,10 @@
       1400
     ],
     "web": [
-      0,
-      0,
-      1534,
-      1400
+      178,
+      73,
+      694,
+      863
     ],
     "web_hi": [
       0,
@@ -151,8 +151,8 @@
     "back1": [
       0,
       0,
-      1534,
-      1400
+      1,
+      1
     ],
     "back1_hi": [
       0,
@@ -161,10 +161,10 @@
       1400
     ],
     "back9": [
-      0,
-      0,
-      1534,
-      1400
+      1259,
+      221,
+      1373,
+      959
     ],
     "back9_hi": [
       0,
@@ -173,10 +173,10 @@
       1400
     ],
     "welting": [
-      0,
-      0,
-      1534,
-      1400
+      786,
+      71,
+      1196,
+      738
     ],
     "welting_hi": [
       0,
@@ -185,10 +185,10 @@
       1400
     ],
     "binding": [
-      0,
-      0,
-      1534,
-      1400
+      214,
+      51,
+      1322,
+      1342
     ],
     "binding_hi": [
       0,
@@ -197,10 +197,10 @@
       1400
     ],
     "laces": [
-      0,
-      0,
-      1534,
-      1400
+      53,
+      49,
+      1461,
+      1384
     ],
     "laces_hi": [
       0,
@@ -227,10 +227,10 @@
       1400
     ],
     "stitching": [
-      0,
-      0,
-      1534,
-      1400
+      279,
+      166,
+      635,
+      786
     ],
     "p1_smlee_leather": [
       0,
@@ -383,10 +383,10 @@
       1400
     ],
     "_back9_opening_material": [
-      0,
-      0,
-      1534,
-      1400
+      1259,
+      221,
+      1373,
+      959
     ],
     "i_merge_standard_i_leather": [
       0,
@@ -449,22 +449,22 @@
       1400
     ],
     "clean_edge_heal_binding": [
-      0,
-      0,
-      1534,
-      1400
+      800,
+      73,
+      1178,
+      738
     ],
     "clean_edge_heal_palm": [
-      0,
-      0,
-      1534,
-      1400
+      786,
+      133,
+      1177,
+      737
     ],
     "clean_edge_heal_laces": [
-      0,
-      0,
-      1534,
-      1400
+      788,
+      134,
+      1193,
+      730
     ]
   },
   "marks": null,
