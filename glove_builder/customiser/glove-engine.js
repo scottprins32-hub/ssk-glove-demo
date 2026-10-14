@@ -11,6 +11,13 @@ const materialColours = new Map();
 const SMOOTH_SIDE_LEATHER = Object.freeze({
   blurScale: 3.5, darkDetail: .10, softDetail: .04, grainScale: .025
 });
+// Start the pinky panels from clean light planes. Two alpha-weighted passes
+// remove photographic mottling without blurring their full-resolution edges.
+// Add only a faint material texture, never the noisy source-photo residual.
+const CLEAN_PINKY_LEATHER = Object.freeze({
+  blurScale: 10, blurPasses: 2, relief: .65,
+  darkDetail: 0, softDetail: 0, grainScale: .08
+});
 
 // Retain render dependencies, not superseded tracing/review exports. Metadata
 // references (including aliases, web inserts and material sources) are followed
@@ -473,8 +480,9 @@ export class GloveRenderer {
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
-      && (this.DATA.view === 'pinky' || this.DATA.view === 'thumb' && role === 'back1')
-      ? SMOOTH_SIDE_LEATHER : null;
+      ? this.DATA.view === 'pinky' ? CLEAN_PINKY_LEATHER
+        : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER : null
+      : null;
     // The split ring/side masks share one photographed light field when their
     // material recipes match. Their colours and ownership stay independent.
     const cacheRole = ['back78_edge_original','back78_heal_original'].includes(id)
@@ -540,10 +548,10 @@ export class GloveRenderer {
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.
     if (this.imgs._hdLeather) {
-      // Outside this alpha rectangle every weighted term is zero. Keep the
-      // complete calibrated tone array for edge blends, but omit those zero
-      // terms from the box buffers and grain work. Sum order/Float32 storage
-      // within the rectangle is identical to the full-frame calculation.
+      // Keep the complete calibrated tone array for edge blends, but filter
+      // only the alpha rectangle. One pass matches the full-frame calculation;
+      // repeated passes normalize within these material bounds. Alpha is never
+      // filtered, so the original full-resolution outline stays intact.
       const w=rx1-rx0,h=ry1-ry0,
         radius=Math.max(1,Math.round(this.DATA.h/550*(finish?.blurScale ?? 1)));
       const weights=new Float32Array(w*h), weighted=new Float32Array(w*h);
@@ -560,7 +568,11 @@ export class GloveRenderer {
         return out;
       };
       const snake=this.materials?.[role]==='snakeskin' && !!this.imgs._snakeLeather;
-      const blur=box(weighted),weight=box(weights),tex=this.leatherGrain(snake,zone?.group==='lace');
+      let blur=box(weighted),weight=box(weights);
+      for(let pass=1;pass<(finish?.blurPasses ?? 1);pass++) {
+        blur=box(blur);weight=box(weight);
+      }
+      const tex=this.leatherGrain(snake,zone?.group==='lace');
       const lace=zone?.group==='lace',strength=snake?17:(response?.grainStrength ?? (lace?2.2:8.5));
       // The material coordinates are separable: wrap each row/column once,
       // not twice per pixel. This preserves the exact same texture samples.
@@ -577,7 +589,7 @@ export class GloveRenderer {
         const retained=detail < -9 ? detail*(snake?1:(finish?.darkDetail ?? .72))
           : detail*(finish?.softDetail ?? (response?.detailRetention ?? .24)*(snake?1:.55));
         const grain=tex.values[ty[y]+tx[x]]*(snake?1:(finish?.grainScale ?? .30));
-        tone[full]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
+        tone[full]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(finish?.relief ?? response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
     const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
