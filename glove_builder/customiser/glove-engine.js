@@ -42,6 +42,21 @@ function decodeImage(src) {
   }));
   return decodedImages.get(src);
 }
+
+// Keep successful metadata and share requests in flight, but let a failed
+// request be retried. A temporary outage must not remove an angle forever.
+function viewMetadata(name) {
+  const key = name === 'back' ? 'glove' : name;
+  let pending;
+  return () => pending || (pending = (async () => {
+    const inlined = window['__' + key.toUpperCase() + '_DATA__'];
+    if (inlined) return structuredClone(inlined);
+    const response = await fetch('assets/' + key + '-data.json');
+    if (!response.ok) throw new Error('Glove data could not be loaded');
+    return response.json();
+  })().catch(error => { pending = null; throw error; }));
+}
+
 export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
   const mode = progressive ? 'progressive|' + initialView : 'complete';
   if (gloveLoads.has(mode)) return gloveLoads.get(mode);
@@ -49,26 +64,20 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
     const names = ['back','palm','thumb','pinky'];
     // Start metadata requests together, but never put an optional side's
     // metadata on the critical path of the back view.
-    const metadata = names.map(async name => {
-      const key = name === 'back' ? 'glove' : name;
-      try {
-        const inlined = window['__' + key.toUpperCase() + '_DATA__'];
-        if (inlined) return structuredClone(inlined);
-        const response = await fetch('assets/' + key + '-data.json');
-        if (!response.ok) throw new Error('Glove data could not be loaded');
-        return await response.json();
-      } catch (error) { if (name === 'back') throw error; return null; }
-    });
-    const backData = await metadata[0], views = {};
+    const metadata = names.map(viewMetadata);
+    // Optional prefetch failures are handled here; load() exposes a retryable
+    // error when that angle is actually requested.
+    metadata.forEach(load => { load().catch(() => {}); });
+    const backData = await metadata[0](), views = {};
     for (let i = 0; i < names.length; i++) {
       const v = { DATA: i === 0 ? backData : { w:backData.w, h:backData.h,
         zones:[], fieldsShown:[], fieldsNotShown:[], palettes:backData.palettes },
         imgs:{}, idData:null, ready:false, assetErrors:{} };
       let loading;
       v.load = () => loading || (loading = (async () => {
-        const DATA = await metadata[i];
-        if (!DATA) { v.absent = true; throw new Error('View data is unavailable'); }
-        DATA.palettes = backData.palettes; v.DATA = DATA; v.error = null;
+        v.error = null;
+        const DATA = await metadata[i]();
+        DATA.palettes = backData.palettes; v.DATA = DATA;
         const keys = renderAssets(DATA);
         // Hosted HTTPS benefits from HTTP/2 multiplexing. Keep the tighter
         // bound for local HTTP servers, where excessive sockets caused resets.
@@ -102,7 +111,6 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
     await Promise.all((progressive ? [...new Set(['back', initialView])] : names)
       .map(name => views[name]?.load().catch(error => {
         if (name === 'back') throw error;
-        if (!progressive) views[name] = null;
       })));
     return { ...views.back, views };
   })();
@@ -632,28 +640,29 @@ export class GloveRenderer {
   preloadFlags(srcs) {
     this._flags = this._flags || {};
     return Promise.all([...new Set(srcs.filter(Boolean))].map(src =>
-      new Promise(res => {
-        const im = new Image();
-        im.onload = () => { this._flags[src] = im; res(); };
-        im.onerror = res;
-        im.src = src;
-      })));
+      decodeImage(src).then(im => { this._flags[src] = im; }, () => {})));
   }
 
-  // The flag patch on the index finger. SVGs decode asynchronously, so the
-  // app hands over a URL and gets a callback once there is something to draw.
+  // Index or middle-finger embroidery. Share the preload's decode and retain
+  // only the latest redraw callback, even if several paints request this flag.
   setFlag(src, onReady, position = 'index') {
     this.flagPosition = position === 'middle' ? 'middle' : 'index';
     this._flags = this._flags || {};
     this.flagSrc = src || null;
     this.flagImg = src ? (this._flags[src] || null) : null;
+    this._flagReady = onReady;
     if (!src || this.flagImg) return;
-    const im = new Image();
-    im.onload = () => {
+    this._flagLoads = this._flagLoads || new Map();
+    if (this._flagLoads.has(src)) return;
+    const pending = decodeImage(src).then(im => {
+      this._flagLoads.delete(src);
       this._flags[src] = im;
-      if (this.flagSrc === src) { this.flagImg = im; if (onReady) onReady(); }
-    };
-    im.src = src;
+      if (this.flagSrc === src) {
+        this.flagImg = im;
+        this._flagReady?.();
+      }
+    }, () => { this._flagLoads.delete(src); });
+    this._flagLoads.set(src, pending);
   }
 
   // Which of the two things can be fitted to the index finger — 'pad',
