@@ -1,0 +1,11 @@
+# White thumb trim and view loading
+
+The lower diagonal in the photographed thumb was previously fixed-colour silver piping. Scott confirmed it must use **Welting**. Its original 7,470-source-pixel band is retained as a separately calibrated detail. Photographed thread follows **Stitching**, and the old rectangular fixed-art fragment above the seam follows **Back2**. The upper fold remains **Palm**; its existing accepted mask uses the lighting calibration of the web layer from which it was originally cut. Circle artwork and source images are untouched.
+
+`surfaceDetails` supplies colour, visible picking and occluded selection feedback without changing surrounding material histograms or glove alpha. Replacement estimated bodies exclude the photographic corrections. The native-H alias bundle refreshes when a deferred Crocodile texture becomes available.
+
+The default H palm no longer loads eight alternate web inserts and their verification bank. A selected alternate still needs the compiled contract, dimensions, role mapping, review/source pins and actual SHA-256 checks. Successful image decodes and hashes are shared; failed work can retry. All progressive views defer the Crocodile texture until needed. Smaller native palm processing rectangles retain the complete images and exact output.
+
+Using a Python environment with Pillow installed, `python3 scripts/build_side_lossless.py --check` verifies the transport derivatives against every original RGBA byte, dimensions and colour-profile metadata. Rendered layers remain PNG because native and browser WebP decoders round translucent channels differently. Only the opaque palm picking map uses browser-verified exact WebP. Original sources are retained. The final derivatives save 1,213,253 bytes without changing rendered pixels.
+
+Validation: 32 loader regressions, 12 version/package/Back8 checks, lossless byte verification, browser decoding of all 37 inputs, full renderer comparisons, independent ownership/material/alpha checks, and independent review. Local browser first-palm observations around 0.5 seconds are Mac viewport tests, not physical-phone or network guarantees. The reliable universal subsecond objective remains open. Saved design format and default model selection are unchanged.

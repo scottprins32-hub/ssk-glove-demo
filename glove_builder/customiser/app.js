@@ -465,7 +465,8 @@ function viewAvailability(view, w = selectedWeb()) {
   if (native) return { ok: true, note: null };
   if (view === 'back') return w.render && R.views.back?.DATA?.webs?.[w.render]
     ? { ok: true, note: null } : { ok: false, reason: 'webNoBack' };
-  if (view === 'palm') return w.render && R.views.palm?.DATA?.palmWebs?.entries?.[w.render]
+  if (view === 'palm') return w.render && (R.views.palm?.DATA?.palmWebs?.entries?.[w.render]
+      || R.views.palm?.hasPendingSelection?.(w.render))
     ? { ok: true, note: 'palmEstimated' } : { ok: false, reason: 'webNoPalm' };
   if (view === 'thumb') {
     if (estimatesThumb(w)) return { ok: true, note: 'thumbEstimated' };
@@ -568,6 +569,7 @@ function gateSelection(target) {
   selectionRetry(!!request.error);
   if (!request.pending && !request.error) {
     request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
+      if (selected.view === R.views.thumb) registerThumbViews();
       if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
     }).catch(error => {
       request.error = error;
@@ -1135,7 +1137,7 @@ function estimatedThumbViews(v) {
     // not: the one zone C3 may add, and only in this view.
     const extra = (body.zones || []).filter(z => z.id === 'welting' && z.n === 10
       && z.field === 'welting' && z.group === 'lace').slice(0, 1);
-    const zones = [...v.DATA.zones, ...extra];
+    const zones = [...v.DATA.zones, ...extra.filter(z => !v.DATA.zones.some(base => base.id === z.id))];
     if (!ok || !imgs.glove || !imgs._idmap || !imgs.thumb_circle_art
         || !zones.every(z => imgs[z.id] && bbox[z.id])
         || !body.servesWebs.every(s => C3_ROLES.every(r => imgs[inserts[s][r]] && bbox[inserts[s][r]]))) continue;
@@ -1144,6 +1146,7 @@ function estimatedThumbViews(v) {
     // insert block runs for both families identically.
     const thumbWebs = Object.fromEntries(body.servesWebs.map(s => [s, inserts[s]]));
     const DATA = { ...v.DATA, zones, bbox, thumbWebs, thumbCircle: body.thumbCircle,
+                   surfaceDetails: null,
                    sheen: body.sheen || {}, webMarker: null,
                    fieldsShown: [...v.DATA.fieldsShown, ...shown],
                    fieldsNotShown: v.DATA.fieldsNotShown.filter(f => !shown.includes(f)) };

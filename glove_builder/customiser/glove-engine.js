@@ -37,15 +37,17 @@ function assetDependencies(DATA, values, fixed = []) {
 function renderAssets(DATA, baseOnly = false) {
   const values = Object.entries(DATA).filter(([key]) =>
     !['assets','bbox','source','presets','palettes','materialSources','materialResponse'].includes(key) && !key.startsWith('user')
-    && !(baseOnly && ['webs','_snakeLeather'].includes(key))).map(([, value]) => value);
+    && !(baseOnly && ['webs','palmWebs','_snakeLeather'].includes(key))).map(([, value]) => value);
   return assetDependencies(DATA, values, [...FIRST_ASSETS, ...(baseOnly ? [] : ['_snakeLeather']),
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
     'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']);
 }
-function selectionAssets(DATA, web, snake) {
-  return assetDependencies(DATA, [DATA.webs?.[web]], snake ? ['_snakeLeather'] : []);
+function selectionAssets(DATA, web, snake, palmManifest) {
+  const palm = palmManifest?.entries?.[web];
+  return assetDependencies(DATA, [DATA.webs?.[web], ...(palm
+    ? [palm, palmManifest.footprint, palmManifest.protected] : [])], snake ? ['_snakeLeather'] : []);
 }
 // Build-time hashes change cache keys without changing metadata or image bytes.
 // Offline data URLs and external catalogue links keep their original source.
@@ -96,6 +98,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         zones:[], fieldsShown:[], fieldsNotShown:[], palettes:backData.palettes },
         imgs:{}, idData:null, ready:false, assetErrors:{} };
       let loading;
+      let palmManifest;
       const selections = new Map();
       const loadAssets = async keys => {
         // Explicit selections share in-flight decodes with the base and previews.
@@ -112,16 +115,25 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
           }
         }));
       };
+      // Pending means the web can be requested, never that it may be drawn.
+      // Its compiled contract and every selected asset still have to verify.
+      v.hasPendingSelection = web => !!palmManifest?.entries?.[web]
+        && !!PALM_P3.webs[web] && !v.DATA.palmWebs?.entries?.[web];
       v.selectionReady = (web, snake = false) => v.ready
-        && selectionAssets(v.DATA, web, snake).every(key => !!v.imgs[key]);
+        && !v.hasPendingSelection(web)
+        && selectionAssets(v.DATA, web, snake, palmManifest).every(key => !!v.imgs[key]);
       v.loadSelection = (web, snake = false) => {
         const key = JSON.stringify([web || null, !!snake]);
         if (selections.has(key)) return selections.get(key);
         const pending = (async () => {
           await v.load();
-          const keys = selectionAssets(v.DATA, web, snake);
+          const keys = selectionAssets(v.DATA, web, snake, palmManifest);
           await loadAssets(keys);
           if (keys.some(key => !v.imgs[key])) throw new Error('Selected option could not be loaded');
+          if (palmManifest?.entries?.[web]) {
+            await verifyPalmWebs(v, { manifest: palmManifest, web });
+            if (!v.DATA.palmWebs?.entries?.[web]) throw new Error('Selected palm web could not be verified');
+          }
           return v;
         })();
         selections.set(key, pending);
@@ -132,17 +144,20 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         v.error = null;
         const DATA = await metadata[i]();
         DATA.palettes = backData.palettes; v.DATA = DATA;
-        // Only the progressive back defers alternate webs and crocodile texture.
-        // Every other dependency and the default complete API stay unchanged.
-        await loadAssets(renderAssets(DATA, progressive && names[i] === 'back'));
+        const deferredPalm = progressive && names[i] === 'palm';
+        if (deferredPalm) { palmManifest ||= DATA.palmWebs; DATA.palmWebs = null; }
+        // Native palm viewing needs no alternate insert or hash-bank download.
+        // The complete API still eagerly verifies all available palm inserts.
+        await loadAssets(renderAssets(DATA, progressive));
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
+          ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {})];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded');
         const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
         const g = ic.getContext('2d', { willReadFrequently: true });
         g.drawImage(v.imgs._idmap, 0, 0);
         v.idData = g.getImageData(0, 0, DATA.w, DATA.h).data;
-        if (names[i] === 'palm') await verifyPalmWebs(v);
+        if (names[i] === 'palm' && !deferredPalm) await verifyPalmWebs(v);
         v.ready = true; v.error = null;
         return v;
       })().catch(error => { loading = null; v.error = error; throw error; }));
@@ -195,10 +210,10 @@ const PALM_P3 = {
     'spiral-i': ["03d57b94f7003ced4436d01542031df331dfc6a0ed906d7364570a79271a5f02","0392b4fbf14124048e3391debdd91f0b038b1f97a32777e0f09f1c04205f6e7a","d72b82528dc4d3c172c64d5225b6b07cc71ab69e2e024a1c0d63324ae9c812a1","91db7ffa2588c2c87b6a66f0ff736f95f663f23ba9b47fa2a68998ebba5b7a52","cd0a5a63e7f5936b8aa8a453009500a0474c1e5d90b7c62ecc42b65955897d67","805ff52e851e0c57faed9c51399b52c1330c536cfff45e0d4ff37b4e8e35b1e5","0cc1bf3e7de14a3483b3ae5a9ca5d04bf9b7ff60623492fed7f6a442b0b20395"],
   },
 };
-async function verifyPalmWebs(v) {
-  const P = v.DATA.palmWebs;
+async function verifyPalmWebs(v, { manifest = v.DATA.palmWebs, web: selectedWeb = null } = {}) {
+  const P = manifest;
   if (!P) return;
-  v.DATA.palmWebs = null;
+  if (!selectedWeb) v.DATA.palmWebs = null;
   const { DATA, imgs } = v, W = DATA.w, H = DATA.h, T = PALM_P3;
   const same = (a, b) => JSON.stringify(Object.keys(a || {}).sort()) === JSON.stringify(Object.keys(b).sort());
   if (P.view !== 'palm' || P.contract?.revision !== 'PALM-P3' || P.contract?.sha256 !== T.contract
@@ -211,7 +226,7 @@ async function verifyPalmWebs(v) {
         || DATA.zones.filter(z => z.id === id).length !== 1) return;
   }
   // The bytes behind an asset key, hashed once per URL.
-  const hashes = new Map();
+  const hashes = v.palmHashes || (v.palmHashes = new Map());
   const ok = async (part, want) => {
     if (!part || typeof part.asset !== 'string' || part.sha256 !== want) return false;
     // tinted() places the layer by its box. Every reviewed PALM-P2 layer is
@@ -229,10 +244,13 @@ async function verifyPalmWebs(v) {
           .map(b => b.toString(16).padStart(2, '0')).join('');
       } catch { return null; }
     })());
-    return (await hashes.get(url)) === want;
+    const valid = (await hashes.get(url)) === want;
+    if (!valid) hashes.delete(url); // a transient failure remains retryable
+    return valid;
   };
   if (!(await ok(P.footprint, T.footprint)) || !(await ok(P.protected, T.protected))) return;
   for (const m of [P.footprint, P.protected]) {
+    if (imgs[m.asset + '#alpha']) continue;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d', { willReadFrequently: true });
     g.drawImage(imgs[m.asset], 0, 0);
@@ -246,6 +264,7 @@ async function verifyPalmWebs(v) {
   }
   const entries = {};
   for (const [web, [manifest, source, evidence, ...layers]] of Object.entries(T.webs)) {
+    if (selectedWeb && web !== selectedWeb) continue;
     const e = P.entries?.[web];
     if (!e || e.status !== 'estimated' || e.manifestSHA256 !== manifest || e.sourceSHA256 !== source
         || e.assetReview?.verdict !== 'PASS' || e.assetReview?.evidenceSHA256 !== evidence
@@ -268,7 +287,8 @@ async function verifyPalmWebs(v) {
   v.DATA.palmWebs = { ...P, contract: { ...P.contract, sha256: T.contract },
     roles: Object.fromEntries(Object.entries(T.roles).map(([k, [id]]) => [k, id])),
     footprint: { asset: P.footprint.asset, sha256: T.footprint },
-    protected: { asset: P.protected.asset, sha256: T.protected }, entries };
+    protected: { asset: P.protected.asset, sha256: T.protected },
+    entries: { ...(selectedWeb ? v.DATA.palmWebs?.entries : {}), ...entries } };
 }
 
 export function shade(hx, f) {
@@ -332,16 +352,18 @@ export class GloveRenderer {
     const def = base.DATA.nativeHContour;
     const active = this.view === 'thumb' && !this.web && !this.webMarked && def;
     const key = this.view + '|' + (active ? def.revision : 'base');
-    if (this.nativeContourKey === key) return;
+    const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
+    if (this.nativeContourKey === key && !newTexture) return;
     this.DATA = base.DATA; this.imgs = base.imgs; this.idData = base.idData;
     if (active) {
-      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base) {
+      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture) {
         const imgs = { ...base.imgs };
         for (const [zone, asset] of Object.entries(def.assets)) imgs[zone] = base.imgs[asset];
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
         this.nativeContourBundle = { base, imgs, DATA: { ...base.DATA,
           bbox: { ...base.DATA.bbox, ...def.bbox },
+          materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown },
           idData: g.getImageData(0,0,c.width,c.height).data };
@@ -495,9 +517,25 @@ export class GloveRenderer {
     // expanding a flat cutout would amplify pores/noise into false relief.
     const lower=Math.min(1,(response?.shadowRange ?? 40)/Math.max(1,mid-lo));
     const upper=Math.min(1,22/Math.max(1,high-mid));
+    // This accepted palm fold was cut from a differently exposed web layer.
+    // Keep its exact ownership/alpha, but calibrate only that mask against its
+    // source lighting instead of treating the source shadow as black leather.
+    const local = response?.localCalibration;
+    let localMask;
+    if (local && this.imgs[local.mask]) {
+      g.clearRect(0,0,width,height); g.drawImage(this.imgs[local.mask],-x0,-y0);
+      localMask=g.getImageData(0,0,width,height).data;
+    }
     for(let j=0;j<tone.length;j++){
       const v=tone[j];
-      tone[j]=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
+      const normal=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
+      const weight=localMask ? localMask[j*4]/255*localMask[j*4+3]/255 : 0;
+      if (weight) {
+        const scale=v<local.mid ? Math.min(1,40/Math.max(1,local.mid-local.lo))
+          : Math.min(1,22/Math.max(1,local.high-local.mid));
+        const corrected=Math.max(0,Math.min(280,248+(v-local.mid)*scale));
+        tone[j]=normal*(1-weight)+corrected*weight;
+      } else tone[j]=normal;
     }
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.
@@ -1217,6 +1255,16 @@ export class GloveRenderer {
         }
       }
     }
+    // Former fixed-colour side details now follow their actual trim/panel
+    // fields. Independent boxes keep the accepted surrounding lighting intact.
+    if (D.surfaceDetails?.length) {
+      ctx.save(); ctx.globalCompositeOperation='source-atop';
+      for (const [asset, role] of D.surfaceDetails) {
+        const layer=this.tinted(asset,this.hex(role,state),asset,role);
+        ctx.drawImage(layer,layer._ox,layer._oy);
+      }
+      ctx.restore();
+    }
     // Glove laces and finger welting remain the same for every selected web.
     if (D.approvedH && this.imgs.approved_h_common_cut) {
       ctx.save();ctx.globalCompositeOperation='destination-out';
@@ -1387,6 +1435,20 @@ export class GloveRenderer {
     }
     if (highlight && highlight.id && D.bbox[highlight.id]) {
       let c = this.tinted(highlight.id, '#ffffff');
+      if (D.surfaceDetails?.length) {
+        const combined=document.createElement('canvas');combined.width=D.w;combined.height=D.h;
+        const g=combined.getContext('2d');g.drawImage(c,c._ox,c._oy);
+        g.globalCompositeOperation='destination-out';
+        for (const [asset] of D.surfaceDetails) g.drawImage(this.imgs[asset],0,0);
+        // Follow the same visible stacking as the coloured details: a panel
+        // highlight cannot bleed through its Welting or overlying Stitching.
+        for (const [asset,role] of D.surfaceDetails) {
+          g.globalCompositeOperation=role===highlight.id?'source-over':'destination-out';
+          const part=this.tinted(asset,'#ffffff',asset,role);
+          g.drawImage(part,part._ox,part._oy);
+        }
+        combined._ox=0;combined._oy=0;c=combined;
+      }
       if (thumbInsert) {
         const key = 'thumb-highlight|' + this.web + '|' + highlight.id;
         let fitted = this.cache.get(key);
@@ -1487,7 +1549,7 @@ export class GloveRenderer {
         clipped._ox = clipped._oy = 0; c = clipped;
       }
       // A highlight may recolour this fitted web, but cannot grow its alpha fringe.
-      ctx.globalCompositeOperation = swap?.webLoops ? 'source-atop' : 'screen';
+      ctx.globalCompositeOperation = swap?.webLoops || D.surfaceDetails?.length ? 'source-atop' : 'screen';
       ctx.globalAlpha = highlight.amount;
       ctx.drawImage(c, c._ox, c._oy);
       ctx.restore();
@@ -1707,6 +1769,9 @@ export class GloveRenderer {
       }
     }
     const j=(y|0)*D.w+(x|0);
+    for (const [asset,role] of [...(D.surfaceDetails || [])].reverse()) {
+      if(this.palmAlpha(asset)[j]>=128)return role;
+    }
     if(D.weltEdgeHealing?.length && this.palmAlpha('welting')[j]<128){
       for(const[id,role]of D.weltEdgeHealing)if(this.palmAlpha(id)[j]>=128)return role;
     }
