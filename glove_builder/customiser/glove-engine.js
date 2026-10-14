@@ -548,10 +548,10 @@ export class GloveRenderer {
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.
     if (this.imgs._hdLeather) {
-      // Outside this alpha rectangle every weighted term is zero. Keep the
-      // complete calibrated tone array for edge blends, but omit those zero
-      // terms from the box buffers and grain work. Sum order/Float32 storage
-      // within the rectangle is identical to the full-frame calculation.
+      // Keep the complete calibrated tone array for edge blends, but filter
+      // only the alpha rectangle. One pass matches the full-frame calculation;
+      // repeated passes normalize within these material bounds. Alpha is never
+      // filtered, so the original full-resolution outline stays intact.
       const w=rx1-rx0,h=ry1-ry0,
         radius=Math.max(1,Math.round(this.DATA.h/550*(finish?.blurScale ?? 1)));
       const weights=new Float32Array(w*h), weighted=new Float32Array(w*h);
