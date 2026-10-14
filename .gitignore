@@ -22,3 +22,9 @@ REVIEW.md
 
 # GitHub Pages build output
 /_site/
+
+# Base44 static package and local app link
+/_base44/
+/_base44-manifest.json
+/.base44-build-*/
+/base44/.app.jsonc

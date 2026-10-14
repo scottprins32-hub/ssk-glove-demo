@@ -1,0 +1,8 @@
+{
+  "name": "SSK Glove Configurator",
+  "description": "SSK custom glove configurator; reviewed static GitHub source.",
+  "site": {
+    "buildCommand": "python3 scripts/build-base44.py",
+    "outputDirectory": "./_base44"
+  }
+}
