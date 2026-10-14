@@ -101,7 +101,6 @@ export const PALETTE_OF = f =>
 export const OFFSTAGE = {
   back1: 'Wingtip — hidden behind the thumb on this view',
   back9: 'Wingtip — hidden behind the pinky on this view',
-  back8: 'Preview merges Back 7 + 8 into one panel',
   // What this view showed as thumb loops turned out to be the knotted lace,
   // mis-cut by the segmentation. The loops themselves are on the palm side.
   thumb_loops: 'Palm side — not visible on this view',
@@ -245,7 +244,7 @@ export const T = {
     limPersonal: 'Embroidery text, thumb number and circle colour are specified in the list, not drawn on the picture.',
     limOtherFlag: 'Other flag (%s) is not drawn on the picture.',
     limSize: 'Size %s is ordered as chosen; the picture is one representative glove size.',
-    limBack8: 'Back 7 and Back 8 are separate colours; only the Pinky side view shows them apart.',
+    limBack8: 'Back 7 and Back 8 are separate colours; the Back and Pinky side views show them apart.',
     phoneBad: 'Enter a phone number with digits, e.g. +31 6 12345678 or 020 123 4567 ext. 12.',
     contactReady: 'Contact details complete.',
     contactMissing: 'Contact details not complete yet. Only needed when you send the design to SSK Europe; saving and sharing work without them, and the design link never contains them.',
@@ -329,7 +328,7 @@ export const T = {
     limPersonal: 'Borduurtekst, duimnummer en cirkelkleur staan in de lijst, maar zijn niet op de afbeelding getekend.',
     limOtherFlag: 'Andere vlag (%s) is niet op de afbeelding getekend.',
     limSize: 'Maat %s wordt besteld zoals gekozen; de afbeelding toont één representatieve maat.',
-    limBack8: 'Back 7 en Back 8 zijn aparte kleuren; alleen de pinkzijde toont ze apart.',
+    limBack8: 'Back 7 en Back 8 zijn aparte kleuren; de achterkant en pinkzijde tonen ze apart.',
     phoneBad: 'Vul een telefoonnummer met cijfers in, bijv. +31 6 12345678 of 020 123 4567 toestel 12.',
     contactReady: 'Contactgegevens compleet.',
     contactMissing: 'Contactgegevens nog niet compleet. Alleen nodig als je het ontwerp naar SSK Europe stuurt; opslaan en delen werken zonder, en de ontwerplink bevat ze nooit.',

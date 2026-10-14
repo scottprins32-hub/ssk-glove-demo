@@ -33,7 +33,7 @@ const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE'
    are real order fields the back view cannot show — see OFFSTAGE. */
 const FIELD_TO_LAYER = {
   web: 'web', palm: 'palm', back3: 'back3', back4: 'back4', back5: 'back5',
-  back6: 'back6', back7: 'back78', belt: 'belt', lining: 'lining',
+  back6: 'back6', back7: 'back78', back8: 'back8', belt: 'belt', lining: 'lining',
   binding: 'binding', welting: 'welting', laces: 'laces',
   thumb_loops: 'thumb_loops', pinky_loops: 'pinky_loops',
   stitching: 'stitching', ring_emb: 'embroidery'
@@ -482,6 +482,7 @@ function editView(view) {
   return true;
 }
 function colourView(field) {
+  if (field === 'back8' && S.view === 'back' && viewAvailability('back').ok) return false;
   // These parts are most clearly separated in their side view.
   const preferred = { back1: 'thumb', back2: 'thumb', back8: 'pinky',
     back9: 'pinky', palm: 'palm' }[field];
@@ -657,7 +658,7 @@ function proofLimits() {
   if (S.thumbText.trim() || S.pinkyText.trim() || S.thumbNumber) out.push(t('limPersonal'));
   if (S.flag === 'Other Flag') out.push(t('limOtherFlag').replace('%s', S.flagOther.trim() || '—'));
   if (S.size) out.push(t('limSize').replace('%s', S.size));
-  if (S.colors.back7 && S.colors.back8 && (S.colors.back7 !== S.colors.back8 || (S.materials?.back7 || 'standard') !== (S.materials?.back8 || 'standard')) && S.view !== 'pinky')
+  if (S.colors.back7 && S.colors.back8 && (S.colors.back7 !== S.colors.back8 || (S.materials?.back7 || 'standard') !== (S.materials?.back8 || 'standard')) && !['back', 'pinky'].includes(S.view))
     out.push(t('limBack8'));
   return out;
 }
