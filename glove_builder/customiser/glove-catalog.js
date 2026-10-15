@@ -249,7 +249,16 @@ export const T = {
     contactReady: 'Contact details complete.',
     contactMissing: 'Contact details not complete yet. Only needed when you send the design to SSK Europe; saving and sharing work without them, and the design link never contains them.',
     previewSmaller: 'Smaller preview', previewLarger: 'Larger preview',
-    allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom'
+    allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom',
+    summary: 'Summary', summaryTitle: 'Your choices',
+    downloadImage: 'Download image', myDesigns: 'My designs',
+    saveToGallery: 'Save to my designs', saveToGalleryBtn: 'Save design',
+    galleryNamePh: 'Name this design', untitledDesign: 'Untitled design',
+    gallerySaved: 'Saved to your designs.', gallerySaveFail: 'Could not save. Try again.',
+    galleryTitle: 'My saved designs',
+    galleryEmpty: 'No saved designs yet. Build a glove and save it to see it here.',
+    backToBuilder: 'Back to builder', openDesign: 'Open', deleteDesign: 'Delete',
+    confirmDelete: 'Delete this design?', savedOn: 'Saved on %s'
   },
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
@@ -333,6 +342,15 @@ export const T = {
     contactReady: 'Contactgegevens compleet.',
     contactMissing: 'Contactgegevens nog niet compleet. Alleen nodig als je het ontwerp naar SSK Europe stuurt; opslaan en delen werken zonder, en de ontwerplink bevat ze nooit.',
     previewSmaller: 'Kleinere afbeelding', previewLarger: 'Grotere afbeelding',
-    allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom'
+    allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom',
+    summary: 'Overzicht', summaryTitle: 'Jouw keuzes',
+    downloadImage: 'Afbeelding downloaden', myDesigns: 'Mijn ontwerpen',
+    saveToGallery: 'Opslaan in mijn ontwerpen', saveToGalleryBtn: 'Ontwerp opslaan',
+    galleryNamePh: 'Geef dit ontwerp een naam', untitledDesign: 'Naamloos ontwerp',
+    gallerySaved: 'Opgeslagen in je ontwerpen.', gallerySaveFail: 'Opslaan mislukt. Probeer opnieuw.',
+    galleryTitle: 'Mijn opgeslagen ontwerpen',
+    galleryEmpty: 'Nog geen opgeslagen ontwerpen. Stel een handschoen samen en sla hem op om hem hier te zien.',
+    backToBuilder: 'Terug naar de builder', openDesign: 'Openen', deleteDesign: 'Verwijderen',
+    confirmDelete: 'Dit ontwerp verwijderen?', savedOn: 'Opgeslagen op %s'
   }
 };

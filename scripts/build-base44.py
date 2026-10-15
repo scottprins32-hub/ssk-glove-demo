@@ -16,7 +16,8 @@ SOURCE = ROOT / '_site'
 OUTPUT = ROOT / '_base44'
 MANIFEST = ROOT / '_base44-manifest.json'
 ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js',
-               'refcode.js', 'app.css', 'favicon.svg', '.nojekyll')
+               'refcode.js', 'app.css', 'favicon.svg', '.nojekyll',
+               'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js')
 FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 MAX_ARCHIVE_BYTES = 50_000_000
 

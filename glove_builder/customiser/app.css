@@ -481,3 +481,33 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .resume-dialog::backdrop { background: #0008; }
 .resume-dialog h2 { margin-top: 0; }
 .resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
+
+/* ----------------------------------------------------------- summary drawer */
+.sum-scrim { position: fixed; inset: 0; z-index: 70; background: var(--scrim); }
+.sum-drawer {
+  position: absolute; top: 0; right: 0; height: 100%;
+  width: min(420px, 100vw);
+  display: flex; flex-direction: column;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-overlay);
+  border-left: 1px solid var(--border-default);
+}
+.sum-head {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-5); border-bottom: 1px solid var(--border-default);
+}
+.sum-head h2 {
+  margin: 0; font-family: var(--font-display); font-weight: var(--weight-display-heavy);
+  font-size: var(--display-sm); text-transform: uppercase; letter-spacing: var(--tracking-display);
+  color: var(--text-heading);
+}
+.sum-x {
+  width: 36px; height: 36px; border: 0; background: transparent;
+  font-size: 24px; line-height: 1; color: var(--gray-500); cursor: pointer; min-width: 44px;
+}
+.sum-body { flex: 1 1 auto; overflow-y: auto; padding: var(--space-5); }
+.sum-foot { flex: none; padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-default); }
+@media (max-width: 900px) { .sum-drawer { width: 100%; } }
+
+/* ---------------------------------------------------------- gallery save */
+.gallery-save input { margin-bottom: var(--space-2); }
