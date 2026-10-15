@@ -1708,35 +1708,38 @@ document.addEventListener('keydown', ev => {
 /* ------------------------------------------------------ summary drawer */
 function paintSummary() {
   const body = $('#sumbody');
-  if (!body || $('#sumscrim').hidden) return;
+  if (!body || $('#sumdrawer').hidden) return;
   body.textContent = '';
   body.appendChild(buildSpec());
 }
 function openSummary() {
   if (flushText()) paint();
-  const scrim = $('#sumscrim');
-  scrim.hidden = false;
-  void scrim.offsetHeight;            // commit the off-screen start frame
-  scrim.classList.add('is-open');     // then slide it in
-  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
+  const drawer = $('#sumdrawer');
+  drawer.hidden = false;
+  void drawer.offsetHeight;            // commit the off-screen start frame
+  drawer.classList.add('is-open');     // then slide it in
+  document.body.classList.add('sum-open');  // push the builder aside
   paintSummary();
   $('#sumx').focus();
 }
 function closeSummary() {
-  const scrim = $('#sumscrim');
-  if (scrim.hidden || !scrim.classList.contains('is-open')) return;
-  scrim.classList.remove('is-open');  // slide out + fade
-  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
+  const drawer = $('#sumdrawer');
+  if (drawer.hidden || !drawer.classList.contains('is-open')) return;
+  drawer.classList.remove('is-open');  // slide out
+  document.body.classList.remove('sum-open');
   $('#summary')?.focus();
-  // Drop it from layout once the slide-out finishes, so it stops catching input.
+  // Drop it from layout once the slide-out finishes.
   clearTimeout(closeSummary._t);
-  closeSummary._t = setTimeout(() => { if (!scrim.classList.contains('is-open')) scrim.hidden = true; }, 220);
+  closeSummary._t = setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 220);
 }
-$('#summary').onclick = openSummary;
+$('#summary').onclick = () => {
+  const drawer = $('#sumdrawer');
+  if (drawer.hidden || !drawer.classList.contains('is-open')) openSummary();
+  else closeSummary();
+};
 $('#sumx').onclick = closeSummary;
-$('#sumscrim').onclick = ev => { if (ev.target === $('#sumscrim')) closeSummary(); };
 document.addEventListener('keydown', ev => {
-  if ($('#sumscrim').hidden) return;
+  if ($('#sumdrawer').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSummary(); }
 });
 async function copyToClipboard(ev, txt) {

@@ -11,6 +11,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-body);
   overflow: hidden;                 /* only the panel scrolls */
+  transition: padding-right var(--dur-med) var(--ease-out);
 }
 button { font: inherit; color: inherit; }
 
@@ -483,18 +484,14 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
 
 /* ----------------------------------------------------------- summary drawer */
-/* The scrim fades and the drawer slides from the right; `is-open` drives
-   both. `hidden` still removes it from layout once the slide-out ends, so a
-   closed drawer catches no input and costs paint() nothing. */
-.sum-scrim {
-  position: fixed; inset: 0; z-index: 70; background: var(--scrim);
-  opacity: 0;
-  transition: opacity var(--dur-med) var(--ease-out);
-}
-.sum-scrim.is-open { opacity: 1; }
+/* Push drawer: the panel slides in from the right and the builder content
+   shifts left to make room (body.sum-open). No scrim — the builder stays
+   visible and interactive so the summary updates live. `hidden` drops the
+   drawer from layout once the slide-out ends. */
+:root { --sum-w: 420px; }
 .sum-drawer {
-  position: absolute; top: 0; right: 0; height: 100%;
-  width: min(420px, 100vw);
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: var(--sum-w); z-index: 70;
   display: flex; flex-direction: column;
   background: var(--surface-card);
   box-shadow: var(--shadow-overlay);
@@ -503,7 +500,8 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   transition: transform var(--dur-med) var(--ease-out);
   will-change: transform;
 }
-.sum-scrim.is-open .sum-drawer { transform: translateX(0); }
+.sum-drawer.is-open { transform: translateX(0); }
+body.sum-open { padding-right: var(--sum-w); }
 .sum-head {
   flex: none; display: flex; align-items: center; justify-content: space-between;
   padding: var(--space-5); border-bottom: 1px solid var(--border-default);
@@ -519,7 +517,7 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 }
 .sum-body { flex: 1 1 auto; overflow-y: auto; padding: var(--space-5); }
 .sum-foot { flex: none; padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-default); }
-@media (max-width: 900px) { .sum-drawer { width: 100%; } }
+@media (max-width: 900px) { .sum-drawer { width: 100%; } body.sum-open { padding-right: 0; } }
 
 /* ---------------------------------------------------------- gallery save */
 .gallery-save input { margin-bottom: var(--space-2); }
