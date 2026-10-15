@@ -11,12 +11,12 @@ const materialColours = new Map();
 const SMOOTH_SIDE_LEATHER = Object.freeze({
   blurScale: 3.5, darkDetail: .10, softDetail: .04, grainScale: .025
 });
-// Start the pinky panels from clean light planes. Two alpha-weighted passes
-// remove photographic mottling without blurring their full-resolution edges.
-// Add only a faint material texture, never the noisy source-photo residual.
+// Keep the pinky clean, with the same fine material grain used on the thumb.
+// Two alpha-weighted passes soften photographic mottling while retaining broad
+// folds; a small source contribution restores shallow creases. Masks stay sharp.
 const CLEAN_PINKY_LEATHER = Object.freeze({
-  blurScale: 10, blurPasses: 2, relief: .65,
-  darkDetail: 0, softDetail: 0, grainScale: .08
+  blurScale: 5, blurPasses: 2, relief: 1.20,
+  darkDetail: .10, softDetail: .04, grainScale: .30
 });
 
 // Retain render dependencies, not superseded tracing/review exports. Metadata
@@ -464,9 +464,11 @@ export class GloveRenderer {
   // Normalize source light and add material detail; masks and ownership stay unchanged.
   // Embroidery, thread, logos and flags keep their existing render path.
   materialSurface(id, role) {
-    // Two ownership pieces cut from one source keep that source's illumination.
-    // Boxes remain identical: a colour-only split must not relight either piece.
-    const source = this.DATA.materialSources?.[id];
+    // Standard leather can use a registered material plate under its original
+    // ownership mask. Crocodile retains its existing source. Shared-source
+    // ownership splits likewise keep identical boxes and illumination.
+    const source = (this.materials?.[role] !== 'snakeskin'
+      && this.DATA.standardMaterialSources?.[id]) || this.DATA.materialSources?.[id];
     if (source && source !== id && this.imgs[source]
         && this.DATA.bbox[source]?.every((v,i) => v === this.DATA.bbox[id][i])) {
       return this.materialSurface(source, role);
@@ -480,7 +482,7 @@ export class GloveRenderer {
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
-      ? this.DATA.view === 'pinky' ? CLEAN_PINKY_LEATHER
+      ? this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
         : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER : null
       : null;
     // The split ring/side masks share one photographed light field when their
