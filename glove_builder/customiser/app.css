@@ -483,7 +483,15 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
 
 /* ----------------------------------------------------------- summary drawer */
-.sum-scrim { position: fixed; inset: 0; z-index: 70; background: var(--scrim); }
+/* The scrim fades and the drawer slides from the right; `is-open` drives
+   both. `hidden` still removes it from layout once the slide-out ends, so a
+   closed drawer catches no input and costs paint() nothing. */
+.sum-scrim {
+  position: fixed; inset: 0; z-index: 70; background: var(--scrim);
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-out);
+}
+.sum-scrim.is-open { opacity: 1; }
 .sum-drawer {
   position: absolute; top: 0; right: 0; height: 100%;
   width: min(420px, 100vw);
@@ -491,7 +499,11 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   background: var(--surface-card);
   box-shadow: var(--shadow-overlay);
   border-left: 1px solid var(--border-default);
+  transform: translateX(100%);
+  transition: transform var(--dur-med) var(--ease-out);
+  will-change: transform;
 }
+.sum-scrim.is-open .sum-drawer { transform: translateX(0); }
 .sum-head {
   flex: none; display: flex; align-items: center; justify-content: space-between;
   padding: var(--space-5); border-bottom: 1px solid var(--border-default);

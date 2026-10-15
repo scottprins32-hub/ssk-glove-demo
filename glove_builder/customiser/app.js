@@ -1714,15 +1714,23 @@ function paintSummary() {
 }
 function openSummary() {
   if (flushText()) paint();
-  $('#sumscrim').hidden = false;
+  const scrim = $('#sumscrim');
+  scrim.hidden = false;
+  void scrim.offsetHeight;            // commit the off-screen start frame
+  scrim.classList.add('is-open');     // then slide it in
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
   paintSummary();
   $('#sumx').focus();
 }
 function closeSummary() {
-  $('#sumscrim').hidden = true;
+  const scrim = $('#sumscrim');
+  if (scrim.hidden || !scrim.classList.contains('is-open')) return;
+  scrim.classList.remove('is-open');  // slide out + fade
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
   $('#summary')?.focus();
+  // Drop it from layout once the slide-out finishes, so it stops catching input.
+  clearTimeout(closeSummary._t);
+  closeSummary._t = setTimeout(() => { if (!scrim.classList.contains('is-open')) scrim.hidden = true; }, 220);
 }
 $('#summary').onclick = openSummary;
 $('#sumx').onclick = closeSummary;
