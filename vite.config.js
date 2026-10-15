@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { resolve } from "path";
 import base44 from "@base44/vite-plugin";
 
 // The live app is the static 2.5D glove configurator that already lives in
@@ -16,5 +17,11 @@ export default defineConfig({
   build: {
     outDir: "../../dist",
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve("glove_builder/customiser/index.html"),
+        gallery: resolve("glove_builder/customiser/gallery.html"),
+      },
+    },
   },
 });

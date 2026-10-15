@@ -7,6 +7,7 @@ import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1,
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
+         import { addDesign } from './gallery-store.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -1353,6 +1354,37 @@ function renderYou(b) {
 }
 
 /* -------------------------------------------------------------- 8. review */
+function saveToGalleryField() {
+  const box = el('div', 'field gallery-save');
+  box.appendChild(el('span', 'field-lab', t('saveToGallery')));
+  const nameInput = el('input'); nameInput.type = 'text'; nameInput.maxLength = 60;
+  nameInput.placeholder = t('galleryNamePh'); nameInput.value = S.name || '';
+  nameInput.setAttribute('aria-label', t('galleryNamePh'));
+  const saveBtn = el('button', 'btn btn-ghost', t('saveToGalleryBtn')); saveBtn.type = 'button';
+  saveBtn.style.alignSelf = 'flex-start';
+  const status = el('p', 'note'); status.setAttribute('role', 'status');
+  saveBtn.onclick = async () => {
+    const name = nameInput.value.trim() || t('untitledDesign');
+    saveBtn.disabled = true; status.textContent = '';
+    const ok = await readyForExport();
+    if (!ok) { saveBtn.disabled = false; status.textContent = t('gallerySaveFail'); return; }
+    const full = proofImage();
+    const tw = 240;
+    const thumb = document.createElement('canvas');
+    thumb.width = tw; thumb.height = Math.max(1, Math.round(full.height * tw / full.width));
+    thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
+    addDesign({
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)),
+      name, refcode: code(), savedAt: new Date().toISOString(),
+      thumb: thumb.toDataURL('image/jpeg', 0.78),
+      state: encodeState(true)
+    });
+    saveBtn.disabled = false;
+    status.textContent = t('gallerySaved');
+  };
+  box.append(nameInput, saveBtn, status);
+  return box;
+}
 function renderReview(b) {
   const open = requiredQuestions().filter(q => !answered(q));
   if (open.length) {
@@ -1365,6 +1397,7 @@ function renderReview(b) {
   b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
   b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
+  b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
@@ -1624,10 +1657,7 @@ function specText() {
 
 /* ---------------------------------------------------------------- sheet */
 let sheetReturnFocus;
-async function openSheet() {
-  if (flushText()) paint();
-  // A selection may change while an angle or optional insert is decoding.
-  // Export only after the current selection, not a stale request, is ready.
+async function readyForExport() {
   for (;;) {
     const selected = selectedAssets();
     try {
@@ -1638,10 +1668,14 @@ async function openSheet() {
       if (selectedAssets().key === selected.key) {
         selectionRequest = { key: selected.key, error }; draw(); paint();
       }
-      return;
+      return false;
     }
-    if (selectedAssets().key === selected.key) break;
+    if (selectedAssets().key === selected.key) return true;
   }
+}
+async function openSheet() {
+  if (flushText()) paint();
+  if (!await readyForExport()) return;
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
   $('#shot').src = proofImage().toDataURL('image/png');
@@ -1670,6 +1704,33 @@ document.addEventListener('keydown', ev => {
   if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
 });
+
+/* ------------------------------------------------------ summary drawer */
+function paintSummary() {
+  const body = $('#sumbody');
+  if (!body || $('#sumscrim').hidden) return;
+  body.textContent = '';
+  body.appendChild(buildSpec());
+}
+function openSummary() {
+  if (flushText()) paint();
+  $('#sumscrim').hidden = false;
+  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
+  paintSummary();
+  $('#sumx').focus();
+}
+function closeSummary() {
+  $('#sumscrim').hidden = true;
+  for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = false;
+  $('#summary')?.focus();
+}
+$('#summary').onclick = openSummary;
+$('#sumx').onclick = closeSummary;
+$('#sumscrim').onclick = ev => { if (ev.target === $('#sumscrim')) closeSummary(); };
+document.addEventListener('keydown', ev => {
+  if ($('#sumscrim').hidden) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); closeSummary(); }
+});
 async function copyToClipboard(ev, txt) {
   const b = ev.currentTarget, was = b.textContent;   // nulled once we await
   try { await navigator.clipboard.writeText(txt); }
@@ -1694,6 +1755,17 @@ $('#download').onclick = () => {
   const a = el('a'); a.href = url; a.download = 'SSK-glove-design.txt';
   a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+async function downloadImage() {
+  if (flushText()) paint();
+  if (!await readyForExport()) return;
+  proofImage().toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = el('a'); a.href = url; a.download = 'SSK-glove-design.png';
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
+$('#sheetimg').onclick = downloadImage;
+$('#sumimg').onclick = downloadImage;
 
 /* ----------------------------------------------------------------- paint */
 /* Every paint rebuilds the step nav and the body from scratch, which destroys
@@ -1815,6 +1887,7 @@ function paint(rebuildBody = true) {
     if (again) again.focus({ preventScroll: true });
   }
 
+  paintSummary();
   save();
 }
 

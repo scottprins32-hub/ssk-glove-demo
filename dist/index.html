@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SSK Europe — Handschoen samenstellen</title>
+<link rel="icon" href="/assets/favicon-CE1G3PN_.svg" type="image/svg+xml">
+<!-- Critical images start alongside modules; same full-quality files. -->
+<link rel="preload" href="/assets/glove-DbyLhNIp.webp" as="image" fetchpriority="high">
+<link rel="preload" href="/assets/idmap-C1oV831a.png" as="image" fetchpriority="high">
+<link rel="preload" href="/assets/leather-texture-DKDWqBTb.webp" as="image" fetchpriority="high">
+<link rel="preload" href="/assets/lace-height-BcUxykd6.webp" as="image" fetchpriority="high">
+<link rel="preload" href="/assets/glove-data-DiAm_s-Y.json" as="fetch" crossorigin>
+<link rel="modulepreload" href="/assets/app-a95peAjv.js">
+<link rel="modulepreload" href="/assets/glove-engine-C04CgoMe.js">
+<link rel="modulepreload" href="/assets/glove-catalog-BiAOjUaK.js">
+<link rel="modulepreload" href="/assets/refcode-Ci9ydHZy.js">
+  <script type="module" crossorigin src="/assets/main-CIc6UXQ6.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/gallery-store-CmztW5eg.js">
+  <link rel="stylesheet" crossorigin href="/assets/gallery-store-B0t2J7lN.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-FghggK6L.css">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <span class="wordmark">SSK EUROPE</span>
+    <span class="hdr-rule"></span>
+    <span class="hdr-title">
+      <b data-t="builder">Handschoen samenstellen</b>
+      <i data-t="model">SSK Pro Custom · achterzijde</i>
+    </span>
+  </div>
+  <div class="hdr-tools">
+    <div class="lang" role="group" aria-label="Taal / Language">
+      <button id="lang-en" class="lang-btn" type="button">EN</button>
+      <button id="lang-nl" class="lang-btn is-on" type="button">NL</button>
+    </div>
+    <button id="undo" class="icon-btn" type="button" aria-label="Undo">&#8630;</button>
+    <button id="redo" class="icon-btn" type="button" aria-label="Redo">&#8631;</button>
+    <button id="summary" class="btn btn-ghost" type="button" data-t="summary">Overzicht</button>
+    <button id="share" class="btn btn-ghost" type="button" data-t="share">Ontwerp delen</button>
+    <div class="ref">
+      <span class="ref-lab" data-t="reference">Referentie</span>
+      <span class="ref-code" id="refcode">SSK2-00</span>
+    </div>
+    <div class="price">
+      <span class="price-lab" data-t="totalPrice">Totaal</span>
+      <span class="price-val" id="price">—</span>
+    </div>
+  </div>
+</header>
+
+<nav class="steps" id="steps" aria-label="Stappen"></nav>
+
+<main class="wrap">
+  <section class="stage">
+    <div class="stage-tag" id="stagetag" hidden></div>
+    <div class="stage-view" id="stageview" hidden role="group"></div>
+    <canvas id="glove" width="929" height="1100" aria-label="Handschoen"></canvas>
+    <p class="stage-hint" id="stagehint"></p>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-head">
+      <span class="panel-count"><b id="stepnum">01</b> / <span id="steptot">08</span></span>
+      <span class="panel-state" id="stepstate"></span>
+    </div>
+    <h1 class="panel-title" id="steptitle">Start</h1>
+    <p class="panel-lead" id="steplead"></p>
+    <div class="panel-body" id="body"></div>
+  </aside>
+</main>
+
+<footer class="bar">
+  <div class="bar-progress">
+    <span class="bar-count"><b id="donecount">0</b> / <span id="totalcount">36</span></span>
+    <span class="bar-track"><span class="bar-fill" id="barfill"></span></span>
+  </div>
+  <div class="bar-acts">
+    <button id="prev" class="btn btn-ghost" type="button" data-t="backStep">Terug</button>
+    <button id="next" class="btn btn-primary" type="button">Verder</button>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheettitle">
+    <button class="sheet-x" id="sheetx" type="button" aria-label="Sluiten">&times;</button>
+    <h2 id="sheettitle" data-t="sendTitle">Jouw SSK custom handschoen</h2>
+    <img id="shot" alt="">
+    <p class="sheet-lead" data-t="sendLead"></p>
+    <div class="sheet-code" id="sheetcode"></div>
+    <p id="sheetstatus" class="note" role="status"></p>
+    <div id="spechost"></div>
+    <div class="sheet-acts">
+      <button class="btn btn-primary" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
+      <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
+      <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
+      <button class="btn btn-ghost" id="sheetimg" type="button" data-t="downloadImage">Afbeelding downloaden</button>
+      <a class="btn btn-ghost" href="gallery.html" data-t="myDesigns">Mijn ontwerpen</a>
+      <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
+    </div>
+  </div>
+</div>
+
+<div class="sum-scrim" id="sumscrim" hidden>
+  <aside class="sum-drawer" role="dialog" aria-modal="true" aria-labelledby="sumtitle">
+    <div class="sum-head">
+      <h2 id="sumtitle" data-t="summaryTitle">Jouw keuzes</h2>
+      <button class="sum-x" id="sumx" type="button" aria-label="Sluiten">&times;</button>
+    </div>
+    <div class="sum-body" id="sumbody"></div>
+    <div class="sum-foot">
+      <button class="btn btn-primary" id="sumimg" type="button" data-t="downloadImage">Afbeelding downloaden</button>
+    </div>
+  </aside>
+</div>
+
+</body>
+</html>
