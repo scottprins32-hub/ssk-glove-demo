@@ -180,6 +180,22 @@ test('real back metadata follows selected material dependencies without loading 
   assert.equal(h.images.size, 156);
 });
 
+test('pinky material plates are ready with the view while Crocodile texture stays deferred', async () => {
+  const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/pinky-data.json', import.meta.url)));
+  const h = await harness({ metadata });
+  const bundle = await h.loadGlove({ progressive: true });
+  for (const role of ['back4', 'back5', 'back6', 'back7', 'back8', 'back9', 'palm']) {
+    const plate = metadata.standardMaterialSources[role];
+    assert.ok(bundle.imgs[plate], `${role} material must be ready before the view is shown`);
+    assert.ok(bundle.imgs[role], `${role} original remains available for Crocodile`);
+    assert.deepEqual(metadata.bbox[plate], metadata.bbox[role]);
+    assert.equal(h.images.get(metadata.assets[plate]), 1);
+  }
+  assert.equal(h.images.has(metadata.assets._snakeLeather), false);
+  await bundle.views.back.loadSelection(null, true);
+  assert.equal(h.images.get(metadata.assets._snakeLeather), 1);
+});
+
 test('concurrent options and repeated selection share in-flight image decodes', async () => {
   const h = await harness({ metadata: optionalMetadata, manualImages: ['a.png','a-hi.png','b.png','attach.png'] });
   const bundle = await h.loadGlove({ progressive: true });

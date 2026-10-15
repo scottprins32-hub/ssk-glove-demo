@@ -286,6 +286,48 @@
       0,
       737,
       1100
+    ],
+    "generated_back9": [
+      57,
+      160,
+      358,
+      989
+    ],
+    "generated_back8": [
+      144,
+      148,
+      472,
+      977
+    ],
+    "generated_back7": [
+      237,
+      63,
+      554,
+      825
+    ],
+    "generated_back5": [
+      348,
+      43,
+      618,
+      767
+    ],
+    "generated_back6": [
+      363,
+      42,
+      617,
+      741
+    ],
+    "generated_back4": [
+      332,
+      82,
+      629,
+      978
+    ],
+    "generated_palm": [
+      329,
+      380,
+      370,
+      485
     ]
   },
   "assets": {
@@ -308,8 +350,8 @@
     "binding_hi": "assets/side/pinky-user-r16/binding_hi.webp",
     "welting": "assets/side-lossless-r01/pinky-welting.png",
     "welting_hi": "assets/side/pinky-user-r16/welting_hi.webp",
-    "laces": "assets/side/pinky-user-r16/laces.webp",
-    "laces_hi": "assets/side/pinky-user-r16/laces_hi.webp",
+    "laces": "assets/pinky-lace-relief-r01/laces.png",
+    "laces_hi": "assets/pinky-lace-relief-r01/laces_hi.png",
     "embroidery": "assets/side/pinky-user-r16/embroidery.webp",
     "stitching": "assets/side/pinky-user-r16/stitching.webp",
     "embroidery_lht": "assets/side/pinky-user-r16/embroidery_lht.webp",
@@ -326,7 +368,14 @@
     "clean_edge_heal_back7": "assets/clean-edges-r01/pinky-heal-back7.png",
     "clean_edge_heal_back8": "assets/clean-edges-r01/pinky-heal-back8.png",
     "clean_edge_heal_back9": "assets/clean-edges-r01/pinky-heal-back9.png",
-    "clean_edge_heal_binding": "assets/clean-edges-r01/pinky-heal-binding.png"
+    "clean_edge_heal_binding": "assets/clean-edges-r01/pinky-heal-binding.png",
+    "generated_back9": "assets/pinky-leather-generated-r01/back9.png",
+    "generated_back8": "assets/pinky-leather-generated-r01/back8.png",
+    "generated_back7": "assets/pinky-leather-generated-r01/back7.png",
+    "generated_back5": "assets/pinky-leather-generated-r01/back5.png",
+    "generated_back6": "assets/pinky-leather-generated-r01/back6.png",
+    "generated_back4": "assets/pinky-leather-generated-r01/back4.png",
+    "generated_palm": "assets/pinky-leather-generated-r01/palm.png"
   },
   "sheen": {
     "back4": 1,
@@ -443,6 +492,108 @@
         "mid": 246,
         "high": 265
       }
+    },
+    "laces": {
+      "detailRetention": 1.5,
+      "grainStrength": 0
+    },
+    "generated_back9": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_back8": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_back7": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_back5": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_back6": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_back4": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
+    },
+    "generated_palm": {
+      "calibration": {
+        "lo": 118,
+        "mid": 145,
+        "high": 166
+      },
+      "finish": {
+        "blurScale": 1.5,
+        "darkDetail": 0.4,
+        "softDetail": 0.22,
+        "grainScale": 0,
+        "relief": 1
+      }
     }
   },
   "materialSources": {},
@@ -475,5 +626,14 @@
       "clean_edge_heal_binding",
       "binding"
     ]
-  ]
+  ],
+  "standardMaterialSources": {
+    "back9": "generated_back9",
+    "back8": "generated_back8",
+    "back7": "generated_back7",
+    "back5": "generated_back5",
+    "back6": "generated_back6",
+    "back4": "generated_back4",
+    "palm": "generated_palm"
+  }
 }
