@@ -2,6 +2,7 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL } from './glove-engine.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
@@ -12,7 +13,6 @@ import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FL
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 // Scott confirmed snakeskin for the large exterior panels, at no surcharge.
-const MATERIAL_FIELDS = Object.freeze(['back1','back2','back3','back4','back5','back6','back7','back8','back9','belt']);
 const cleanMaterials = input => Object.fromEntries(MATERIAL_FIELDS.filter(k=>input?.[k]==='snakeskin').map(k=>[k,'snakeskin']));
 const materialLabel = value => value === 'snakeskin' ? 'Crocodile pattern' : (S.lang === 'nl' ? 'Normaal leer' : 'Standard leather');
 function layerMaterials(D=R.DATA, map=viewLayerField()) {
@@ -21,11 +21,8 @@ function layerMaterials(D=R.DATA, map=viewLayerField()) {
 const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
 // Pim confirmed the flag surcharge through Scott on 7 October 2026.
 // Integer cents: all UI and order exports use this single calculation.
-const PRICE_CENTS = Object.freeze({ base: 37495, flag: 500 });
 const hasFlag = (s = S) => !!s.flag && s.flag !== 'None';
-const priceBreakdown = (s = S) => ({ base: PRICE_CENTS.base,
-  flag: hasFlag(s) ? PRICE_CENTS.flag : 0,
-  total: PRICE_CENTS.base + (hasFlag(s) ? PRICE_CENTS.flag : 0) });
+const priceBreakdown = (s = S) => quoteDesign(s);
 const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE',
   { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
@@ -1365,10 +1362,47 @@ function renderReview(b) {
   b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
   b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
+  const commerceHost=document.createElement('div');b.appendChild(commerceHost);
+  import('./commerce-ui.js').then(({mountCommerce})=>{
+    if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
+      getDesign:()=>structuredClone(S),capture:captureOrderViews});
+  }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
   b.appendChild(go);
+}
+
+async function captureOrderViews() {
+  const snapshot=structuredClone(S),web=WEBS.find(w=>w.id===snapshot.webType),previews=[];
+  const art=flagArt(),renderer=new GloveRenderer({...R.views.back,views:R.views});
+  await renderer.preloadFlags(art?[art]:[]);
+  for(const view of ['back','palm','thumb','pinky']) {
+    const bundle=R.views[view];
+    if(bundle?.load)await bundle.load();
+    registerThumbViews();
+    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'));
+    registerThumbViews();
+    const availability=viewAvailability(view,web);
+    if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
+    const angle=view==='thumb'&&thumbEstimatedViewOf(web)||view;
+    renderer.views=R.views;
+    if(!renderer.setView(angle))throw new Error('View unavailable');
+    renderer.setWeb(web?.render);renderer.setWebMarked(web?.id!==NATIVE_WEB);
+    renderer.setFlag(art,null,snapshot.flagPosition);
+    const padColour=DATA.palettes.leather.find(c=>c[0]===snapshot.colors.pad_color)?.[2]||null;
+    renderer.setPad(PAD_PART[snapshot.pad]||null,padColour);
+    const D=renderer.DATA,map=view==='back'?LAYER_TO_FIELD:view==='palm'?{...PALM_FIELDS,stitching:'stitching'}:Object.fromEntries(D.zones.map(z=>[z.id,z.field]));
+    renderer.setMaterials(Object.fromEntries(D.zones.map(z=>[z.id,snapshot.materials?.[map[z.id]]||'standard'])));
+    const state=Object.fromEntries(D.zones.map(z=>[z.id,snapshot.colors[map[z.id]]||DATA.palettes[z.group][0][0]]));state.palm=snapshot.colors.palm||'10';
+    const canvas=document.createElement('canvas');canvas.width=D.w;canvas.height=D.h;
+    renderer.draw(canvas.getContext('2d'),state,snapshot.bullet,null,hasFlag(snapshot),/^L/.test(snapshot.hand));
+    const notes=availability.note?[vt(availability.note)]:[];
+    notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
+    if(snapshot.thumbText||snapshot.pinkyText||snapshot.thumbNumber)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
+    previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
+  }
+  return previews;
 }
 
 /* --------------------------------------------------------------- widgets */

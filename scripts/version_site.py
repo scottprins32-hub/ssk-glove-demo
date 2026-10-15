@@ -30,7 +30,7 @@ def version_site(root):
         versions[name] = digest(path)
 
     done, visiting = {}, set()
-    imports = re.compile(r'((?:from\s*|import\s*)([\'"]))(\./[^\'"?#]+\.js)(\2)')
+    imports = re.compile(r'((?:from\s*|import\s*(?:\(\s*)?)([\'"]))(\./[^\'"?#]+\.js)(\2)')
     def module(path):
         if path in done:
             return done[path]

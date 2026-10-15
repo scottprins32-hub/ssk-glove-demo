@@ -1,0 +1,42 @@
+{
+  "name": "GloveRateBucket",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "uses": {
+      "type": "integer",
+      "default": 0
+    },
+    "expires_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

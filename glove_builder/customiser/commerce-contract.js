@@ -1,0 +1,93 @@
+import {HANDS,SIZES,PADS,WEBS,FLAGS,EMB_FONTS,CIRCLE_COLORS,COLOUR_ORDER,PALETTE_OF} from './glove-catalog.js';
+import {encodeV4} from './refcode.js';
+import {COMMERCE_CATALOG} from './commerce-catalog.js';
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
+export {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign};
+
+export const SHOP = Object.freeze({origin:'https://sskeurope.ccvshop.nl',productId:896372573,
+  productUrl:'https://sskeurope.ccvshop.nl/SSK-Custom-Glove',productName:'SSK Custom Glove'});
+export const VIEWS = ['back','palm','thumb','pinky'];
+export class CommerceError extends Error {
+  constructor(code,status=400){super(code);this.code=code;this.status=status;}
+}
+const fail = code => {throw new CommerceError(code);};
+const text = (v,max) => {
+  if(v==null) return '';
+  if(typeof v!=='string'||v.length>max||/[\u0000-\u001f\u007f]/.test(v)) fail('invalid_design_text');
+  return v.trim();
+};
+const member=(v,list,key='id')=>list.some(x=>(key?x[key]:x)===v);
+const colour=(value,palette)=>member(value,COMMERCE_CATALOG.palettes[palette]);
+
+export function validateDesign(raw) {
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)) fail('invalid_design');
+  if(!member(raw.hand,HANDS)||!SIZES.includes(raw.size)||!member(raw.pad,PADS)) fail('invalid_design_fit');
+  if(!WEBS.some(w=>w.id===raw.webType&&w.sizes.includes(raw.size))) fail('invalid_design_web');
+  const badge=COMMERCE_CATALOG.bullets.find(b=>b.index===raw.bullet&&b.active);
+  if(!badge) fail('invalid_design_badge');
+  const colors={};
+  for(const field of COLOUR_ORDER) {
+    const value=raw.colors?.[field];
+    if(field==='pad_color'&&raw.pad==='None'&&!value) continue;
+    if(!colour(value,PALETTE_OF(field))) fail('invalid_design_colour');
+    colors[field]=value;
+  }
+  const materials={};
+  for(const [field,value] of Object.entries(raw.materials||{})) {
+    if(!MATERIAL_FIELDS.includes(field)||value!=='snakeskin') fail('invalid_design_material');
+    materials[field]=value;
+  }
+  const flag=raw.flag??'None';
+  if(!member(flag,FLAGS)) fail('invalid_design_flag');
+  const flagPosition=raw.flagPosition??'index';
+  if(!['index','middle'].includes(flagPosition)) fail('invalid_design_flag_position');
+  if(flag!=='None') {
+    const [a,b]=flagPosition==='middle'?['back5','back6']:['back3','back4'];
+    if(colors[a]!==colors[b]||materials[a]!==materials[b]) fail('invalid_design_flag_panels');
+  }
+  const out={schemaVersion:1,lang:raw.lang==='en'?'en':'nl',hand:raw.hand,size:raw.size,pad:raw.pad,
+    webType:raw.webType,bullet:raw.bullet,colors,materials,flag,flagPosition,
+    thumbText:text(raw.thumbText,18),pinkyText:text(raw.pinkyText,18),thumbNumber:text(raw.thumbNumber,2),
+    flagOther:flag==='Other Flag'?text(raw.flagOther,40):'',thumbFont:raw.thumbFont??null,
+    thumbMain:raw.thumbMain??null,thumbOutline:raw.thumbOutline??null,circle:raw.circle??null,numberColor:raw.numberColor??null};
+  if(out.thumbText||out.pinkyText) {
+    if(!member(out.thumbFont,EMB_FONTS)||!colour(out.thumbMain,'embroidery')) fail('invalid_design_personalization');
+    if(/Outline|Shadow/.test(out.thumbFont)) { if(!colour(out.thumbOutline,'embroidery')) fail('invalid_design_personalization'); } else out.thumbOutline=null;
+  } else Object.assign(out,{thumbFont:null,thumbMain:null,thumbOutline:null});
+  if(out.thumbNumber) {
+    if(!/^[A-Z0-9]{1,2}$/.test(out.thumbNumber)||!CIRCLE_COLORS.some(c=>c[0]===out.circle)||!colour(out.numberColor,'embroidery')) fail('invalid_design_number');
+  } else Object.assign(out,{circle:null,numberColor:null});
+  if(flag==='Other Flag'&&!out.flagOther) fail('invalid_design_flag_other');
+  if(raw.personalCheck===true) fail('personalization_confirmation_required');
+  return out;
+}
+export const designCode = design => encodeV4(design,COMMERCE_CATALOG.bullets[design.bullet].name);
+export function specification(design) {
+  const rows=[['Design',designCode(design)],['Throwing hand',design.hand],['Size',design.size],['Web',design.webType],['Finger protection',design.pad],
+    ...Object.entries(design.colors).filter(([key])=>key!=='pad_color'||design.pad!=='None').map(([key,value])=>[key,value+' · '+COMMERCE_CATALOG.palettes[PALETTE_OF(key)].find(c=>c.id===value).name]),
+    ...MATERIAL_FIELDS.map(key=>[`${key} material`,design.materials[key]==='snakeskin'?'Crocodile pattern':'Standard leather']),
+    ['Badge',COMMERCE_CATALOG.bullets[design.bullet].name],['Flag',design.flag],['Flag position',design.flagPosition],
+    ...['flagOther','thumbText','pinkyText','thumbFont','thumbMain','thumbOutline','thumbNumber','circle','numberColor'].filter(k=>design[k]).map(k=>[k,design[k]])];
+  return rows;
+}
+export function validatePreviews(input) {
+  if(!Array.isArray(input)||input.length!==4||input.some(p=>!p||typeof p!=='object')||new Set(input.map(p=>p.view)).size!==4) fail('invalid_previews');
+  let size=0;
+  return input.map(p=>{
+    if(!VIEWS.includes(p.view)||typeof p.available!=='boolean') fail('invalid_previews');
+    const notes=Array.isArray(p.notes)?p.notes.slice(0,12).map(n=>text(n,1200)):[];
+    if(!p.available) return {view:p.view,available:false,notes};
+    if(typeof p.dataUrl!=='string'||!/^data:image\/(png|webp);base64,[A-Za-z0-9+/]+=*$/.test(p.dataUrl)) fail('invalid_previews');
+    const payload=p.dataUrl.split(',')[1];size+=payload.length;
+    if(payload.length>1100000||size>2600000) fail('previews_too_large');
+    const start=atob(payload.slice(0,32));
+    if(!(p.dataUrl.startsWith('data:image/png')&&start.startsWith('\x89PNG\r\n\x1a\n'))&&
+       !(p.dataUrl.startsWith('data:image/webp')&&start.startsWith('RIFF')&&start.slice(8,12)==='WEBP')) fail('invalid_previews');
+    return {view:p.view,available:true,dataUrl:p.dataUrl,notes};
+  });
+}
+export function safeCheckoutUrl(value) {
+  let url;try{url=new URL(value);}catch{throw new CommerceError('invalid_checkout_response',502);}
+  if(url.origin!==SHOP.origin||url.username||url.password) throw new CommerceError('invalid_checkout_response',502);
+  return url.href;
+}
