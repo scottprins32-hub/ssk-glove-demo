@@ -6,6 +6,9 @@ Output: _base44/ and _base44-manifest.json. Does not deploy or touch backend dat
 import hashlib
 import json
 import pathlib
+import re
+import uuid
+from urllib.parse import urljoin
 import runpy
 import shutil
 import tarfile
@@ -20,7 +23,8 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js',
                'commerce-catalog.js','commerce-pricing.js','commerce-contract.js','commerce-config.js',
                'commerce-client.js','commerce-ui.js','commerce-display.js','commerce-summary.js','commerce.css',
                'order.html','order.js','merchant.html','merchant.js','merchant-auth.bundle.js',
-               'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js')
+               'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
+               'performance.html', 'performance.js')
 FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 MAX_ARCHIVE_BYTES = 50_000_000
 
@@ -39,6 +43,7 @@ def dependencies(source):
         data = json.loads((source / filename).read_text())
         keep.update(v for v in data['assets'].values() if not v.startswith('data:'))
         keep.update(b['thumb'] for b in data.get('bullets', []) if b.get('thumb'))
+    keep.update(str(p.relative_to(source)) for p in (source/'assets/runtime').rglob('*') if p.is_file())
     for name in keep:
         path = source / name
         if not path.is_file() or not path.resolve().is_relative_to(source.resolve()):
@@ -61,6 +66,48 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
             payload = target.read_bytes()
             entries.append({'path': name, 'bytes': len(payload),
                             'sha256': hashlib.sha256(payload).hexdigest()})
+        # Test harness needs every versioned module alias without fetching modules
+        # before its stopwatch starts. Nothing changes the served image bytes.
+        aliases = {}
+        for name in keep:
+            if not name.endswith('.js'): continue
+            aliases[name] = name
+            for spec in re.findall(r"(?:from\s*|import\s*(?:\(\s*)?)[\"'](\./[^\"']+\.js(?:\?[^\"']*)?)[\"']", (staging / name).read_text()):
+                resolved = urljoin(name, spec)
+                aliases[resolved] = resolved.split('?')[0]
+        for spec in re.findall(r'(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"', (staging / 'index.html').read_text()):
+            aliases[spec] = spec.split('?')[0]
+        def generated(name, payload):
+            if isinstance(payload, str): payload=payload.encode()
+            (staging / name).write_bytes(payload)
+            keep.append(name)
+            entries.append({'path':name, 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest()})
+        generated('performance-modules.json', json.dumps(aliases, sort_keys=True) + '\n')
+        # Separate immutable cold keys let normal document navigations measure
+        # real HTML→visible-ready latency without an iframe or privileged tools.
+        js=(staging / 'performance.js').read_text()
+        if 'function observer(config)' in js:
+            observer=js[js.index('function observer(config)'):js.index('\nfunction output()')]
+            html=(staging / 'index.html').read_text()
+            css=(staging / 'ds/tokens/fonts.css').read_text()
+            for i in range(1,10):
+                nonce=uuid.uuid4().hex
+                def bust(path): return path+('&' if '?' in path else '?')+'bench='+nonce
+                font= re.sub(r'url\(([\"\']?)([^)\"\' ]+)\1\)',
+                    lambda m:'url("'+bust(urljoin('ds/tokens/fonts.css',m[2]))+'")',css)
+                font_name=f'performance-fonts-{i}.css'
+                generated(font_name,font)
+                imports={ './'+alias:'./'+bust(path) for alias,path in aliases.items() }
+                setup='<script type="importmap">'+json.dumps({'imports':imports})+'</script>'
+                setup+='<script>('+observer+')('+json.dumps({'direct':True,'nonce':nonce,'id':nonce,'protocol':'https:'})+');</script>'
+                page=html.replace('<meta charset="utf-8">','<meta charset="utf-8">'+setup)
+                def rewrite(m):
+                    path=m[2]
+                    if path.startswith('ds/tokens/fonts.css'): path=font_name
+                    if path.split('?')[0].endswith('.js'): path=path.split('?')[0]
+                    return m[1]+bust(path)+m[3]
+                page=re.sub(r'((?:src|href)=")([^"]+)(")',rewrite,page)
+                generated(f'performance-cold-{i}.html',page)
         archive = pathlib.Path(temporary) / 'site.tar.gz'
         with tarfile.open(archive, 'w:gz') as tar:
             for name in keep:

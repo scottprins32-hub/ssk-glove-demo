@@ -6,9 +6,9 @@ const source = await readFile(new URL('../glove_builder/customiser/glove-engine.
 let moduleId = 0;
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-async function harness({ failures = {}, imageFailures = {}, manualImages = false, metadata, versions } = {}) {
+async function harness({ failures = {}, imageFailures = {}, manualImages = false, metadata, versions, packs, packData } = {}) {
   const requests = new Map(), images = new Map(), pendingImages = new Map();
-  globalThis.window = { __SSK_ASSET_VERSIONS__: versions };
+  globalThis.window = { __SSK_ASSET_VERSIONS__: versions, __SSK_IMAGE_PACKS__: packs };
   globalThis.location = { protocol: 'https:' };
   globalThis.document = { createElement: () => ({
     getContext: () => ({ drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(4) }) })
@@ -17,6 +17,7 @@ async function harness({ failures = {}, imageFailures = {}, manualImages = false
     const count = (requests.get(url) || 0) + 1;
     requests.set(url, count);
     if (count <= (failures[url] || 0)) return { ok: false };
+    if (packData && url === 'native.pack') return {ok:true,arrayBuffer:async()=>packData.buffer};
     return { ok: true, json: async () => structuredClone(metadata || { w: 1, h: 1, palettes: {}, zones: [],
       assets: { glove: 'body.png', _idmap: 'id.png' } }) };
   };
@@ -347,4 +348,31 @@ test('pad-mask reuse follows both the immutable input layer and pad image', asyn
   assert.notEqual(r.underPad({...input},null),mask);
   r.imgs.hood={}; assert.notEqual(r.underPad(input,null),mask);
   r.pad=null; assert.equal(r.underPad(input,null),input);
+});
+
+const nativePack = {
+  'body.png':{pack:'native.pack',offset:0,length:2,type:'image/png'},
+  'id.png':{pack:'native.pack',offset:2,length:2,type:'image/png'}
+};
+test('native images share one package fetch and preserve original source cache keys', async () => {
+  const h=await harness({packs:nativePack,packData:new Uint8Array([1,2,3,4])});
+  const bundle=await h.loadGlove({progressive:true});
+  assert.equal(bundle.ready,true);
+  assert.equal(h.requests.get('native.pack'),1);
+  assert.equal([...h.images.keys()].filter(k=>k.startsWith('blob:')).length,2);
+  await bundle.views.palm.load();
+  assert.equal(h.requests.get('native.pack'),1);
+  assert.equal([...h.images.keys()].filter(k=>k.startsWith('blob:')).length,2);
+});
+test('failed image package falls back to the original full-quality images', async () => {
+  const h=await harness({packs:nativePack,failures:{'native.pack':1}});
+  assert.equal((await h.loadGlove({progressive:true})).ready,true);
+  assert.equal(h.images.get('body.png'),1);
+  assert.equal(h.images.get('id.png'),1);
+});
+test('out-of-bounds package entries fall back instead of decoding wrong bytes', async () => {
+  const h=await harness({packs:{...nativePack,'id.png':{...nativePack['id.png'],offset:999}},packData:new Uint8Array([1,2,3,4])});
+  assert.equal((await h.loadGlove({progressive:true})).ready,true);
+  assert.equal(h.images.get('id.png'),1);
+  assert.equal(h.requests.get('native.pack'),1);
 });

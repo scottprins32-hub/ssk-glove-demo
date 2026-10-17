@@ -324,6 +324,7 @@ const SAVE_KEY = 'ssk-glove-v1';
 let pendingDraft = null;
 
 function save() {
+  if (window.__SSK_PERF__) return; // Isolated benchmark never replaces a customer's draft.
   if (pendingDraft) return; // Preserve the previous design until its owner chooses.
   try {
     const o = { ...S, schemaVersion: 1 };
@@ -331,6 +332,7 @@ function save() {
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }
 function load() {
+  if (window.__SSK_PERF__) return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -595,7 +597,8 @@ function draw(target = ctx, highlight = S.step === 3) {
       pendingView.load().then(() => {
         registerThumbViews();
         if (S.view === requested) { draw(); paint(S.step !== 7 && S.step !== 5); }
-      }).catch(() => {
+      }).catch(error => {
+        window.__SSK_PERF__?.failure(error);
         if (S.view === requested) {
           $('#glove').removeAttribute('aria-busy');
           drawUnavailable(ctx, 'viewNotLoaded');
@@ -763,6 +766,7 @@ function renderStart(b) {
     // Keep the source pixels: a 200px bitmap blurs on Retina and browser zoom.
     // CSS controls the card size; the backing canvas retains the full render.
     const cv = el('canvas'); cv.width = DATA.w; cv.height = DATA.h;
+    cv.dataset.previewPending = 'true';
     cv.style.width = '100%'; cv.style.aspectRatio = DATA.w + '/' + DATA.h;
     c.appendChild(cv);
     c.appendChild(el('span', 'cap',
@@ -790,6 +794,7 @@ function renderStart(b) {
         if (starterImages.size > STARTERS.length * 3) starterImages.delete(starterImages.keys().next().value);
       }
       cv.getContext('2d').drawImage(image, 0, 0);
+      delete cv.dataset.previewPending;
     };
     if (starterImages.has(key)) showWhenMounted.push(show);
     else pendingStarters.push([cv, show]);
@@ -939,6 +944,7 @@ function liveThumbs(field, items, box, jobFor) {
                               S.webType, S.materials, box]);
   if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
   const put = (card, cv) => {
+    delete card.dataset.previewPending;
     const shown = el('canvas');
     shown.width = cv.width; shown.height = cv.height;
     shown.getContext('2d').drawImage(cv, 0, 0);
@@ -952,7 +958,10 @@ function liveThumbs(field, items, box, jobFor) {
     const setUp = card && jobFor(it);
     if (!setUp) return;
     const hit = thumbs.get(box[0] + ':' + it.id);
-    if (hit) put(card, hit); else todo.push([it, card, setUp]);
+    if (hit) put(card, hit); else {
+      card.dataset.previewPending = 'true';
+      todo.push([it, card, setUp]);
+    }
   });
   if (!todo.length) return;
   const tmp = document.createElement('canvas');
@@ -965,6 +974,18 @@ function liveThumbs(field, items, box, jobFor) {
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
   if (isLefty()) sx = DATA.w - sx - sw;
+  // Fetch independent option images together. Keep the expensive composites
+  // one per frame; serial downloads previously added a round trip per card.
+  const prepared = new Map();
+  requestAnimationFrame(() => {
+    if (!field.isConnected || key !== thumbKey) return;
+    for (const [it, card, setUp] of todo) {
+      setUp(previewR);
+      const pending = R.views.back.loadSelection(previewR.web,
+        Object.values(S.materials || {}).includes('snakeskin'));
+      prepared.set(it.id, pending); pending.catch(() => {});
+    }
+  });
   // One per frame. Four full-canvas composites in a single frame is half a
   // second of locked-up page on a laptop and worse on a phone; spread out,
   // the cards fill in one after another and nothing blocks.
@@ -974,7 +995,7 @@ function liveThumbs(field, items, box, jobFor) {
     const [it, card, setUp] = job;
     setUp(previewR);
     try {
-      await R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'));
+      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin')));
     } catch {
       if (field.isConnected && key === thumbKey) {
         if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
@@ -1397,6 +1418,7 @@ function renderReview(b) {
   import('./commerce-ui.js').then(({mountCommerce})=>{
     if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
       getDesign:()=>structuredClone(S),capture:captureOrderViews});
+    reportPerformance();
   }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
   b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
@@ -1939,6 +1961,16 @@ function paint(rebuildBody = true) {
 
   paintSummary();
   save();
+  reportPerformance();
+}
+
+// Optional, test-only observer. No observer or storage changes on normal visits.
+function reportPerformance() {
+  window.__SSK_PERF__?.ready({ step:S.step, view:S.view,
+    ready:initialRendered && selectionIsReady() && viewAvailability(S.view).ok,
+    flagsReady:S.step !== 0 || starterFlagsReady,
+    reviewReady:S.step !== 7 || !!document.querySelector('.commerce-panel'),
+    width:ctx?.canvas.width, height:ctx?.canvas.height });
 }
 
 /* ------------------------------------------------------------------ wire */
@@ -1963,6 +1995,7 @@ $('#redo').onclick = () => {
   restore(redoStack.pop()); paint();
 };
 
+let starterFlagsReady = false;
 const savedDraft = load();
 const requestedInitialView = decodeState(location.hash.slice(1))?.view;
 loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedInitialView)
@@ -1980,6 +2013,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
+    starterFlagsReady = true;
     // Flag selection keeps its own decoded callback; only starter cards need
     // refreshing when the complete flag set becomes available.
     if (S.step === 0) paint();
@@ -2091,6 +2125,15 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
+  // Browsing a design normally precedes Review and the other angles. Warm
+  // these immutable resources after startup, with a quiet network task, so
+  // switching does not restart a chain of downloads. Failures remain retryable.
+  setTimeout(() => {
+    import('./commerce-ui.js').catch(() => {});
+    for (const view of ['palm','thumb','pinky']) {
+      R.views[view]?.load().then(registerThumbViews).catch(() => {});
+    }
+  }, 1200);
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
