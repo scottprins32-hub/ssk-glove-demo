@@ -7,11 +7,18 @@ let current, nonce='';
 function observer(config) {
   performance.setResourceTimingBufferSize(5000);
   const start=performance.now();
-  let pending={label:'initial',start}, serial=0;
+  let pending={label:'initial',start:config.direct?0:start}, serial=0;
   const errors=[];
   addEventListener('error',e=>errors.push(e.message||'resource error'));
   addEventListener('unhandledrejection',e=>errors.push(String(e.reason)));
-  function send(detail){parent.postMessage({sskTiming:config.id,...detail},config.origin);}
+  function send(detail){
+    if(config.direct){
+      let report=document.querySelector('#performance-report');
+      if(!report){report=document.createElement('pre');report.id='performance-report';report.hidden=true;document.body.append(report);}
+      const entries=JSON.parse(report.textContent||'[]');entries.push(detail);
+      report.textContent=JSON.stringify(entries);report.dataset.count=String(entries.filter(e=>e.entry).length);
+    }else parent.postMessage({sskTiming:config.id,...detail},config.origin);
+  }
   const begin=e=>{
     const b=e.target.closest?.('#steps button,#stageview button');
     if(!b)return;

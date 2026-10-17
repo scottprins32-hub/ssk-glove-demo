@@ -7,6 +7,7 @@ import hashlib
 import json
 import pathlib
 import re
+import uuid
 from urllib.parse import urljoin
 import runpy
 import shutil
@@ -75,11 +76,37 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
                 aliases[resolved] = resolved.split('?')[0]
         for spec in re.findall(r'(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"', (staging / 'index.html').read_text()):
             aliases[spec] = spec.split('?')[0]
-        name = 'performance-modules.json'
-        payload = (json.dumps(aliases, sort_keys=True) + '\n').encode()
-        (staging / name).write_bytes(payload)
-        keep.append(name)
-        entries.append({'path':name, 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest()})
+        def generated(name, payload):
+            if isinstance(payload, str): payload=payload.encode()
+            (staging / name).write_bytes(payload)
+            keep.append(name)
+            entries.append({'path':name, 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest()})
+        generated('performance-modules.json', json.dumps(aliases, sort_keys=True) + '\n')
+        # Separate immutable cold keys let normal document navigations measure
+        # real HTML→visible-ready latency without an iframe or privileged tools.
+        js=(staging / 'performance.js').read_text()
+        if 'function observer(config)' in js:
+            observer=js[js.index('function observer(config)'):js.index('\nfunction output()')]
+            html=(staging / 'index.html').read_text()
+            css=(staging / 'ds/tokens/fonts.css').read_text()
+            for i in range(1,10):
+                nonce=uuid.uuid4().hex
+                def bust(path): return path+('&' if '?' in path else '?')+'bench='+nonce
+                font= re.sub(r'url\(([\"\']?)([^)\"\' ]+)\1\)',
+                    lambda m:'url("'+bust(urljoin('ds/tokens/fonts.css',m[2]))+'")',css)
+                font_name=f'performance-fonts-{i}.css'
+                generated(font_name,font)
+                imports={ './'+alias:'./'+bust(path) for alias,path in aliases.items() }
+                setup='<script type="importmap">'+json.dumps({'imports':imports})+'</script>'
+                setup+='<script>('+observer+')('+json.dumps({'direct':True,'nonce':nonce,'id':nonce,'protocol':'https:'})+');</script>'
+                page=html.replace('<head>','<head>'+setup)
+                def rewrite(m):
+                    path=m[2]
+                    if path.startswith('ds/tokens/fonts.css'): path=font_name
+                    if '.js' in path: path=path.split('?')[0]
+                    return m[1]+bust(path)+m[3]
+                page=re.sub(r'((?:src|href)=")([^"]+)(")',rewrite,page)
+                generated(f'performance-cold-{i}.html',page)
         archive = pathlib.Path(temporary) / 'site.tar.gz'
         with tarfile.open(archive, 'w:gz') as tar:
             for name in keep:
