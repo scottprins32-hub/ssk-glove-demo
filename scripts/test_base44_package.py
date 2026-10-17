@@ -69,6 +69,25 @@ class PackageTests(unittest.TestCase):
         self.assertTrue((self.output / 'previous').is_file())
         self.assertFalse(self.manifest.exists())
 
+    def test_compact_probe_has_nine_cold_keys_and_early_charset(self):
+        (self.source/'performance.js').write_text('function observer(config) {}\nfunction output() {}')
+        (self.source/'index.html').write_text('<html><head><meta charset="utf-8"></head><body><script src="app.js?v=abc"></script></body></html>')
+        (self.source/'ds/tokens').mkdir(parents=True)
+        (self.source/'ds/tokens/fonts.css').write_text('body{}')
+        self.package()
+        page=(self.output/'performance-cold.html').read_text()
+        self.assertLess(page.index('<meta charset="utf-8">'),1024)
+        self.assertIn('document.write',page)
+        self.assertIn('probe',page)
+        self.assertFalse((self.output/'performance-cold-1.html').exists())
+        self.assertEqual(len(list(self.output.glob('performance-fonts-*.css'))),9)
+
+    def test_extracted_limit_preserves_previous_package(self):
+        with patch.object(build, 'MAX_EXTRACTED_BYTES', 1):
+            with self.assertRaisesRegex(ValueError, 'Extracted site'):
+                self.package()
+        self.assertTrue((self.output / 'previous').is_file())
+
     def test_external_reference_is_rejected(self):
         (self.root / 'private.txt').write_text('private')
         (self.source / 'assets/glove-data.json').write_text(json.dumps({
