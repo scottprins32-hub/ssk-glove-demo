@@ -596,7 +596,7 @@ function draw(target = ctx, highlight = S.step === 3) {
       const requested = S.view;
       pendingView.load().then(() => {
         registerThumbViews();
-        if (S.view === requested) { draw(); paint(S.step !== 7 && S.step !== 5); }
+        if (S.view === requested) { draw(); paint(S.step !== 0 && S.step !== 7 && S.step !== 5); }
       }).catch(error => {
         window.__SSK_PERF__?.failure(error);
         if (S.view === requested) {
@@ -746,8 +746,7 @@ function stepOpen(i) {
 // cards, one idle task at a time; a detached grid cannot queue more work.
 const starterImages = new Map();
 let starterRenderer, starterObserver;
-const previewTask = callback => window.requestIdleCallback
-  ? requestIdleCallback(callback, { timeout: 350 }) : setTimeout(callback, 32);
+const previewTask = callback => requestAnimationFrame(callback);
 function renderStart(b) {
   starterObserver?.disconnect();
   // Starter cards always show the back and never mutate the active view.
@@ -2106,7 +2105,9 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       b.type = 'button'; b.dataset.view = id;
       b.onclick = () => {
         if (!R.hasView(id)) return;
-        S.view = id; draw(); paint();
+        // Start cards always show the back. Preserve their native canvases
+        // when only the stage angle changes, instead of copying them all again.
+        S.view = id; draw(); paint(S.step !== 0);
       };
       // Warm an angle on intent. Avoid competing with the selected web by
       // immediately downloading all side views after the first frame.
