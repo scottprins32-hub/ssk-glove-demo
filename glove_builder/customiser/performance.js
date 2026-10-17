@@ -20,11 +20,11 @@ function observer(config) {
     }else parent.postMessage({sskTiming:config.id,...detail},config.origin);
   }
   const begin=e=>{
-    const b=e.target.closest?.('#steps button,#stageview button');
+    const b=e.target.closest?.('#steps button,#stageview button'+(location.search.includes('quality=1')?',#body button':''));
     if(!b)return;
     const view=b.dataset.view;
-    const step=view?undefined:[...b.parentElement.children].indexOf(b);
-    const label=view?'view:'+view:'step:'+b.textContent.trim();
+    const step=b.parentElement.id==='steps'?[...b.parentElement.children].indexOf(b):undefined;
+    const label=view?'view:'+view:(step===undefined?'choice:':'step:')+b.textContent.trim();
     if(pending?.label===label)return;
     pending={label,start:performance.now(),view,step};serial++;
   };
@@ -48,7 +48,12 @@ function observer(config) {
         resourceCount:performance.getEntriesByType('resource').length,
         transferred:performance.getEntriesByType('resource').reduce((n,r)=>n+r.transferSize,0),
         resources:performance.getEntriesByType('resource').map(r=>({name:r.name,start:r.startTime,duration:r.duration,bytes:r.transferSize})),errors:[...errors]};
-      pending=null;polling=false;send({entry});
+      pending=null;polling=false;
+      if(location.search.includes('quality=1')){
+        const canvas=document.querySelector('#glove');
+        const pixels=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+        crypto.subtle.digest('SHA-256',pixels).then(buf=>{entry.pixelHash=[...new Uint8Array(buf)].map(n=>n.toString(16).padStart(2,'0')).join('');send({entry});});
+      }else send({entry});
     }));
   }
   window.__SSK_PERF__={nonce:config.nonce,protocol:config.protocol,failure(error){send({error:String(error?.stack||error)});},ready(state){

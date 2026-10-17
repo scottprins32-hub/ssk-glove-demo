@@ -43,6 +43,7 @@ def dependencies(source):
         data = json.loads((source / filename).read_text())
         keep.update(v for v in data['assets'].values() if not v.startswith('data:'))
         keep.update(b['thumb'] for b in data.get('bullets', []) if b.get('thumb'))
+    keep.update(str(p.relative_to(source)) for p in (source/'assets/runtime').rglob('*') if p.is_file())
     for name in keep:
         path = source / name
         if not path.is_file() or not path.resolve().is_relative_to(source.resolve()):
@@ -103,7 +104,7 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
                 def rewrite(m):
                     path=m[2]
                     if path.startswith('ds/tokens/fonts.css'): path=font_name
-                    if '.js' in path: path=path.split('?')[0]
+                    if path.split('?')[0].endswith('.js'): path=path.split('?')[0]
                     return m[1]+bust(path)+m[3]
                 page=re.sub(r'((?:src|href)=")([^"]+)(")',rewrite,page)
                 generated(f'performance-cold-{i}.html',page)

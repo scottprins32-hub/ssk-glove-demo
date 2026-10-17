@@ -21,7 +21,7 @@ def version_site(root):
         data = json.loads((root / name).read_text())
         paths.update(v for v in data.get('assets', {}).values() if not v.startswith('data:'))
         paths.update(b['thumb'] for b in data.get('bullets', []) if b.get('thumb'))
-    for folder in ('assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs'):
+    for folder in ('assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs', 'assets/runtime'):
         paths.update(str(p.relative_to(root)) for p in (root / folder).rglob('*') if p.is_file())
     for name in sorted(paths):
         path = root / name
