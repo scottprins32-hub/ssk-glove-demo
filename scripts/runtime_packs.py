@@ -42,8 +42,9 @@ console.log(JSON.stringify(groups));"""
     result=subprocess.run(['node','--input-type=module','-e',code,
         (root/'glove-engine.js').resolve().as_uri(),root.resolve().as_uri()+'/'],check=True,capture_output=True,text=True)
     groups=json.loads(result.stdout)
-    # The thumb stays individually cached to keep the full-quality host archive
-    # below Base44's 50 MB limit; its requests are multiplexed by the loader.
-    groups.pop('thumb')
+    # Group the small thumb masks; large plates keep their individual cache
+    # entries. This removes request overhead without duplicating enough bytes
+    # to exceed the host's 50 MB archive limit. Nothing is transcoded.
+    groups['thumb']=[name for name in groups['thumb'] if (root/name).stat().st_size<=128_000]
     groups['back'].extend(str(p.relative_to(root)) for p in (root/'assets/flags').glob('*.svg'))
     return write_packs(root,groups)
