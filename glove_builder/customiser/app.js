@@ -2207,13 +2207,16 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   // The selected back is decoded and drawn. Prepare angles while starter
   // cards render, at low network priority; a customer may switch immediately.
   // Failures remain retryable through the normal selected-view load path.
-  setTimeout(() => {
-    for (const view of ['palm','thumb','pinky']) {
+  setTimeout(async () => {
+    await Promise.allSettled(['palm','pinky'].map(view =>
       R.views[view]?.load({priority:'low'}).then(()=>{
         registerThumbViews();
-        if(view==='palm' || view==='pinky') prepareSideFrame(view);
-      }).catch(() => {});
-    }
+        prepareSideFrame(view);
+      })
+    ));
+    // Thumb has many individual plates. Keep those requests behind the two
+    // packed angles; selecting/focusing Thumb still starts its normal load.
+    R.views.thumb?.load({priority:'low'}).then(registerThumbViews).catch(() => {});
   }, 0);
   setTimeout(() => { import('./commerce-ui.js').catch(() => {}); }, 1200);
 }).catch(error => {
