@@ -40,11 +40,21 @@ class PackageTests(unittest.TestCase):
         (self.source / 'assets/original-photo.jpg').write_bytes(b'do not publish')
         result = self.package()
         for entry in result['files']:
+            if entry['path'] == 'performance-modules.json': continue
             self.assertEqual((self.output / entry['path']).read_bytes(),
                              (self.source / entry['path']).read_bytes())
         self.assertFalse((self.output / 'assets/original-photo.jpg').exists())
         self.assertTrue((self.source / 'assets/original-photo.jpg').exists())
         self.assertEqual(json.loads(self.manifest.read_text()), result)
+
+    def test_benchmark_map_follows_versioned_imports_without_prefetch(self):
+        (self.source / 'app.js').write_text("import './glove-engine.js?v=abc';\nimport('./commerce-ui.js?v=def');")
+        (self.source / 'index.html').write_text('<script src="app.js?v=123"></script>')
+        self.package()
+        aliases=json.loads((self.output / 'performance-modules.json').read_text())
+        self.assertEqual(aliases['glove-engine.js?v=abc'], 'glove-engine.js')
+        self.assertEqual(aliases['commerce-ui.js?v=def'], 'commerce-ui.js')
+        self.assertEqual(aliases['app.js?v=123'], 'app.js')
 
     def test_missing_dependency_preserves_previous_package(self):
         (self.source / 'assets/layer.webp').unlink()

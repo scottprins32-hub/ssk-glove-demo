@@ -61,7 +61,10 @@ function selectionAssets(DATA, web, snake, palmManifest) {
 export function assetURL(src) {
   if (typeof src !== 'string' || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) return src;
   const hash = window.__SSK_ASSET_VERSIONS__?.[src];
-  return hash ? src + (src.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(hash) : src;
+  let url = hash ? src + (src.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(hash) : src;
+  const nonce = window.__SSK_PERF__?.nonce;
+  if (nonce) url += (url.includes('?') ? '&' : '?') + 'bench=' + encodeURIComponent(nonce);
+  return url;
 }
 function decodeImage(source) {
   const src = assetURL(source);
@@ -109,7 +112,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       const selections = new Map();
       const loadAssets = async keys => {
         // Explicit selections share in-flight decodes with the base and previews.
-        const parallelImages = location.protocol === 'https:' ? 24 : 8;
+        const parallelImages = (window.__SSK_PERF__?.protocol || location.protocol) === 'https:' ? 24 : 8;
         let next = 0;
         await Promise.all(Array.from({length: Math.min(parallelImages, keys.length)}, async () => {
           while (next < keys.length) {

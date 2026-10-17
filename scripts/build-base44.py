@@ -6,6 +6,8 @@ Output: _base44/ and _base44-manifest.json. Does not deploy or touch backend dat
 import hashlib
 import json
 import pathlib
+import re
+from urllib.parse import urljoin
 import runpy
 import shutil
 import tarfile
@@ -20,7 +22,8 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js',
                'commerce-catalog.js','commerce-pricing.js','commerce-contract.js','commerce-config.js',
                'commerce-client.js','commerce-ui.js','commerce-display.js','commerce-summary.js','commerce.css',
                'order.html','order.js','merchant.html','merchant.js','merchant-auth.bundle.js',
-               'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js')
+               'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
+               'performance.html', 'performance.js')
 FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 MAX_ARCHIVE_BYTES = 50_000_000
 
@@ -61,6 +64,22 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
             payload = target.read_bytes()
             entries.append({'path': name, 'bytes': len(payload),
                             'sha256': hashlib.sha256(payload).hexdigest()})
+        # Test harness needs every versioned module alias without fetching modules
+        # before its stopwatch starts. Nothing changes the served image bytes.
+        aliases = {}
+        for name in keep:
+            if not name.endswith('.js'): continue
+            aliases[name] = name
+            for spec in re.findall(r"(?:from\s*|import\s*(?:\(\s*)?)[\"'](\./[^\"']+\.js(?:\?[^\"']*)?)[\"']", (staging / name).read_text()):
+                resolved = urljoin(name, spec)
+                aliases[resolved] = resolved.split('?')[0]
+        for spec in re.findall(r'(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"', (staging / 'index.html').read_text()):
+            aliases[spec] = spec.split('?')[0]
+        name = 'performance-modules.json'
+        payload = (json.dumps(aliases, sort_keys=True) + '\n').encode()
+        (staging / name).write_bytes(payload)
+        keep.append(name)
+        entries.append({'path':name, 'bytes':len(payload), 'sha256':hashlib.sha256(payload).hexdigest()})
         archive = pathlib.Path(temporary) / 'site.tar.gz'
         with tarfile.open(archive, 'w:gz') as tar:
             for name in keep:
