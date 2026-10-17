@@ -99,7 +99,7 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
                 imports={ './'+alias:'./'+bust(path) for alias,path in aliases.items() }
                 setup='<script type="importmap">'+json.dumps({'imports':imports})+'</script>'
                 setup+='<script>('+observer+')('+json.dumps({'direct':True,'nonce':nonce,'id':nonce,'protocol':'https:'})+');</script>'
-                page=html.replace('<head>','<head>'+setup)
+                page=html.replace('<meta charset="utf-8">','<meta charset="utf-8">'+setup)
                 def rewrite(m):
                     path=m[2]
                     if path.startswith('ds/tokens/fonts.css'): path=font_name
