@@ -44,6 +44,7 @@ function observer(config) {
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       if(token!==serial||!pending||!complete()){requestAnimationFrame(poll);return;}
       const entry={label:pending.label,ms:performance.now()-pending.start,...latest,
+        navigation:performance.getEntriesByType('navigation').map(n=>({ttfb:n.responseStart,htmlEnd:n.responseEnd,bytes:n.transferSize,type:n.type})),
         viewport:[innerWidth,innerHeight],overflow:document.documentElement.scrollWidth>innerWidth,
         resourceCount:performance.getEntriesByType('resource').length,
         transferred:performance.getEntriesByType('resource').reduce((n,r)=>n+r.transferSize,0),

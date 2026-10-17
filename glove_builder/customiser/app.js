@@ -974,6 +974,18 @@ function liveThumbs(field, items, box, jobFor) {
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
   if (isLefty()) sx = DATA.w - sx - sw;
+  // Fetch independent option images together. Keep the expensive composites
+  // one per frame; serial downloads previously added a round trip per card.
+  const prepared = new Map();
+  requestAnimationFrame(() => {
+    if (!field.isConnected || key !== thumbKey) return;
+    for (const [it, card, setUp] of todo) {
+      setUp(previewR);
+      const pending = R.views.back.loadSelection(previewR.web,
+        Object.values(S.materials || {}).includes('snakeskin'));
+      prepared.set(it.id, pending); pending.catch(() => {});
+    }
+  });
   // One per frame. Four full-canvas composites in a single frame is half a
   // second of locked-up page on a laptop and worse on a phone; spread out,
   // the cards fill in one after another and nothing blocks.
@@ -983,7 +995,7 @@ function liveThumbs(field, items, box, jobFor) {
     const [it, card, setUp] = job;
     setUp(previewR);
     try {
-      await R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'));
+      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin')));
     } catch {
       if (field.isConnected && key === thumbKey) {
         if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
@@ -2113,6 +2125,15 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
+  // Browsing a design normally precedes Review and the other angles. Warm
+  // these immutable resources after startup, with a quiet network task, so
+  // switching does not restart a chain of downloads. Failures remain retryable.
+  setTimeout(() => {
+    import('./commerce-ui.js').catch(() => {});
+    for (const view of ['palm','thumb','pinky']) {
+      R.views[view]?.load().then(registerThumbViews).catch(() => {});
+    }
+  }, 1200);
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
