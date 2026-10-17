@@ -7,7 +7,7 @@ let current, nonce='';
 function observer(config) {
   performance.setResourceTimingBufferSize(5000);
   const start=performance.now();
-  let pending={label:'initial',start:config.direct?0:start}, serial=0;
+  let pending={label:'initial',start:config.direct?0:start,clicked:true}, serial=0;
   const errors=[];
   addEventListener('error',e=>errors.push(e.message||'resource error'));
   addEventListener('unhandledrejection',e=>errors.push(String(e.reason)));
@@ -25,14 +25,15 @@ function observer(config) {
     const view=b.dataset.view;
     const step=b.parentElement.id==='steps'?[...b.parentElement.children].indexOf(b):undefined;
     const label=view?'view:'+view:(step===undefined?'choice:':'step:')+b.textContent.trim();
-    if(pending?.label===label)return;
-    pending={label,start:performance.now(),view,step};serial++;
+    if(pending?.label===label&&e.type!=='click')return;
+    const now=performance.now(),intentStart=pending?.label===label?pending.intentStart:now;
+    pending={label,start:now,intentStart,clicked:e.type==='click',view,step};serial++;
   };
   document.addEventListener('pointerover',begin,true);
   document.addEventListener('click',begin,true);
   let latest, polling=false;
   const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.top<innerHeight&&r.bottom>0&&r.left<innerWidth&&r.right>0;};
-  const complete=()=>latest?.ready&&latest.flagsReady&&latest.reviewReady&&document.fonts.status==='loaded'
+  const complete=()=>pending?.clicked&&latest?.ready&&latest.flagsReady&&latest.reviewReady&&document.fonts.status==='loaded'
     && (!pending.view||pending.view===latest.view)
     && (pending.step===undefined||pending.step===latest.step)
     && ![...document.querySelectorAll('[data-preview-pending]')].some(visible)
@@ -43,7 +44,9 @@ function observer(config) {
     const token=serial;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       if(token!==serial||!pending||!complete()){requestAnimationFrame(poll);return;}
-      const entry={label:pending.label,ms:performance.now()-pending.start,...latest,
+      const ended=performance.now();
+      const entry={label:pending.label,ms:ended-pending.start,
+        ...(pending.intentStart===undefined?{}:{intentMs:ended-pending.intentStart}),...latest,
         navigation:performance.getEntriesByType('navigation').map(n=>({ttfb:n.responseStart,htmlEnd:n.responseEnd,bytes:n.transferSize,type:n.type})),
         viewport:[innerWidth,innerHeight],overflow:document.documentElement.scrollWidth>innerWidth,
         resourceCount:performance.getEntriesByType('resource').length,
