@@ -1,0 +1,3 @@
+Pages package ready; 475 asset references checked; 564 content-versioned assets.
+Base44 package ready: 639 files, 39,070,027 bytes; archive 36,576,902 bytes.
+Complete static site ready: /tmp/ssk-qa-static-20261017

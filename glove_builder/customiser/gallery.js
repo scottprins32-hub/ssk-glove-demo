@@ -73,7 +73,13 @@ function render() {
     del.type = 'button';
     del.textContent = t('deleteDesign');
     del.onclick = () => {
-      if (confirm(t('confirmDelete'))) { removeDesign(d.id); render(); }
+      if (confirm(t('confirmDelete'))) {
+        try { removeDesign(d.id); render(); }
+        catch { let error = document.querySelector('#gallery-status');
+          if (!error) { error = document.createElement('p'); error.id = 'gallery-status'; error.setAttribute('role','status'); grid.before(error); }
+          error.textContent = t('gallerySaveFail');
+        }
+      }
     };
 
     acts.append(open, del);

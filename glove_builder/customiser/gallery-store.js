@@ -4,18 +4,21 @@
 
 const GALLERY_KEY = 'ssk-gallery-v1';
 const MAX_DESIGNS = 40;
+const validDesign = d => d && typeof d === 'object' &&
+  ['id','name','refcode','savedAt','thumb','state'].every(k => typeof d[k] === 'string') &&
+  d.id.length > 0 && d.state.length > 0 && /^data:image\/(jpeg|png|webp);base64,/.test(d.thumb);
 
 export function loadGallery() {
   try {
     const raw = localStorage.getItem(GALLERY_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
+    return Array.isArray(list) ? list.filter(validDesign) : [];
   } catch (e) { return []; }
 }
 
 export function saveGallery(list) {
-  try { localStorage.setItem(GALLERY_KEY, JSON.stringify(list)); }
-  catch (e) { /* storage full or blocked: the session still works */ }
+  // Let callers report failure; claiming a save here would lose the design.
+  localStorage.setItem(GALLERY_KEY, JSON.stringify(list));
 }
 
 export function addDesign(design) {

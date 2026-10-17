@@ -500,6 +500,7 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
   transition: transform var(--dur-med) var(--ease-out);
   will-change: transform;
 }
+.sum-drawer[hidden] { display: none; }
 .sum-drawer.is-open { transform: translateX(0); }
 body.sum-open { padding-right: var(--sum-w); }
 .sum-head {
@@ -521,3 +522,12 @@ body.sum-open { padding-right: var(--sum-w); }
 
 /* ---------------------------------------------------------- gallery save */
 .gallery-save input { margin-bottom: var(--space-2); }
+/* Keep language and price visible without shrinking controls off narrow phones. */
+@media (max-width: 900px) {
+  .hdr { position: relative; }
+  .hdr-brand { min-height: 44px; }
+  .hdr-tools { gap: 6px; }
+  .hdr-tools > .lang { position: absolute; top: 6px; right: 92px; flex-shrink: 0; }
+  .hdr-tools > .price { position: absolute; top: 15px; right: 12px; min-width: 0; }
+  #summary, #share { flex: 1; min-width: 0; min-height: 44px; padding-inline: 8px; font-size: 12px; white-space: normal; }
+}

@@ -1,0 +1,68 @@
+{
+  "endpoint": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v10",
+  "revision": "ccv-r01-14",
+  "date": "2026-10-17T13:18:20.208Z",
+  "checks": [
+    {
+      "action": "config",
+      "status": 200
+    },
+    {
+      "action": "create",
+      "status": 200
+    },
+    {
+      "action": "read",
+      "status": 200
+    },
+    {
+      "action": "read",
+      "status": 404,
+      "error": "design_not_found"
+    },
+    {
+      "action": "checkout",
+      "status": 404,
+      "error": "design_not_found"
+    },
+    {
+      "action": "checkout",
+      "status": 503,
+      "error": "checkout_not_connected"
+    },
+    {
+      "action": "status",
+      "status": 200
+    },
+    {
+      "action": "copy",
+      "status": 200
+    },
+    {
+      "action": "read",
+      "status": 200
+    },
+    {
+      "action": "admin-list",
+      "status": 403,
+      "error": "admin_required"
+    },
+    {
+      "action": "disallowed-origin",
+      "status": 403
+    }
+  ],
+  "syntheticIds": [
+    "6ad3759d36aae8a67132d1b4",
+    "6ad375a098848c485f8964e7"
+  ],
+  "quote": {
+    "currency": "EUR",
+    "version": "ssk-2026-10",
+    "base": 37495,
+    "flag": 500,
+    "total": 37995
+  },
+  "tokensRecorded": false,
+  "passed": true
+}

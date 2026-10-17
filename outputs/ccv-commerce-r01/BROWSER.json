@@ -1,0 +1,192 @@
+{
+  "capturedAt": "2026-10-15T15:39:43.463Z",
+  "mode": "Local packaged frontend with deployed backend v10; checkout blocked",
+  "viewports": [
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "buttons": [
+        {
+          "height": 77.1875,
+          "text": "Bekijk de vier beelden en je keuzes",
+          "width": 312
+        },
+        {
+          "height": 51.59375,
+          "text": "Verder naar veilig afrekenen",
+          "width": 312
+        },
+        {
+          "height": 51.59375,
+          "text": "Bestelstatus controleren",
+          "width": 312
+        },
+        {
+          "height": 51.59375,
+          "text": "Ontwerplink kopiëren",
+          "width": 312
+        },
+        {
+          "height": 51.59375,
+          "text": "Terug naar SSK Custom Glove",
+          "width": 312
+        }
+      ],
+      "images": [
+        {
+          "alt": "Achterkant",
+          "height": 1100,
+          "loaded": true,
+          "width": 929
+        },
+        {
+          "alt": "Palm",
+          "height": 1400,
+          "loaded": true,
+          "width": 1534
+        },
+        {
+          "alt": "Duimzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 822
+        },
+        {
+          "alt": "Pinkzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 737
+        }
+      ],
+      "overflow": false,
+      "returnLink": "https://sskeurope.ccvshop.nl/SSK-Custom-Glove"
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "buttons": [
+        {
+          "height": 51.59375,
+          "text": "Bekijk de vier beelden en je keuzes",
+          "width": 337.703125
+        },
+        {
+          "height": 77.1875,
+          "text": "Verder naar veilig afrekenen",
+          "width": 223.328125
+        },
+        {
+          "height": 77.1875,
+          "text": "Bestelstatus controleren",
+          "width": 223.3359375
+        },
+        {
+          "height": 77.1875,
+          "text": "Ontwerplink kopiëren",
+          "width": 223.3359375
+        },
+        {
+          "height": 51.59375,
+          "text": "Terug naar SSK Custom Glove",
+          "width": 690
+        }
+      ],
+      "images": [
+        {
+          "alt": "Achterkant",
+          "height": 1100,
+          "loaded": true,
+          "width": 929
+        },
+        {
+          "alt": "Palm",
+          "height": 1400,
+          "loaded": true,
+          "width": 1534
+        },
+        {
+          "alt": "Duimzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 822
+        },
+        {
+          "alt": "Pinkzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 737
+        }
+      ],
+      "overflow": false,
+      "returnLink": "https://sskeurope.ccvshop.nl/SSK-Custom-Glove"
+    },
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900,
+      "buttons": [
+        {
+          "height": 77.1875,
+          "text": "Bekijk de vier beelden en je keuzes",
+          "width": 280
+        },
+        {
+          "height": 77.1875,
+          "text": "Verder naar veilig afrekenen",
+          "width": 280
+        },
+        {
+          "height": 51.59375,
+          "text": "Bestelstatus controleren",
+          "width": 273.6796875
+        },
+        {
+          "height": 51.59375,
+          "text": "Ontwerplink kopiëren",
+          "width": 230.1171875
+        },
+        {
+          "height": 77.1875,
+          "text": "Terug naar SSK Custom Glove",
+          "width": 280
+        }
+      ],
+      "images": [
+        {
+          "alt": "Achterkant",
+          "height": 1100,
+          "loaded": true,
+          "width": 929
+        },
+        {
+          "alt": "Palm",
+          "height": 1400,
+          "loaded": true,
+          "width": 1534
+        },
+        {
+          "alt": "Duimzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 822
+        },
+        {
+          "alt": "Pinkzijde",
+          "height": 1100,
+          "loaded": true,
+          "width": 737
+        }
+      ],
+      "overflow": false,
+      "returnLink": "https://sskeurope.ccvshop.nl/SSK-Custom-Glove"
+    }
+  ],
+  "inspectButtonPreservesCapability": true,
+  "inspectScrolled": true,
+  "limits": [
+    "Emulated viewports, not physical devices",
+    "No real CCV checkout or authenticated merchant browser test"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "GloveOrderDraft": {
+    "status": 200,
+    "arrayRows": 0
+  },
+  "GloveRateBucket": {
+    "status": 200,
+    "arrayRows": 0
+  },
+  "User": {
+    "status": 401
+  }
+}

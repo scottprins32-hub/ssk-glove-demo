@@ -1,0 +1,39 @@
+// The entity APIs are injected, so admission tests exercise the deployed adapter.
+export function createStore(entity,buckets,rateId) {
+  return {
+    get:async id=>{try{return await entity.get(id);}catch(error){if(error.status===404)return null;throw error;}},
+    create:async data=>{
+      // Base44 limits a single string field. Preserve exact image bytes in
+      // bounded chunks inside the same private, capability-gated snapshot.
+      const previews=data.previews.map(p=>{
+        const clean={view:p.view,available:p.available,notes:p.notes||[]};
+        if(!p.available)return clean;
+        const chunks=p.chunks?[...p.chunks]:[];if(!p.chunks)for(let i=0;i<p.dataUrl.length;i+=8192)chunks.push(p.dataUrl.slice(i,i+8192));
+        return {...clean,chunks};
+      });
+      return entity.create({...data,previews});
+    },
+    publicPreviews:async previews=>previews.map(p=>p.available
+      ?{view:p.view,available:true,dataUrl:p.chunks.join(''),notes:p.notes}
+      :{view:p.view,available:false,notes:p.notes||[]}),update:(id,data)=>entity.update(id,data),list:()=>entity.list('-created_date',100),
+    reserveRate:async(_fingerprint,hour)=>{
+      // One pre-provisioned row: concurrent Base44 upsert is not unique.
+      // Reset only forward; an older in-flight request cannot reopen an hour.
+      for(let attempt=0;attempt<3;attempt++) {
+        let row;try{row=await buckets.get(rateId);}catch(error){if(error.status===404)return false;throw error;}
+        if(!row||row.key>hour&&row.key!=='initial-global')return false;
+        if(row.key!==hour){try{await buckets.updateMany({id:rateId,key:row.key,uses:row.uses},{$set:{key:hour,uses:0}});}catch(error){if(error.status!==500)throw error;}continue;}
+        if(!Number.isInteger(row.uses)||row.uses>=100)return false;
+        // Equality CAS avoids the platform's anonymous bulk-query operator error.
+        try {
+          const admitted=await buckets.updateMany({id:rateId,key:hour,uses:row.uses},{$inc:{uses:1}});
+          if(admitted.updated===1)return true;
+        } catch(error) {if(error.status!==500)throw error;}
+        // Anonymous zero-match bulk updates can return HTTP 500 on Base44.
+        // A fresh equality CAS is safe here: extra increments only consume quota.
+      }
+      return false;
+    },
+    claim:async id=>{try{const result=await entity.updateMany({id,status:'draft'},{$set:{status:'submitting'}});return result.updated===1;}catch(error){if(error.status===500){const row=await entity.get(id);if(row&&row.status!=='draft')return false;}throw error;}}
+  };
+}

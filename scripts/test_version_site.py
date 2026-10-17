@@ -67,6 +67,12 @@ class VersionSiteTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     version_site(self.root)
 
+    def test_dynamic_import_is_versioned(self):
+        (self.root / 'lazy.js').write_text('export const answer=42;')
+        (self.root / 'app.js').write_text("import('./lazy.js').then(console.log);")
+        version_site(self.root)
+        self.assertIn("import('./lazy.js?v=" + digest(self.root / 'lazy.js'), (self.root / 'app.js').read_text())
+
     def test_missing_module_rejected(self):
         (self.root / 'app.js').write_text("import './missing.js';")
         with self.assertRaises(ValueError):

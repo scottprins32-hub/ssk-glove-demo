@@ -2,18 +2,18 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL } from './glove-engine.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
-         import { addDesign } from './gallery-store.js';
+import { addDesign } from './gallery-store.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 // Scott confirmed snakeskin for the large exterior panels, at no surcharge.
-const MATERIAL_FIELDS = Object.freeze(['back1','back2','back3','back4','back5','back6','back7','back8','back9','belt']);
 const cleanMaterials = input => Object.fromEntries(MATERIAL_FIELDS.filter(k=>input?.[k]==='snakeskin').map(k=>[k,'snakeskin']));
 const materialLabel = value => value === 'snakeskin' ? 'Crocodile pattern' : (S.lang === 'nl' ? 'Normaal leer' : 'Standard leather');
 function layerMaterials(D=R.DATA, map=viewLayerField()) {
@@ -22,11 +22,8 @@ function layerMaterials(D=R.DATA, map=viewLayerField()) {
 const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
 // Pim confirmed the flag surcharge through Scott on 7 October 2026.
 // Integer cents: all UI and order exports use this single calculation.
-const PRICE_CENTS = Object.freeze({ base: 37495, flag: 500 });
 const hasFlag = (s = S) => !!s.flag && s.flag !== 'None';
-const priceBreakdown = (s = S) => ({ base: PRICE_CENTS.base,
-  flag: hasFlag(s) ? PRICE_CENTS.flag : 0,
-  total: PRICE_CENTS.base + (hasFlag(s) ? PRICE_CENTS.flag : 0) });
+const priceBreakdown = (s = S) => quoteDesign(s);
 const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE',
   { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
@@ -571,10 +568,10 @@ function gateSelection(target) {
   if (!request.pending && !request.error) {
     request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     }).catch(error => {
       request.error = error;
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     });
   }
   return true;
@@ -597,7 +594,7 @@ function draw(target = ctx, highlight = S.step === 3) {
       const requested = S.view;
       pendingView.load().then(() => {
         registerThumbViews();
-        if (S.view === requested) { draw(); paint(); }
+        if (S.view === requested) { draw(); paint(S.step !== 7 && S.step !== 5); }
       }).catch(() => {
         if (S.view === requested) {
           $('#glove').removeAttribute('aria-busy');
@@ -1364,23 +1361,22 @@ function saveToGalleryField() {
   saveBtn.style.alignSelf = 'flex-start';
   const status = el('p', 'note'); status.setAttribute('role', 'status');
   saveBtn.onclick = async () => {
-    const name = nameInput.value.trim() || t('untitledDesign');
     saveBtn.disabled = true; status.textContent = '';
-    const ok = await readyForExport();
-    if (!ok) { saveBtn.disabled = false; status.textContent = t('gallerySaveFail'); return; }
-    const full = proofImage();
-    const tw = 240;
-    const thumb = document.createElement('canvas');
-    thumb.width = tw; thumb.height = Math.max(1, Math.round(full.height * tw / full.width));
-    thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
-    addDesign({
-      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)),
-      name, refcode: code(), savedAt: new Date().toISOString(),
-      thumb: thumb.toDataURL('image/jpeg', 0.78),
-      state: encodeState(true)
-    });
-    saveBtn.disabled = false;
-    status.textContent = t('gallerySaved');
+    try {
+      if (flushText()) paint();
+      const name = nameInput.value.trim() || t('untitledDesign');
+      if (!await readyForExport()) throw Error('assets_not_ready');
+      const full = proofImage(), thumb = document.createElement('canvas');
+      thumb.width = 240; thumb.height = Math.max(1, Math.round(full.height * 240 / full.width));
+      thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
+      addDesign({id: crypto.randomUUID(), name, refcode: code(), savedAt: new Date().toISOString(),
+        thumb: thumb.toDataURL('image/jpeg', 0.78), state: encodeState(true)});
+      status.textContent = t('gallerySaved');
+      const gallery = el('a', 'btn btn-ghost', t('myDesigns'));
+      gallery.href = './gallery.html'; status.append(' ', gallery);
+    } catch { status.textContent = t('gallerySaveFail'); }
+    finally { saveBtn.disabled = false; }
+
   };
   box.append(nameInput, saveBtn, status);
   return box;
@@ -1397,11 +1393,48 @@ function renderReview(b) {
   b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
   b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
+  const commerceHost=document.createElement('div');b.appendChild(commerceHost);
+  import('./commerce-ui.js').then(({mountCommerce})=>{
+    if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
+      getDesign:()=>structuredClone(S),capture:captureOrderViews});
+  }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
   b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
   b.appendChild(go);
+}
+
+async function captureOrderViews() {
+  const snapshot=structuredClone(S),web=WEBS.find(w=>w.id===snapshot.webType),previews=[];
+  const art=flagArt(),renderer=new GloveRenderer({...R.views.back,views:R.views});
+  await renderer.preloadFlags(art?[art]:[]);
+  for(const view of ['back','palm','thumb','pinky']) {
+    const bundle=R.views[view];
+    if(bundle?.load)await bundle.load();
+    registerThumbViews();
+    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'));
+    registerThumbViews();
+    const availability=viewAvailability(view,web);
+    if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
+    const angle=view==='thumb'&&thumbEstimatedViewOf(web)||view;
+    renderer.views=R.views;
+    if(!renderer.setView(angle))throw new Error('View unavailable');
+    renderer.setWeb(web?.render);renderer.setWebMarked(web?.id!==NATIVE_WEB);
+    renderer.setFlag(art,null,snapshot.flagPosition);
+    const padColour=DATA.palettes.leather.find(c=>c[0]===snapshot.colors.pad_color)?.[2]||null;
+    renderer.setPad(PAD_PART[snapshot.pad]||null,padColour);
+    const D=renderer.DATA,map=view==='back'?LAYER_TO_FIELD:view==='palm'?{...PALM_FIELDS,stitching:'stitching'}:Object.fromEntries(D.zones.map(z=>[z.id,z.field]));
+    renderer.setMaterials(Object.fromEntries(D.zones.map(z=>[z.id,snapshot.materials?.[map[z.id]]||'standard'])));
+    const state=Object.fromEntries(D.zones.map(z=>[z.id,snapshot.colors[map[z.id]]||DATA.palettes[z.group][0][0]]));state.palm=snapshot.colors.palm||'10';
+    const canvas=document.createElement('canvas');canvas.width=D.w;canvas.height=D.h;
+    renderer.draw(canvas.getContext('2d'),state,snapshot.bullet,null,hasFlag(snapshot),/^L/.test(snapshot.hand));
+    const notes=availability.note?[vt(availability.note)]:[];
+    notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
+    if(snapshot.thumbText||snapshot.pinkyText||snapshot.thumbNumber)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
+    previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
+  }
+  return previews;
 }
 
 /* --------------------------------------------------------------- widgets */
@@ -1666,7 +1699,7 @@ async function readyForExport() {
       if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
-        selectionRequest = { key: selected.key, error }; draw(); paint();
+        selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);
       }
       return false;
     }
@@ -1715,7 +1748,9 @@ function paintSummary() {
 function openSummary() {
   if (flushText()) paint();
   const drawer = $('#sumdrawer');
-  drawer.hidden = false;
+  clearTimeout(closeSummary._t);
+  drawer.hidden = false; drawer.inert = false; drawer.removeAttribute('aria-hidden');
+  $('#summary').setAttribute('aria-expanded', 'true');
   void drawer.offsetHeight;            // commit the off-screen start frame
   drawer.classList.add('is-open');     // then slide it in
   document.body.classList.add('sum-open');  // push the builder aside
@@ -1725,6 +1760,8 @@ function openSummary() {
 function closeSummary() {
   const drawer = $('#sumdrawer');
   if (drawer.hidden || !drawer.classList.contains('is-open')) return;
+  drawer.inert = true; drawer.setAttribute('aria-hidden', 'true');
+  $('#summary').setAttribute('aria-expanded', 'false');
   drawer.classList.remove('is-open');  // slide out
   document.body.classList.remove('sum-open');
   $('#summary')?.focus();
@@ -1805,6 +1842,8 @@ function paint(rebuildBody = true) {
   }
   const L = S.lang;
   document.documentElement.lang = L;
+  $('#sumx').setAttribute('aria-label', L === 'en' ? 'Close summary' : 'Sluiten');
+  $('#steps').setAttribute('aria-label', L === 'en' ? 'Steps' : 'Stappen');
   const hadKey = focusKey(document.activeElement);
   const wasStep = paint.lastStep;
   const revealMaterial = rebuildBody && S.step === 3
