@@ -1962,6 +1962,17 @@ function paint(rebuildBody = true) {
   paintSummary();
   save();
   reportPerformance();
+  if (S.step === 1) warmWebOptions();
+}
+
+const warmedSizes = new Set();
+function warmWebOptions() {
+  const key = S.size;
+  if (!key || warmedSizes.has(key)) return;
+  warmedSizes.add(key);
+  for (const web of WEBS.filter(w => w.sizes.includes(key))) {
+    R.views.back.loadSelection(web.render || null, false).catch(() => warmedSizes.delete(key));
+  }
 }
 
 // Optional, test-only observer. No observer or storage changes on normal visits.
@@ -2131,7 +2142,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   setTimeout(() => {
     import('./commerce-ui.js').catch(() => {});
     for (const view of ['palm','thumb','pinky']) {
-      R.views[view]?.load().then(registerThumbViews).catch(() => {});
+      R.views[view]?.load({priority:'low'}).then(registerThumbViews).catch(() => {});
     }
   }, 1200);
 }).catch(error => {

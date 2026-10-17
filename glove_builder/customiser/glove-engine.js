@@ -81,13 +81,13 @@ export function assetURL(src) {
   return url;
 }
 const imagePacks = new Map();
-async function packedImage(source) {
+async function packedImage(source, priority = 'auto') {
   const entry = window.__SSK_IMAGE_PACKS__?.[source];
   if (!entry) return null;
   const url = assetURL(entry.pack);
   let pending = imagePacks.get(url);
   if (!pending) {
-    pending = fetch(url).then(response => {
+    pending = fetch(url, {priority}).then(response => {
       if (!response.ok) throw new Error('Image package could not be loaded');
       return response.arrayBuffer();
     });
@@ -100,11 +100,11 @@ async function packedImage(source) {
     throw new Error('Invalid image package boundary');
   return URL.createObjectURL(new Blob([data.slice(entry.offset,entry.offset+entry.length)],{type:entry.type}));
 }
-function decodeImage(source) {
+function decodeImage(source, priority = 'auto') {
   const src = assetURL(source);
   if (!decodedImages.has(src)) decodedImages.set(src, new Promise((resolve, reject) => {
     const start = packed => {
-    const im = new Image();
+    const im = new Image(); im.fetchPriority = priority;
     const release = () => { if (packed) URL.revokeObjectURL(packed); };
     im.onload = () => { release(); resolve(im); };
     im.onerror = () => {
@@ -113,7 +113,7 @@ function decodeImage(source) {
     };
     im.src = packed || src;
     };
-    if (window.__SSK_IMAGE_PACKS__?.[source]) packedImage(source).then(start, () => start(null));
+    if (window.__SSK_IMAGE_PACKS__?.[source]) packedImage(source, priority).then(start, () => start(null));
     else start(null);
   }));
   return decodedImages.get(src);
@@ -152,7 +152,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       let loading;
       let palmManifest;
       const selections = new Map();
-      const loadAssets = async keys => {
+      const loadAssets = async (keys, priority = 'auto') => {
         // Explicit selections share in-flight decodes with the base and previews.
         const parallelImages = (window.__SSK_PERF__?.protocol || location.protocol) === 'https:' ? 96 : 8;
         let next = 0;
@@ -161,7 +161,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
             const key = keys[next++];
             if (v.imgs[key]) continue;
             try {
-              v.imgs[key] = await decodeImage(v.DATA.assets[key]);
+              v.imgs[key] = await decodeImage(v.DATA.assets[key], priority);
               delete v.assetErrors[key];
             } catch (error) { v.assetErrors[key] = error; }
           }
@@ -192,7 +192,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         pending.finally(() => selections.delete(key)).catch(() => {});
         return pending;
       };
-      v.load = () => loading || (loading = (async () => {
+      v.load = ({priority = 'auto'} = {}) => loading || (loading = (async () => {
         v.error = null;
         const DATA = await metadata[i]();
         DATA.palettes = backData.palettes; v.DATA = DATA;
@@ -200,7 +200,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         if (deferredPalm) { palmManifest ||= DATA.palmWebs; DATA.palmWebs = null; }
         // Native palm viewing needs no alternate insert or hash-bank download.
         // The complete API still eagerly verifies all available palm inserts.
-        await loadAssets(renderAssets(DATA, progressive));
+        await loadAssets(renderAssets(DATA, progressive), priority);
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {})];
