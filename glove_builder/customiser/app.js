@@ -2136,15 +2136,15 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   document.querySelector('.stage').appendChild(size);
 
   draw(); paint();
-  // Browsing a design normally precedes Review and the other angles. Warm
-  // these immutable resources after startup, with a quiet network task, so
-  // switching does not restart a chain of downloads. Failures remain retryable.
+  // The selected back is decoded and drawn. Prepare angles while starter
+  // cards render, at low network priority; a customer may switch immediately.
+  // Failures remain retryable through the normal selected-view load path.
   setTimeout(() => {
-    import('./commerce-ui.js').catch(() => {});
     for (const view of ['palm','thumb','pinky']) {
       R.views[view]?.load({priority:'low'}).then(registerThumbViews).catch(() => {});
     }
-  }, 1200);
+  }, 0);
+  setTimeout(() => { import('./commerce-ui.js').catch(() => {}); }, 1200);
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
