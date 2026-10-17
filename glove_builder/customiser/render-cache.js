@@ -45,7 +45,7 @@ export class PublicRenders {
       this.db=db; db.onversionchange=()=>db.close();
       await new Promise((resolve,reject)=>{
         const tx=db.transaction('images','readonly'), request=tx.objectStore('images').getAll();
-        request.onsuccess=()=>{ for(const row of request.result) if(row.key.startsWith(this.prefix)) this.blobs.set(row.key.slice(this.prefix.length),row); };
+        request.onsuccess=()=>{ for(const row of request.result) if(typeof row?.key==='string' && row.key.startsWith(this.prefix)) this.blobs.set(row.key.slice(this.prefix.length),row); };
         tx.oncomplete=resolve; tx.onerror=tx.onabort=()=>reject(tx.error);
       });
     } catch { this.failed=true; }
@@ -55,11 +55,12 @@ export class PublicRenders {
     // Do not hold an accepted first visit behind a slow local storage device.
     await Promise.race([this.ready,new Promise(resolve=>setTimeout(resolve,120))]);
     const row=this.blobs.get(key);
-    if(!row || row.width!==width || row.height!==height || !(row.blob instanceof Blob) || row.blob.type!=='image/png') return null;
+    if(!row) return null;
+    if(row.width!==width || row.height!==height || !(row.blob instanceof Blob) || row.blob.type!=='image/png') {this.blobs.delete(key);return null;}
     if(this.pending.has(key)) return this.pending.get(key);
     const pending=new Promise(resolve=>{
       const url=URL.createObjectURL(row.blob), image=new Image();
-      const finish=value=>{URL.revokeObjectURL(url);resolve(value);};
+      const finish=value=>{URL.revokeObjectURL(url);if(!value)this.blobs.delete(key);resolve(value);};
       image.onload=()=>{const valid=image.naturalWidth===width && image.naturalHeight===height;if(valid)this.hits++;finish(valid ? image : null);};
       image.onerror=()=>finish(null); image.src=url;
     });
@@ -83,11 +84,12 @@ export class PublicRenders {
         store.put(row);
         const all=store.getAll();
         all.onsuccess=()=>{
-          const rows=all.result.sort((a,b)=>a.used-b.used);
-          let size=rows.reduce((n,r)=>n+r.bytes,0), count=rows.length;
+          const rows=all.result.filter(r=>typeof r?.key==='string' && r.blob instanceof Blob)
+            .sort((a,b)=>(Number.isFinite(a.used)?a.used:0)-(Number.isFinite(b.used)?b.used:0));
+          let size=rows.reduce((n,r)=>n+r.blob.size,0), count=rows.length;
           for(const old of rows) {
             if(size<=MAX_BYTES && count<=MAX_ENTRIES) break;
-            store.delete(old.key); size-=old.bytes; count--;
+            store.delete(old.key); size-=old.blob.size; count--;
           }
         };
         tx.oncomplete=()=>{this.blobs.set(key,row);this.writes++;};

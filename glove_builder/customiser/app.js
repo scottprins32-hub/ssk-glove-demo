@@ -1114,7 +1114,8 @@ function renderWeb(b) {
   const grid = el('div', 'web-refs-grid');
   for (const r of WEB_REFERENCES) {
     const fig = el('figure', 'web-ref');
-    const img = el('img'); img.src = assetURL(r.img); img.alt = `${r.id}: ${t('webRefBadge')}`; img.loading = 'lazy';
+    const img = el('img'); img.alt = `${r.id}: ${t('webRefBadge')}`;
+    setImageSource(img, r.img);
     const cap = el('figcaption');
     cap.append(el('strong', null, r.id), el('span', 'web-ref-badge', t('webRefBadge')));
     fig.append(img, cap); grid.appendChild(fig);
@@ -2027,7 +2028,7 @@ function warmWebOptions() {
   const key = S.size;
   if (!key || warmedSizes.has(key)) return;
   warmedSizes.add(key);
-  preloadImages(WEBS.filter(w=>w.sizes.includes(key)).map(w=>w.img)).catch(()=>warmedSizes.delete(key));
+  preloadImages([...WEBS.filter(w=>w.sizes.includes(key)),...WEB_REFERENCES].map(w=>w.img)).catch(()=>warmedSizes.delete(key));
   for (const web of WEBS.filter(w => w.sizes.includes(key))) {
     R.views.back.loadSelection(web.render || null, false).catch(() => warmedSizes.delete(key));
   }
