@@ -119,6 +119,26 @@ function decodeImage(source, priority = 'auto') {
   return decodedImages.get(src);
 }
 
+export function preloadImages(sources) { return Promise.all(sources.filter(Boolean).map(src=>decodeImage(src))); }
+
+// Catalogue pictures use the same exact-byte packages as the renderer. Keep
+// each DOM image independent; moving a shared Image would remove another card.
+export function setImageSource(image,source) {
+  const original=assetURL(source);
+  if(!window.__SSK_IMAGE_PACKS__?.[source]) { image.src=original; return; }
+  image.loading='eager';
+  packedImage(source).then(url=>{
+    if(!image.isConnected) { URL.revokeObjectURL(url); return; }
+    const release=()=>{
+      URL.revokeObjectURL(url);
+      image.removeEventListener('load',release); image.removeEventListener('error',fallback);
+    };
+    const fallback=()=>{release();image.src=original;};
+    image.addEventListener('load',release,{once:true});
+    image.addEventListener('error',fallback,{once:true}); image.src=url;
+  },()=>{if(image.isConnected) image.src=original;});
+}
+
 // Keep successful metadata and share requests in flight, but let a failed
 // request be retried. A temporary outage must not remove an angle forever.
 function viewMetadata(name) {
@@ -370,6 +390,22 @@ export class GloveRenderer {
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
     this.octx = this.off.getContext('2d');
+  }
+
+  drawCached(ctx,state,bullet,highlight,flag,mirror,frames,key) {
+    this.syncNativeHContour();
+    // Picking depends on the configuration, even when the pixels are reused.
+    this._drawn=[bullet,flag];
+    const hit=!highlight && frames.get(key);
+    if(hit) {
+      ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,this.DATA.w,this.DATA.h);
+      ctx.drawImage(hit,0,0); return hit;
+    }
+    this.draw(ctx,state,bullet,highlight,flag,mirror);
+    if(highlight) return null;
+    const image=document.createElement('canvas');image.width=this.DATA.w;image.height=this.DATA.h;
+    image.getContext('2d').drawImage(ctx.canvas,0,0); frames.put(key,image);
+    return image;
   }
 
   // Which side of the glove is being drawn. The tint cache is keyed by zone

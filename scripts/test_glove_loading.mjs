@@ -376,3 +376,30 @@ test('out-of-bounds package entries fall back instead of decoding wrong bytes', 
   assert.equal(h.images.get('id.png'),1);
   assert.equal(h.requests.get('native.pack'),1);
 });
+
+test('full frame reuse snapshots pixels and refreshes picking metadata on a hit',async()=>{
+  const h=await harness(),r=new h.GloveRenderer(await h.loadGlove({progressive:true}));
+  r.syncNativeHContour=()=>{};r.DATA={w:1,h:1};let draws=0,copies=0;
+  r.draw=()=>draws++;
+  const entries=new Map(),frames={get:k=>entries.get(k),put:(k,v)=>entries.set(k,v)};
+  const ctx={canvas:{width:1,height:1},setTransform(){},clearRect(){},drawImage(){copies++;}};
+  const first=r.drawCached(ctx,{},1,null,false,false,frames,'back');
+  assert.notEqual(first,ctx.canvas,'the live canvas is never retained as an immutable frame');
+  r.drawCached(ctx,{},2,null,true,false,frames,'back');
+  assert.equal(draws,1);assert.equal(copies,1);assert.deepEqual(r._drawn,[2,true]);
+  r.drawCached(ctx,{},2,{id:'palm'},true,false,frames,'back');
+  assert.equal(draws,2,'selection feedback never reuses an unhighlighted frame');
+});
+
+test('catalogue package failure retains the original image URL',async()=>{
+  const h=await harness({packs:{'photo.jpg':{pack:'bad.pack',offset:0,length:2,type:'image/jpeg'}},failures:{'bad.pack':1}});
+  const image={isConnected:true};h.setImageSource(image,'photo.jpg');await settle();
+  assert.equal(image.src,'photo.jpg');
+});
+
+test('removed catalogue cards release their unused blob URL',async()=>{
+  const h=await harness({packs:{'photo.jpg':{pack:'native.pack',offset:0,length:2,type:'image/jpeg'}},packData:new Uint8Array([1,2])});
+  const original=URL.revokeObjectURL;let released=0;URL.revokeObjectURL=()=>released++;
+  try {const image={isConnected:false};h.setImageSource(image,'photo.jpg');await settle();assert.equal(released,1);assert.equal(image.src,undefined);}
+  finally {URL.revokeObjectURL=original;}
+});

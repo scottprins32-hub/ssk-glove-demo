@@ -2,6 +2,7 @@
 import hashlib
 import json
 import pathlib
+import re
 import tempfile
 import unittest
 
@@ -59,6 +60,18 @@ class VersionSiteTest(unittest.TestCase):
         self.assertNotEqual(before['assets/glove.webp'], after['assets/glove.webp'])
         self.assertEqual(before['assets/glove-data.json'], after['assets/glove-data.json'])
         self.assertEqual(self.metadata.read_bytes(), metadata_before)
+
+    def test_public_render_revision_tracks_code_and_image_changes(self):
+        def revision():
+            version_site(self.root)
+            return re.search(r'__SSK_RENDER_REVISION__="([^"]+)"',(self.root/'index.html').read_text())[1]
+        first=revision()
+        self.write_sources('export const version = 2;')
+        second=revision()
+        self.assertNotEqual(first,second)
+        self.write_sources('export const version = 2;')
+        self.image.write_bytes(b'new full quality source')
+        self.assertNotEqual(second,revision())
 
     def test_missing_or_external_assets_rejected(self):
         for name in ('assets/missing.webp', '../outside.webp'):

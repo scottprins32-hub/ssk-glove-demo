@@ -285,6 +285,8 @@ test('actual app keeps pending palm selectable but gates drawing until verificat
     const document = {querySelector:()=>({appendChild:node=>{nodes['#'+node.id]=node;}})};
     const ctx = {canvas:{width:1,height:1},clearRect(){}};
     const flagArt=()=>null, layerMaterials=()=>({}), layerState=()=>({}), hasFlag=()=>false, isLefty=()=>false;
+    const visualKey=()=>'test',nativeFrameKey=()=>'',defaultVisual=null;
+    const nativeFrames={select(){},get(){return null;},put(){}},rememberPublic=()=>{};
     const drawUnavailable=()=>{throw Error('unexpected unavailable view');};
     R.draw=()=>draws.push(R.web);
     ${availability}
