@@ -45,6 +45,6 @@ console.log(JSON.stringify(groups));"""
     # Group the small thumb masks; large plates keep their individual cache
     # entries. This removes request overhead without duplicating enough bytes
     # to exceed the host's 50 MB archive limit. Nothing is transcoded.
-    groups['thumb']=[name for name in groups['thumb'] if (root/name).stat().st_size<=128_000]
+    groups['thumb']=[name for name in groups['thumb'] if (root/name).stat().st_size<=32_768]
     groups['back'].extend(str(p.relative_to(root)) for p in (root/'assets/flags').glob('*.svg'))
     return write_packs(root,groups)

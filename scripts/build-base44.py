@@ -27,6 +27,7 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js',
                'performance.html', 'performance.js')
 FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 MAX_ARCHIVE_BYTES = 50_000_000
+MAX_EXTRACTED_BYTES = 50_000_000
 
 
 def dependencies(source):
@@ -90,24 +91,39 @@ def package(source=SOURCE, output=OUTPUT, manifest=MANIFEST):
             observer=js[js.index('function observer(config)'):js.index('\nfunction output()')]
             html=(staging / 'index.html').read_text()
             css=(staging / 'ds/tokens/fonts.css').read_text()
+            nonces=[]
             for i in range(1,10):
-                nonce=uuid.uuid4().hex
+                nonce=uuid.uuid4().hex;nonces.append(nonce)
                 def bust(path): return path+('&' if '?' in path else '?')+'bench='+nonce
-                font= re.sub(r'url\(([\"\']?)([^)\"\' ]+)\1\)',
+                font=re.sub(r'url\(([\"\']?)([^)\"\' ]+)\1\)',
                     lambda m:'url("'+bust(urljoin('ds/tokens/fonts.css',m[2]))+'")',css)
-                font_name=f'performance-fonts-{i}.css'
-                generated(font_name,font)
-                imports={ './'+alias:'./'+bust(path) for alias,path in aliases.items() }
-                setup='<script type="importmap">'+json.dumps({'imports':imports})+'</script>'
-                setup+='<script>('+observer+')('+json.dumps({'direct':True,'nonce':nonce,'id':nonce,'protocol':'https:'})+');</script>'
-                page=html.replace('<meta charset="utf-8">','<meta charset="utf-8">'+setup)
-                def rewrite(m):
-                    path=m[2]
-                    if path.startswith('ds/tokens/fonts.css'): path=font_name
-                    if path.split('?')[0].endswith('.js'): path=path.split('?')[0]
-                    return m[1]+bust(path)+m[3]
-                page=re.sub(r'((?:src|href)=")([^"]+)(")',rewrite,page)
-                generated(f'performance-cold-{i}.html',page)
+                generated(f'performance-fonts-{i}.css',font)
+            # One direct-navigation document replaces nine near-identical HTML
+            # copies. document.write runs during parsing; its overhead remains
+            # in the navigation clock. Runtime code/assets are unchanged.
+            boot = """const nonces=NONCES, aliases=ALIASES;
+const requested=Number(new URLSearchParams(location.search).get('probe')||1);
+const i=Number.isInteger(requested)&&requested>=1&&requested<=9?requested:1;
+const nonce=nonces[i-1];
+const bust=p=>p+(p.includes('?')?'&':'?')+'bench='+nonce;
+const doc=new DOMParser().parseFromString(SOURCE,'text/html');
+const map=doc.createElement('script');map.type='importmap';
+map.textContent=JSON.stringify({imports:Object.fromEntries(Object.entries(aliases).map(([alias,path])=>['./'+alias,'./'+bust(path)]))});
+const setup=doc.createElement('script');setup.textContent='('+OBSERVER+')('+JSON.stringify({direct:true,nonce,id:nonce,protocol:location.protocol})+');';
+const charset=doc.querySelector('meta[charset]');charset.after(map);map.after(setup);
+for(const node of doc.querySelectorAll('link[href],script[src]')){
+ const attr=node.tagName==='LINK'?'href':'src';let path=node.getAttribute(attr);
+ if(path.startsWith('ds/tokens/fonts.css'))path='performance-fonts-'+i+'.css';
+ if(path.split('?')[0].endsWith('.js'))path=path.split('?')[0];
+ node.setAttribute(attr,bust(path));
+}
+document.write('<!doctype html>'+doc.documentElement.outerHTML);"""
+            for marker, value in [('NONCES',nonces),('ALIASES',aliases),('SOURCE',html),('OBSERVER',observer)]:
+                boot=boot.replace(marker,json.dumps(value).replace('<',chr(92)+'u003c'))
+            generated('performance-cold.html','<!doctype html><html><head><meta charset="utf-8"><script>'+boot+'</script></head></html>')
+        extracted_bytes=sum(e['bytes'] for e in entries)
+        if extracted_bytes >= MAX_EXTRACTED_BYTES:
+            raise ValueError(f'Extracted site is {extracted_bytes:,} bytes; Base44 limit is 50 MB')
         archive = pathlib.Path(temporary) / 'site.tar.gz'
         with tarfile.open(archive, 'w:gz') as tar:
             for name in keep:
