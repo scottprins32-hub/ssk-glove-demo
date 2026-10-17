@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = ROOT / '_site'
 OUTPUT = ROOT / '_base44'
 MANIFEST = ROOT / '_base44-manifest.json'
-ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js',
+ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'render-cache.js',
                'refcode.js', 'app.css', 'favicon.svg', '.nojekyll',
                'commerce-catalog.js','commerce-pricing.js','commerce-contract.js','commerce-config.js',
                'commerce-client.js','commerce-ui.js','commerce-display.js','commerce-summary.js','commerce.css',

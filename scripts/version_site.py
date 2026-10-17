@@ -60,7 +60,8 @@ def version_site(root):
         return parsed.path + '?' + (query + '&' if query else '') + 'v=' + digest(path) + ('#' + parsed.fragment if parsed.fragment else '')
     for path in root.rglob('*.css'):
         path.write_text(re.sub(r'url\(([^)]*)\)', lambda m: 'url(' + repr(reference(m[1].strip().strip('\'"'), path.parent)) + ')', path.read_text()))
-    manifest = '<script>window.__SSK_ASSET_VERSIONS__=' + json.dumps(versions, separators=(',', ':')).replace('<', '\\u003c') + ';</script>'
+    revision=hashlib.sha256(json.dumps({'assets':versions,'modules':{str(p.relative_to(root.resolve())):v for p,v in done.items()}},sort_keys=True).encode()).hexdigest()[:24]
+    manifest = '<script>window.__SSK_RENDER_REVISION__='+json.dumps(revision)+';window.__SSK_ASSET_VERSIONS__=' + json.dumps(versions, separators=(',', ':')).replace('<', '\\u003c') + ';</script>'
     for path in root.glob('*.html'):
         html = re.sub(r'(\b(?:src|href)=[\'"])([^\'"]+)([\'"])', lambda m: m[1] + reference(m[2], path.parent) + m[3], path.read_text())
         path.write_text(html.replace('</head>', manifest + '\n</head>'))

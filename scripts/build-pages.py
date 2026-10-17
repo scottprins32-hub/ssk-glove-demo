@@ -41,7 +41,9 @@ def build():
     index = re.sub(r'<link rel="preload"[^>]*href="assets/glove-data.json"[^>]*>\n?', '', index)
     index = index.replace('<link rel="modulepreload" href="refcode.js">',
         '<link rel="modulepreload" href="refcode.js">\n<link rel="modulepreload" href="gallery-store.js">\n<link rel="modulepreload" href="commerce-pricing.js">')
-    preloads = '<link rel="preload" href="assets/runtime/back.pack" as="fetch" crossorigin>\n'
+    preloads = '<link rel="preload" href="assets/runtime/back.pack" as="fetch" crossorigin fetchpriority="high">\n'
+    for angle in ('palm','pinky'):
+        preloads += f'<link rel="preload" href="assets/runtime/{angle}.pack" as="fetch" crossorigin fetchpriority="low">\n'
     fonts = ['7cHpv4kjgoGqM7E_DMs5ynghnQ.woff2',
         'HTxwL3I-JCGChYJ8VI-L6OO_au7B4-Lwz3bWuYMBYro.woff2',
         'HTxwL3I-JCGChYJ8VI-L6OO_au7B46r2z3bWuYMBYro.woff2',

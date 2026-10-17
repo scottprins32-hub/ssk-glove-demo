@@ -32,12 +32,14 @@ def build_packs(root):
     # its ownership rules. Only native bodies are packed; alternate webs stay lazy.
     code="""import {readFile} from 'node:fs/promises';
 const {renderAssets}=await import(process.argv[1]);
+const {WEBS,WEB_REFERENCES}=await import(new URL('glove-catalog.js',process.argv[2]));
 const groups={};
 for(const view of ['back','palm','thumb','pinky']) {
  const file=view==='back'?'glove':view;
  const data=JSON.parse(await readFile(new URL('assets/'+file+'-data.json',process.argv[2])));
  groups[view]=renderAssets(data,true).map(key=>data.assets[key]);
 }
+groups['web-options']=[...WEBS.filter(w=>w.sizes.includes('11.75"')),...WEB_REFERENCES].filter(w=>w.img?.endsWith('.jpg')).map(w=>w.img);
 console.log(JSON.stringify(groups));"""
     result=subprocess.run(['node','--input-type=module','-e',code,
         (root/'glove-engine.js').resolve().as_uri(),root.resolve().as_uri()+'/'],check=True,capture_output=True,text=True)
