@@ -1,0 +1,13 @@
+{
+  "origin": "https://ssk-glove-configurator-da8db964.base44.app/",
+  "visibleText": "- banner:\n  - generic: SSK EUROPE\n  - generic: Handschoen samenstellen\n  - generic: SSK Pro Custom · achterzijde\n  - group \"Taal / Language\":\n    - button \"EN\"\n    - button \"NL\"\n  - button \"Undo\": ↶\n  - button \"Redo\": ↷\n  - button \"Overzicht\"\n  - button \"Ontwerp delen\"\n  - generic: Referentie\n  - generic: SSK2-00\n  - generic: Totaal\n  - text: —\n- navigation \"Stappen\"\n- main:\n  - generic \"Handschoen\"\n  - paragraph\n  - complementary:\n    - generic: 01 / 08\n    - heading \"De handschoen kon niet worden geladen\" [level=1]\n    - paragraph: Controleer je verbinding en laad deze pagina opnieuw.\n- contentinfo:\n  - generic: 0 / 36\n  - button \"Terug\"\n  - button \"Verder\" [disabled]\n- dialog \"Jouw keuzes\":\n  - heading \"Jouw keuzes\" [level=2]\n  - button \"Sluiten\": ×\n  - button \"Afbeelding downloaden\"",
+  "errors": [
+    {
+      "level": "error",
+      "message": "Glove initialization failed Error: Glove data could not be loaded\n    at https://ssk-glove-configurator-da8db964.base44.app/assets/main-vZUzgVNJ.js:1:2186",
+      "timestamp": "2026-10-17T13:16:43.168Z",
+      "url": "https://ssk-glove-configurator-da8db964.base44.app/assets/main-vZUzgVNJ.js"
+    }
+  ],
+  "networkInspection": "Not performed: saved browser permission denies raw CDP. Diagnosis uses local source and published dist file listing."
+}

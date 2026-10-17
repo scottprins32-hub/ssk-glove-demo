@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SSK Europe — Mijn opgeslagen ontwerpen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="ds/tokens/fonts.css">
+<link rel="stylesheet" href="ds/tokens/colors.css">
+<link rel="stylesheet" href="ds/tokens/typography.css">
+<link rel="stylesheet" href="ds/tokens/spacing.css">
+<link rel="stylesheet" href="ds/tokens/effects.css">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+
+<header class="ghdr">
+  <div class="ghdr-brand">
+    <span class="wordmark">SSK EUROPE</span>
+    <span class="ghdr-title" data-t="galleryTitle">Mijn opgeslagen ontwerpen</span>
+  </div>
+  <div class="ghdr-tools">
+    <div class="lang" role="group" aria-label="Taal / Language">
+      <button id="lang-en" class="lang-btn" type="button">EN</button>
+      <button id="lang-nl" class="lang-btn is-on" type="button">NL</button>
+    </div>
+    <a class="btn btn-ghost" href="index.html" data-t="backToBuilder">Terug naar de builder</a>
+  </div>
+</header>
+
+<main class="gmain">
+  <div id="gallery-grid" class="ggrid"></div>
+  <div id="gallery-empty" class="gempty" hidden></div>
+</main>
+
+<script type="module" src="gallery.js"></script>
+</body>
+</html>

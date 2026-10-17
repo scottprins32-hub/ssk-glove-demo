@@ -8,6 +8,7 @@ import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1,
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
+import { addDesign } from './gallery-store.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -567,10 +568,10 @@ function gateSelection(target) {
   if (!request.pending && !request.error) {
     request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     }).catch(error => {
       request.error = error;
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     });
   }
   return true;
@@ -593,7 +594,7 @@ function draw(target = ctx, highlight = S.step === 3) {
       const requested = S.view;
       pendingView.load().then(() => {
         registerThumbViews();
-        if (S.view === requested) { draw(); paint(); }
+        if (S.view === requested) { draw(); paint(S.step !== 7 && S.step !== 5); }
       }).catch(() => {
         if (S.view === requested) {
           $('#glove').removeAttribute('aria-busy');
@@ -1350,6 +1351,36 @@ function renderYou(b) {
 }
 
 /* -------------------------------------------------------------- 8. review */
+function saveToGalleryField() {
+  const box = el('div', 'field gallery-save');
+  box.appendChild(el('span', 'field-lab', t('saveToGallery')));
+  const nameInput = el('input'); nameInput.type = 'text'; nameInput.maxLength = 60;
+  nameInput.placeholder = t('galleryNamePh'); nameInput.value = S.name || '';
+  nameInput.setAttribute('aria-label', t('galleryNamePh'));
+  const saveBtn = el('button', 'btn btn-ghost', t('saveToGalleryBtn')); saveBtn.type = 'button';
+  saveBtn.style.alignSelf = 'flex-start';
+  const status = el('p', 'note'); status.setAttribute('role', 'status');
+  saveBtn.onclick = async () => {
+    saveBtn.disabled = true; status.textContent = '';
+    try {
+      if (flushText()) paint();
+      const name = nameInput.value.trim() || t('untitledDesign');
+      if (!await readyForExport()) throw Error('assets_not_ready');
+      const full = proofImage(), thumb = document.createElement('canvas');
+      thumb.width = 240; thumb.height = Math.max(1, Math.round(full.height * 240 / full.width));
+      thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
+      addDesign({id: crypto.randomUUID(), name, refcode: code(), savedAt: new Date().toISOString(),
+        thumb: thumb.toDataURL('image/jpeg', 0.78), state: encodeState(true)});
+      status.textContent = t('gallerySaved');
+      const gallery = el('a', 'btn btn-ghost', t('myDesigns'));
+      gallery.href = './gallery.html'; status.append(' ', gallery);
+    } catch { status.textContent = t('gallerySaveFail'); }
+    finally { saveBtn.disabled = false; }
+
+  };
+  box.append(nameInput, saveBtn, status);
+  return box;
+}
 function renderReview(b) {
   const open = requiredQuestions().filter(q => !answered(q));
   if (open.length) {
@@ -1367,6 +1398,7 @@ function renderReview(b) {
     if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
       getDesign:()=>structuredClone(S),capture:captureOrderViews});
   }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
+  b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
@@ -1658,10 +1690,7 @@ function specText() {
 
 /* ---------------------------------------------------------------- sheet */
 let sheetReturnFocus;
-async function openSheet() {
-  if (flushText()) paint();
-  // A selection may change while an angle or optional insert is decoding.
-  // Export only after the current selection, not a stale request, is ready.
+async function readyForExport() {
   for (;;) {
     const selected = selectedAssets();
     try {
@@ -1670,12 +1699,16 @@ async function openSheet() {
       if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
-        selectionRequest = { key: selected.key, error }; draw(); paint();
+        selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);
       }
-      return;
+      return false;
     }
-    if (selectedAssets().key === selected.key) break;
+    if (selectedAssets().key === selected.key) return true;
   }
+}
+async function openSheet() {
+  if (flushText()) paint();
+  if (!await readyForExport()) return;
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
   $('#shot').src = proofImage().toDataURL('image/png');
@@ -1704,6 +1737,48 @@ document.addEventListener('keydown', ev => {
   if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
 });
+
+/* ------------------------------------------------------ summary drawer */
+function paintSummary() {
+  const body = $('#sumbody');
+  if (!body || $('#sumdrawer').hidden) return;
+  body.textContent = '';
+  body.appendChild(buildSpec());
+}
+function openSummary() {
+  if (flushText()) paint();
+  const drawer = $('#sumdrawer');
+  clearTimeout(closeSummary._t);
+  drawer.hidden = false; drawer.inert = false; drawer.removeAttribute('aria-hidden');
+  $('#summary').setAttribute('aria-expanded', 'true');
+  void drawer.offsetHeight;            // commit the off-screen start frame
+  drawer.classList.add('is-open');     // then slide it in
+  document.body.classList.add('sum-open');  // push the builder aside
+  paintSummary();
+  $('#sumx').focus();
+}
+function closeSummary() {
+  const drawer = $('#sumdrawer');
+  if (drawer.hidden || !drawer.classList.contains('is-open')) return;
+  drawer.inert = true; drawer.setAttribute('aria-hidden', 'true');
+  $('#summary').setAttribute('aria-expanded', 'false');
+  drawer.classList.remove('is-open');  // slide out
+  document.body.classList.remove('sum-open');
+  $('#summary')?.focus();
+  // Drop it from layout once the slide-out finishes.
+  clearTimeout(closeSummary._t);
+  closeSummary._t = setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 220);
+}
+$('#summary').onclick = () => {
+  const drawer = $('#sumdrawer');
+  if (drawer.hidden || !drawer.classList.contains('is-open')) openSummary();
+  else closeSummary();
+};
+$('#sumx').onclick = closeSummary;
+document.addEventListener('keydown', ev => {
+  if ($('#sumdrawer').hidden) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); closeSummary(); }
+});
 async function copyToClipboard(ev, txt) {
   const b = ev.currentTarget, was = b.textContent;   // nulled once we await
   try { await navigator.clipboard.writeText(txt); }
@@ -1728,6 +1803,17 @@ $('#download').onclick = () => {
   const a = el('a'); a.href = url; a.download = 'SSK-glove-design.txt';
   a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+async function downloadImage() {
+  if (flushText()) paint();
+  if (!await readyForExport()) return;
+  proofImage().toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = el('a'); a.href = url; a.download = 'SSK-glove-design.png';
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
+$('#sheetimg').onclick = downloadImage;
+$('#sumimg').onclick = downloadImage;
 
 /* ----------------------------------------------------------------- paint */
 /* Every paint rebuilds the step nav and the body from scratch, which destroys
@@ -1756,6 +1842,8 @@ function paint(rebuildBody = true) {
   }
   const L = S.lang;
   document.documentElement.lang = L;
+  $('#sumx').setAttribute('aria-label', L === 'en' ? 'Close summary' : 'Sluiten');
+  $('#steps').setAttribute('aria-label', L === 'en' ? 'Steps' : 'Stappen');
   const hadKey = focusKey(document.activeElement);
   const wasStep = paint.lastStep;
   const revealMaterial = rebuildBody && S.step === 3
@@ -1849,6 +1937,7 @@ function paint(rebuildBody = true) {
     if (again) again.focus({ preventScroll: true });
   }
 
+  paintSummary();
   save();
 }
 

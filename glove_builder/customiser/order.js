@@ -5,7 +5,7 @@ const status=document.querySelector('#status'),host=document.querySelector('#ord
 const credentials=readOrderFragment();
 async function start() {
   if(!credentials)throw Object.assign(Error(),{code:'design_not_found'});
-  const draft=await api('read',credentials),config=await api('config'),en=draft.design.lang==='en',tr=(nl,english)=>en?english:nl;
+  const draft=await api('read',credentials),config=await api('config').catch(()=>({connected:false})),en=draft.design.lang==='en',tr=(nl,english)=>en?english:nl;
   document.documentElement.lang=en?'en':'nl';document.querySelector('h1').textContent=tr('Je ontwerp en bestelling','Your design and order');document.querySelector('.eyebrow').textContent=tr('JOUW HANDSCHOEN','YOUR GLOVE');
   host.hidden=false;status.textContent=tr('Vaste ontwerpversie · bewaard tot ','Fixed design · saved until ')+new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{dateStyle:'long'}).format(new Date(draft.expiresAt));
   const aside=displayDraft(draft,host);

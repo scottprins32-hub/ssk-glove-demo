@@ -1,7 +1,7 @@
 {
   "endpoint": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v10",
   "revision": "ccv-r01-14",
-  "date": "2026-10-15T15:28:01.539Z",
+  "date": "2026-10-17T13:18:20.208Z",
   "checks": [
     {
       "action": "config",
@@ -53,8 +53,8 @@
     }
   ],
   "syntheticIds": [
-    "6ad0f102f6c0f26337b48c9d",
-    "6ad0f10771613d82bea14991"
+    "6ad3759d36aae8a67132d1b4",
+    "6ad375a098848c485f8964e7"
   ],
   "quote": {
     "currency": "EUR",

@@ -191,7 +191,7 @@ export const T = {
     name: 'Your name', phone: 'Phone number',
     left: 'left', done: 'done', undo: 'Undo', redo: 'Redo', reset: 'Reset',
     compare: 'Compare', snapshot: 'Snapshot', clear: 'Clear', basePrice: 'From',
-    finish: 'Save design', reference: 'Design code', copy: 'Copy specification',
+    finish: 'Download or share', reference: 'Design code', copy: 'Copy specification',
     copyLink: 'Copy link',
     copied: 'Copied', keep: 'Keep building', open: 'Open a saved design',
     paste: 'Paste a design link or reference code', notShown: 'Not shown on this view',
@@ -250,7 +250,16 @@ export const T = {
     contactReady: 'Contact details complete.',
     contactMissing: 'Contact details not complete yet. Only needed when you send the design to SSK Europe; saving and sharing work without them, and the design link never contains them.',
     previewSmaller: 'Smaller preview', previewLarger: 'Larger preview',
-    allSet: 'All set', sendIt: 'Save design', model2: 'SSK Pro Custom'
+    allSet: 'All set', sendIt: 'Download or share', model2: 'SSK Pro Custom',
+    summary: 'Summary', summaryTitle: 'Your choices',
+    downloadImage: 'Download image', myDesigns: 'My designs',
+    saveToGallery: 'Save to my designs', saveToGalleryBtn: 'Save on this device',
+    galleryNamePh: 'Name this design', untitledDesign: 'Untitled design',
+    gallerySaved: 'Saved to your designs.', gallerySaveFail: 'Could not save on this device. Browser storage may be full or blocked. Download or share your design to keep it.',
+    galleryTitle: 'My saved designs',
+    galleryEmpty: 'No saved designs yet. Build a glove and save it to see it here.',
+    backToBuilder: 'Back to builder', openDesign: 'Open', deleteDesign: 'Delete',
+    confirmDelete: 'Delete this design?', savedOn: 'Saved on %s'
   },
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
@@ -278,7 +287,7 @@ export const T = {
     name: 'Je naam', phone: 'Telefoonnummer',
     left: 'nog open', done: 'klaar', undo: 'Ongedaan', redo: 'Opnieuw', reset: 'Wissen',
     compare: 'Vergelijk', snapshot: 'Vastleggen', clear: 'Wissen', basePrice: 'Vanaf',
-    finish: 'Ontwerp opslaan', reference: 'Ontwerpcode', copy: 'Kopieer specificatie',
+    finish: 'Downloaden of delen', reference: 'Ontwerpcode', copy: 'Kopieer specificatie',
     copied: 'Gekopieerd', keep: 'Verder bouwen', open: 'Bewaard ontwerp openen',
     copyLink: 'Kopieer link',
     paste: 'Plak een ontwerplink of referentiecode', notShown: 'Niet zichtbaar op deze weergave',
@@ -334,6 +343,15 @@ export const T = {
     contactReady: 'Contactgegevens compleet.',
     contactMissing: 'Contactgegevens nog niet compleet. Alleen nodig als je het ontwerp naar SSK Europe stuurt; opslaan en delen werken zonder, en de ontwerplink bevat ze nooit.',
     previewSmaller: 'Kleinere afbeelding', previewLarger: 'Grotere afbeelding',
-    allSet: 'Compleet', sendIt: 'Ontwerp opslaan', model2: 'SSK Pro Custom'
+    allSet: 'Compleet', sendIt: 'Downloaden of delen', model2: 'SSK Pro Custom',
+    summary: 'Overzicht', summaryTitle: 'Jouw keuzes',
+    downloadImage: 'Afbeelding downloaden', myDesigns: 'Mijn ontwerpen',
+    saveToGallery: 'Opslaan in mijn ontwerpen', saveToGalleryBtn: 'Bewaren op dit apparaat',
+    galleryNamePh: 'Geef dit ontwerp een naam', untitledDesign: 'Naamloos ontwerp',
+    gallerySaved: 'Opgeslagen in je ontwerpen.', gallerySaveFail: 'Bewaren op dit apparaat is mislukt. Browseropslag kan vol of geblokkeerd zijn. Download of deel je ontwerp om het te bewaren.',
+    galleryTitle: 'Mijn opgeslagen ontwerpen',
+    galleryEmpty: 'Nog geen opgeslagen ontwerpen. Stel een handschoen samen en sla hem op om hem hier te zien.',
+    backToBuilder: 'Terug naar de builder', openDesign: 'Openen', deleteDesign: 'Verwijderen',
+    confirmDelete: 'Dit ontwerp verwijderen?', savedOn: 'Opgeslagen op %s'
   }
 };

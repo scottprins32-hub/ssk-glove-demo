@@ -1,0 +1,318 @@
+{
+  "capturedAt": "2026-10-17T13:25:03.244Z",
+  "mode": "Local synthetic backend; no CCV writes",
+  "builderViewports": [
+    {
+      "name": "phone-small",
+      "width": 320,
+      "height": 740,
+      "closedDrawerAbsent": true,
+      "headerControls": [
+        {
+          "height": 44,
+          "left": 160.4375,
+          "right": 193.796875,
+          "text": "EN",
+          "width": 33.359375
+        },
+        {
+          "height": 44,
+          "left": 193.796875,
+          "right": 227,
+          "text": "NL",
+          "width": 33.203125
+        },
+        {
+          "height": 44,
+          "left": 12,
+          "right": 56,
+          "text": "↶",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 62,
+          "right": 106,
+          "text": "↷",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 112,
+          "right": 207,
+          "text": "Overzicht",
+          "width": 95
+        },
+        {
+          "height": 44,
+          "left": 213,
+          "right": 308,
+          "text": "Ontwerp delen",
+          "width": 95
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "phone",
+      "width": 390,
+      "height": 844,
+      "closedDrawerAbsent": true,
+      "headerControls": [
+        {
+          "height": 44,
+          "left": 230.4375,
+          "right": 263.796875,
+          "text": "EN",
+          "width": 33.359375
+        },
+        {
+          "height": 44,
+          "left": 263.796875,
+          "right": 297,
+          "text": "NL",
+          "width": 33.203125
+        },
+        {
+          "height": 44,
+          "left": 12,
+          "right": 56,
+          "text": "↶",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 62,
+          "right": 106,
+          "text": "↷",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 112,
+          "right": 242,
+          "text": "Overzicht",
+          "width": 130
+        },
+        {
+          "height": 44,
+          "left": 248,
+          "right": 378,
+          "text": "Ontwerp delen",
+          "width": 130
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "closedDrawerAbsent": true,
+      "headerControls": [
+        {
+          "height": 44,
+          "left": 608.4375,
+          "right": 641.796875,
+          "text": "EN",
+          "width": 33.359375
+        },
+        {
+          "height": 44,
+          "left": 641.796875,
+          "right": 675,
+          "text": "NL",
+          "width": 33.203125
+        },
+        {
+          "height": 44,
+          "left": 12,
+          "right": 56,
+          "text": "↶",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 62,
+          "right": 106,
+          "text": "↷",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 112,
+          "right": 431,
+          "text": "Overzicht",
+          "width": 319
+        },
+        {
+          "height": 44,
+          "left": 437,
+          "right": 756,
+          "text": "Ontwerp delen",
+          "width": 319
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 900,
+      "closedDrawerAbsent": true,
+      "headerControls": [
+        {
+          "height": 44,
+          "left": 319.609375,
+          "right": 352.96875,
+          "text": "EN",
+          "width": 33.359375
+        },
+        {
+          "height": 44,
+          "left": 352.96875,
+          "right": 386.171875,
+          "text": "NL",
+          "width": 33.203125
+        },
+        {
+          "height": 44,
+          "left": 393.96875,
+          "right": 437.96875,
+          "text": "↶",
+          "width": 44
+        },
+        {
+          "height": 44,
+          "left": 449.96875,
+          "right": 493.96875,
+          "text": "↷",
+          "width": 44
+        },
+        {
+          "height": 40,
+          "left": 505.96875,
+          "right": 608.328125,
+          "text": "Overzicht",
+          "width": 102.359375
+        },
+        {
+          "height": 40,
+          "left": 620.328125,
+          "right": 746.78125,
+          "text": "Ontwerp delen",
+          "width": 126.453125
+        }
+      ],
+      "overflow": false
+    }
+  ],
+  "orderViewports": [
+    {
+      "name": "order-phone",
+      "width": 390,
+      "height": 844,
+      "actualHeight": 844,
+      "actualWidth": 390,
+      "checkoutDisabled": true,
+      "overflow": false,
+      "views": [
+        {
+          "alt": "Achterkant",
+          "loaded": true
+        },
+        {
+          "alt": "Palm",
+          "loaded": true
+        },
+        {
+          "alt": "Duimzijde",
+          "loaded": true
+        },
+        {
+          "alt": "Pinkzijde",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "name": "order-tablet",
+      "width": 768,
+      "height": 1024,
+      "actualHeight": 1024,
+      "actualWidth": 768,
+      "checkoutDisabled": true,
+      "overflow": false,
+      "views": [
+        {
+          "alt": "Achterkant",
+          "loaded": true
+        },
+        {
+          "alt": "Palm",
+          "loaded": true
+        },
+        {
+          "alt": "Duimzijde",
+          "loaded": true
+        },
+        {
+          "alt": "Pinkzijde",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "name": "order-desktop",
+      "width": 1280,
+      "height": 900,
+      "actualHeight": 900,
+      "actualWidth": 1280,
+      "checkoutDisabled": true,
+      "overflow": false,
+      "views": [
+        {
+          "alt": "Achterkant",
+          "loaded": true
+        },
+        {
+          "alt": "Palm",
+          "loaded": true
+        },
+        {
+          "alt": "Duimzijde",
+          "loaded": true
+        },
+        {
+          "alt": "Pinkzijde",
+          "loaded": true
+        }
+      ]
+    }
+  ],
+  "actionsVerified": [
+    "New white11.75H nohood defaults",
+    "Confirmation checkbox required before snapshot",
+    "Saved owner snapshot four loaded views",
+    "Shared recipient has no owner authority",
+    "Save named gallery design and reopen exact Unicode embroidery,number,flag position,hood colour",
+    "No name/phone in gallery restore link",
+    "Resume prompt and exact design code",
+    "Fresh start resets glove to white11.75H nohood",
+    "Japan starter recouples previously orange hood to darknavy",
+    "Flag middle placement and €5surcharge",
+    "Individual Crocodile back3/back7, no palm option, undo redo",
+    "Left-handed choice and12.75size web filter",
+    "Phone overview opens and closes",
+    "English language switch",
+    "Download exact specification text",
+    "Anonymous administrator access denied"
+  ],
+  "limits": [
+    "Single browser with separate tabs/session storage; not independent physical devices/accounts",
+    "Real CCV checkout and authenticated admin remain unverified",
+    "Raw network CDP denied; no workaround used"
+  ],
+  "correctedAt": "2026-10-17T13:36:36.806Z",
+  "evidenceCorrection": "Initial order screenshots targeted a background tab unaffected by viewport override and were withdrawn. Replaced after asserting actual innerWidth/innerHeight in the controlled tab."
+}

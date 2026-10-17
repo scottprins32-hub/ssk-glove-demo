@@ -11,6 +11,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-body);
   overflow: hidden;                 /* only the panel scrolls */
+  transition: padding-right var(--dur-med) var(--ease-out);
 }
 button { font: inherit; color: inherit; }
 
@@ -481,3 +482,52 @@ input:focus-visible, .opt-btn:focus-visible, .sw:focus-visible, .card:focus-visi
 .resume-dialog::backdrop { background: #0008; }
 .resume-dialog h2 { margin-top: 0; }
 .resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
+
+/* ----------------------------------------------------------- summary drawer */
+/* Push drawer: the panel slides in from the right and the builder content
+   shifts left to make room (body.sum-open). No scrim — the builder stays
+   visible and interactive so the summary updates live. `hidden` drops the
+   drawer from layout once the slide-out ends. */
+:root { --sum-w: 420px; }
+.sum-drawer {
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: var(--sum-w); z-index: 70;
+  display: flex; flex-direction: column;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-overlay);
+  border-left: 1px solid var(--border-default);
+  transform: translateX(100%);
+  transition: transform var(--dur-med) var(--ease-out);
+  will-change: transform;
+}
+.sum-drawer[hidden] { display: none; }
+.sum-drawer.is-open { transform: translateX(0); }
+body.sum-open { padding-right: var(--sum-w); }
+.sum-head {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-5); border-bottom: 1px solid var(--border-default);
+}
+.sum-head h2 {
+  margin: 0; font-family: var(--font-display); font-weight: var(--weight-display-heavy);
+  font-size: var(--display-sm); text-transform: uppercase; letter-spacing: var(--tracking-display);
+  color: var(--text-heading);
+}
+.sum-x {
+  width: 36px; height: 36px; border: 0; background: transparent;
+  font-size: 24px; line-height: 1; color: var(--gray-500); cursor: pointer; min-width: 44px;
+}
+.sum-body { flex: 1 1 auto; overflow-y: auto; padding: var(--space-5); }
+.sum-foot { flex: none; padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-default); }
+@media (max-width: 900px) { .sum-drawer { width: 100%; } body.sum-open { padding-right: 0; } }
+
+/* ---------------------------------------------------------- gallery save */
+.gallery-save input { margin-bottom: var(--space-2); }
+/* Keep language and price visible without shrinking controls off narrow phones. */
+@media (max-width: 900px) {
+  .hdr { position: relative; }
+  .hdr-brand { min-height: 44px; }
+  .hdr-tools { gap: 6px; }
+  .hdr-tools > .lang { position: absolute; top: 6px; right: 92px; flex-shrink: 0; }
+  .hdr-tools > .price { position: absolute; top: 15px; right: 12px; min-width: 0; }
+  #summary, #share { flex: 1; min-width: 0; min-height: 44px; padding-inline: 8px; font-size: 12px; white-space: normal; }
+}
