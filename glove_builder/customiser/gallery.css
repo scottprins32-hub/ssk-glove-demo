@@ -22,9 +22,9 @@ body {
 }
 .ghdr-brand { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
 .wordmark {
-  font-family: var(--font-display); font-weight: var(--weight-display-heavy);
-  font-size: var(--text-lg); letter-spacing: var(--tracking-caps); text-transform: uppercase;
-  white-space: nowrap;
+  display: block; flex: none; width: 144px; height: 40px;
+  object-fit: contain; padding: 6px 9px;
+  background: var(--white); border-radius: var(--radius-sm);
 }
 .ghdr-title {
   font-family: var(--font-display); font-weight: var(--weight-display);
