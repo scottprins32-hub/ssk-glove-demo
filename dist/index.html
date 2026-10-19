@@ -11,14 +11,14 @@
 <link rel="preload" href="/assets/leather-texture-DKDWqBTb.webp" as="image" fetchpriority="high">
 <link rel="preload" href="/assets/lace-height-BcUxykd6.webp" as="image" fetchpriority="high">
 <link rel="preload" href="/assets/glove-data-DiAm_s-Y.json" as="fetch" crossorigin>
-<link rel="modulepreload" href="/assets/app-DVWmSpmm.js">
-<link rel="modulepreload" href="/assets/glove-engine-C04CgoMe.js">
-<link rel="modulepreload" href="/assets/glove-catalog-BiAOjUaK.js">
+<link rel="modulepreload" href="/assets/app-Cz0sO0AI.js">
+<link rel="modulepreload" href="/assets/glove-engine-BIjRWw_Y.js">
+<link rel="modulepreload" href="/assets/glove-catalog-D6mnyMGP.js">
 <link rel="modulepreload" href="/assets/refcode-Ci9ydHZy.js">
-  <script type="module" crossorigin src="/assets/main-vZUzgVNJ.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/gallery-store-CmztW5eg.js">
+  <script type="module" crossorigin src="/assets/main-Lyh1XOtt.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/gallery-store-3PbkeIIf.js">
   <link rel="stylesheet" crossorigin href="/assets/gallery-store-B0t2J7lN.css">
-  <link rel="stylesheet" crossorigin href="/assets/main-BRzTyZRe.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-Br0meTUN.css">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
     </div>
     <button id="undo" class="icon-btn" type="button" aria-label="Undo">&#8630;</button>
     <button id="redo" class="icon-btn" type="button" aria-label="Redo">&#8631;</button>
-    <button id="summary" class="btn btn-ghost" type="button" data-t="summary">Overzicht</button>
+    <button id="summary" aria-controls="sumdrawer" aria-expanded="false" class="btn btn-ghost" type="button" data-t="summary">Overzicht</button>
     <button id="share" class="btn btn-ghost" type="button" data-t="share">Ontwerp delen</button>
     <div class="ref">
       <span class="ref-lab" data-t="reference">Referentie</span>
@@ -103,7 +103,7 @@
   </div>
 </div>
 
-<aside class="sum-drawer" id="sumdrawer" role="dialog" aria-modal="false" aria-labelledby="sumtitle" hidden>
+<aside class="sum-drawer" id="sumdrawer" role="dialog" aria-modal="false" aria-labelledby="sumtitle" aria-hidden="true" inert hidden>
   <div class="sum-head">
     <h2 id="sumtitle" data-t="summaryTitle">Jouw keuzes</h2>
     <button class="sum-x" id="sumx" type="button" aria-label="Sluiten">&times;</button>

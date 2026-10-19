@@ -6,6 +6,20 @@ const gloveLoads = new Map();
 const decodedImages = new Map();
 const materialSurfaces = new WeakMap();
 const materialColours = new Map();
+// Starter cards and the main stage use the same immutable source pixels.
+// Reuse identical material tints across renderers; bound retained RGBA memory.
+const sharedTints = new WeakMap(), tintLRU = new Map();
+let tintBytes = 0;
+function rememberTint(variants, key, canvas) {
+  variants.set(key, canvas);
+  const bytes = canvas.width * canvas.height * 4;
+  tintLRU.set(canvas, { variants, key, bytes }); tintBytes += bytes;
+  while (tintBytes > 32_000_000 && tintLRU.size) {
+    const [old, entry] = tintLRU.entries().next().value;
+    tintLRU.delete(old); tintBytes -= entry.bytes;
+    if (entry.variants.get(entry.key) === old) entry.variants.delete(entry.key);
+  }
+}
 // These photographed side panels carry unusually coarse source grain. Smooth
 // their normal leather while keeping full-resolution masks and separate trims.
 const SMOOTH_SIDE_LEATHER = Object.freeze({
@@ -41,7 +55,7 @@ function assetDependencies(DATA, values, fixed = []) {
   values.forEach(walk); fixed.forEach(take);
   return [...FIRST_ASSETS.filter(key => keys.has(key)), ...[...keys].filter(key => !FIRST_ASSETS.includes(key))];
 }
-function renderAssets(DATA, baseOnly = false) {
+export function renderAssets(DATA, baseOnly = false) {
   const values = Object.entries(DATA).filter(([key]) =>
     !['assets','bbox','source','presets','palettes','materialSources','materialResponse'].includes(key) && !key.startsWith('user')
     && !(baseOnly && ['webs','palmWebs','_snakeLeather'].includes(key))).map(([, value]) => value);
@@ -61,17 +75,68 @@ function selectionAssets(DATA, web, snake, palmManifest) {
 export function assetURL(src) {
   if (typeof src !== 'string' || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) return src;
   const hash = window.__SSK_ASSET_VERSIONS__?.[src];
-  return hash ? src + (src.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(hash) : src;
+  let url = hash ? src + (src.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(hash) : src;
+  const nonce = window.__SSK_PERF__?.nonce;
+  if (nonce) url += (url.includes('?') ? '&' : '?') + 'bench=' + encodeURIComponent(nonce);
+  return url;
 }
-function decodeImage(source) {
+const imagePacks = new Map();
+async function packedImage(source, priority = 'auto') {
+  const entry = window.__SSK_IMAGE_PACKS__?.[source];
+  if (!entry) return null;
+  const url = assetURL(entry.pack);
+  let pending = imagePacks.get(url);
+  if (!pending) {
+    pending = fetch(url, {priority}).then(response => {
+      if (!response.ok) throw new Error('Image package could not be loaded');
+      return response.arrayBuffer();
+    });
+    imagePacks.set(url, pending);
+    pending.catch(() => imagePacks.delete(url));
+  }
+  const data = await pending;
+  if (!Number.isSafeInteger(entry.offset) || !Number.isSafeInteger(entry.length)
+      || entry.offset < 0 || entry.length <= 0 || entry.offset + entry.length > data.byteLength)
+    throw new Error('Invalid image package boundary');
+  return URL.createObjectURL(new Blob([data.slice(entry.offset,entry.offset+entry.length)],{type:entry.type}));
+}
+function decodeImage(source, priority = 'auto') {
   const src = assetURL(source);
   if (!decodedImages.has(src)) decodedImages.set(src, new Promise((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = () => { decodedImages.delete(src); reject(new Error('Image could not be loaded')); };
-    im.src = src;
+    const start = packed => {
+    const im = new Image(); im.fetchPriority = priority;
+    const release = () => { if (packed) URL.revokeObjectURL(packed); };
+    im.onload = () => { release(); resolve(im); };
+    im.onerror = () => {
+      if (packed) { release(); packed = null; im.src = src; }
+      else { decodedImages.delete(src); reject(new Error('Image could not be loaded')); }
+    };
+    im.src = packed || src;
+    };
+    if (window.__SSK_IMAGE_PACKS__?.[source]) packedImage(source, priority).then(start, () => start(null));
+    else start(null);
   }));
   return decodedImages.get(src);
+}
+
+export function preloadImages(sources) { return Promise.all(sources.filter(Boolean).map(src=>decodeImage(src))); }
+
+// Catalogue pictures use the same exact-byte packages as the renderer. Keep
+// each DOM image independent; moving a shared Image would remove another card.
+export function setImageSource(image,source) {
+  const original=assetURL(source);
+  if(!window.__SSK_IMAGE_PACKS__?.[source]) { image.src=original; return; }
+  image.loading='eager';
+  packedImage(source).then(url=>{
+    if(!image.isConnected) { URL.revokeObjectURL(url); return; }
+    const release=()=>{
+      URL.revokeObjectURL(url);
+      image.removeEventListener('load',release); image.removeEventListener('error',fallback);
+    };
+    const fallback=()=>{release();image.src=original;};
+    image.addEventListener('load',release,{once:true});
+    image.addEventListener('error',fallback,{once:true}); image.src=url;
+  },()=>{if(image.isConnected) image.src=original;});
 }
 
 // Keep successful metadata and share requests in flight, but let a failed
@@ -107,16 +172,16 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       let loading;
       let palmManifest;
       const selections = new Map();
-      const loadAssets = async keys => {
+      const loadAssets = async (keys, priority = 'auto') => {
         // Explicit selections share in-flight decodes with the base and previews.
-        const parallelImages = location.protocol === 'https:' ? 24 : 8;
+        const parallelImages = (window.__SSK_PERF__?.protocol || location.protocol) === 'https:' ? 96 : 8;
         let next = 0;
         await Promise.all(Array.from({length: Math.min(parallelImages, keys.length)}, async () => {
           while (next < keys.length) {
             const key = keys[next++];
             if (v.imgs[key]) continue;
             try {
-              v.imgs[key] = await decodeImage(v.DATA.assets[key]);
+              v.imgs[key] = await decodeImage(v.DATA.assets[key], priority);
               delete v.assetErrors[key];
             } catch (error) { v.assetErrors[key] = error; }
           }
@@ -147,7 +212,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         pending.finally(() => selections.delete(key)).catch(() => {});
         return pending;
       };
-      v.load = () => loading || (loading = (async () => {
+      v.load = ({priority = 'auto'} = {}) => loading || (loading = (async () => {
         v.error = null;
         const DATA = await metadata[i]();
         DATA.palettes = backData.palettes; v.DATA = DATA;
@@ -155,7 +220,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         if (deferredPalm) { palmManifest ||= DATA.palmWebs; DATA.palmWebs = null; }
         // Native palm viewing needs no alternate insert or hash-bank download.
         // The complete API still eagerly verifies all available palm inserts.
-        await loadAssets(renderAssets(DATA, progressive));
+        await loadAssets(renderAssets(DATA, progressive), priority);
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {})];
@@ -325,6 +390,22 @@ export class GloveRenderer {
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
     this.octx = this.off.getContext('2d');
+  }
+
+  drawCached(ctx,state,bullet,highlight,flag,mirror,frames,key) {
+    this.syncNativeHContour();
+    // Picking depends on the configuration, even when the pixels are reused.
+    this._drawn=[bullet,flag];
+    const hit=!highlight && frames.get(key);
+    if(hit) {
+      ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,this.DATA.w,this.DATA.h);
+      ctx.drawImage(hit,0,0); return hit;
+    }
+    this.draw(ctx,state,bullet,highlight,flag,mirror);
+    if(highlight) return null;
+    const image=document.createElement('canvas');image.width=this.DATA.w;image.height=this.DATA.h;
+    image.getContext('2d').drawImage(ctx.canvas,0,0); frames.put(key,image);
+    return image;
   }
 
   // Which side of the glove is being drawn. The tint cache is keyed by zone
@@ -633,10 +714,20 @@ export class GloveRenderer {
     const hit = this.cache.get(key);
     if (hit) return hit;
     const [x0, y0, x1, y1] = this.DATA.bbox[id];
+    const surface = this.materialSurface(id, materialOf);
+    let variants, sharedKey;
+    if (surface) {
+      let masks = sharedTints.get(surface);
+      if (!masks) { masks = new WeakMap(); sharedTints.set(surface, masks); }
+      variants = masks.get(this.imgs[id]);
+      if (!variants) { variants = new Map(); masks.set(this.imgs[id], variants); }
+      sharedKey = JSON.stringify([hx, x0, y0, x1, y1]);
+      const shared = variants.get(sharedKey);
+      if (shared) return shared;
+    }
     const c = document.createElement('canvas');
     c.width = Math.max(1, x1 - x0); c.height = Math.max(1, y1 - y0);
     const g = c.getContext('2d', {willReadFrequently:true});
-    const surface = this.materialSurface(id, materialOf);
     g.drawImage(this.imgs[id], -x0, -y0);
     // Opaque material tint replaces RGB below. Its alpha is the source mask;
     // retain the composite path for translucent colours and non-material art.
@@ -689,6 +780,7 @@ export class GloveRenderer {
       g.putImageData(pixels,0,0);
     }
     c._ox = x0; c._oy = y0;
+    if (variants) rememberTint(variants, sharedKey, c);
     this.cache.set(key, c);
     this.order.push(key);
     if (this.order.length > 240) this.cache.delete(this.order.shift());

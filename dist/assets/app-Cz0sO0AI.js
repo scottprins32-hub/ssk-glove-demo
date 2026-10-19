@@ -2,18 +2,19 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import { loadGlove, GloveRenderer, assetURL } from './glove-engine.js';
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
+import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } from './glove-engine.js';
+import { NativeFrames, PublicRenders } from './render-cache.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
-         import { addDesign } from './gallery-store.js';
+import { addDesign } from './gallery-store.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 // Scott confirmed snakeskin for the large exterior panels, at no surcharge.
-const MATERIAL_FIELDS = Object.freeze(['back1','back2','back3','back4','back5','back6','back7','back8','back9','belt']);
 const cleanMaterials = input => Object.fromEntries(MATERIAL_FIELDS.filter(k=>input?.[k]==='snakeskin').map(k=>[k,'snakeskin']));
 const materialLabel = value => value === 'snakeskin' ? 'Crocodile pattern' : (S.lang === 'nl' ? 'Normaal leer' : 'Standard leather');
 function layerMaterials(D=R.DATA, map=viewLayerField()) {
@@ -22,11 +23,8 @@ function layerMaterials(D=R.DATA, map=viewLayerField()) {
 const UNSET = '#C4C9D0';           // --gray-300: reads as 'not picked', not as a colour
 // Pim confirmed the flag surcharge through Scott on 7 October 2026.
 // Integer cents: all UI and order exports use this single calculation.
-const PRICE_CENTS = Object.freeze({ base: 37495, flag: 500 });
 const hasFlag = (s = S) => !!s.flag && s.flag !== 'None';
-const priceBreakdown = (s = S) => ({ base: PRICE_CENTS.base,
-  flag: hasFlag(s) ? PRICE_CENTS.flag : 0,
-  total: PRICE_CENTS.base + (hasFlag(s) ? PRICE_CENTS.flag : 0) });
+const priceBreakdown = (s = S) => quoteDesign(s);
 const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE',
   { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
@@ -160,6 +158,48 @@ const S = {
   withdrawnWeb: null
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
+const nativeFrames=new NativeFrames();
+const publicRenders=new PublicRenders(window.__SSK_RENDER_REVISION__,window.__SSK_PERF__?.nonce || '');
+let defaultVisual=null;
+const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
+  S.thumbText,S.thumbNumber,S.pinkyText]);
+const nativeFrameKey=(view,renderer=R)=>view+'|'+!!renderer.flagImg+'|'+Object.keys(renderer.views[view]?.imgs || {}).length;
+const rememberPublic=(key,image)=>{
+  const write=()=>publicRenders.write(key,image);
+  if(window.requestIdleCallback) requestIdleCallback(write,{timeout:2000}); else setTimeout(write,32);
+};
+const sideFrameJobs=new Set();
+function prepareSideFrame(view) {
+  if(!starterFlagsReady || S.webType!==NATIVE_WEB || !R.views[view]?.ready) return;
+  const signature=visualKey(),job=signature+'|'+view;
+  if(sideFrameJobs.has(job)) return;
+  sideFrameJobs.add(job);
+  const work=async()=>{
+    try {
+      if(visualKey()!==signature || S.view===view || S.step===3) return;
+      const data=R.views[view].DATA;
+      const saved=signature===defaultVisual ? await publicRenders.read('default:'+view,data.w,data.h) : null;
+      if(visualKey()!==signature || S.view===view || S.step===3) return;
+      // A separate renderer cannot move the displayed glove or its picking map.
+      const renderer=new GloveRenderer({ ...R.views.back,views:R.views });
+      renderer._flags=R._flags;renderer.setView(view);
+      renderer.setFlag(flagArt(),null,S.flagPosition);renderer.setWeb(null);renderer.setWebMarked(false);
+      renderer.setPad(PAD_PART[S.pad] || null,S.colors.pad_color ? hexOf('pad_color') : null);
+      const map=view==='palm' ? PALM_FIELDS : Object.fromEntries(data.zones.map(z=>[z.id,z.field]));
+      renderer.setMaterials(layerMaterials(data,map));
+      nativeFrames.select(signature);
+      const key=nativeFrameKey(view,renderer);
+      if(nativeFrames.get(key)) return;
+      if(saved) {nativeFrames.put(key,saved);return;}
+      const canvas=document.createElement('canvas');canvas.width=data.w;canvas.height=data.h;
+      const image=renderer.drawCached(canvas.getContext('2d'),layerState(data,map),S.bullet,null,hasFlag(),isLefty(),nativeFrames,key);
+      if(signature===defaultVisual && !Object.keys(R.views[view].assetErrors).length)
+        rememberPublic('default:'+view,image);
+    } catch { /* Preparing an angle is optional; selection retains its normal path. */ }
+    finally {sideFrameJobs.delete(job);}
+  };
+  if(window.requestIdleCallback) requestIdleCallback(work,{timeout:1000}); else setTimeout(work,32);
+}
 /* The web question reads unanswered while S.withdrawnWeb is set; this says why. */
 const withdrawnNote = () => (S.withdrawnWeb && !S.webType)
   ? t('webWithdrawn').replace('%s', S.withdrawnWeb) : '';
@@ -324,16 +364,16 @@ function cleanSharedState(raw) {
    Every read and write is wrapped — a private window or blocked site data
    makes these throw, and losing the draft is not worth breaking the page. */
 const SAVE_KEY = 'ssk-glove-v1';
-let pendingDraft = null;
 
 function save() {
-  if (pendingDraft) return; // Preserve the previous design until its owner chooses.
+  if (window.__SSK_PERF__) return; // Isolated benchmark never replaces a customer's draft.
   try {
     const o = { ...S, schemaVersion: 1 };
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }
 function load() {
+  if (window.__SSK_PERF__) return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -571,10 +611,10 @@ function gateSelection(target) {
   if (!request.pending && !request.error) {
     request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     }).catch(error => {
       request.error = error;
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     });
   }
   return true;
@@ -597,8 +637,9 @@ function draw(target = ctx, highlight = S.step === 3) {
       const requested = S.view;
       pendingView.load().then(() => {
         registerThumbViews();
-        if (S.view === requested) { draw(); paint(); }
-      }).catch(() => {
+        if (S.view === requested) { draw(); paint(S.step !== 0 && S.step !== 7 && S.step !== 5); }
+      }).catch(error => {
+        window.__SSK_PERF__?.failure(error);
         if (S.view === requested) {
           $('#glove').removeAttribute('aria-busy');
           drawUnavailable(ctx, 'viewNotLoaded');
@@ -635,10 +676,14 @@ function draw(target = ctx, highlight = S.step === 3) {
   R.setPad(PAD_PART[S.pad] || null,
            S.colors.pad_color ? hexOf('pad_color') : null);
   R.setMaterials(layerMaterials());
-  R.draw(target, layerState(), S.bullet,
-    highlight && viewFieldLayer()[S.part]
-      ? { id: viewFieldLayer()[S.part], amount: 0.16 } : null,
-    hasFlag(), isLefty());
+  const selected=highlight && viewFieldLayer()[S.part]
+    ? { id:viewFieldLayer()[S.part],amount:0.16 } : null;
+  if(target===ctx && !selected) {
+    const signature=visualKey();nativeFrames.select(signature);
+    const image=R.drawCached(target,layerState(),S.bullet,null,hasFlag(),isLefty(),nativeFrames,nativeFrameKey(view));
+    if(signature===defaultVisual && !Object.keys(R.views[S.view]?.assetErrors || {}).length)
+      rememberPublic('default:'+view,image);
+  } else R.draw(target,layerState(),S.bullet,selected,hasFlag(),isLefty());
   if (target === ctx && !initialRendered) {
     initialRendered = true;
     performance.mark('ssk-ready');
@@ -743,11 +788,10 @@ function stepOpen(i) {
 
 /* ------------------------------------------------------------- 1. start */
 // Full-resolution starter renders survive UI repaint. Render only visible
-// cards, one idle task at a time; a detached grid cannot queue more work.
+// cards, one animation frame at a time; detached cards cannot queue more work.
 const starterImages = new Map();
 let starterRenderer, starterObserver;
-const previewTask = callback => window.requestIdleCallback
-  ? requestIdleCallback(callback, { timeout: 350 }) : setTimeout(callback, 32);
+const previewTask = callback => requestAnimationFrame(callback);
 function renderStart(b) {
   starterObserver?.disconnect();
   // Starter cards always show the back and never mutate the active view.
@@ -766,16 +810,19 @@ function renderStart(b) {
     // Keep the source pixels: a 200px bitmap blurs on Retina and browser zoom.
     // CSS controls the card size; the backing canvas retains the full render.
     const cv = el('canvas'); cv.width = DATA.w; cv.height = DATA.h;
+    cv.dataset.previewPending = 'true';
     cv.style.width = '100%'; cv.style.aspectRatio = DATA.w + '/' + DATA.h;
     c.appendChild(cv);
     c.appendChild(el('span', 'cap',
       `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
     c.onclick = () => { applyStarter(st); paint(); };
     grid.appendChild(c);
-    const key = st.id + '|' + isLefty() + '|' + Object.keys(R._flags || {}).length;
-    const show = () => {
+    const key = st.id + '|' + isLefty() + '|' + Object.keys(R._flags || {}).sort().join(',');
+    const show = async () => {
       if (!cv.isConnected) return;
       let image = starterImages.get(key);
+      if(!image) image=await publicRenders.read('starter:'+key,DATA.w,DATA.h);
+      if(!cv.isConnected) return;
       if (!image) {
         image = document.createElement('canvas'); image.width = DATA.w; image.height = DATA.h;
         const prev = { colors: S.colors, bullet:S.bullet, flag:S.flag,
@@ -788,11 +835,16 @@ function renderStart(b) {
           starterR.draw(image.getContext('2d'), layerState(DATA, LAYER_TO_FIELD),
             S.bullet, null, hasFlag(), isLefty());
         } finally { Object.assign(S, prev); }
+        if(starterFlagsReady) rememberPublic('starter:'+key,image);
+      }
+      if(!starterImages.has(key)) {
         starterImages.set(key, image);
         // At most one full-resolution set per hand plus a pending flag set.
         if (starterImages.size > STARTERS.length * 3) starterImages.delete(starterImages.keys().next().value);
       }
       cv.getContext('2d').drawImage(image, 0, 0);
+      delete cv.dataset.previewPending;
+      reportPerformance();
     };
     if (starterImages.has(key)) showWhenMounted.push(show);
     else pendingStarters.push([cv, show]);
@@ -803,9 +855,9 @@ function renderStart(b) {
     showWhenMounted.forEach(show => show());
     const jobs = [];
     let running = false;
-    const run = () => {
+    const run = async () => {
       const next = jobs.shift();
-      if (next) { next(); previewTask(run); } else running = false;
+      if (next) { await next(); previewTask(run); } else running = false;
     };
     const observer = starterObserver = new IntersectionObserver(entries => {
       if (!grid.isConnected) { observer.disconnect(); return; }
@@ -942,6 +994,7 @@ function liveThumbs(field, items, box, jobFor) {
                               S.webType, S.materials, box]);
   if (key !== thumbKey) { thumbs.clear(); thumbKey = key; }
   const put = (card, cv) => {
+    delete card.dataset.previewPending;
     const shown = el('canvas');
     shown.width = cv.width; shown.height = cv.height;
     shown.getContext('2d').drawImage(cv, 0, 0);
@@ -955,7 +1008,10 @@ function liveThumbs(field, items, box, jobFor) {
     const setUp = card && jobFor(it);
     if (!setUp) return;
     const hit = thumbs.get(box[0] + ':' + it.id);
-    if (hit) put(card, hit); else todo.push([it, card, setUp]);
+    if (hit) put(card, hit); else {
+      card.dataset.previewPending = 'true';
+      todo.push([it, card, setUp]);
+    }
   });
   if (!todo.length) return;
   const tmp = document.createElement('canvas');
@@ -968,6 +1024,18 @@ function liveThumbs(field, items, box, jobFor) {
   // The render is mirrored for a left-handed glove, so what the crop is
   // aimed at is on the other side of it and the crop has to mirror too.
   if (isLefty()) sx = DATA.w - sx - sw;
+  // Fetch independent option images together. Keep the expensive composites
+  // one per frame; serial downloads previously added a round trip per card.
+  const prepared = new Map();
+  requestAnimationFrame(() => {
+    if (!field.isConnected || key !== thumbKey) return;
+    for (const [it, card, setUp] of todo) {
+      setUp(previewR);
+      const pending = R.views.back.loadSelection(previewR.web,
+        Object.values(S.materials || {}).includes('snakeskin'));
+      prepared.set(it.id, pending); pending.catch(() => {});
+    }
+  });
   // One per frame. Four full-canvas composites in a single frame is half a
   // second of locked-up page on a laptop and worse on a phone; spread out,
   // the cards fill in one after another and nothing blocks.
@@ -977,7 +1045,7 @@ function liveThumbs(field, items, box, jobFor) {
     const [it, card, setUp] = job;
     setUp(previewR);
     try {
-      await R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'));
+      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin')));
     } catch {
       if (field.isConnected && key === thumbKey) {
         if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
@@ -1044,7 +1112,8 @@ function renderWeb(b) {
   const grid = el('div', 'web-refs-grid');
   for (const r of WEB_REFERENCES) {
     const fig = el('figure', 'web-ref');
-    const img = el('img'); img.src = assetURL(r.img); img.alt = `${r.id}: ${t('webRefBadge')}`; img.loading = 'lazy';
+    const img = el('img'); img.alt = `${r.id}: ${t('webRefBadge')}`;
+    setImageSource(img, r.img);
     const cap = el('figcaption');
     cap.append(el('strong', null, r.id), el('span', 'web-ref-badge', t('webRefBadge')));
     fig.append(img, cap); grid.appendChild(fig);
@@ -1364,23 +1433,22 @@ function saveToGalleryField() {
   saveBtn.style.alignSelf = 'flex-start';
   const status = el('p', 'note'); status.setAttribute('role', 'status');
   saveBtn.onclick = async () => {
-    const name = nameInput.value.trim() || t('untitledDesign');
     saveBtn.disabled = true; status.textContent = '';
-    const ok = await readyForExport();
-    if (!ok) { saveBtn.disabled = false; status.textContent = t('gallerySaveFail'); return; }
-    const full = proofImage();
-    const tw = 240;
-    const thumb = document.createElement('canvas');
-    thumb.width = tw; thumb.height = Math.max(1, Math.round(full.height * tw / full.width));
-    thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
-    addDesign({
-      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)),
-      name, refcode: code(), savedAt: new Date().toISOString(),
-      thumb: thumb.toDataURL('image/jpeg', 0.78),
-      state: encodeState(true)
-    });
-    saveBtn.disabled = false;
-    status.textContent = t('gallerySaved');
+    try {
+      if (flushText()) paint();
+      const name = nameInput.value.trim() || t('untitledDesign');
+      if (!await readyForExport()) throw Error('assets_not_ready');
+      const full = proofImage(), thumb = document.createElement('canvas');
+      thumb.width = 240; thumb.height = Math.max(1, Math.round(full.height * 240 / full.width));
+      thumb.getContext('2d').drawImage(full, 0, 0, thumb.width, thumb.height);
+      addDesign({id: crypto.randomUUID(), name, refcode: code(), savedAt: new Date().toISOString(),
+        thumb: thumb.toDataURL('image/jpeg', 0.78), state: encodeState(true)});
+      status.textContent = t('gallerySaved');
+      const gallery = el('a', 'btn btn-ghost', t('myDesigns'));
+      gallery.href = './gallery.html'; status.append(' ', gallery);
+    } catch { status.textContent = t('gallerySaveFail'); }
+    finally { saveBtn.disabled = false; }
+
   };
   box.append(nameInput, saveBtn, status);
   return box;
@@ -1397,11 +1465,49 @@ function renderReview(b) {
   b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
   b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
+  const commerceHost=document.createElement('div');b.appendChild(commerceHost);
+  import('./commerce-ui.js').then(({mountCommerce})=>{
+    if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
+      getDesign:()=>structuredClone(S),capture:captureOrderViews});
+    reportPerformance();
+  }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
   b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
   b.appendChild(go);
+}
+
+async function captureOrderViews() {
+  const snapshot=structuredClone(S),web=WEBS.find(w=>w.id===snapshot.webType),previews=[];
+  const art=flagArt(),renderer=new GloveRenderer({...R.views.back,views:R.views});
+  await renderer.preloadFlags(art?[art]:[]);
+  for(const view of ['back','palm','thumb','pinky']) {
+    const bundle=R.views[view];
+    if(bundle?.load)await bundle.load();
+    registerThumbViews();
+    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'));
+    registerThumbViews();
+    const availability=viewAvailability(view,web);
+    if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
+    const angle=view==='thumb'&&thumbEstimatedViewOf(web)||view;
+    renderer.views=R.views;
+    if(!renderer.setView(angle))throw new Error('View unavailable');
+    renderer.setWeb(web?.render);renderer.setWebMarked(web?.id!==NATIVE_WEB);
+    renderer.setFlag(art,null,snapshot.flagPosition);
+    const padColour=DATA.palettes.leather.find(c=>c[0]===snapshot.colors.pad_color)?.[2]||null;
+    renderer.setPad(PAD_PART[snapshot.pad]||null,padColour);
+    const D=renderer.DATA,map=view==='back'?LAYER_TO_FIELD:view==='palm'?{...PALM_FIELDS,stitching:'stitching'}:Object.fromEntries(D.zones.map(z=>[z.id,z.field]));
+    renderer.setMaterials(Object.fromEntries(D.zones.map(z=>[z.id,snapshot.materials?.[map[z.id]]||'standard'])));
+    const state=Object.fromEntries(D.zones.map(z=>[z.id,snapshot.colors[map[z.id]]||DATA.palettes[z.group][0][0]]));state.palm=snapshot.colors.palm||'10';
+    const canvas=document.createElement('canvas');canvas.width=D.w;canvas.height=D.h;
+    renderer.draw(canvas.getContext('2d'),state,snapshot.bullet,null,hasFlag(snapshot),/^L/.test(snapshot.hand));
+    const notes=availability.note?[vt(availability.note)]:[];
+    notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
+    if(snapshot.thumbText||snapshot.pinkyText||snapshot.thumbNumber)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
+    previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
+  }
+  return previews;
 }
 
 /* --------------------------------------------------------------- widgets */
@@ -1448,8 +1554,13 @@ function cardField(label, opts, value, onPick, required, shape) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(value === o.id));
     c.dataset.key = `${label}|${o.id}`;
-    c.innerHTML = (o.img ? `<img src="${assetURL(o.img)}" alt="" loading="lazy">` : '') +
-      `<span class="cap"><span class="nm">${o.label}</span></span>`;
+    c.innerHTML = `<span class="cap"><span class="nm">${o.label}</span></span>`;
+    if(o.img) {
+      const image=el('img');image.alt='';image.loading='lazy';c.prepend(image);
+      // The promise settles after this card is mounted. Packed images never
+      // start a redundant original-URL request while the preview is prepared.
+      setImageSource(image,o.img);
+    }
     c.onclick = () => onPick(o.id);
     grid.appendChild(c);
   }
@@ -1666,7 +1777,7 @@ async function readyForExport() {
       if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
-        selectionRequest = { key: selected.key, error }; draw(); paint();
+        selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);
       }
       return false;
     }
@@ -1715,7 +1826,9 @@ function paintSummary() {
 function openSummary() {
   if (flushText()) paint();
   const drawer = $('#sumdrawer');
-  drawer.hidden = false;
+  clearTimeout(closeSummary._t);
+  drawer.hidden = false; drawer.inert = false; drawer.removeAttribute('aria-hidden');
+  $('#summary').setAttribute('aria-expanded', 'true');
   void drawer.offsetHeight;            // commit the off-screen start frame
   drawer.classList.add('is-open');     // then slide it in
   document.body.classList.add('sum-open');  // push the builder aside
@@ -1725,6 +1838,8 @@ function openSummary() {
 function closeSummary() {
   const drawer = $('#sumdrawer');
   if (drawer.hidden || !drawer.classList.contains('is-open')) return;
+  drawer.inert = true; drawer.setAttribute('aria-hidden', 'true');
+  $('#summary').setAttribute('aria-expanded', 'false');
   drawer.classList.remove('is-open');  // slide out
   document.body.classList.remove('sum-open');
   $('#summary')?.focus();
@@ -1805,6 +1920,8 @@ function paint(rebuildBody = true) {
   }
   const L = S.lang;
   document.documentElement.lang = L;
+  $('#sumx').setAttribute('aria-label', L === 'en' ? 'Close summary' : 'Sluiten');
+  $('#steps').setAttribute('aria-label', L === 'en' ? 'Steps' : 'Stappen');
   const hadKey = focusKey(document.activeElement);
   const wasStep = paint.lastStep;
   const revealMaterial = rebuildBody && S.step === 3
@@ -1900,6 +2017,30 @@ function paint(rebuildBody = true) {
 
   paintSummary();
   save();
+  reportPerformance();
+  if (S.step === 1) warmWebOptions();
+}
+
+const warmedSizes = new Set();
+function warmWebOptions() {
+  const key = S.size;
+  if (!key || warmedSizes.has(key)) return;
+  warmedSizes.add(key);
+  preloadImages([...WEBS.filter(w=>w.sizes.includes(key)),...WEB_REFERENCES].map(w=>w.img)).catch(()=>warmedSizes.delete(key));
+  for (const web of WEBS.filter(w => w.sizes.includes(key))) {
+    R.views.back.loadSelection(web.render || null, false).catch(() => warmedSizes.delete(key));
+  }
+}
+
+// Optional, test-only observer. No observer or storage changes on normal visits.
+function reportPerformance() {
+  window.__SSK_PERF__?.ready({ step:S.step, view:S.view,
+    ready:initialRendered && selectionIsReady() && viewAvailability(S.view).ok,
+    flagsReady:S.step !== 0 || starterFlagsReady,
+    reviewReady:S.step !== 7 || !!document.querySelector('.commerce-panel'),
+    width:ctx?.canvas.width, height:ctx?.canvas.height,
+    renderCache:{publicHits:publicRenders.hits,publicWrites:publicRenders.writes,
+      frameBytes:nativeFrames.bytes,frames:nativeFrames.entries.size} });
 }
 
 /* ------------------------------------------------------------------ wire */
@@ -1924,10 +2065,11 @@ $('#redo').onclick = () => {
   restore(redoStack.pop()); paint();
 };
 
+let starterFlagsReady = false;
 const savedDraft = load();
 const requestedInitialView = decodeState(location.hash.slice(1))?.view;
 loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedInitialView)
-  ? requestedInitialView : 'back' }).then(bundle => {
+  ? requestedInitialView : 'back' }).then(async bundle => {
   DATA = bundle.DATA;
   // The catalogue decides what can be ordered; the asset data only draws it.
   for (const b of DATA.bullets) {
@@ -1941,6 +2083,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
   ctx = $('#glove').getContext('2d');
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
+    starterFlagsReady = true;
     // Flag selection keeps its own decoded callback; only starter cards need
     // refreshing when the complete flag set becomes available.
     if (S.step === 0) paint();
@@ -1948,48 +2091,21 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
 
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;
-  // Shared links open directly; local drafts require an explicit choice.
+  // Shared links open directly; a saved draft restores automatically so the
+  // glove loads the visitor's own design without a prompt.
   const h = location.hash.slice(1);
   const shared = h ? cleanSharedState(decodeState(h)) : null;
   S.size = '11.75"'; S.webType = NATIVE_WEB; S.pad = 'None';
   for (const field of COLOUR_ORDER) {
     if (DATA.palettes[PALETTE_OF(field)].some(c => c[0] === '10')) S.colors[field] = '10';
   }
+  defaultVisual=visualKey();
   const o = cleanState(shared);
   if (o) Object.assign(S, o, { step: 0 });
   else {
     const draft = cleanState(savedDraft);
-    const defaultDraft = cleanState(S);
-    const changedDraft = draft && Object.keys(draft).some(key => {
-      if (key === 'lang') return false;
-      return JSON.stringify(draft[key]) !== JSON.stringify(defaultDraft[key]);
-    });
-    if (draft && (changedDraft || savedDraft.step > 0)) {
-      pendingDraft = { ...draft, step: Number.isInteger(savedDraft.step) &&
-        savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 };
-      const dialog = document.createElement('dialog');
-      dialog.className = 'resume-dialog';
-      const en = draft.lang === 'en';
-      dialog.setAttribute('aria-labelledby', 'resume-title');
-      const title = document.createElement('h2'); title.id = 'resume-title';
-      title.textContent = en ? 'Continue your glove?' : 'Verder met je handschoen?';
-      const desc = document.createElement('p');
-      desc.textContent = en ? 'Your previous design is saved on this device.' : 'Je vorige ontwerp is op dit apparaat bewaard.';
-      dialog.append(title, desc);
-      for (const resume of [true, false]) {
-        const button = document.createElement('button'); button.type = 'button'; button.className = 'btn';
-        button.textContent = resume ? (en ? 'Continue my design' : 'Verder met mijn ontwerp') : (en ? 'Start fresh' : 'Opnieuw beginnen');
-        button.onclick = () => {
-          if (resume) Object.assign(S, pendingDraft);
-          pendingDraft = null; dialog.close(); dialog.remove(); draw(); paint();
-          $('#next').focus();
-        };
-        dialog.append(button);
-      }
-      // Escape must not discard or silently restore the saved design.
-      dialog.addEventListener('cancel', event => event.preventDefault());
-      document.body.append(dialog); dialog.showModal();
-    }
+    if (draft) Object.assign(S, draft, { step: Number.isInteger(savedDraft.step)
+      && savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 });
   }
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
@@ -2022,7 +2138,9 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       b.type = 'button'; b.dataset.view = id;
       b.onclick = () => {
         if (!R.hasView(id)) return;
-        S.view = id; draw(); paint();
+        // Start cards always show the back. Preserve their native canvases
+        // when only the stage angle changes, instead of copying them all again.
+        S.view = id; draw(); paint(S.step !== 0);
       };
       // Warm an angle on intent. Avoid competing with the selected web by
       // immediately downloading all side views after the first frame.
@@ -2051,7 +2169,25 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   };
   document.querySelector('.stage').appendChild(size);
 
+  if(visualKey()===defaultVisual && S.view==='back') {
+    const image=await publicRenders.read('default:back',DATA.w,DATA.h);
+    if(image) { nativeFrames.select(defaultVisual);nativeFrames.put(nativeFrameKey('back'),image); }
+  }
   draw(); paint();
+  // The selected back is decoded and drawn. Prepare angles while starter
+  // cards render, at low network priority; a customer may switch immediately.
+  // Failures remain retryable through the normal selected-view load path.
+  setTimeout(() => {
+    for (const view of ['palm','pinky']) {
+      R.views[view]?.load({priority:'low'}).then(()=>{
+        registerThumbViews();
+        prepareSideFrame(view);
+      }).catch(() => {});
+    }
+    // Thumb's many individual plates stay on its existing intent/selection
+    // path, so optional downloads cannot flood the Web step's requests.
+  }, 0);
+  setTimeout(() => { import('./commerce-ui.js').catch(() => {}); }, 1200);
 }).catch(error => {
   console.error('Glove initialization failed', error);
   $('#steptitle').textContent = t('loadError');
