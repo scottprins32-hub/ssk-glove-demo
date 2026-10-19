@@ -25,7 +25,7 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'r
                'order.html','order.js','merchant.html','merchant.js','merchant-auth.bundle.js',
                'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
                'performance.html', 'performance.js')
-FOLDERS = ('ds', 'teamwear', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
+FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 MAX_ARCHIVE_BYTES = 50_000_000
 MAX_EXTRACTED_BYTES = 50_000_000
 

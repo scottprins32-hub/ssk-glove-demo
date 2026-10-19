@@ -133,7 +133,15 @@ function shirt(view, spec, state, uid) {
   out.push(shade(TORSO, uid));
   out.push(decorations(view, spec, state));
   if (view === 'back' && spec.names) out.push(namesAndNumbers(state, 200, 120, 270));
+  if (view === 'front' && spec.names) out.push(frontNumber(state, 146, 262));
   return out.join('');
+}
+
+// The 3-inch number on the front, left of centre as worn on a jersey.
+function frontNumber(state, x, y) {
+  const n = state.names;
+  if (!n.enabled || !n.front) return '';
+  return lettering(state.preview?.number || '23', x, y, 46, { fill: n.fill, outline: n.outline, font: n.font });
 }
 
 function namesAndNumbers(state, cx, nameY, numY) {
@@ -142,8 +150,8 @@ function namesAndNumbers(state, cx, nameY, numY) {
   const p = state.preview || {};
   const look = { fill: n.fill, outline: n.outline, font: n.font };
   const name = (p.name || 'NAAM').toUpperCase();
-  return lettering(name, cx, nameY, 30, look, { maxWidth: Math.min(180, name.length * 19) })
-    + lettering(p.number || '23', cx, numY, 130, look);
+  return (n.name !== false ? lettering(name, cx, nameY, 30, look, { maxWidth: Math.min(180, name.length * 19) }) : '')
+    + (n.back !== false ? lettering(p.number || '23', cx, numY, 130, look) : '');
 }
 
 function hoodie(view, spec, state, uid) {
@@ -175,6 +183,7 @@ function hoodie(view, spec, state, uid) {
   out.push(shade(TORSO, uid));
   out.push(decorations(view, spec, state));
   if (view === 'back' && spec.names) out.push(namesAndNumbers(state, 200, 160, 290));
+  if (view === 'front' && spec.names) out.push(frontNumber(state, 150, 290));
   return out.join('');
 }
 
@@ -210,6 +219,7 @@ function jacket(view, spec, state, uid) {
   out.push(shade(TORSO, uid));
   out.push(decorations(view, spec, state));
   if (view === 'back' && spec.names) out.push(namesAndNumbers(state, 200, 165, 295));
+  if (view === 'front' && spec.names) out.push(frontNumber(state, 150, 250));
   return out.join('');
 }
 
@@ -306,17 +316,56 @@ function bag(view, spec, state, uid) {
 const DRAW = { shirt, hoodie, jacket, pants, socks, cap, bag };
 const VIEWBOX = { shirt: '0 -10 400 450', hoodie: '0 -20 400 460', jacket: '0 -10 400 450', pants: '0 0 400 460', socks: '0 0 400 450', cap: '40 50 320 250', bag: '40 20 320 420' };
 
+// ------------------------------------------------------------ photographs
+let PHOTOS = {};
+let PHOTO_BACK = {};
+export function setPhotos(index, backs) { PHOTOS = index || {}; PHOTO_BACK = backs || {}; }
+
+export function photoFor(spec, colour, view) {
+  const set = PHOTOS[spec.variant.photo];
+  if (!set) return null;
+  const entry = set[colour] || Object.values(set)[0];
+  return entry?.[view] || null;
+}
+
+function photo(view, spec, state) {
+  const img = photoFor(spec, state.photoColour, view);
+  const { w, h } = img;
+  const out = [`<image href="${img.src}" x="0" y="0" width="${w}" height="${h}" data-zone="body"/>`];
+  (spec.placements || []).filter(p => p.view === view && p.photoBox).forEach(p => {
+    const [x, y, bw, bh] = p.photoBox;
+    out.push(placement({ x: x * w, y: y * h, w: bw * w, h: bh * h }, state.deco[p.id], state.lettering));
+  });
+  const back = PHOTO_BACK[spec.variant.photo];
+  if (view === 'back' && back && spec.names && state.names.enabled) {
+    const n = state.names; const look = { fill: n.fill, outline: n.outline, font: n.font };
+    const p = state.preview || {};
+    const [cx, nameY, numY, numH] = back;
+    if (n.name !== false) {
+      const name = (p.name || 'NAAM').toUpperCase();
+      out.push(lettering(name, cx * w, nameY * h, h * 0.045, look, { maxWidth: Math.min(w * 0.5, name.length * h * 0.028) }));
+    }
+    if (n.back !== false) out.push(lettering(p.number || '23', cx * w, numY * h, numH * h, look));
+  }
+  return { body: out.join(''), viewBox: `0 0 ${w} ${h}` };
+}
+
 let uidSeq = 0;
 // spec: { template, variant, zones, placements, names } ; state: colors, deco, names, lettering, preview
 export function renderGarment(spec, state, view = 'front', opts = {}) {
   const uid = `g${++uidSeq}`;
+  const label = esc(opts.label || '');
+  if (spec.variant.photo && photoFor(spec, state.photoColour, view)) {
+    const ph = photo(view, spec, state);
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ph.viewBox}" role="img" aria-label="${label}">${defs(uid)}${ph.body}</svg>`;
+  }
   const draw = DRAW[spec.template];
   if (!draw) return '';
   const body = draw(view, spec, state, uid);
-  const label = esc(opts.label || '');
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX[spec.template]}" role="img" aria-label="${label}">${defs(uid)}${body}</svg>`;
 }
 
 export function hasBack(spec) {
+  if (spec.variant.photo && PHOTOS[spec.variant.photo]) return Object.values(PHOTOS[spec.variant.photo]).some(c => c.back);
   return spec.template !== 'socks' && spec.template !== 'bag';
 }

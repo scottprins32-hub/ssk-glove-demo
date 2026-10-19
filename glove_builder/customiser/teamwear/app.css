@@ -248,6 +248,16 @@ textarea.input { resize: vertical; }
 }
 .icon-btn:disabled { opacity: var(--state-disabled-opacity); cursor: not-allowed; }
 
+.line { grid-template-areas: 'art txt acts' 'price price price'; }
+.line-art { grid-area: art; } .line-txt { grid-area: txt; } .line-acts { grid-area: acts; }
+.line-price { grid-area: price; }
+.price-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.price-table td { padding: 4px 4px; border-bottom: 1px solid var(--border-default); vertical-align: top; }
+.price-table .code { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.price-table .num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+.price-table .disc td { color: var(--status-success); }
+.price-table .tot td { border-bottom: 0; font-weight: var(--weight-semibold); color: var(--ink-900); }
+
 /* ------------------------------------------------------------------- bar */
 .bar {
   flex: none; display: flex; align-items: center; justify-content: space-between;
