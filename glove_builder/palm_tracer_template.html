@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm Tracer</title>
+<style>
+:root {
+  --bg: #f4f2ee; --panel: #ffffff; --ink: #1d1b18; --muted: #6b665e; --line: #ddd8cf;
+  --accent: #1f5fbf; --bies: #1f6bff; --welting: #e8332a; --finger: #f2c200; --other: #19a974;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18171a; --panel: #222126; --ink: #ecebe8; --muted: #a39f97; --line: #3a3840; --accent: #6ea2ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18171a; --panel: #222126; --ink: #ecebe8; --muted: #a39f97; --line: #3a3840; --accent: #6ea2ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 14px; margin: 0 12px 0 0; }
+.group { display: flex; gap: 4px; align-items: center; padding-right: 10px; margin-right: 4px; border-right: 1px solid var(--line); }
+.group:last-child { border-right: 0; }
+button, select, input[type=number], input[type=text] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.on kbd { color: var(--ink); }
+button:disabled { opacity: .45; cursor: default; }
+#stage { position: relative; overflow: hidden; background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 20px 20px; }
+#stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#hud { position: absolute; left: 10px; bottom: 10px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; color: var(--muted); pointer-events: none; max-width: calc(100% - 20px); }
+aside { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+aside section { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
+#list { overflow: auto; flex: 1; padding: 6px 0; }
+.cat { padding: 4px 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.cat .sw { width: 10px; height: 10px; border-radius: 2px; }
+.cat .n { color: var(--muted); font-weight: 400; }
+.cat button { margin-left: auto; padding: 0 6px; }
+.item { display: flex; gap: 6px; align-items: center; padding: 3px 12px 3px 26px; cursor: pointer; }
+.item:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.item.sel { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.item .eye { width: 18px; text-align: center; color: var(--muted); }
+.item .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .v { color: var(--muted); font-size: 11px; }
+.row { display: flex; gap: 6px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+.row label { color: var(--muted); min-width: 70px; }
+.row input[type=text] { flex: 1; min-width: 0; }
+.row input[type=range] { flex: 1; }
+.keys { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.keys summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.keys { padding: 10px 12px; border-top: 1px solid var(--line); }
+.keys b { color: var(--ink); font-weight: 600; }
+kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--bg); }
+@media (max-width: 800px) { body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 40vh; } aside { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Palm tracer</h1>
+  <div class="group" id="tools">
+    <button data-tool="select" title="Selecteren en punten verslepen (V)">Selecteer <kbd>V</kbd></button>
+    <button data-tool="pen" title="Polygoon klikken (P)">Pen <kbd>P</kbd></button>
+    <button data-tool="lasso" title="Uit de vrije hand slepen (L)">Lasso <kbd>L</kbd></button>
+    <button data-tool="wand" title="Klik op een kleurvlak (W)">Toverstaf <kbd>W</kbd></button>
+  </div>
+  <div class="group">
+    <span>Nieuw als</span>
+    <select id="newCat"></select>
+    <button id="retrace" title="De volgende vorm die je tekent vervangt de geselecteerde (R)">Hertrace <kbd>R</kbd></button>
+  </div>
+  <div class="group">
+    <span>Achtergrond</span>
+    <select id="bg">
+      <option value="photo">Foto (rainbow)</option>
+      <option value="render">Render (palm view)</option>
+      <option value="none">Geen</option>
+    </select>
+    <label><input type="checkbox" id="oldMasks"> Huidige maskers</label>
+  </div>
+  <div class="group">
+    <button id="undo" title="Ctrl/Cmd+Z">Ongedaan</button>
+    <button id="redo" title="Ctrl/Cmd+Shift+Z">Opnieuw</button>
+    <button id="fit" title="Passend maken (0)">Passend <kbd>0</kbd></button>
+  </div>
+  <div class="group">
+    <button id="exportJson">JSON opslaan</button>
+    <button id="exportPng">PNG-maskers</button>
+    <button id="importJson">JSON laden</button>
+    <button id="reset" title="Terug naar de voorgetekende versie">Reset</button>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </div>
+</header>
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="hud"></div>
+</div>
+<aside>
+  <section id="props">
+    <h2>Geselecteerd</h2>
+    <div id="noSel" class="keys">Klik op een vorm of kies er een in de lijst.</div>
+    <div id="selBox" hidden>
+      <div class="row"><label>Naam</label><input type="text" id="selName"></div>
+      <div class="row"><label>Soort</label><select id="selCat"></select></div>
+      <div class="row"><label>Punten</label><span id="selPts"></span></div>
+      <div class="row"><label>Vereenvoudig</label><input type="range" id="simp" min="0.3" max="6" step="0.1" value="1.5"><span id="simpV">1.5</span><button id="doSimp">Toepassen</button></div>
+      <div class="row"><button id="dup">Dupliceren</button><button id="del">Verwijderen</button><button id="zoomSel">Zoom</button></div>
+    </div>
+  </section>
+  <section>
+    <h2>Weergave</h2>
+    <div class="row"><label>Vulling</label><input type="range" id="fill" min="0" max="0.9" step="0.05" value="0.3"></div>
+    <div class="row"><label>Toverstaf</label><input type="range" id="tol" min="3" max="40" step="1" value="13"><span id="tolV">13</span></div>
+    <div class="row"><label><input type="checkbox" id="onlySel"> Alleen geselecteerde soort tonen</label></div>
+  </section>
+  <div id="list"></div>
+  <details class="keys" open>
+    <summary>Sneltoetsen</summary>
+    <b>Punten</b>: sleep een punt. <kbd>Alt</kbd>-klik op een rand voegt een punt toe, <kbd>Alt</kbd>-klik op een punt haalt het weg.<br>
+    <b>Vorm verplaatsen</b>: sleep binnen de geselecteerde vorm met <kbd>Shift</kbd>.<br>
+    <b>Pen</b>: klik punten, <kbd>Enter</kbd> of dubbelklik sluit, <kbd>Backspace</kbd> haalt het laatste punt weg, <kbd>Esc</kbd> stopt.<br>
+    <b>Zoom</b>: scrollwiel. <b>Pannen</b>: spatie of rechtermuisknop slepen.<br>
+    <kbd>Del</kbd> verwijdert de vorm, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> zet de soort, <kbd>Tab</kbd> naar de volgende vorm, dubbelklik in de lijst zoomt in.
+  </details>
+</aside>
+<script>
+const DATA = /*__DATA__*/{};
+const W = DATA.w, H = DATA.h;
+const CATS = DATA.cats; // [{id,label,color}]
+const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+const KEY = 'ssk-palm-tracer-v1';
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const stage = document.getElementById('stage'), hud = document.getElementById('hud');
+const $ = id => document.getElementById(id);
+
+// Images
+const photo = new Image(); photo.src = DATA.photo;
+const render = new Image(); render.src = DATA.render;
+const old = new Image(); old.src = DATA.oldMasks;
+let lab = null; // CIELAB of the photo for the wand: dark green and dark teal are close in RGB, far apart in Lab
+photo.onload = () => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.drawImage(photo, 0, 0, W, H);
+  const px = x.getImageData(0, 0, W, H).data;
+  const lin = new Float32Array(256); for (let i = 0; i < 256; i++) { const v = i / 255; lin[i] = v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }
+  const f = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  lab = new Float32Array(W * H * 3);
+  for (let i = 0, j = 0; i < px.length; i += 4, j += 3) {
+    const r = lin[px[i]], g = lin[px[i + 1]], b = lin[px[i + 2]];
+    const X = f((r * .4124 + g * .3576 + b * .1805) / .95047), Y = f(r * .2126 + g * .7152 + b * .0722), Z = f((r * .0193 + g * .1192 + b * .9505) / 1.08883);
+    lab[j] = 116 * Y - 16; lab[j + 1] = 500 * (X - Y); lab[j + 2] = 200 * (Y - Z);
+  }
+  draw();
+};
+render.onload = old.onload = () => draw();
+
+// State
+let shapes = [], sel = -1, uid = 1;
+function fresh() { return DATA.shapes.map(s => ({ id: uid++, cat: s.cat, name: s.name, pts: s.pts.map(p => p.slice()), hidden: false })); }
+function load() {
+  try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && Array.isArray(j.shapes)) return j.shapes.map(s => ({ ...s, id: uid++ })); } catch (e) {}
+  return fresh();
+}
+shapes = load();
+let saveT = 0;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify({ shapes })); } catch (e) {} }, 300); }
+
+// Undo
+const past = [], future = [];
+function snap() { past.push(JSON.stringify(shapes)); if (past.length > 200) past.shift(); future.length = 0; }
+function undo() { if (!past.length) return; future.push(JSON.stringify(shapes)); shapes = JSON.parse(past.pop()); fix(); }
+function redo() { if (!future.length) return; past.push(JSON.stringify(shapes)); shapes = JSON.parse(future.pop()); fix(); }
+function fix() { if (sel >= shapes.length) sel = -1; save(); ui(); draw(); }
+
+// View
+let scale = 1, ox = 0, oy = 0, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const r = stage.getBoundingClientRect();
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  draw();
+}
+function fit() {
+  const r = stage.getBoundingClientRect();
+  scale = Math.min(r.width / W, r.height / H) * .96;
+  ox = (r.width - W * scale) / 2; oy = (r.height - H * scale) / 2; draw();
+}
+function zoomTo(b) {
+  const r = stage.getBoundingClientRect();
+  const w = Math.max(b[2] - b[0], 160), h = Math.max(b[3] - b[1], 160);
+  scale = Math.min(r.width / w, r.height / h) * .7;
+  ox = r.width / 2 - (b[0] + b[2]) / 2 * scale; oy = r.height / 2 - (b[1] + b[3]) / 2 * scale; draw();
+}
+const toImg = (x, y) => [(x - ox) / scale, (y - oy) / scale];
+function evPt(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+
+// Geometry
+function bbox(p) { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of p) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); } return [a, b, c, d]; }
+function inside(p, x, y) { let o = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) o = !o; } return o; }
+function segDist(px, py, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1]; const l = dx * dx + dy * dy; let t = l ? ((px - a[0]) * dx + (py - a[1]) * dy) / l : 0; t = Math.max(0, Math.min(1, t)); const x = a[0] + t * dx, y = a[1] + t * dy; return [Math.hypot(px - x, py - y), t]; }
+function rdp(pts, eps) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+  const st = [[0, pts.length - 1]];
+  while (st.length) { const [a, b] = st.pop(); let m = -1, md = 0; for (let i = a + 1; i < b; i++) { const d = segDist(pts[i][0], pts[i][1], pts[a], pts[b])[0]; if (d > md) { md = d; m = i; } } if (md > eps) { keep[m] = 1; st.push([a, m], [m, b]); } }
+  return pts.filter((_, i) => keep[i]);
+}
+function simplifyClosed(pts, eps) {
+  if (pts.length < 5) return pts;
+  // split at the point farthest from the first, so the closing edge is kept
+  let far = 0, fd = -1; for (let i = 0; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[0][0], pts[i][1] - pts[0][1]); if (d > fd) { fd = d; far = i; } }
+  const a = rdp(pts.slice(0, far + 1), eps), b = rdp(pts.slice(far).concat([pts[0]]), eps);
+  const out = a.concat(b.slice(1, -1));
+  return out.length >= 3 ? out : pts;
+}
+const R = v => Math.round(v * 10) / 10;
+
+// Draw
+function visible(s) { if (s.hidden) return false; if ($('onlySel').checked && sel >= 0) return s.cat === shapes[sel].cat; return true; }
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * ox, dpr * oy);
+  ctx.imageSmoothingEnabled = scale < 3;
+  const bg = $('bg').value;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  if (bg === 'photo' && photo.complete) ctx.drawImage(photo, 0, 0, W, H);
+  if (bg === 'render' && render.complete) ctx.drawImage(render, 0, 0, W, H);
+  if ($('oldMasks').checked && old.complete) { ctx.globalAlpha = .55; ctx.drawImage(old, 0, 0, W, H); ctx.globalAlpha = 1; }
+  const fa = +$('fill').value, lw = 1.5 / scale;
+  shapes.forEach((s, i) => {
+    if (!visible(s) || i === sel) return;
+    path(s.pts); const c = CAT[s.cat].color;
+    ctx.globalAlpha = fa; ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.lineWidth = lw; ctx.strokeStyle = c; ctx.stroke();
+  });
+  if (sel >= 0 && shapes[sel]) {
+    const s = shapes[sel], c = CAT[s.cat].color;
+    path(s.pts); ctx.globalAlpha = Math.max(fa, .25); ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.lineWidth = 3 / scale; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.lineWidth = 1.5 / scale; ctx.strokeStyle = c; ctx.stroke();
+    const r = 4 / scale;
+    s.pts.forEach((p, k) => {
+      ctx.beginPath(); ctx.rect(p[0] - r, p[1] - r, 2 * r, 2 * r);
+      ctx.fillStyle = k === hoverV ? '#000' : '#fff'; ctx.fill(); ctx.lineWidth = 1 / scale; ctx.strokeStyle = '#000'; ctx.stroke();
+    });
+  }
+  if (drawing && drawing.length) {
+    ctx.beginPath(); drawing.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    if (tool === 'pen' && mouseImg) ctx.lineTo(mouseImg[0], mouseImg[1]);
+    ctx.lineWidth = 2 / scale; ctx.strokeStyle = CAT[$('newCat').value].color; ctx.setLineDash([6 / scale, 4 / scale]); ctx.stroke(); ctx.setLineDash([]);
+    if (tool === 'pen') drawing.forEach(p => { ctx.beginPath(); ctx.arc(p[0], p[1], 3 / scale, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); });
+  }
+  if (wandPreview) {
+    path(wandPreview); ctx.fillStyle = CAT[$('newCat').value].color; ctx.globalAlpha = .4; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.lineWidth = 1.5 / scale; ctx.strokeStyle = '#fff'; ctx.stroke();
+  }
+  hudText();
+}
+function path(p) { ctx.beginPath(); p.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); }
+function hudText() {
+  const t = { select: 'Selecteren', pen: 'Pen', lasso: 'Lasso', wand: 'Toverstaf' }[tool];
+  const m = mouseImg ? `x ${Math.round(mouseImg[0])}, y ${Math.round(mouseImg[1])}` : '';
+  const rt = retrace ? ` · <b>hertrace</b>: de volgende vorm vervangt "${shapes[sel] ? shapes[sel].name : ''}"` : '';
+  hud.innerHTML = `${t} · ${Math.round(scale * 100)}% · ${m}${rt}`;
+}
+
+// UI lists
+function fillCats(selEl) { selEl.innerHTML = CATS.map(c => `<option value="${c.id}">${c.label}</option>`).join(''); }
+fillCats($('newCat')); fillCats($('selCat'));
+function ui() {
+  const list = $('list'); list.innerHTML = '';
+  CATS.forEach(c => {
+    const items = shapes.map((s, i) => [s, i]).filter(([s]) => s.cat === c.id);
+    const h = document.createElement('div'); h.className = 'cat';
+    const allHidden = items.length && items.every(([s]) => s.hidden);
+    h.innerHTML = `<span class="sw" style="background:${c.color}"></span>${c.label} <span class="n">${items.length}</span><button title="Alles tonen/verbergen">${allHidden ? 'toon' : 'verberg'}</button>`;
+    h.querySelector('button').onclick = () => { items.forEach(([s]) => s.hidden = !allHidden); save(); ui(); draw(); };
+    list.appendChild(h);
+    items.forEach(([s, i]) => {
+      const d = document.createElement('div'); d.className = 'item' + (i === sel ? ' sel' : '');
+      d.innerHTML = `<span class="eye">${s.hidden ? '·' : '●'}</span><span class="nm"></span><span class="v">${s.pts.length}</span>`;
+      d.querySelector('.nm').textContent = s.name;
+      d.querySelector('.eye').onclick = e => { e.stopPropagation(); s.hidden = !s.hidden; save(); ui(); draw(); };
+      d.onclick = () => { select(i); };
+      d.ondblclick = () => { select(i); zoomTo(bbox(s.pts)); };
+      if (i === sel) setTimeout(() => d.scrollIntoView({ block: 'nearest' }));
+      list.appendChild(d);
+    });
+  });
+  const s = shapes[sel];
+  $('noSel').hidden = !!s; $('selBox').hidden = !s;
+  if (s) { if (document.activeElement !== $('selName')) $('selName').value = s.name; $('selCat').value = s.cat; $('selPts').textContent = s.pts.length; }
+  $('retrace').classList.toggle('on', retrace); $('retrace').disabled = !s;
+  $('undo').disabled = !past.length; $('redo').disabled = !future.length;
+  document.querySelectorAll('#tools button').forEach(b => b.classList.toggle('on', b.dataset.tool === tool));
+}
+function select(i) { sel = i; if (sel < 0) retrace = false; ui(); draw(); }
+
+// Tools
+let tool = 'select', retrace = false, drawing = null, mouseImg = null, hoverV = -1, drag = null, wandPreview = null, panning = null, spaceDown = false;
+function setTool(t) { tool = t; drawing = null; wandPreview = null; cv.style.cursor = t === 'select' ? 'default' : 'crosshair'; ui(); draw(); }
+document.querySelectorAll('#tools button').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+
+function addShape(pts) {
+  if (pts.length < 3) return;
+  snap();
+  pts = pts.map(p => [R(p[0]), R(p[1])]);
+  if (retrace && shapes[sel]) { shapes[sel].pts = pts; retrace = false; }
+  else {
+    const cat = $('newCat').value;
+    const n = shapes.filter(s => s.cat === cat).length + 1;
+    shapes.push({ id: uid++, cat, name: `${CAT[cat].label} ${n}`, pts, hidden: false });
+    sel = shapes.length - 1;
+  }
+  save(); ui(); draw();
+}
+
+function hitVertex(x, y) {
+  const s = shapes[sel]; if (!s) return -1;
+  const r = 7 / scale; let best = -1, bd = r;
+  s.pts.forEach((p, k) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; best = k; } });
+  return best;
+}
+function hitEdge(x, y) {
+  const s = shapes[sel]; if (!s) return -1;
+  let best = -1, bd = 6 / scale;
+  for (let k = 0; k < s.pts.length; k++) { const d = segDist(x, y, s.pts[k], s.pts[(k + 1) % s.pts.length])[0]; if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+function hitShape(x, y) {
+  // smallest visible shape under the cursor, so thin lines over big pieces stay clickable
+  let best = -1, ba = 1e12;
+  shapes.forEach((s, i) => {
+    if (!visible(s)) return;
+    const b = bbox(s.pts); if (x < b[0] - 4 || x > b[2] + 4 || y < b[1] - 4 || y > b[3] + 4) return;
+    let hit = inside(s.pts, x, y);
+    if (!hit) for (let k = 0; k < s.pts.length && !hit; k++) hit = segDist(x, y, s.pts[k], s.pts[(k + 1) % s.pts.length])[0] < 4 / scale;
+    if (hit) { const a = (b[2] - b[0]) * (b[3] - b[1]); if (a < ba) { ba = a; best = i; } }
+  });
+  return best;
+}
+
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('mousedown', e => {
+  const [mx, my] = evPt(e), [x, y] = toImg(mx, my);
+  if (e.button === 2 || e.button === 1 || spaceDown) { panning = [mx, my, ox, oy]; return; }
+  if (tool === 'select') {
+    const v = hitVertex(x, y);
+    if (v >= 0) {
+      if (e.altKey) { if (shapes[sel].pts.length > 3) { snap(); shapes[sel].pts.splice(v, 1); hoverV = -1; save(); ui(); draw(); } return; }
+      snap(); drag = { kind: 'v', v }; return;
+    }
+    if (e.altKey) { const ed = hitEdge(x, y); if (ed >= 0) { snap(); shapes[sel].pts.splice(ed + 1, 0, [R(x), R(y)]); drag = { kind: 'v', v: ed + 1 }; save(); ui(); draw(); return; } }
+    if (e.shiftKey && sel >= 0 && inside(shapes[sel].pts, x, y)) { snap(); drag = { kind: 's', x, y }; return; }
+    select(hitShape(x, y));
+  } else if (tool === 'pen') {
+    if (!drawing) drawing = [];
+    if (e.detail >= 2) { closePen(); return; }
+    drawing.push([x, y]); draw();
+  } else if (tool === 'lasso') {
+    drawing = [[x, y]];
+  } else if (tool === 'wand') {
+    const p = wand(Math.round(x), Math.round(y));
+    if (p) addShape(p);
+  }
+});
+function closePen() { if (drawing && drawing.length >= 3) addShape(drawing); drawing = null; draw(); }
+window.addEventListener('mousemove', e => {
+  const [mx, my] = evPt(e); const [x, y] = toImg(mx, my); mouseImg = [x, y];
+  if (panning) { ox = panning[2] + mx - panning[0]; oy = panning[3] + my - panning[1]; draw(); return; }
+  if (drag && drag.kind === 'v') { shapes[sel].pts[drag.v] = [R(x), R(y)]; draw(); return; }
+  if (drag && drag.kind === 's') { const dx = x - drag.x, dy = y - drag.y; drag.x = x; drag.y = y; shapes[sel].pts.forEach(p => { p[0] = R(p[0] + dx); p[1] = R(p[1] + dy); }); draw(); return; }
+  if (tool === 'lasso' && drawing && e.buttons & 1) { const l = drawing[drawing.length - 1]; if (Math.hypot(l[0] - x, l[1] - y) > 1.5 / scale) drawing.push([x, y]); draw(); return; }
+  if (tool === 'select' && e.target === cv) { const v = hitVertex(x, y); if (v !== hoverV) { hoverV = v; draw(); } cv.style.cursor = v >= 0 ? 'move' : 'default'; }
+  if (tool === 'pen' && drawing) draw(); else hudText();
+});
+window.addEventListener('mouseup', () => {
+  if (panning) { panning = null; return; }
+  if (drag) { drag = null; save(); ui(); draw(); }
+  if (tool === 'lasso' && drawing) { const p = simplifyClosed(drawing, .8); drawing = null; if (p.length >= 3) addShape(p); else draw(); }
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [mx, my] = evPt(e), [x, y] = toImg(mx, my);
+  scale = Math.min(40, Math.max(.1, scale * Math.exp(-e.deltaY * .0015)));
+  ox = mx - x * scale; oy = my - y * scale; draw();
+}, { passive: false });
+
+// Wand: flood fill on the photo by colour distance to the clicked pixel, then trace the outline
+function wand(sx, sy) {
+  if (!lab || sx < 0 || sy < 0 || sx >= W || sy >= H) return null;
+  const tol = +$('tol').value, t2 = tol * tol;
+  // average a 5x5 seed so a single noisy pixel does not decide
+  let l0 = 0, a0 = 0, b0 = 0, n = 0;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = sx + dx, y = sy + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue; const j = (y * W + x) * 3; l0 += lab[j]; a0 += lab[j + 1]; b0 += lab[j + 2]; n++; }
+  l0 /= n; a0 /= n; b0 /= n;
+  const m = new Uint8Array(W * H), st = [sy * W + sx]; m[sy * W + sx] = 1; let count = 0;
+  while (st.length) {
+    const k = st.pop(); count++; if (count > 600000) break;
+    const x = k % W, y = (k / W) | 0;
+    const nb = [x > 0 ? k - 1 : -1, x < W - 1 ? k + 1 : -1, y > 0 ? k - W : -1, y < H - 1 ? k + W : -1];
+    for (const q of nb) { if (q < 0 || m[q]) continue; const j = q * 3; const dl = (lab[j] - l0) * .5, da = lab[j + 1] - a0, db = lab[j + 2] - b0; if (dl * dl + da * da + db * db <= t2) { m[q] = 1; st.push(q); } }
+  }
+  const pts = trace(m);
+  if (!pts) return null;
+  return simplifyClosed(pts, 1.2);
+}
+function trace(m) {
+  // marching squares from the first set pixel in raster order: its top-left
+  // corner is on the outer boundary, so holes are never followed
+  let k0 = m.indexOf(1); if (k0 < 0) return null;
+  const at = (x, y) => x >= 0 && y >= 0 && x < W && y < H && m[y * W + x] === 1;
+  const sx = k0 % W, sy = (k0 / W) | 0;
+  let x = sx, y = sy, dx = 0, dy = 0, guard = 0; const out = [];
+  do {
+    const i = (at(x - 1, y - 1) ? 1 : 0) | (at(x, y - 1) ? 2 : 0) | (at(x - 1, y) ? 4 : 0) | (at(x, y) ? 8 : 0);
+    let nx = 0, ny = 0;
+    switch (i) {
+      case 1: case 5: case 13: ny = -1; break;
+      case 2: case 3: case 7: nx = 1; break;
+      case 4: case 12: case 14: nx = -1; break;
+      case 8: case 10: case 11: ny = 1; break;
+      case 6: if (dy === -1) nx = -1; else nx = 1; break;
+      case 9: if (dx === 1) ny = -1; else ny = 1; break;
+      default: return out.length >= 3 ? out : null;
+    }
+    if (nx !== dx || ny !== dy) out.push([x, y]); // corners only
+    dx = nx; dy = ny; x += nx; y += ny;
+  } while ((x !== sx || y !== sy) && ++guard < 2000000);
+  return out.length >= 3 ? out : null;
+}
+
+// Keys
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+  if (e.key === ' ') { spaceDown = true; cv.style.cursor = 'grab'; e.preventDefault(); return; }
+  if (e.key === 'Escape') { if (drawing) { drawing = null; draw(); } else if (retrace) { retrace = false; ui(); draw(); } else select(-1); return; }
+  if (e.key === 'Enter' && tool === 'pen') { closePen(); return; }
+  if (e.key === 'Backspace' && tool === 'pen' && drawing) { drawing.pop(); draw(); e.preventDefault(); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && sel >= 0) {
+    e.preventDefault();
+    if (tool === 'select' && hoverV >= 0 && shapes[sel].pts.length > 3) { snap(); shapes[sel].pts.splice(hoverV, 1); hoverV = -1; }
+    else { snap(); shapes.splice(sel, 1); sel = -1; }
+    save(); ui(); draw(); return;
+  }
+  if (e.key === 'Tab') { e.preventDefault(); if (shapes.length) { select(((sel + (e.shiftKey ? -1 : 1)) + shapes.length) % shapes.length); zoomTo(bbox(shapes[sel].pts)); } return; }
+  const k = e.key.toLowerCase();
+  if (k === 'v') setTool('select'); else if (k === 'p') setTool('pen'); else if (k === 'l') setTool('lasso'); else if (k === 'w') setTool('wand');
+  else if (k === 'r') toggleRetrace(); else if (k === '0') fit();
+  else if (['1', '2', '3', '4'].includes(k)) { const c = CATS[+k - 1]; if (!c) return; if (sel >= 0) { snap(); shapes[sel].cat = c.id; save(); } $('newCat').value = c.id; ui(); draw(); }
+});
+window.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; cv.style.cursor = tool === 'select' ? 'default' : 'crosshair'; } });
+
+function toggleRetrace() { if (sel < 0) return; retrace = !retrace; if (retrace && tool === 'select') setTool('pen'); ui(); draw(); }
+$('retrace').onclick = toggleRetrace;
+$('undo').onclick = undo; $('redo').onclick = redo; $('fit').onclick = fit;
+['bg', 'oldMasks', 'fill', 'onlySel'].forEach(id => $(id).addEventListener('input', draw));
+$('tol').oninput = () => { $('tolV').textContent = $('tol').value; };
+$('simp').oninput = () => { $('simpV').textContent = $('simp').value; };
+$('doSimp').onclick = () => { const s = shapes[sel]; if (!s) return; snap(); s.pts = simplifyClosed(s.pts, +$('simp').value); save(); ui(); draw(); };
+$('selName').oninput = () => { const s = shapes[sel]; if (!s) return; s.name = $('selName').value; save(); ui(); };
+$('selName').onfocus = () => snap();
+$('selCat').onchange = () => { const s = shapes[sel]; if (!s) return; snap(); s.cat = $('selCat').value; save(); ui(); draw(); };
+$('del').onclick = () => { if (sel < 0) return; snap(); shapes.splice(sel, 1); sel = -1; save(); ui(); draw(); };
+$('dup').onclick = () => { const s = shapes[sel]; if (!s) return; snap(); shapes.push({ ...s, id: uid++, name: s.name + ' kopie', pts: s.pts.map(p => [p[0] + 10, p[1] + 10]) }); sel = shapes.length - 1; save(); ui(); draw(); };
+$('zoomSel').onclick = () => { if (sel >= 0) zoomTo(bbox(shapes[sel].pts)); };
+$('reset').onclick = () => { if (!confirm('Alles terugzetten naar de voorgetekende versie? Je eigen wijzigingen gaan weg (Ongedaan maken kan nog).')) return; snap(); shapes = fresh(); sel = -1; save(); ui(); draw(); };
+
+// Export / import
+function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+$('exportJson').onclick = () => {
+  const k = DATA.srcScale; // canvas -> source crop
+  const out = {
+    view: 'palm', canvas: [W, H], source: DATA.source,
+    note: 'pts in palm-view canvas pixels; srcPts in source crop pixels (rainbow-palm.png)',
+    shapes: shapes.map(s => ({ cat: s.cat, name: s.name, pts: s.pts.map(p => [R(p[0]), R(p[1])]), srcPts: s.pts.map(p => [R(p[0] * k), R(p[1] * k)]) }))
+  };
+  download('palm-trace.json', new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }));
+};
+$('exportPng').onclick = async () => {
+  for (const c of CATS) {
+    const items = shapes.filter(s => s.cat === c.id); if (!items.length) continue;
+    const m = document.createElement('canvas'); m.width = W; m.height = H; const x = m.getContext('2d');
+    x.fillStyle = '#fff'; items.forEach(s => { x.beginPath(); s.pts.forEach((p, k) => k ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fill(); });
+    const blob = await new Promise(r => m.toBlob(r, 'image/png'));
+    download(`palm-${c.id}.png`, blob);
+    await new Promise(r => setTimeout(r, 250));
+  }
+};
+$('importJson').onclick = () => $('file').click();
+$('file').onchange = async () => {
+  const f = $('file').files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    const arr = Array.isArray(j) ? j : j.shapes;
+    if (!Array.isArray(arr)) throw new Error('geen shapes');
+    snap();
+    shapes = arr.filter(s => CAT[s.cat] && Array.isArray(s.pts) && s.pts.length >= 3).map(s => ({ id: uid++, cat: s.cat, name: String(s.name || CAT[s.cat].label), pts: s.pts.map(p => [+p[0], +p[1]]), hidden: false }));
+    sel = -1; save(); ui(); draw();
+  } catch (e) { alert('Kon dit bestand niet lezen: ' + e.message); }
+  $('file').value = '';
+};
+
+new ResizeObserver(() => { resize(); }).observe(stage);
+resize(); fit(); ui(); setTool('select');
+window.__tracer = { get shapes() { return shapes; }, select, wand, fit };
+</script>
+</body>
+</html>
