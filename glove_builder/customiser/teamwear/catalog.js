@@ -205,13 +205,15 @@ export const PHOTO_COLOURS = {
   purple: 'purple', royal: 'royal', scarlet: 'scarlet', white: 'white',
 };
 // [x, y, w, h, rotate°, skewY°] — the last two turn the logo with the
-// garment, because most photos are taken at an angle.
+// garment, because most photos are taken at an angle. Measured on the photos:
+// tee centre line at x .58 (BST99) / .55 (BST99LS) under the neckline; cap
+// front panels between x .40 and .79, visor seam at y .78.
 export const PHOTO_BOXES = {
-  bst99: { chest: [0.23, 0.27, 0.36, 0.13, 0, -6], heart: [0.47, 0.19, 0.14, 0.08, 0, -6], nape: null, sleeveL: null },
-  bst99ls: { chest: [0.24, 0.25, 0.4, 0.13, 0, -7], heart: [0.5, 0.18, 0.14, 0.07, 0, -7], nape: null, sleeveL: null },
+  bst99: { chest: [0.41, 0.15, 0.34, 0.12, 0, -6], heart: [0.68, 0.15, 0.12, 0.07, 0, -6], nape: null, sleeveL: null },
+  bst99ls: { chest: [0.37, 0.14, 0.32, 0.11, 0, -5], heart: [0.65, 0.14, 0.12, 0.06, 0, -5], nape: null, sleeveL: null },
   bsj200: { chestR: [0.3, 0.22, 0.24, 0.1, 0, -4], heart: [0.73, 0.22, 0.12, 0.1, 0, -10], back: null },
   bsj200back: { back: [0.29, 0.2, 0.48, 0.18, 0, -3] },
-  hc2: { front: [0.29, 0.25, 0.3, 0.22, -6, 0], backArch: null },
+  hc2: { front: [0.45, 0.38, 0.3, 0.27, 4, 0], backArch: null },
 };
 // Where names and numbers sit on a back photo: [cx, nameY, numberY, numberH].
 export const PHOTO_BACK = { bsj200: [0.53, 0.2, 0.5, 0.26] };
