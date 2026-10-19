@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glove Tracer</title>
+<title>SSK Glove Tracer</title>
 <style>
 :root {
   --bg: #f4f2ee; --panel: #ffffff; --ink: #1d1b18; --muted: #6b665e; --line: #ddd8cf;
@@ -12,14 +12,25 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #18171a; --panel: #222126; --ink: #ecebe8; --muted: #a39f97; --line: #3a3840; --accent: #6ea2ff;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #18171a; --panel: #222126; --ink: #ecebe8; --muted: #a39f97; --line: #3a3840; --accent: #6ea2ff;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
+#sheet { position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 70%, transparent); display: grid; place-items: center; padding: 16px; }
+.sheet-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; width: min(760px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+#sheetText { width: 100%; height: 50vh; font: 11px ui-monospace, monospace; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+#sheetMasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+#sheetMasks figure { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+#sheetMasks img { width: 100%; background: #000; border-radius: 4px; }
+#sheetMasks figcaption { color: var(--muted); }
+#status { color: var(--muted); }
 html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
+body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; height: 100%; overflow: hidden; }
 header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
 header h1 { font-size: 14px; margin: 0 12px 0 0; }
 .group { display: flex; gap: 4px; align-items: center; padding-right: 10px; margin-right: 4px; border-right: 1px solid var(--line); }
@@ -94,13 +105,22 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
     <button id="fit" title="Passend maken (0)">Passend <kbd>0</kbd></button>
   </div>
   <div class="group">
-    <button id="exportJson">JSON opslaan</button>
-    <button id="exportPng">PNG-maskers</button>
+    <button id="exportJson" title="Zet alle vormen van alle aanzichten als JSON op het klembord">JSON kopiëren</button>
+    <button id="exportPng" title="Laat de maskers van dit aanzicht zien">Maskers</button>
     <button id="importJson">JSON laden</button>
     <button id="reset" title="Terug naar de voorgetekende versie">Reset</button>
     <input type="file" id="file" accept=".json,application/json" hidden>
+    <span id="status" role="status"></span>
   </div>
 </header>
+<div id="sheet" hidden>
+  <div class="sheet-card">
+    <div class="row"><b id="sheetTitle"></b><button id="sheetClose" style="margin-left:auto">Sluiten</button></div>
+    <p id="sheetNote" class="keys"></p>
+    <textarea id="sheetText" readonly hidden></textarea>
+    <div id="sheetMasks"></div>
+  </div>
+</div>
 <div id="stage">
   <canvas id="cv"></canvas>
   <div id="hud"></div>
@@ -516,10 +536,22 @@ $('selCat').onchange = () => { const s = shapes[sel]; if (!s) return; snap(); s.
 $('del').onclick = () => { if (sel < 0) return; snap(); shapes.splice(sel, 1); sel = -1; save(); ui(); draw(); };
 $('dup').onclick = () => { const s = shapes[sel]; if (!s) return; snap(); shapes.push({ ...s, id: uid++, name: s.name + ' kopie', pts: s.pts.map(p => [p[0] + 10, p[1] + 10]) }); sel = shapes.length - 1; save(); ui(); draw(); };
 $('zoomSel').onclick = () => { if (sel >= 0) zoomTo(bbox(shapes[sel].pts)); };
-$('reset').onclick = () => { if (!confirm('Alles terugzetten naar de voorgetekende versie? Je eigen wijzigingen gaan weg (Ongedaan maken kan nog).')) return; snap(); shapes = fresh(); sel = -1; save(); ui(); draw(); };
+// Reset asks on the button itself: a second click within four seconds.
+let resetArmed = 0;
+$('reset').onclick = () => {
+  if (Date.now() - resetArmed > 4000) { resetArmed = Date.now(); $('reset').textContent = 'Zeker? Klik nog eens'; setTimeout(() => { $('reset').textContent = 'Reset'; }, 4000); return; }
+  resetArmed = 0; $('reset').textContent = 'Reset';
+  snap(); shapes = fresh(); sel = -1; save(); ui(); draw(); say('Teruggezet naar de voorgetekende versie. Ongedaan maken kan nog.');
+};
+let sayT = 0;
+function say(t) { $('status').textContent = t; clearTimeout(sayT); sayT = setTimeout(() => { $('status').textContent = ''; }, 5000); }
+function sheet(title, note) { $('sheetTitle').textContent = title; $('sheetNote').textContent = note; $('sheetText').hidden = true; $('sheetMasks').innerHTML = ''; $('sheet').hidden = false; }
+$('sheetClose').onclick = () => { $('sheet').hidden = true; };
+$('sheet').onclick = e => { if (e.target === $('sheet')) $('sheet').hidden = true; };
 
 // Export / import
-function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+// Saving files is blocked where this page is published, so the trace goes
+// out through the clipboard, and the masks are shown to save from the page.
 $('exportJson').onclick = () => {
   const out = {
     note: 'pts in view canvas pixels, the same space as that view\'s *-data.json; srcPts only where the view has a source photograph',
@@ -530,32 +562,52 @@ $('exportJson').onclick = () => {
       return o;
     })
   };
-  download('glove-trace.json', new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }));
+  const text = JSON.stringify(out);
+  const fallback = () => {
+    sheet('Trace als JSON', 'Kopiëren lukte niet automatisch. De tekst is geselecteerd: druk Cmd+C (of Ctrl+C) en plak hem in een bericht aan Claude.');
+    const t = $('sheetText'); t.hidden = false; t.value = text; t.focus(); t.select();
+  };
+  try {
+    navigator.clipboard.writeText(text).then(() => say(`JSON gekopieerd: ${shapes.length} vormen, ${Math.round(text.length / 1024)} kB. Plak hem in een bericht aan Claude.`), fallback);
+  } catch (e) { fallback(); }
 };
-$('exportPng').onclick = async () => {
-  // this view only: one mask per category at the view's canvas size
+$('exportPng').onclick = () => {
+  sheet(`Maskers · ${DATA.views[VIEW].label}`, `Wit is het onderdeel, ${W}×${H} px, hetzelfde formaat als het aanzicht. Rechtsklik op een masker om het als afbeelding te bewaren.`);
+  let any = false;
   for (const c of CATS) {
     const items = shapes.filter(s => s.view === VIEW && s.cat === c.id); if (!items.length) continue;
     const m = document.createElement('canvas'); m.width = W; m.height = H; const x = m.getContext('2d');
     x.fillStyle = '#fff'; items.forEach(s => { x.beginPath(); s.pts.forEach((p, k) => k ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fill(); });
-    const blob = await new Promise(r => m.toBlob(r, 'image/png'));
-    download(`${VIEW}-${c.id}.png`, blob);
-    await new Promise(r => setTimeout(r, 250));
+    const f = document.createElement('figure'), im = document.createElement('img'), cap = document.createElement('figcaption');
+    im.src = m.toDataURL('image/png'); im.alt = `${VIEW}-${c.id}.png`; cap.textContent = `${VIEW}-${c.id}.png · ${items.length} vormen`;
+    f.append(im, cap); $('sheetMasks').append(f); any = true;
   }
+  if (!any) $('sheetNote').textContent = 'Dit aanzicht heeft nog geen vormen.';
 };
 $('importJson').onclick = () => $('file').click();
+// A trace copied with "JSON kopiëren" can be pasted back anywhere on the page.
+window.addEventListener('paste', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const t = e.clipboardData && e.clipboardData.getData('text');
+  if (!t || !t.includes('"shapes"')) return;
+  e.preventDefault(); loadTrace(t);
+});
 $('file').onchange = async () => {
   const f = $('file').files[0]; if (!f) return;
+  loadTrace(await f.text());
+  $('file').value = '';
+};
+function loadTrace(text) {
   try {
-    const j = JSON.parse(await f.text());
+    const j = JSON.parse(text);
     const arr = Array.isArray(j) ? j : j.shapes;
     if (!Array.isArray(arr)) throw new Error('geen shapes');
     snap();
     shapes = arr.filter(s => CAT[s.cat] && Array.isArray(s.pts) && s.pts.length >= 3).map(s => ({ id: uid++, view: DATA.views[s.view] ? s.view : 'palm', cat: s.cat, name: String(s.name || CAT[s.cat].label), pts: s.pts.map(p => [+p[0], +p[1]]), hidden: false }));
     sel = -1; save(); ui(); draw();
-  } catch (e) { alert('Kon dit bestand niet lezen: ' + e.message); }
-  $('file').value = '';
-};
+    say(`${shapes.length} vormen geladen.`);
+  } catch (e) { say('Kon dit bestand niet lezen: ' + e.message + '. Kies een JSON uit "JSON kopiëren".'); }
+}
 
 // Views and legend
 function setView(v) {
