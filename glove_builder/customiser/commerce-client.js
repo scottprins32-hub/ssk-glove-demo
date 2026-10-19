@@ -1,6 +1,7 @@
 import {API_ENDPOINT,APP_ID,TEST_MODE,API_REVISION} from './commerce-config.js';
 export {TEST_MODE};
 const messages={
+  checkout_approval_pending:['Bestellen is nog niet geopend. Je ontwerp blijft bewaard; SSK geeft bestellen vrij na goedkeuring.','Ordering is awaiting SSK approval. Your saved design remains available.'],
   checkout_storage_required:['Sta sessieopslag toe om veilig af te rekenen, of open de ontwerplink in een andere browser. Bekijken en downloaden blijven beschikbaar.','Allow session storage for secure checkout, or open this design link in another browser. Viewing and downloading remain available.'],
   already_ordered:['Dit ontwerp is al overgedragen als bestelling. Controleer je bestelling bij SSK.','This design has already been ordered. Check your order with SSK.'],
   checkout_not_connected:['Afrekenen wordt binnenkort beschikbaar. Je ontwerp is veilig opgeslagen; je kunt het bewaren of downloaden.','Checkout is not connected yet. Your design is saved; you can keep or download it.'],
