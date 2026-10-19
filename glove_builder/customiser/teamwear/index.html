@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>SSK Europe — Teamkleding samenstellen</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../ds/tokens/fonts.css">
+<link rel="stylesheet" href="../ds/tokens/typography.css">
+<link rel="stylesheet" href="../ds/tokens/spacing.css">
+<link rel="stylesheet" href="../ds/tokens/effects.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="app.css">
+<link rel="modulepreload" href="catalog.js">
+<link rel="modulepreload" href="garments.js">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <img class="wordmark" src="../ssk-logo.svg" width="144" height="40" alt="SSK">
+    <span class="hdr-rule"></span>
+    <span class="hdr-title">
+      <b data-t="builder">Teamkleding samenstellen</b>
+      <i>SSK Europe · Teamwear</i>
+    </span>
+  </div>
+  <div class="hdr-tools">
+    <div class="lang" role="group" aria-label="Taal / Language">
+      <button id="lang-en" class="lang-btn" type="button">EN</button>
+      <button id="lang-nl" class="lang-btn is-on" type="button">NL</button>
+    </div>
+    <button id="cartbtn" class="btn btn-ghost hdr-cart" type="button"><span data-t="order">Teamorder</span> <b id="cartcount">0</b></button>
+    <div class="price">
+      <span class="price-lab" data-t="total">Totaal</span>
+      <span class="price-val" id="price">—</span>
+    </div>
+  </div>
+</header>
+
+<nav class="steps" id="steps" aria-label="Stappen"></nav>
+
+<main class="wrap">
+  <section class="stage">
+    <div class="stage-tag" id="stagetag"></div>
+    <div class="stage-view" id="stageview" role="group"></div>
+    <div class="stage-svg" id="stagesvg"></div>
+    <p class="stage-hint" id="stagehint"></p>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-head">
+      <span class="panel-count"><b id="stepnum">01</b> / <span id="steptot">07</span></span>
+    </div>
+    <h1 class="panel-title" id="steptitle">Product</h1>
+    <p class="panel-lead" id="steplead"></p>
+    <div class="panel-body" id="body"></div>
+  </aside>
+</main>
+
+<footer class="bar">
+  <span class="bar-track"><span class="bar-fill" id="barfill"></span></span>
+  <div class="bar-acts">
+    <button id="prev" class="btn btn-ghost" type="button" data-t="back">Terug</button>
+    <button id="next" class="btn btn-primary" type="button">Verder</button>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
