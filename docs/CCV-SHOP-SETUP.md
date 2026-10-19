@@ -21,6 +21,7 @@ Create a CCV API key for the **SSK Europe shop** with permissions:
 - GET `/api/rest/v1/products/896372573/`
 - POST `/api/rest/v1/orders/`
 - GET `/api/rest/v1/orders/:id/`
+- GET `/api/rest/v1/orders/:id/orderrows/` (verify the product, price and complete specification separately from shipping)
 
 Store only on the dedicated Base44 backend as secrets `CCV_SHOP_API_KEY` (public API key) and `CCV_SHOP_API_SECRET` (HMAC secret). Never put them in HTML, JavaScript, GitHub, a shared design link, or a chat message. Use the Base44 project's Secrets settings. No customer data is requested until CCV checkout.
 
@@ -71,7 +72,7 @@ Official API: https://demo.ccvshop.nl/API/Docs/ (API v1, incomplete orders, orde
 
 ## Proof storage and execution pin
 
-Images are losslessly split into fields of at most 8192 characters within the private snapshot, then reconstructed only after a view-capability or admin check. This avoids the observed Base44 large-string field rejection. A direct 650,000-character storage round trip matched exactly. Private file upload was tested but signed URL creation did not finish; production does not depend on it. No public file hosting is used for customer proofs. The client rejects any API response with a different revision from `ccv-r02-04`. Function `ssk-commerce-v14` is the verified immutable execution name; previous task-created experimental names are retired. Do not assume a successful function deploy means the public runtime switched versions; verify the returned revision.
+Images are losslessly split into fields of at most 8192 characters within the private snapshot, then reconstructed only after a view-capability or admin check. This avoids the observed Base44 large-string field rejection. A direct 650,000-character storage round trip matched exactly. Private file upload was tested but signed URL creation did not finish; production does not depend on it. No public file hosting is used for customer proofs. The client rejects any API response with a different revision from `ccv-r02-04`. Function `ssk-commerce-v14` is the current execution pin; previous task-created experimental names are retired in the remote inventory. Cached older executions may still respond, so verify the returned revision and approval gates rather than inferring invalidation from retirement. Do not assume a successful function deploy means the public runtime switched versions; verify the returned revision.
 
 Proof images originate in the browser and are supporting illustrations, not independently verified production geometry. Server-validated choices and exact personalization are authoritative. Stored proofs are bounded to 2.6 MB base64 per snapshot; the global 100/hour admission limit bounds incoming storage, and is not a per-user limit.
 
