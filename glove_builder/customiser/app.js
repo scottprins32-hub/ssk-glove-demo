@@ -2067,7 +2067,8 @@ $('#redo').onclick = () => {
 
 let starterFlagsReady = false;
 const savedDraft = load();
-const requestedInitialView = decodeState(location.hash.slice(1))?.view;
+const requestedInitialView = decodeState(location.hash.slice(1))?.view
+  || (savedDraft && typeof savedDraft === 'object' ? savedDraft.view : null);
 loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedInitialView)
   ? requestedInitialView : 'back' }).then(async bundle => {
   DATA = bundle.DATA;
@@ -2082,13 +2083,6 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   const est = estimatedThumbViews(R.views.thumb);
   if (est) { Object.assign(R.views, est.views); Object.assign(C3_ROUTE, est.bodyOfWeb); }
   ctx = $('#glove').getContext('2d');
-  R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
-    starterFlagsReady = true;
-    // Flag selection keeps its own decoded callback; only starter cards need
-    // refreshing when the complete flag set becomes available.
-    if (S.step === 0) paint();
-  });
-
   applyStarter(STARTERS[0], true);
   S.startId = STARTERS[0].id;
   // Shared links open directly; a saved draft restores automatically so the
@@ -2174,6 +2168,12 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if(image) { nativeFrames.select(defaultVisual);nativeFrames.put(nativeFrameKey('back'),image); }
   }
   draw(); paint();
+  R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
+    starterFlagsReady = true;
+    // Flag selection keeps its own decoded callback; only starter cards need
+    // refreshing when the complete flag set becomes available.
+    if (S.step === 0) paint();
+  });
   // The selected back is decoded and drawn. Prepare angles while starter
   // cards render, at low network priority; a customer may switch immediately.
   // Failures remain retryable through the normal selected-view load path.

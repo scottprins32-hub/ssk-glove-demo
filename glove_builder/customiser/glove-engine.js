@@ -174,7 +174,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       const selections = new Map();
       const loadAssets = async (keys, priority = 'auto') => {
         // Explicit selections share in-flight decodes with the base and previews.
-        const parallelImages = (window.__SSK_PERF__?.protocol || location.protocol) === 'https:' ? 96 : 8;
+        const parallelImages = 96;
         let next = 0;
         await Promise.all(Array.from({length: Math.min(parallelImages, keys.length)}, async () => {
           while (next < keys.length) {
@@ -582,24 +582,28 @@ export class GloveRenderer {
     const g = c.getContext('2d', {willReadFrequently:true});
     g.drawImage(img,-x0,-y0);
     const base=g.getImageData(0,0,width,height).data;
-    g.clearRect(0,0,width,height);
-    if(hi)g.drawImage(hi,-x0,-y0);
-    const light=g.getImageData(0,0,width,height).data;
+    let light=null;
+    if(hi){
+      g.clearRect(0,0,width,height);
+      g.drawImage(hi,-x0,-y0);
+      light=g.getImageData(0,0,width,height).data;
+    }
     const tone=new Float32Array(width*height), hist=new Uint32Array(766);
     let n=0, rx0=width, ry0=height, rx1=0, ry1=0;
     for(let i=0,j=0;i<base.length;i+=4,j++){
-      if (!base[i+3] && !light[i+3]) continue;
-      if(base[i+3]) {
-        const x=j%width,y=Math.floor(j/width);
+      const ba=base[i+3], la=light ? light[i+3] : 0;
+      if (!ba && !la) continue;
+      if(ba) {
+        const x=j%width,y=(j/width)|0;
         if(x<rx0)rx0=x;if(x>=rx1)rx1=x+1;
         if(y<ry0)ry0=y;if(y>=ry1)ry1=y+1;
       }
       // Source pairs split diffuse and specular at neutral grey. Recombine
       // for calibration so clipped white diffuse retains its highlight detail.
       const v=(base[i]+base[i+1]+base[i+2])/3
-        +2*(light[i]+light[i+1]+light[i+2])/3*light[i+3]/255;
+        +(la ? 2*(light[i]+light[i+1]+light[i+2])/3*la/255 : 0);
       tone[j]=v;
-      if(base[i+3]>=245){hist[Math.min(765,Math.round(v))]++;n++;}
+      if(ba>=245){hist[Math.min(765,Math.round(v))]++;n++;}
     }
     if(n<64)return null; // no invented texture on empty/tiny masks
     const quantile=q=>{let total=0;for(let i=0;i<hist.length;i++){total+=hist[i];if(total>=n*q)return i;}return 255;};
@@ -617,16 +621,23 @@ export class GloveRenderer {
       g.clearRect(0,0,width,height); g.drawImage(this.imgs[local.mask],-x0,-y0);
       localMask=g.getImageData(0,0,width,height).data;
     }
-    for(let j=0;j<tone.length;j++){
-      const v=tone[j];
-      const normal=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
-      const weight=localMask ? localMask[j*4]/255*localMask[j*4+3]/255 : 0;
-      if (weight) {
-        const scale=v<local.mid ? Math.min(1,40/Math.max(1,local.mid-local.lo))
-          : Math.min(1,22/Math.max(1,local.high-local.mid));
-        const corrected=Math.max(0,Math.min(280,248+(v-local.mid)*scale));
-        tone[j]=normal*(1-weight)+corrected*weight;
-      } else tone[j]=normal;
+    if (localMask) {
+      for(let j=0;j<tone.length;j++){
+        const v=tone[j];
+        const normal=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
+        const weight=localMask[j*4]/255*localMask[j*4+3]/255;
+        if (weight) {
+          const scale=v<local.mid ? Math.min(1,40/Math.max(1,local.mid-local.lo))
+            : Math.min(1,22/Math.max(1,local.high-local.mid));
+          const corrected=Math.max(0,Math.min(280,248+(v-local.mid)*scale));
+          tone[j]=normal*(1-weight)+corrected*weight;
+        } else tone[j]=normal;
+      }
+    } else {
+      for(let j=0;j<tone.length;j++){
+        const v=tone[j];
+        tone[j]=Math.max(0,Math.min(280,248+(v-mid)*(v<mid?lower:upper)));
+      }
     }
     // The generated input is material only. Source geometry, masks and all
     // picking remain unchanged. Embroidery/thread never enter this path.

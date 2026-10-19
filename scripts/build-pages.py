@@ -39,8 +39,10 @@ def build():
     import re
     index = re.sub(r'<link rel="preload"[^>]*as="image"[^>]*>\n?', '', index)
     index = re.sub(r'<link rel="preload"[^>]*href="assets/glove-data.json"[^>]*>\n?', '', index)
-    index = index.replace('<link rel="modulepreload" href="refcode.js">',
-        '<link rel="modulepreload" href="refcode.js">\n<link rel="modulepreload" href="gallery-store.js">\n<link rel="modulepreload" href="commerce-pricing.js">')
+    for mod in ('render-cache.js', 'gallery-store.js', 'commerce-pricing.js'):
+        if f'href="{mod}"' not in index:
+            index = index.replace('<link rel="modulepreload" href="refcode.js">',
+                f'<link rel="modulepreload" href="refcode.js">\n<link rel="modulepreload" href="{mod}">')
     preloads = '<link rel="preload" href="assets/runtime/back.pack" as="fetch" crossorigin fetchpriority="high">\n'
     for angle in ('palm','pinky'):
         preloads += f'<link rel="preload" href="assets/runtime/{angle}.pack" as="fetch" crossorigin fetchpriority="low">\n'
