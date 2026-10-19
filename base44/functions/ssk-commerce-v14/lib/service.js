@@ -82,8 +82,11 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
           return {url:result.url};
         } catch(error) {
           // After claim, any interruption could conceal a successful CCV write. Never retry the POST automatically.
-          await store.update(d.id,{status:'uncertain',last_error:error.code||'checkout_outcome_unknown'}).catch(()=>{});
-          throw new CommerceError('checkout_needs_review',409);
+          await store.update(d.id,{status:'uncertain',last_error:error.code||'checkout_outcome_unknown',
+            ...(Number.isSafeInteger(error.ccvOrderId)&&error.ccvOrderId>0?{ccv_order_id:error.ccvOrderId}:{})}).catch(()=>{});
+          const failure=new CommerceError('checkout_needs_review',409);
+          failure.upstreamStatus=error.upstreamStatus;failure.upstreamDetail=error.upstreamDetail;
+          throw failure;
         }
       }
       case 'status': {
@@ -102,6 +105,14 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
         if(!d)throw new CommerceError('design_not_found',404);return publicDraft(d);
       }
       case 'admin-check':await requireAdmin(user);return {connected:ccv.configured,checkoutEnabled:ccv.configured&&checkoutEnabled===true,acceptanceTestsEnabled:acceptanceTestsEnabled===true,product:ccv.configured?{id:(await checkPrice()).id}:null,shop:SHOP};
+      case 'admin-order-check': {
+        await requireAdmin(user);const d=await store.get(body.id);
+        if(!d?.ccv_order_id)throw new CommerceError('design_not_found',404);
+        const order=await ccv.order(d.ccv_order_id,d),row=order.verifiedRow;
+        return {orderId:order.id,paid:order.paid===true,completed:order.is_completed===true,currency:order.currency,
+          gloveTotal:d.quote.total,shipping:Number(order.total_shipping),total:Number(order.total_price),
+          taxPercent:Number(row.tax),specificationVerified:true};
+      }
       case 'admin-reconcile': {
         await requireAdmin(user);
         const d=await store.get(body.id);

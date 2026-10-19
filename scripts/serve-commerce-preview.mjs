@@ -28,10 +28,10 @@ http.createServer(async(req,res)=>{
    const input=JSON.parse(body);
    if(simulate){try{const result=await simulate(input);res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...result,apiRevision:API_REVISION}));}catch(e){res.writeHead(e.status||503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:e.code||'service_unavailable'}));}return;}
    if(!['config','create','copy','read','status'].includes(input.action)){res.writeHead(403);res.end('{"error":"preview_read_only_checkout"}');return;}
-   const upstream=await fetch('https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v11',{method:'POST',headers:{'Content-Type':'application/json','X-App-Id':'6acecad7d76f2c87da8db964'},body});
+   const upstream=await fetch('https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v14',{method:'POST',headers:{'Content-Type':'application/json','X-App-Id':'6acecad7d76f2c87da8db964'},body});
    const reply=await upstream.text();console.log(JSON.stringify({action:input.action,requestBytes:Buffer.byteLength(body),status:upstream.status,error:upstream.ok?undefined:reply.slice(0,160)}));res.writeHead(upstream.status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(reply);return;
   }
-  if(url.pathname==='/commerce-config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end("export const API_ENDPOINT='/api/commerce';export const APP_ID='6acecad7d76f2c87da8db964';export const TEST_MODE=true;export const API_REVISION='ccv-r02-01';");return;}
+  if(url.pathname==='/commerce-config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end("export const API_ENDPOINT='/api/commerce';export const APP_ID='6acecad7d76f2c87da8db964';export const TEST_MODE=true;export const API_REVISION='ccv-r02-04';");return;}
   const filename=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!filename.startsWith(root+path.sep)||!(await stat(filename)).isFile()){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'Content-Type':types[path.extname(filename)]||'application/octet-stream','Cache-Control':'no-store'});res.end(await readFile(filename));

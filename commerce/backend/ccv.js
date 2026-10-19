@@ -1,4 +1,5 @@
-import {SHOP,CommerceError,safeCheckoutUrl} from '../../glove_builder/customiser/commerce-contract.js';
+import {SHOP,CommerceError,safeCheckoutUrl,specification} from '../../glove_builder/customiser/commerce-contract.js';
+const specificationLines=draft=>specification(draft.design).map(([key,value])=>`${key}: ${value}`);
 const encoder=new TextEncoder();
 export async function signRequest(key,secret,method,path,body,date) {
   const signingKey=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-512'},false,['sign']);
@@ -9,15 +10,25 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
   const configured=!!key&&!!secret;
   async function request(method,path,data) {
     if(!configured) throw new CommerceError('checkout_not_connected',503);
-    if(!/^\/api\/rest\/v1\/(products|orders)\/[0-9/]*$/.test(path)) throw new CommerceError('invalid_upstream_path',500);
+    if(!/^\/api\/rest\/v1\/(?:products\/[0-9]+\/|orders\/(?:[0-9]+\/(?:orderrows\/)?)?)$/.test(path)) throw new CommerceError('invalid_upstream_path',500);
     const body=data===undefined?'':JSON.stringify(data),date=now().toISOString().replace(/\.\d{3}Z$/,'Z');
     const signature=await signRequest(key,secret,method,path,body,date);
     let response;
-    try {response=await fetcher(SHOP.origin+path,{method,redirect:'error',signal:AbortSignal.timeout(15000),
+    try {response=await fetcher(SHOP.origin+path,{method,redirect:'manual',signal:AbortSignal.timeout(15000),
       headers:{'x-public':key,'x-date':date,'x-hash':signature,'Content-Type':'application/json','Accept':'application/json'},
       ...(data===undefined?{}:{body})});}
-    catch {throw new CommerceError(method==='POST'?'checkout_outcome_unknown':'shop_unavailable',502);}
-    if(!response.ok) throw new CommerceError(method==='POST'?'checkout_outcome_unknown':response.status===401||response.status===403?'shop_access_denied':'shop_unavailable',502);
+    catch(cause) {
+      const error=new CommerceError(method==='POST'?'checkout_outcome_unknown':'shop_unavailable',502);
+      error.upstreamDetail=String(cause?.message||cause?.name||'Network request failed').slice(0,500).replaceAll(key,'[redacted]').replaceAll(secret,'[redacted]');
+      throw error;
+    }
+    if(!response.ok) {
+      const error=new CommerceError(method==='POST'?'checkout_outcome_unknown':response.status===401||response.status===403?'shop_access_denied':'shop_unavailable',502);
+      error.upstreamStatus=response.status;
+      // Only returned to an authenticated administrator requesting diagnostics.
+      error.upstreamDetail=(await response.text()).slice(0,1200).replaceAll(key,'[redacted]').replaceAll(secret,'[redacted]');
+      throw error;
+    }
     try{return await response.json();}catch{throw new CommerceError(method==='POST'?'checkout_outcome_unknown':'invalid_checkout_response',502);}
   }
   async function product() {
@@ -27,12 +38,21 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
   }
   function verifyOrder(order,draft) {
     if(!Number.isSafeInteger(order.id)||order.id<1||order.reservationnumber!==`SSK-${draft.id}`||order.currency!=='EUR'||
-      Math.round(Number(order.total_orderrow_price)*100)!==draft.quote.total||order.order_row_taxes_included!==true) throw new CommerceError('checkout_verification_failed',502);
+      order.order_row_taxes_included!==true) throw new CommerceError('checkout_verification_failed',502);
     return order;
   }
   async function order(id,draft) {
     if(!Number.isSafeInteger(id)||id<1) throw new CommerceError('invalid_order_id');
-    return verifyOrder(await request('GET',`/api/rest/v1/orders/${id}/`),draft);
+    const verified=verifyOrder(await request('GET',`/api/rest/v1/orders/${id}/`),draft);
+    // CCV's aggregate total_orderrow_price includes shop shipping. Verify the
+    // actual product row, leaving delivery costs to the shop's checkout.
+    const rows=await request('GET',`/api/rest/v1/orders/${id}/orderrows/`),row=rows.items?.[0];
+    if(verified.id!==id||!Array.isArray(rows.items)||rows.items.length!==1||rows.next||row.order_id!==id||row.product_id!==SHOP.productId||Number(row.count)!==1||
+      Number(row.discount)!==0||Math.round(Number(row.price)*100)!==draft.quote.total||
+      Math.round(Number(row.total_price)*100)!==draft.quote.total||!Number.isFinite(Number(row.tax))||Number(row.tax)<0||Number(row.tax)>100||
+      typeof row.memo!=='string'||!row.memo.includes(`Snapshot: ${draft.id}`)||
+      !specificationLines(draft).every(line=>row.memo.split('\n').includes(line)))throw new CommerceError('checkout_verification_failed',502);
+    return {...verified,verifiedRow:row};
   }
   return {configured,product,order,async prepare(draft,memo) {
     await product();
@@ -41,8 +61,10 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
       reservationnumber:`SSK-${draft.id}`,customer:{},
       orderrows:[{product_id:SHOP.productId,count:1,price:draft.quote.total/100,discount:0,memo}]});
     if(!Number.isSafeInteger(created.id)||created.id<1) throw new CommerceError('checkout_outcome_unknown',502);
-    const verified=await order(created.id,draft);
-    if(verified.is_completed!==false||verified.paid!==false) throw new CommerceError('checkout_verification_failed',502);
-    return {id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href)};
+    try {
+      const verified=await order(created.id,draft);
+      if(verified.is_completed!==false||verified.paid!==false) throw new CommerceError('checkout_verification_failed',502);
+      return {id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href)};
+    }catch(error){error.ccvOrderId=created.id;throw error;}
   }};
 }

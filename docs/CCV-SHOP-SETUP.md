@@ -22,9 +22,17 @@ Create a CCV API key for the **SSK Europe shop** with permissions:
 - POST `/api/rest/v1/orders/`
 - GET `/api/rest/v1/orders/:id/`
 
-Store only on the dedicated Base44 backend as secrets `CCV_API_KEY` (public API key) and `CCV_API_SECRET` (HMAC secret). Never put them in HTML, JavaScript, GitHub, a shared design link, or a chat message. Use the Base44 project's Secrets settings. No customer data is requested until CCV checkout.
+Store only on the dedicated Base44 backend as secrets `CCV_SHOP_API_KEY` (public API key) and `CCV_SHOP_API_SECRET` (HMAC secret). Never put them in HTML, JavaScript, GitHub, a shared design link, or a chat message. Use the Base44 project's Secrets settings. No customer data is requested until CCV checkout.
 
-The app/function ID is `6acecad7d76f2c87da8db964`; function name `ssk-commerce-v10`. Entity RLS permits only admins; the function exposes separate random read/checkout capabilities, storing only their hashes. A shared read link cannot reopen another buyer's cart. Owning checkout capability is kept in sessionStorage, so a different browser creates its own fixed copy. Do not use the visible SSK reference code as authorization.
+The app/function ID is `6acecad7d76f2c87da8db964`; function name `ssk-commerce-v14`. Entity RLS permits only admins; the function exposes separate random read/checkout capabilities, storing only their hashes. A shared read link cannot reopen another buyer's cart. Owning checkout capability is kept in sessionStorage, so a different browser creates its own fixed copy. Do not use the visible SSK reference code as authorization.
+
+## Separate approval and test switches
+
+Credentials establish a connection only. `CCV_LIVE_ORDERING_V14_ENABLED` defaults to off; only the exact server value `true` permits public checkout. Keep it `false` until Pim approves the ordering flow. Public request fields cannot override it, and pausing also blocks previously prepared checkout links. Saving, sharing and downloads remain available.
+
+`CCV_ACCEPTANCE_V14_TESTS_ENABLED` is a separate temporary server switch, off by default. With this switch enabled, only an authenticated Base44 administrator can call `admin-test-checkout`, and must also provide the snapshot's checkout capability, `confirmed: true`, and `purpose: "acceptance-test"`. Test baskets use the real quote and specification but are created unpaid and incomplete with an explicit **ACCEPTANCE TEST — DO NOT FULFIL** memo. Never complete or pay them without separate authorization. Disable this switch immediately after the bounded test. Keep the legacy unversioned switches `CCV_LIVE_ORDERING_ENABLED` and `CCV_ACCEPTANCE_TESTS_ENABLED` false permanently; they must not activate retired handlers. Public checkout remains blocked throughout.
+
+Legacy functions used different credential names. **Never install `CCV_API_KEY` or `CCV_API_SECRET`**: a retired endpoint was observed serving cached old code after deletion. The isolated `CCV_SHOP_*` names prevent that code from acquiring CCV credentials. Verify secret names, active function/revision and the public checkout rejection after every deployment; a successful CLI deployment/deletion alone is insufficient.
 
 ## Acceptance after keys are installed
 
@@ -53,7 +61,7 @@ node scripts/serve-commerce-preview.mjs
 
 Preview: http://127.0.0.1:8892/ . It is visibly test-labelled, proxies only config/create/copy/read/status to the deployed function, and blocks checkout and admin calls. Synthetic designs are saved on Base44; it is not an offline simulator.
 
-Deploy only the named `ssk-commerce-v10` function from the linked dedicated Base44 project. Its generated `lib/` contains canonical dependencies because the platform rejects imports outside the function directory. Never use full entity push or `--force` on an existing app. New private schemas were installed individually. Global rate singleton ID `6ad0d87a4f12d75db8726165` must exist: admission fails closed if missing. It bounds saved snapshots at 100/hour across the app, not per visitor. This is a resource bound, not DDoS protection.
+Deploy only the named `ssk-commerce-v14` function from the linked dedicated Base44 project. Its generated `lib/` contains canonical dependencies because the platform rejects imports outside the function directory. Never use full entity push or `--force` on an existing app. New private schemas were installed individually. Global rate singleton ID `6ad0d87a4f12d75db8726165` must exist: admission fails closed if missing. It bounds saved snapshots at 100/hour across the app, not per visitor. This is a resource bound, not DDoS protection.
 
 Order links expire after 30 days. Expiry blocks capability access; records remain private for administrator support. There is no scheduled deletion yet. Maximum proof payload is 2.6 MB base64; individual image limit 1.1 MB. Source glove images and lace bytes are unchanged. Admin SDK is loaded on the separate admin page; ordering modules load only at review.
 
@@ -63,12 +71,16 @@ Official API: https://demo.ccvshop.nl/API/Docs/ (API v1, incomplete orders, orde
 
 ## Proof storage and execution pin
 
-Images are losslessly split into fields of at most 8192 characters within the private snapshot, then reconstructed only after a view-capability or admin check. This avoids the observed Base44 large-string field rejection. A direct 650,000-character storage round trip matched exactly. Private file upload was tested but signed URL creation did not finish; production does not depend on it. No public file hosting is used for customer proofs. The client rejects any API response with a different revision from `ccv-r01-14`. Function `ssk-commerce-v10` is the verified immutable execution name; previous task-created experimental names are retired. Do not assume a successful function deploy means the public runtime switched versions; verify the returned revision.
+Images are losslessly split into fields of at most 8192 characters within the private snapshot, then reconstructed only after a view-capability or admin check. This avoids the observed Base44 large-string field rejection. A direct 650,000-character storage round trip matched exactly. Private file upload was tested but signed URL creation did not finish; production does not depend on it. No public file hosting is used for customer proofs. The client rejects any API response with a different revision from `ccv-r02-04`. Function `ssk-commerce-v14` is the verified immutable execution name; previous task-created experimental names are retired. Do not assume a successful function deploy means the public runtime switched versions; verify the returned revision.
 
 Proof images originate in the browser and are supporting illustrations, not independently verified production geometry. Server-validated choices and exact personalization are authoritative. Stored proofs are bounded to 2.6 MB base64 per snapshot; the global 100/hour admission limit bounds incoming storage, and is not a per-user limit.
 
 ## Current delivery status
 
-Backend v10/revision14 is deployed. The commerce frontend is built and available in the local test preview; the existing production glove frontend is preserved. Final independent integration review passed the bounded build/access/responsive scope. 74 deterministic tests passed. See `outputs/ccv-commerce-r01/STATE.md` for evidence and remaining activation gates.
+The original v10/revision14 preparation and 74-test report are historical evidence under `outputs/ccv-commerce-r01/`. Current connection, approval controls and executed acceptance results are recorded in the dated CCV connection release report. Do not treat the historical integration review as current checkout acceptance.
 
 The production store adapter uses equality-based conditional updates. Observed Base44 no-match HTTP500 responses are handled with bounded rate retries; checkout claim ambiguity fails closed after reading current state. There is no automatic retry of an external order POST. Real interrupted-CCV reconciliation still requires the agreed credentialed acceptance test.
+
+## Executed connection acceptance
+
+See [19 October 2026 acceptance](CCV-ACCEPTANCE-2026-10-19.md) for actual tests, amounts, remaining payment/merchant gates and activation instructions.
