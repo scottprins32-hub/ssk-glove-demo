@@ -1,6 +1,7 @@
 // SSK Europe teamwear catalogue: what a club can order and what each part of
-// it may be. Garment prices are PRICE_PENDING until Pim sends them; the page
-// shows "prijs volgt" for them and never invents a number.
+// it may be. Garment prices are the plain item's price in the SSK Europe CCV
+// shop (incl. VAT, read 19 Oct 2026; see docs/apparel/). Where the shop has no
+// plain equivalent the price is PRICE_PENDING and the page says "prijs volgt".
 export const PRICE_PENDING = null;
 
 // Team colours. These are garment colours a club can pick, not interface
@@ -86,8 +87,8 @@ export const PRODUCTS = [
     blurb: { nl: 'Wedstrijdshirt met knopen, voor baseball en softbal.', en: 'Button game jersey for baseball and softball.' },
     price: PRICE_PENDING,
     variants: [
-      { id: 'full', nl: 'Volledig doorknoopt', en: 'Full button', neck: 'vbutton', placket: 'full' },
-      { id: 'two', nl: 'Two-button', en: 'Two-button', neck: 'vbutton', placket: 'two' },
+      { id: 'full', nl: 'Volledig doorknoopt', en: 'Full button', neck: 'vbutton', placket: 'full', price: 29.50, sku: 'JE BUTTON' },
+      { id: 'two', nl: 'Two-button', en: 'Two-button', neck: 'vbutton', placket: 'two', price: 28.00, sku: 'BST62' },
       { id: 'crew', nl: 'Ronde hals (gesublimeerd)', en: 'Crew neck (sublimated)', neck: 'crew' },
     ],
     zones: [Z('body', 'Romp', 'Body', 'white'), Z('sleeves', 'Mouwen', 'Sleeves', 'black'), Z('trim', 'Boord & mouwrand', 'Collar & cuffs', 'scarlet'), Z('piping', 'Bies', 'Piping', 'scarlet'), Z('buttons', 'Knopen', 'Buttons', 'black')],
@@ -99,8 +100,8 @@ export const PRODUCTS = [
     blurb: { nl: 'Lang, knicker of short; met of zonder bies.', en: 'Full length, knicker or shorts; with or without piping.' },
     price: PRICE_PENDING,
     variants: [
-      { id: 'long', nl: 'Lang', en: 'Full length', length: 'long' },
-      { id: 'knicker', nl: 'Knicker', en: 'Knicker', length: 'knicker' },
+      { id: 'long', nl: 'Lang', en: 'Full length', length: 'long', price: 45.00, sku: 'BP60' },
+      { id: 'knicker', nl: 'Knicker', en: 'Knicker', length: 'knicker', price: 47.50, sku: 'BP68' },
       { id: 'short', nl: 'Short', en: 'Shorts', length: 'short' },
     ],
     zones: [Z('body', 'Broek', 'Pants', 'white'), Z('waist', 'Tailleband & lussen', 'Waistband & loops', 'black'), Z('piping', 'Bies', 'Piping', 'scarlet')],
@@ -112,8 +113,8 @@ export const PRODUCTS = [
     blurb: { nl: 'Dik met lange mouwen, of dun met korte mouwen en zakken.', en: 'Heavy with long sleeves, or light with short sleeves and pockets.' },
     price: PRICE_PENDING,
     variants: [
-      { id: 'thick', nl: 'Dik, lange mouwen', en: 'Heavy, long sleeves', zip: 'half', sleeve: 'long' },
-      { id: 'thin', nl: 'Dun, korte mouwen met zakken (BSJ200)', en: 'Light, short sleeves with pockets (BSJ200)', zip: 'half', sleeve: 'short', pockets: true, photo: 'bsj200' },
+      { id: 'thick', nl: 'Dik, lange mouwen', en: 'Heavy, long sleeves', zip: 'half', sleeve: 'long', price: 38.00, sku: 'SSK-WB' },
+      { id: 'thin', nl: 'Dun, korte mouwen met zakken (BSJ200)', en: 'Light, short sleeves with pockets (BSJ200)', zip: 'half', sleeve: 'short', pockets: true, photo: 'bsj200', price: 37.50, sku: 'BSJ200' },
     ],
     zones: [Z('body', 'Romp', 'Body', 'black'), Z('yoke', 'Schouderpas', 'Shoulder yoke', 'black'), Z('sleeves', 'Mouwen', 'Sleeves', 'black'), Z('stripe', 'Mouwstreep', 'Sleeve stripe', 'scarlet'), Z('trim', 'Kraag & boorden', 'Collar & ribbing', 'scarlet'), Z('pocket', 'Zakken', 'Pockets', 'black'), Z('zipper', 'Rits', 'Zip', 'white')],
     placements: [
@@ -129,11 +130,11 @@ export const PRODUCTS = [
     price: PRICE_PENDING,
     variants: [
       { id: 'pullover', nl: 'Pullover', en: 'Pullover', zip: false },
-      { id: 'zip', nl: 'Met rits', en: 'Full zip', zip: true },
+      { id: 'zip', nl: 'Met rits', en: 'Full zip', zip: true, unpriced: true }  // the shop sells pullovers only,
     ],
     materials: [
-      { id: 'cotton', nl: 'Katoen', en: 'Cotton' },
-      { id: 'drigear', nl: 'Polyester (DRI-GEAR)', en: 'Polyester (DRI-GEAR)' },
+      { id: 'cotton', nl: 'Katoen', en: 'Cotton', price: 37.95, sku: 'Z265' },
+      { id: 'drigear', nl: 'Polyester (DRI-GEAR)', en: 'Polyester (DRI-GEAR)', price: 37.95, sku: 'FLH2' },
     ],
     zones: [Z('body', 'Romp', 'Body', 'black'), Z('sleeves', 'Mouwen', 'Sleeves', 'black'), Z('hood', 'Capuchon', 'Hood', 'black'), Z('pocket', 'Buidelzak', 'Pocket', 'black'), Z('trim', 'Boorden', 'Ribbing', 'black'), Z('drawcord', 'Koord', 'Drawcord', 'white'), Z('zipper', 'Rits', 'Zip', 'white')],
     placements: [
@@ -148,8 +149,8 @@ export const PRODUCTS = [
     blurb: { nl: 'Trainings- en supportersshirt, korte of lange mouw.', en: 'Practice and fan tee, short or long sleeve.' },
     price: PRICE_PENDING,
     variants: [
-      { id: 'short', nl: 'Korte mouw (BST99)', en: 'Short sleeve (BST99)', neck: 'crew', photo: 'bst99' },
-      { id: 'long', nl: 'Lange mouw (BST99LS)', en: 'Long sleeve (BST99LS)', neck: 'crew', sleeve: 'long', photo: 'bst99ls' },
+      { id: 'short', nl: 'Korte mouw (BST99)', en: 'Short sleeve (BST99)', neck: 'crew', photo: 'bst99', price: 12.95, sku: 'BST99' },
+      { id: 'long', nl: 'Lange mouw (BST99LS)', en: 'Long sleeve (BST99LS)', neck: 'crew', sleeve: 'long', photo: 'bst99ls', price: 14.95, sku: 'BST99LS' },
     ],
     zones: [Z('body', 'Romp', 'Body', 'black'), Z('sleeves', 'Mouwen', 'Sleeves', 'black'), Z('trim', 'Boord', 'Collar', 'black')],
     placements: SHIRT_FRONT,
@@ -169,8 +170,8 @@ export const PRODUCTS = [
     blurb: { nl: 'Open of dicht. Borduren vanaf 12 stuks.', en: 'Open or closed back. Embroidery from 12 pieces.' },
     price: PRICE_PENDING,
     variants: [
-      { id: 'closed', nl: 'Dicht (fitted, HC2)', en: 'Closed back (fitted, HC2)', closure: 'fitted', sizes: ['fitted'], photo: 'hc2' },
-      { id: 'open', nl: 'Open (verstelbaar)', en: 'Open back (adjustable)', closure: 'snap', sizes: ['one'] },
+      { id: 'closed', nl: 'Dicht (fitted, HC2)', en: 'Closed back (fitted, HC2)', closure: 'fitted', sizes: ['fitted'], photo: 'hc2', price: 14.95, sku: 'HC2' },
+      { id: 'open', nl: 'Open (verstelbaar)', en: 'Open back (adjustable)', closure: 'snap', sizes: ['one'], price: 11.45, sku: 'HC4' },
     ],
     zones: [Z('front', 'Voorpanelen', 'Front panels', 'black'), Z('sides', 'Zij- & achterpanelen', 'Side & back panels', 'black'), Z('visor', 'Klep', 'Visor', 'black'), Z('button', 'Knoop', 'Button', 'scarlet'), Z('trim', 'Sluiting', 'Closure', 'black')],
     placements: [
@@ -183,7 +184,7 @@ export const PRODUCTS = [
     nl: 'Sokken', en: 'Socks',
     blurb: { nl: 'Teamsokken in clubkleuren.', en: 'Team socks in club colours.' },
     price: PRICE_PENDING,
-    variants: [{ id: 'std', nl: 'Halfhoog', en: 'Crew' }],
+    variants: [{ id: 'std', nl: 'Halfhoog', en: 'Crew', price: 7.50, sku: 'AS2' }],
     zones: [Z('body', 'Sok', 'Sock', 'black'), Z('trim', 'Boord', 'Cuff', 'scarlet'), Z('stripe', 'Streep', 'Stripe', 'white')],
     placements: [],
   },

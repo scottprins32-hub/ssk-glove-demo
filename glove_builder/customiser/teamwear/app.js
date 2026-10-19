@@ -159,8 +159,11 @@ function priceOf(item) {
   const sp = specFor(p, item.variantId);
   const q = qtyOf(item);
   const lines = []; const pending = [];
-  if (p.price == null) pending.push(`${L(p)} (${t().garment})`);
-  else lines.push({ code: p.id.toUpperCase(), label: L(p), unit: p.price, qty: q });
+  const material = p.materials?.find(m => m.id === item.material);
+  const base = sp.variant.unpriced ? null : material?.price ?? sp.variant.price ?? p.price;
+  const sku = material?.sku ?? sp.variant.sku ?? p.id.toUpperCase();
+  if (base == null) pending.push(`${L(p)} (${t().garment})`);
+  else lines.push({ code: sku, label: `${L(p)} · ${L(sp.variant)}${material ? ` · ${L(material)}` : ''}`, unit: base, qty: q });
   sp.placements.forEach(pl => {
     const d = decoChoice(item, pl);
     if (!d || (pl.clashesWithNames && p.names && item.names.enabled)) return;
