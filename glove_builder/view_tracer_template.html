@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Palm Tracer</title>
+<title>Glove Tracer</title>
 <style>
 :root {
   --bg: #f4f2ee; --panel: #ffffff; --ink: #1d1b18; --muted: #6b665e; --line: #ddd8cf;
@@ -19,7 +19,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
+body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
 header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
 header h1 { font-size: 14px; margin: 0 12px 0 0; }
 .group { display: flex; gap: 4px; align-items: center; padding-right: 10px; margin-right: 4px; border-right: 1px solid var(--line); }
@@ -33,7 +33,7 @@ button:disabled { opacity: .45; cursor: default; }
 #stage { position: relative; overflow: hidden; background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 20px 20px; }
 #stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #hud { position: absolute; left: 10px; bottom: 10px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; color: var(--muted); pointer-events: none; max-width: calc(100% - 20px); }
-aside { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+aside { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow-x: hidden; }
 aside section { padding: 10px 12px; border-bottom: 1px solid var(--line); }
 aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
 #list { overflow: auto; flex: 1; padding: 6px 0; }
@@ -47,6 +47,12 @@ aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; co
 .item .eye { width: 18px; text-align: center; color: var(--muted); }
 .item .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item .v { color: var(--muted); font-size: 11px; }
+#legend { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 8px; }
+.lg { display: flex; gap: 6px; align-items: center; cursor: pointer; border-radius: 4px; padding: 1px 4px; }
+.lg:hover, .lg.on { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.lg .sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #0003; flex: none; }
+.lg span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#views button { min-width: 0; }
 .row { display: flex; gap: 6px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
 .row label { color: var(--muted); min-width: 70px; }
 .row input[type=text] { flex: 1; min-width: 0; }
@@ -61,7 +67,8 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 </head>
 <body>
 <header>
-  <h1>Palm tracer</h1>
+  <h1>Tracer</h1>
+  <div class="group" id="views"></div>
   <div class="group" id="tools">
     <button data-tool="select" title="Selecteren en punten verslepen (V)">Selecteer <kbd>V</kbd></button>
     <button data-tool="pen" title="Polygoon klikken (P)">Pen <kbd>P</kbd></button>
@@ -76,11 +83,10 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   <div class="group">
     <span>Achtergrond</span>
     <select id="bg">
+      <option value="render">Builder (alle onderdelen in eigen kleur)</option>
       <option value="photo">Foto (rainbow)</option>
-      <option value="render">Render (palm view)</option>
       <option value="none">Geen</option>
     </select>
-    <label><input type="checkbox" id="oldMasks"> Huidige maskers</label>
   </div>
   <div class="group">
     <button id="undo" title="Ctrl/Cmd+Z">Ongedaan</button>
@@ -113,9 +119,13 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
   </section>
   <section>
     <h2>Weergave</h2>
-    <div class="row"><label>Vulling</label><input type="range" id="fill" min="0" max="0.9" step="0.05" value="0.3"></div>
+    <div class="row"><label>Vulling</label><input type="range" id="fill" min="0" max="0.9" step="0.05" value="0.15"></div>
     <div class="row"><label>Toverstaf</label><input type="range" id="tol" min="3" max="40" step="1" value="13"><span id="tolV">13</span></div>
     <div class="row"><label><input type="checkbox" id="onlySel"> Alleen geselecteerde soort tonen</label></div>
+  </section>
+  <section>
+    <h2>Onderdelen in dit aanzicht</h2>
+    <div id="legend"></div>
   </section>
   <div id="list"></div>
   <details class="keys" open>
@@ -129,23 +139,51 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
 </aside>
 <script>
 const DATA = /*__DATA__*/{};
-const W = DATA.w, H = DATA.h;
+let flash = null; // legend highlight of one zone
+let VIEW = DATA.views[DATA.start] ? DATA.start : Object.keys(DATA.views)[0];
+let W = DATA.views[VIEW].w, H = DATA.views[VIEW].h;
 const CATS = DATA.cats; // [{id,label,color}]
 const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
-const KEY = 'ssk-palm-tracer-v1';
+const KEY = 'ssk-view-tracer-v1';
 
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const stage = document.getElementById('stage'), hud = document.getElementById('hud');
 const $ = id => document.getElementById(id);
 
-// Images
-const photo = new Image(); photo.src = DATA.photo;
-const render = new Image(); render.src = DATA.render;
-const old = new Image(); old.src = DATA.oldMasks;
-let lab = null; // CIELAB of the photo for the wand: dark green and dark teal are close in RGB, far apart in Lab
-photo.onload = () => {
+// Images, per view: the builder render with every part in its own colour,
+// the photograph where there is one, and the zone map that names the part
+// under the mouse.
+const IMG = {};
+function img(view, key) {
+  const k = view + '|' + key;
+  if (!IMG[k] && DATA.views[view][key]) { IMG[k] = new Image(); IMG[k].onload = () => { if (key === 'idmap') readIdmap(view); draw(); }; IMG[k].src = DATA.views[view][key]; }
+  return IMG[k];
+}
+const ready = im => im && im.complete && im.naturalWidth;
+const IDS = {}; // view -> Uint8Array of zone index + 1
+function readIdmap(view) {
+  const im = IMG[view + '|idmap'], v = DATA.views[view];
+  const c = document.createElement('canvas'); c.width = v.w; c.height = v.h;
+  const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+  const d = x.getImageData(0, 0, v.w, v.h).data, out = new Uint8Array(v.w * v.h);
+  for (let i = 0; i < out.length; i++) out[i] = d[i * 4];
+  IDS[view] = out;
+}
+function zoneAt(x, y) {
+  const m = IDS[VIEW]; x = Math.floor(x); y = Math.floor(y);
+  if (!m || x < 0 || y < 0 || x >= W || y >= H) return null;
+  const i = m[y * W + x]; return i ? DATA.views[VIEW].legend[i - 1] : null;
+}
+// CIELAB of whatever background is shown, for the wand: dark green and dark
+// teal are close in RGB, far apart in Lab.
+let lab = null, labKey = '';
+function background() { const bg = $('bg').value; return bg === 'none' ? null : img(VIEW, bg); }
+function labOf() {
+  const im = background(), k = VIEW + '|' + $('bg').value;
+  if (!ready(im)) return null;
+  if (labKey === k) return lab;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const x = c.getContext('2d'); x.drawImage(photo, 0, 0, W, H);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(im, 0, 0, W, H);
   const px = x.getImageData(0, 0, W, H).data;
   const lin = new Float32Array(256); for (let i = 0; i < 256; i++) { const v = i / 255; lin[i] = v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }
   const f = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
@@ -155,13 +193,12 @@ photo.onload = () => {
     const X = f((r * .4124 + g * .3576 + b * .1805) / .95047), Y = f(r * .2126 + g * .7152 + b * .0722), Z = f((r * .0193 + g * .1192 + b * .9505) / 1.08883);
     lab[j] = 116 * Y - 16; lab[j + 1] = 500 * (X - Y); lab[j + 2] = 200 * (Y - Z);
   }
-  draw();
-};
-render.onload = old.onload = () => draw();
+  labKey = k; return lab;
+}
 
 // State
 let shapes = [], sel = -1, uid = 1;
-function fresh() { return DATA.shapes.map(s => ({ id: uid++, cat: s.cat, name: s.name, pts: s.pts.map(p => p.slice()), hidden: false })); }
+function fresh() { return DATA.shapes.map(s => ({ id: uid++, view: s.view, cat: s.cat, name: s.name, pts: s.pts.map(p => p.slice()), hidden: false })); }
 function load() {
   try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && Array.isArray(j.shapes)) return j.shapes.map(s => ({ ...s, id: uid++ })); } catch (e) {}
   return fresh();
@@ -221,7 +258,7 @@ function simplifyClosed(pts, eps) {
 const R = v => Math.round(v * 10) / 10;
 
 // Draw
-function visible(s) { if (s.hidden) return false; if ($('onlySel').checked && sel >= 0) return s.cat === shapes[sel].cat; return true; }
+function visible(s) { if (s.view !== VIEW || s.hidden) return false; if ($('onlySel').checked && sel >= 0) return s.cat === shapes[sel].cat; return true; }
 function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cv.width, cv.height);
@@ -229,9 +266,7 @@ function draw() {
   ctx.imageSmoothingEnabled = scale < 3;
   const bg = $('bg').value;
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-  if (bg === 'photo' && photo.complete) ctx.drawImage(photo, 0, 0, W, H);
-  if (bg === 'render' && render.complete) ctx.drawImage(render, 0, 0, W, H);
-  if ($('oldMasks').checked && old.complete) { ctx.globalAlpha = .55; ctx.drawImage(old, 0, 0, W, H); ctx.globalAlpha = 1; }
+  const im = background(); if (ready(im)) ctx.drawImage(im, 0, 0, W, H);
   const fa = +$('fill').value, lw = 1.5 / scale;
   shapes.forEach((s, i) => {
     if (!visible(s) || i === sel) return;
@@ -239,6 +274,7 @@ function draw() {
     ctx.globalAlpha = fa; ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1;
     ctx.lineWidth = lw; ctx.strokeStyle = c; ctx.stroke();
   });
+  if (flash) ctx.drawImage(flash.canvas, 0, 0);
   if (sel >= 0 && shapes[sel]) {
     const s = shapes[sel], c = CAT[s.cat].color;
     path(s.pts); ctx.globalAlpha = Math.max(fa, .25); ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = 1;
@@ -265,7 +301,8 @@ function draw() {
 function path(p) { ctx.beginPath(); p.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); }
 function hudText() {
   const t = { select: 'Selecteren', pen: 'Pen', lasso: 'Lasso', wand: 'Toverstaf' }[tool];
-  const m = mouseImg ? `x ${Math.round(mouseImg[0])}, y ${Math.round(mouseImg[1])}` : '';
+  const z = mouseImg && zoneAt(mouseImg[0], mouseImg[1]);
+  const m = (mouseImg ? `x ${Math.round(mouseImg[0])}, y ${Math.round(mouseImg[1])}` : '') + (z ? ` · <b>${z.label}</b> (${z.colour})` : '');
   const rt = retrace ? ` · <b>hertrace</b>: de volgende vorm vervangt "${shapes[sel] ? shapes[sel].name : ''}"` : '';
   hud.innerHTML = `${t} · ${Math.round(scale * 100)}% · ${m}${rt}`;
 }
@@ -276,7 +313,7 @@ fillCats($('newCat')); fillCats($('selCat'));
 function ui() {
   const list = $('list'); list.innerHTML = '';
   CATS.forEach(c => {
-    const items = shapes.map((s, i) => [s, i]).filter(([s]) => s.cat === c.id);
+    const items = shapes.map((s, i) => [s, i]).filter(([s]) => s.view === VIEW && s.cat === c.id);
     const h = document.createElement('div'); h.className = 'cat';
     const allHidden = items.length && items.every(([s]) => s.hidden);
     h.innerHTML = `<span class="sw" style="background:${c.color}"></span>${c.label} <span class="n">${items.length}</span><button title="Alles tonen/verbergen">${allHidden ? 'toon' : 'verberg'}</button>`;
@@ -314,8 +351,8 @@ function addShape(pts) {
   if (retrace && shapes[sel]) { shapes[sel].pts = pts; retrace = false; }
   else {
     const cat = $('newCat').value;
-    const n = shapes.filter(s => s.cat === cat).length + 1;
-    shapes.push({ id: uid++, cat, name: `${CAT[cat].label} ${n}`, pts, hidden: false });
+    const n = shapes.filter(s => s.view === VIEW && s.cat === cat).length + 1;
+    shapes.push({ id: uid++, view: VIEW, cat, name: `${CAT[cat].label} ${n}`, pts, hidden: false });
     sel = shapes.length - 1;
   }
   save(); ui(); draw();
@@ -392,8 +429,9 @@ cv.addEventListener('wheel', e => {
   ox = mx - x * scale; oy = my - y * scale; draw();
 }, { passive: false });
 
-// Wand: flood fill on the photo by colour distance to the clicked pixel, then trace the outline
+// Wand: flood fill on the background by colour distance to the clicked pixel, then trace the outline
 function wand(sx, sy) {
+  const lab = labOf();
   if (!lab || sx < 0 || sy < 0 || sx >= W || sy >= H) return null;
   const tol = +$('tol').value, t2 = tol * tol;
   // average a 5x5 seed so a single noisy pixel does not decide
@@ -452,7 +490,12 @@ window.addEventListener('keydown', e => {
     else { snap(); shapes.splice(sel, 1); sel = -1; }
     save(); ui(); draw(); return;
   }
-  if (e.key === 'Tab') { e.preventDefault(); if (shapes.length) { select(((sel + (e.shiftKey ? -1 : 1)) + shapes.length) % shapes.length); zoomTo(bbox(shapes[sel].pts)); } return; }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const idx = shapes.map((s, i) => i).filter(i => shapes[i].view === VIEW); if (!idx.length) return;
+    const at = idx.indexOf(sel), next = idx[((at < 0 ? -1 : at) + (e.shiftKey ? -1 : 1) + idx.length) % idx.length];
+    select(next); zoomTo(bbox(shapes[next].pts)); return;
+  }
   const k = e.key.toLowerCase();
   if (k === 'v') setTool('select'); else if (k === 'p') setTool('pen'); else if (k === 'l') setTool('lasso'); else if (k === 'w') setTool('wand');
   else if (k === 'r') toggleRetrace(); else if (k === '0') fit();
@@ -463,7 +506,7 @@ window.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; 
 function toggleRetrace() { if (sel < 0) return; retrace = !retrace; if (retrace && tool === 'select') setTool('pen'); ui(); draw(); }
 $('retrace').onclick = toggleRetrace;
 $('undo').onclick = undo; $('redo').onclick = redo; $('fit').onclick = fit;
-['bg', 'oldMasks', 'fill', 'onlySel'].forEach(id => $(id).addEventListener('input', draw));
+['bg', 'fill', 'onlySel'].forEach(id => $(id).addEventListener('input', draw));
 $('tol').oninput = () => { $('tolV').textContent = $('tol').value; };
 $('simp').oninput = () => { $('simpV').textContent = $('simp').value; };
 $('doSimp').onclick = () => { const s = shapes[sel]; if (!s) return; snap(); s.pts = simplifyClosed(s.pts, +$('simp').value); save(); ui(); draw(); };
@@ -478,21 +521,25 @@ $('reset').onclick = () => { if (!confirm('Alles terugzetten naar de voorgeteken
 // Export / import
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 $('exportJson').onclick = () => {
-  const k = DATA.srcScale; // canvas -> source crop
   const out = {
-    view: 'palm', canvas: [W, H], source: DATA.source,
-    note: 'pts in palm-view canvas pixels; srcPts in source crop pixels (rainbow-palm.png)',
-    shapes: shapes.map(s => ({ cat: s.cat, name: s.name, pts: s.pts.map(p => [R(p[0]), R(p[1])]), srcPts: s.pts.map(p => [R(p[0] * k), R(p[1] * k)]) }))
+    note: 'pts in view canvas pixels, the same space as that view\'s *-data.json; srcPts only where the view has a source photograph',
+    views: Object.fromEntries(Object.entries(DATA.views).map(([k, v]) => [k, { canvas: [v.w, v.h], source: v.source || null }])),
+    shapes: shapes.map(s => {
+      const v = DATA.views[s.view], o = { view: s.view, cat: s.cat, name: s.name, pts: s.pts.map(p => [R(p[0]), R(p[1])]) };
+      if (v.srcScale) o.srcPts = s.pts.map(p => [R(p[0] * v.srcScale), R(p[1] * v.srcScale)]);
+      return o;
+    })
   };
-  download('palm-trace.json', new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }));
+  download('glove-trace.json', new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' }));
 };
 $('exportPng').onclick = async () => {
+  // this view only: one mask per category at the view's canvas size
   for (const c of CATS) {
-    const items = shapes.filter(s => s.cat === c.id); if (!items.length) continue;
+    const items = shapes.filter(s => s.view === VIEW && s.cat === c.id); if (!items.length) continue;
     const m = document.createElement('canvas'); m.width = W; m.height = H; const x = m.getContext('2d');
     x.fillStyle = '#fff'; items.forEach(s => { x.beginPath(); s.pts.forEach((p, k) => k ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fill(); });
     const blob = await new Promise(r => m.toBlob(r, 'image/png'));
-    download(`palm-${c.id}.png`, blob);
+    download(`${VIEW}-${c.id}.png`, blob);
     await new Promise(r => setTimeout(r, 250));
   }
 };
@@ -504,15 +551,42 @@ $('file').onchange = async () => {
     const arr = Array.isArray(j) ? j : j.shapes;
     if (!Array.isArray(arr)) throw new Error('geen shapes');
     snap();
-    shapes = arr.filter(s => CAT[s.cat] && Array.isArray(s.pts) && s.pts.length >= 3).map(s => ({ id: uid++, cat: s.cat, name: String(s.name || CAT[s.cat].label), pts: s.pts.map(p => [+p[0], +p[1]]), hidden: false }));
+    shapes = arr.filter(s => CAT[s.cat] && Array.isArray(s.pts) && s.pts.length >= 3).map(s => ({ id: uid++, view: DATA.views[s.view] ? s.view : 'palm', cat: s.cat, name: String(s.name || CAT[s.cat].label), pts: s.pts.map(p => [+p[0], +p[1]]), hidden: false }));
     sel = -1; save(); ui(); draw();
   } catch (e) { alert('Kon dit bestand niet lezen: ' + e.message); }
   $('file').value = '';
 };
 
+// Views and legend
+function setView(v) {
+  if (!DATA.views[v]) return;
+  VIEW = v; W = DATA.views[v].w; H = DATA.views[v].h; sel = -1; retrace = false; drawing = null; flash = null;
+  const bg = $('bg'); [...bg.options].forEach(o => o.disabled = o.value !== 'none' && !DATA.views[v][o.value]);
+  if (bg.selectedOptions[0].disabled) bg.value = 'render';
+  ['render', 'photo', 'idmap'].forEach(k => img(v, k));
+  document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  legend(); fit(); ui();
+}
+$('views').innerHTML = Object.entries(DATA.views).map(([k, v]) => `<button data-view="${k}">${v.label}</button>`).join('');
+document.querySelectorAll('#views button').forEach(b => b.onclick = () => setView(b.dataset.view));
+function legend() {
+  const L = DATA.views[VIEW].legend;
+  $('legend').innerHTML = L.map((z, i) => `<div class="lg" data-i="${i}" title="Klik: laat zien waar dit zit"><span class="sw" style="background:${z.hex}"></span><span>${z.label} · ${z.colour}</span></div>`).join('');
+  $('legend').querySelectorAll('.lg').forEach(el => el.onclick = () => showZone(+el.dataset.i, el));
+}
+function showZone(i, el) {
+  const m = IDS[VIEW]; if (!m) return;
+  if (flash && flash.i === i) { flash = null; el.classList.remove('on'); draw(); return; }
+  $('legend').querySelectorAll('.lg').forEach(x => x.classList.toggle('on', x === el));
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const d = x.createImageData(W, H);
+  for (let k = 0; k < m.length; k++) { const o = k * 4; if (m[k] === i + 1) { d.data[o] = 255; d.data[o + 1] = 0; d.data[o + 2] = 220; d.data[o + 3] = 215; } else { d.data[o + 3] = 170; } }
+  x.putImageData(d, 0, 0); flash = { i, canvas: c }; draw();
+}
+
 new ResizeObserver(() => { resize(); }).observe(stage);
-resize(); fit(); ui(); setTool('select');
-window.__tracer = { get shapes() { return shapes; }, select, wand, fit };
+resize(); setView(VIEW); setTool('select');
+window.__tracer = { get shapes() { return shapes; }, get view() { return VIEW; }, select, wand, fit, setView };
 </script>
 </body>
 </html>
