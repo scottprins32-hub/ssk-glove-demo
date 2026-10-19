@@ -20,6 +20,7 @@ async function start() {
   consent.append(check,document.createTextNode(tr(' Ik heb dit ontwerp gecontroleerd en wil ermee verder naar de SSK-webshop.',' I checked this design and want to continue to the SSK webshop.')));
   function disable(code){button.disabled=true;message.textContent=errorMessage({code},draft.design.lang);}
   if(!config.connected)disable('checkout_not_connected');
+  else if(config.checkoutEnabled!==true)disable('checkout_approval_pending');
   if(draft.design.flag==='Other Flag')disable('flag_requires_confirmation');
   if(!checkoutStorageAvailable())disable('checkout_storage_required');
   button.onclick=async()=>{

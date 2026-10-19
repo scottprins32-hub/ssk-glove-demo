@@ -31,7 +31,7 @@ http.createServer(async(req,res)=>{
    const upstream=await fetch('https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v10',{method:'POST',headers:{'Content-Type':'application/json','X-App-Id':'6acecad7d76f2c87da8db964'},body});
    const reply=await upstream.text();console.log(JSON.stringify({action:input.action,requestBytes:Buffer.byteLength(body),status:upstream.status,error:upstream.ok?undefined:reply.slice(0,160)}));res.writeHead(upstream.status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(reply);return;
   }
-  if(url.pathname==='/commerce-config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end("export const API_ENDPOINT='/api/commerce';export const APP_ID='6acecad7d76f2c87da8db964';export const TEST_MODE=true;export const API_REVISION='ccv-r01-14';");return;}
+  if(url.pathname==='/commerce-config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end("export const API_ENDPOINT='/api/commerce';export const APP_ID='6acecad7d76f2c87da8db964';export const TEST_MODE=true;export const API_REVISION='ccv-r02-01';");return;}
   const filename=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
   if(!filename.startsWith(root+path.sep)||!(await stat(filename)).isFile()){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'Content-Type':types[path.extname(filename)]||'application/octet-stream','Cache-Control':'no-store'});res.end(await readFile(filename));

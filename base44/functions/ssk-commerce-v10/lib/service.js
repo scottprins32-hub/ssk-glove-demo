@@ -11,7 +11,7 @@ async function matches(value,expected) {
   for(let i=0;i<64;i++) difference|=hashed.charCodeAt(i)^expected.charCodeAt(i);
   return difference===0;
 }
-export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl}) {
+export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl,checkoutEnabled=false,acceptanceTestsEnabled=false}) {
   const publicDraft=async d=>({id:d.id,reference:d.reference,design:d.design,quote:d.quote,previews:store.publicPreviews?await store.publicPreviews(d.previews):d.previews,
     expiresAt:d.expires_at,specification:specification(d.design)});
   async function save(design,previews,clientFingerprint) {
@@ -38,7 +38,7 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
   return async function run(body,{clientFingerprint='unknown',user}={}) {
     if(!body||typeof body!=='object') throw new CommerceError('invalid_request');
     switch(body.action) {
-      case 'config':return {connected:ccv.configured,shop:SHOP,pricing:quoteDesign({flag:'None'}),mode:'live'};
+      case 'config':return {connected:ccv.configured,checkoutEnabled:ccv.configured&&checkoutEnabled===true,shop:SHOP,pricing:quoteDesign({flag:'None'}),mode:checkoutEnabled===true?'live':'approval_pending'};
       case 'create': {
         if(body.confirmed!==true) throw new CommerceError('design_confirmation_required');
         const design=validateDesign(body.design),previews=validatePreviews(body.previews);
@@ -50,7 +50,13 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
         return save(validateDesign(source.design),source.previews,clientFingerprint);
       }
       case 'read':return publicDraft(await load(body,'view'));
+      case 'admin-test-checkout':
       case 'checkout': {
+        const acceptanceTest=body.action==='admin-test-checkout';
+        if(acceptanceTest){
+          await requireAdmin(user);
+          if(acceptanceTestsEnabled!==true||body.confirmed!==true||body.purpose!=='acceptance-test')throw new CommerceError('acceptance_tests_disabled',403);
+        }else if(checkoutEnabled!==true)throw new CommerceError('checkout_approval_pending',503);
         let d=await load(body,'checkout');
         if(d.design.flag==='Other Flag') throw new CommerceError('flag_requires_confirmation',409);
         if(d.status==='ready') {
@@ -67,7 +73,7 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
           throw new CommerceError('checkout_processing',409);
         }
         try {
-          const memo=[`SSK Custom Glove | ${d.reference}`,`Snapshot: ${d.id}`,`Merchant specification: ${appUrl}merchant.html#${d.id}`,
+          const memo=[...(acceptanceTest?['ACCEPTANCE TEST — DO NOT FULFIL. Unpaid, incomplete test basket.']:[]),`SSK Custom Glove | ${d.reference}`,`Snapshot: ${d.id}`,`Merchant specification: ${appUrl}merchant.html#${d.id}`,
             ...specification(d.design).map(([k,v])=>`${k}: ${v}`),
             `Glove incl. flag: EUR ${(d.quote.total/100).toFixed(2)}; shipping is calculated by CCV.`,
             'Specifications are authoritative; previews may be estimated or unavailable.'].join('\n');
@@ -95,7 +101,7 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
         await requireAdmin(user);const d=await store.get(body.id);
         if(!d)throw new CommerceError('design_not_found',404);return publicDraft(d);
       }
-      case 'admin-check':await requireAdmin(user);return {connected:ccv.configured,product:ccv.configured?{id:(await checkPrice()).id}:null,shop:SHOP};
+      case 'admin-check':await requireAdmin(user);return {connected:ccv.configured,checkoutEnabled:ccv.configured&&checkoutEnabled===true,acceptanceTestsEnabled:acceptanceTestsEnabled===true,product:ccv.configured?{id:(await checkPrice()).id}:null,shop:SHOP};
       case 'admin-reconcile': {
         await requireAdmin(user);
         const d=await store.get(body.id);

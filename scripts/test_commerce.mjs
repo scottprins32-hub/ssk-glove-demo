@@ -11,7 +11,7 @@ import {createCommerce,tokenHash} from '../commerce/backend/service.js';
 export const fixture=()=>({hand:'RHT',size:'11.75"',webType:'H-Web',pad:'None',bullet:7,
   colors:Object.fromEntries(COLOUR_ORDER.map(f=>[f,'10'])),materials:{},flag:'None',lang:'nl'});
 export const previews=()=>['back','palm','thumb','pinky'].map(view=>({view,available:false,notes:['Test: no preview supplied.']}));
-export function harness(ccvOverrides={}) {
+export function harness(ccvOverrides={},options={}) {
   const data=new Map(),rates=new Map();let seq=0,posts=0;
   const store={get:async id=>structuredClone(data.get(id)),create:async d=>{
     const row={...structuredClone(d),id:'draft_'+String(++seq).padStart(10,'0'),created_date:new Date().toISOString()};data.set(row.id,row);return structuredClone(row);},
@@ -21,7 +21,7 @@ export function harness(ccvOverrides={}) {
   const ccv={configured:true,product:async()=>({id:896372573,name:'SSK Custom Glove',price:374.95,discount:0}),
     prepare:async(d)=>{posts++;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout?basket=example'};},
     order:async(id,d)=>({id,is_completed:false,paid:false,checkout_href:'https://sskeurope.ccvshop.nl/checkout',reservationnumber:'SSK-'+d.id,currency:'EUR',total_orderrow_price:d.quote.total/100,order_row_taxes_included:true}),...ccvOverrides};
-  const run=createCommerce({store,ccv,requireAdmin:async u=>{if(u?.role!=='admin')throw Object.assign(Error('admin_required'),{status:403});},appUrl:'https://example.com/'});
+  const run=createCommerce({store,ccv,requireAdmin:async u=>{if(u?.role!=='admin')throw Object.assign(Error('admin_required'),{status:403});},appUrl:'https://example.com/',checkoutEnabled:true,...options});
   const save=()=>run({action:'create',confirmed:true,design:fixture(),previews:previews()});
   return {run,save,data,store,ccv,get posts(){return posts;}};
 }
@@ -168,3 +168,52 @@ test('deployed equality admission reaches the hourly ceiling sequentially',async
 
 test('ambiguous admission consumes quota but cannot over-admit',async()=>{let row={id:'single',key:'2026-10-15T13',uses:0},fail=true;const buckets={get:async()=>structuredClone(row),updateMany:async(q,p)=>{if(row.uses===q.uses){row.uses++;if(fail){fail=false;throw Object.assign(Error('zero-match or committed response lost'),{status:500});}return {updated:1};}throw Object.assign(Error('no match'),{status:500});}};const store=createStore({},buckets,'single');assert.equal(await store.reserveRate('x','2026-10-15T13'),true);assert.equal(row.uses,2);});
 test('ambiguous checkout claim fails closed rather than submitting again',async()=>{const e={updateMany:async()=>{throw Object.assign(Error('no match'),{status:500});},get:async()=>({status:'submitting'})};assert.equal(await createStore(e,{},'x').claim('draft_test'),false);});
+
+test('installed credentials do not enable public ordering without explicit approval',async()=>{
+ for(const value of [undefined,false,'true',1]){
+  const h=harness({}, {checkoutEnabled:value}),d=await h.save();
+  const config=await h.run({action:'config'});assert.equal(config.connected,true);assert.equal(config.checkoutEnabled,false);
+  await assert.rejects(h.run({action:'checkout',id:d.id,token:d.checkoutToken,checkoutEnabled:true,confirmed:true,purpose:'acceptance-test'}),/checkout_approval_pending/);
+  assert.equal(h.posts,0);assert.equal(h.data.get(d.id).status,'draft');
+  assert.equal((await h.run({action:'read',id:d.id,token:d.viewToken})).id,d.id);
+ }
+});
+test('paused ordering blocks previously ready checkout links and prevents upstream reads',async()=>{
+ let reads=0;const h=harness({order:async()=>{reads++;throw Error('must not run');}}, {checkoutEnabled:false});
+ const d=await h.save();Object.assign(h.data.get(d.id),{status:'ready',checkout_url:'https://sskeurope.ccvshop.nl/checkout',ccv_order_id:777});
+ await assert.rejects(h.run({action:'checkout',id:d.id,token:d.checkoutToken}),/checkout_approval_pending/);assert.equal(reads,0);assert.equal(h.posts,0);
+});
+test('acceptance checkout requires admin plus separate strict switch and explicit confirmation',async()=>{
+ const h=harness({}, {checkoutEnabled:false,acceptanceTestsEnabled:true}),d=await h.save();
+ const request={action:'admin-test-checkout',id:d.id,token:d.checkoutToken,confirmed:true,purpose:'acceptance-test'};
+ await assert.rejects(h.run(request),/admin_required/);
+ for(const patch of [{confirmed:false},{purpose:'order'},{token:d.viewToken}])await assert.rejects(h.run({...request,...patch},{user:{role:'admin'}}));
+ assert.equal(h.posts,0);
+ for(const value of [undefined,false,'true',1]){
+  const disabled=harness({}, {checkoutEnabled:false,acceptanceTestsEnabled:value}),saved=await disabled.save();
+  await assert.rejects(disabled.run({...request,id:saved.id,token:saved.checkoutToken},{user:{role:'admin'}}),/acceptance_tests_disabled/);assert.equal(disabled.posts,0);
+ }
+});
+test('admin acceptance baskets use the real quote and specification while public ordering stays off',async()=>{
+ for(const flag of ['None','Japan']){
+  let memo,quote;const h=harness({prepare:async(d,m)=>{memo=m;quote=d.quote;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout'};}},{checkoutEnabled:false,acceptanceTestsEnabled:true});
+  const d=await h.run({action:'create',confirmed:true,design:{...fixture(),flag,thumbText:'QA TEST',thumbFont:'Block',thumbMain:'10'},previews:previews()});
+  const request={action:'admin-test-checkout',id:d.id,token:d.checkoutToken,confirmed:true,purpose:'acceptance-test'};
+  assert.match((await h.run(request,{user:{role:'admin'}})).url,/sskeurope/);
+  assert.equal(quote.total,flag==='None'?37495:37995);assert.match(memo,/ACCEPTANCE TEST — DO NOT FULFIL/);assert.match(memo,/thumbText: QA TEST/);
+  assert.equal((await h.run({action:'config'})).checkoutEnabled,false);
+  await assert.rejects(h.run({...request,action:'checkout'},{user:{role:'admin'}}),/checkout_approval_pending/);
+ }
+});
+test('concurrent admin test clicks and retry still create only one unpaid basket',async()=>{
+ const h=harness({}, {checkoutEnabled:false,acceptanceTestsEnabled:true}),d=await h.save();
+ const request={action:'admin-test-checkout',id:d.id,token:d.checkoutToken,confirmed:true,purpose:'acceptance-test'},ctx={user:{role:'admin'}};
+ const results=await Promise.allSettled(Array.from({length:8},()=>h.run(request,ctx)));
+ assert.equal(h.posts,1);assert.ok(results.some(r=>r.status==='fulfilled'));await h.run(request,ctx);assert.equal(h.posts,1);
+});
+test('service defaults fail closed with connected keys',async()=>{
+ const h=harness(),run=createCommerce({store:h.store,ccv:h.ccv,requireAdmin:async()=>{},appUrl:'https://example.com/'});
+ assert.equal((await run({action:'config'})).checkoutEnabled,false);
+ await assert.rejects(run({action:'checkout'}),/checkout_approval_pending/);
+ await assert.rejects(run({action:'admin-test-checkout',confirmed:true,purpose:'acceptance-test'}),/acceptance_tests_disabled/);
+});

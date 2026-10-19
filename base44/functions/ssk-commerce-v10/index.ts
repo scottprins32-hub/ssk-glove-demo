@@ -33,13 +33,15 @@ Deno.serve(async(request)=>{
     const ccv=createCcv({key:Deno.env.get('CCV_API_KEY'),secret:Deno.env.get('CCV_API_SECRET')});
     const requireAdmin=async()=>{let user;try{user=await client.auth.me();}catch{}if(user?.role!=='admin')throw new CommerceError('admin_required',403);};
     if(body.diagnostics===true){await requireAdmin();diagnosticAdmin=true;}
-    const service=createCommerce({store,ccv,requireAdmin,appUrl:'https://ssk-glove-configurator-da8db964.base44.app/'});
+    const service=createCommerce({store,ccv,requireAdmin,appUrl:'https://ssk-glove-configurator-da8db964.base44.app/',
+      checkoutEnabled:Deno.env.get('CCV_LIVE_ORDERING_ENABLED')==='true',
+      acceptanceTestsEnabled:Deno.env.get('CCV_ACCEPTANCE_TESTS_ENABLED')==='true'});
     const ip=request.headers.get('x-forwarded-for')?.split(',')[0].trim()||'unknown';
     const clientFingerprint=await tokenHash(APP_ID+'|'+ip);
-    return Response.json({...await service(body,{clientFingerprint}),apiRevision:'ccv-r01-14'},{headers:cors});
+    return Response.json({...await service(body,{clientFingerprint}),apiRevision:'ccv-r02-01'},{headers:cors});
   } catch(error) {
     console.error('SSK commerce failure',error?.name,error?.status,error?.message);
-    return Response.json({error:error instanceof CommerceError?error.code:'service_unavailable',apiRevision:'ccv-r01-14',error_kind:error instanceof CommerceError?undefined:error?.name,upstream_status:error?.status||error?.response?.status,error_phase:error?.phase,diagnostic:diagnosticAdmin?{message:error?.message,detail:error?.response?.data?.detail}:undefined},
+    return Response.json({error:error instanceof CommerceError?error.code:'service_unavailable',apiRevision:'ccv-r02-01',error_kind:error instanceof CommerceError?undefined:error?.name,upstream_status:error?.status||error?.response?.status,error_phase:error?.phase,diagnostic:diagnosticAdmin?{message:error?.message,detail:error?.response?.data?.detail}:undefined},
       {status:error instanceof CommerceError?error.status:503,headers:cors});
   }
 });

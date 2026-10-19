@@ -32,7 +32,7 @@ async function start(){
  }
  status.textContent='Ingelogd als SSK-beheerder.';
  const reload=node('button','Vernieuwen','btn');reload.onclick=()=>refresh().catch(e=>{status.textContent=errorMessage(e);});
- const check=node('button','Winkelaansluiting controleren','btn');check.onclick=async()=>{check.disabled=true;try{const c=await call('admin-check');status.textContent=c.connected?'CCV-product en prijs gecontroleerd. Een echte afrekenproef blijft nodig.':'API-sleutels ontbreken. Opslaan werkt; afrekenen blijft uitgeschakeld.';}catch(e){status.textContent=errorMessage(e);}finally{check.disabled=false;}};
+ const check=node('button','Winkelaansluiting controleren','btn');check.onclick=async()=>{check.disabled=true;try{const c=await call('admin-check');status.textContent=c.connected?'CCV-product en prijs gecontroleerd. Bestellen: '+(c.checkoutEnabled?'INGESCHAKELD':'UIT — wacht op goedkeuring van Pim')+'. Beheertests: '+(c.acceptanceTestsEnabled?'aan':'uit')+'.':'API-sleutels ontbreken. Opslaan werkt; afrekenen blijft uitgeschakeld.';}catch(e){status.textContent=errorMessage(e);}finally{check.disabled=false;}};
  actions.append(reload,check);await refresh();const id=location.hash.slice(1);if(/^[a-zA-Z0-9_-]{8,80}$/.test(id))await open(id);
 }
 start().catch(e=>{status.textContent=errorMessage(e);});
