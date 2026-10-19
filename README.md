@@ -39,6 +39,7 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/form_spec.json`, `form_assets/` | SSK's real order form, scraped — 36 questions and its images |
 | `glove_builder/sam3-cpu.patch` | Four upstream SAM3 fixes needed to run it on CPU |
 | `BRIEF.md` | The separate brief for the cinematic one-page SSK demo |
+| [docs/VISUAL-APPROVALS.md](docs/VISUAL-APPROVALS.md) | Scott's visual approvals, scoped to the named webs and views |
 
 ## Rebuilding
 
