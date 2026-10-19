@@ -28,7 +28,7 @@ The app/function ID is `6acecad7d76f2c87da8db964`; function name `ssk-commerce-v
 
 ## Separate approval and test switches
 
-Credentials establish a connection only. `CCV_LIVE_ORDERING_V14_ENABLED` defaults to off; only the exact server value `true` permits public checkout. Keep it `false` until Pim approves the ordering flow. Public request fields cannot override it, and pausing also blocks previously prepared checkout links. Saving, sharing and downloads remain available.
+Credentials establish a connection only. `CCV_LIVE_ORDERING_V14_ENABLED` defaults to off; only the exact server value `true` permits public checkout. Keep it `false` until Pim approves the ordering flow. Public request fields cannot override it, and pausing also blocks requests to resume ready snapshots through the configurator API. CCV bearer URLs already issued remain a separate capability and must be invalidated/cancelled in CCV if they also need to stop. Saving, sharing and downloads remain available.
 
 `CCV_ACCEPTANCE_V14_TESTS_ENABLED` is a separate temporary server switch, off by default. With this switch enabled, only an authenticated Base44 administrator can call `admin-test-checkout`, and must also provide the snapshot's checkout capability, `confirmed: true`, and `purpose: "acceptance-test"`. Test baskets use the real quote and specification but are created unpaid and incomplete with an explicit **ACCEPTANCE TEST — DO NOT FULFIL** memo. Never complete or pay them without separate authorization. Disable this switch immediately after the bounded test. Keep the legacy unversioned switches `CCV_LIVE_ORDERING_ENABLED` and `CCV_ACCEPTANCE_TESTS_ENABLED` false permanently; they must not activate retired handlers. Public checkout remains blocked throughout.
 

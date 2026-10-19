@@ -180,7 +180,7 @@ test('installed credentials do not enable public ordering without explicit appro
   assert.equal((await h.run({action:'read',id:d.id,token:d.viewToken})).id,d.id);
  }
 });
-test('paused ordering blocks previously ready checkout links and prevents upstream reads',async()=>{
+test('paused ordering blocks API resumption of ready snapshots and prevents upstream reads',async()=>{
  let reads=0;const h=harness({order:async()=>{reads++;throw Error('must not run');}}, {checkoutEnabled:false});
  const d=await h.save();Object.assign(h.data.get(d.id),{status:'ready',checkout_url:'https://sskeurope.ccvshop.nl/checkout',ccv_order_id:777});
  await assert.rejects(h.run({action:'checkout',id:d.id,token:d.checkoutToken}),/checkout_approval_pending/);assert.equal(reads,0);assert.equal(h.posts,0);
