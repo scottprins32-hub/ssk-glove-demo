@@ -212,7 +212,7 @@ function minQtyProblems(item) {
 // ------------------------------------------------------------------ render
 function previewState(item) {
   const first = item.roster.find(r => r.name || r.number) || {};
-  return { colors: item.colors, photoColour: item.photoColour, deco: item.deco, names: item.names, lettering: item.lettering, preview: { name: first.name, number: first.number } };
+  return { colors: item.colors, photoColour: item.photoColour, photoHex: colourById(PHOTO_COLOURS[item.photoColour])?.hex, deco: item.deco, names: item.names, lettering: item.lettering, preview: { name: first.name, number: first.number } };
 }
 
 function drawStage() {
@@ -317,7 +317,7 @@ const BODY = {
       }
       if (d.kind === 'text') {
         html += `<input class="input" type="text" maxlength="24" placeholder="${t().textPh}" value="${esc(d.text || '')}" data-text="${pl.id}">
-          <span class="field-lab">${t().fill}</span>${swatches(`decofill:${pl.id}`, d.fill || S.item.lettering.fill)}`;
+          <span class="field-lab">${t().fill}</span>${swatches(`decofill:${pl.id}`, d.fill)}`;
       }
       if (spec().variant.photo && pl.photoBox === null) html += `<p class="hint">${t().notOnPhoto}</p>`;
       if (d.kind !== 'none') {

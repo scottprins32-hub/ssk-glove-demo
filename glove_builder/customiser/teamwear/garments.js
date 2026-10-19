@@ -56,6 +56,14 @@ function lettering(text, x, y, size, look, opts = {}) {
 }
 
 // Logo or text placed on a placement box {x,y,w,h}.
+// Lettering with no colour chosen yet contrasts with the garment, so white
+// text never disappears on a white shirt.
+function contrastFor(hex) {
+  const n = parseInt(String(hex || '#000').slice(1), 16);
+  const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.6 ? '#0B0B0C' : '#FFFFFF';
+}
+
 function placement(box, deco, look) {
   if (!deco || deco.kind === 'none') return '';
   if (deco.kind === 'logo' && deco.logo) {
@@ -77,8 +85,9 @@ function placement(box, deco, look) {
 
 function decorations(view, spec, state) {
   const look = state.lettering;
+  const auto = { ...look, fill: contrastFor(state.colors.body || state.colors.front || state.colors.crown) };
   return (spec.placements || []).filter(p => p.view === view)
-    .map(p => placement(p.box, state.deco[p.id], look)).join('');
+    .map(p => placement(p.box, state.deco[p.id], auto)).join('');
 }
 
 // --------------------------------------------------------------- tops
@@ -333,8 +342,11 @@ function photo(view, spec, state) {
   const { w, h } = img;
   const out = [`<image href="${img.src}" x="0" y="0" width="${w}" height="${h}" data-zone="body"/>`];
   (spec.placements || []).filter(p => p.view === view && p.photoBox).forEach(p => {
-    const [x, y, bw, bh] = p.photoBox;
-    out.push(placement({ x: x * w, y: y * h, w: bw * w, h: bh * h }, state.deco[p.id], state.lettering));
+    const [x, y, bw, bh, rot = 0, skew = 0] = p.photoBox;
+    const box = { x: x * w, y: y * h, w: bw * w, h: bh * h };
+    const cx = box.x + box.w / 2; const cy = box.y + box.h / 2;
+    const deco = placement(box, state.deco[p.id], { ...state.lettering, fill: contrastFor(state.photoHex) });
+    if (deco) out.push(`<g transform="translate(${cx} ${cy}) rotate(${rot}) skewY(${skew}) translate(${-cx} ${-cy})">${deco}</g>`);
   });
   const back = PHOTO_BACK[spec.variant.photo];
   if (view === 'back' && back && spec.names && state.names.enabled) {

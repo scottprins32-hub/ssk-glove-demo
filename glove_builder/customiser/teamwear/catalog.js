@@ -204,14 +204,17 @@ export const PHOTO_COLOURS = {
   black: 'black', 'forest-green': 'forest', gold: 'gold', navy: 'navy', orange: 'orange',
   purple: 'purple', royal: 'royal', scarlet: 'scarlet', white: 'white',
 };
+// [x, y, w, h, rotate°, skewY°] — the last two turn the logo with the
+// garment, because most photos are taken at an angle.
 export const PHOTO_BOXES = {
-  bst99: { chest: [0.28, 0.27, 0.48, 0.15], heart: [0.56, 0.2, 0.17, 0.09], nape: null, sleeveL: null },
-  bst99ls: { chest: [0.3, 0.25, 0.42, 0.14], heart: [0.53, 0.18, 0.15, 0.08], nape: null, sleeveL: null },
-  bsj200: { heart: [0.55, 0.22, 0.17, 0.1], chestR: [0.22, 0.22, 0.17, 0.1], back: [0.22, 0.2, 0.56, 0.22] },
-  hc2: { front: [0.3, 0.24, 0.3, 0.26], backArch: null },
+  bst99: { chest: [0.23, 0.27, 0.36, 0.13, 0, -6], heart: [0.47, 0.19, 0.14, 0.08, 0, -6], nape: null, sleeveL: null },
+  bst99ls: { chest: [0.24, 0.25, 0.4, 0.13, 0, -7], heart: [0.5, 0.18, 0.14, 0.07, 0, -7], nape: null, sleeveL: null },
+  bsj200: { chestR: [0.3, 0.22, 0.24, 0.1, 0, -4], heart: [0.73, 0.22, 0.12, 0.1, 0, -10], back: null },
+  bsj200back: { back: [0.29, 0.2, 0.48, 0.18, 0, -3] },
+  hc2: { front: [0.29, 0.25, 0.3, 0.22, -6, 0], backArch: null },
 };
 // Where names and numbers sit on a back photo: [cx, nameY, numberY, numberH].
-export const PHOTO_BACK = { bsj200: [0.5, 0.2, 0.5, 0.26] };
+export const PHOTO_BACK = { bsj200: [0.53, 0.2, 0.5, 0.26] };
 
 export const productById = id => PRODUCTS.find(p => p.id === id);
 
@@ -230,7 +233,7 @@ export function specFor(product, variantId) {
   if (variant.photo) {
     // A photographed product has one colour: the photo's. Positions the photo
     // cannot show are still offered, with a note, never dropped.
-    const boxes = PHOTO_BOXES[variant.photo];
+    const boxes = { ...PHOTO_BOXES[variant.photo], ...PHOTO_BOXES[`${variant.photo}back`] };
     zones = [{ id: 'body', nl: 'Kleur', en: 'Colour' }];
     placements = placements.map(p => (boxes[p.id] !== undefined ? { ...p, photoBox: boxes[p.id] } : p));
   }
