@@ -25,7 +25,7 @@ Deno.serve(async(request)=>{
     // Keep the SDK entry point intact after validating the platform context.
     if(request.headers.get('Base44-App-Id')!==APP_ID)throw new CommerceError('invalid_platform_context',403);
     const apiUrl=new URL(request.headers.get('Base44-Api-Url')||'https://base44.app');
-    if(apiUrl.origin!=='https://base44.app'||!['','/'].includes(apiUrl.pathname)||apiUrl.search||apiUrl.hash||apiUrl.username||apiUrl.password)throw new CommerceError('invalid_platform_context',403);
+    if(!['https://base44.app','https://ssk-glove-configurator-da8db964.base44.app'].includes(apiUrl.origin)||!['','/'].includes(apiUrl.pathname)||apiUrl.search||apiUrl.hash||apiUrl.username||apiUrl.password)throw new CommerceError('invalid_platform_context',403);
     const client=createClientFromRequest(request);
     const entity=client.asServiceRole.entities.GloveOrderDraft;
     const rawStore=createStore(entity,client.asServiceRole.entities.GloveRateBucket,'6ad0d87a4f12d75db8726165');

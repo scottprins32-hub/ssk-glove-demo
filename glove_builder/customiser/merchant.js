@@ -5,7 +5,7 @@ import {errorMessage,formatMoney} from './commerce-client.js';
 const client=createClient({appId:APP_ID,appBaseUrl:'https://ssk-glove-configurator-da8db964.base44.app',requiresAuth:false});
 const status=document.querySelector('#status'),actions=document.querySelector('#merchant-actions'),list=document.querySelector('#merchant-list'),detail=document.querySelector('#merchant-detail');
 async function call(action,input={}) {
- try {const response=await client.functions.invoke('ssk-commerce-v10',{action,...input});const result=response.data??response;
+ try {const response=await client.functions.invoke('ssk-commerce-v11',{action,...input});const result=response.data??response;
  if(result.apiRevision!==API_REVISION)throw Object.assign(Error(),{code:'service_unavailable'});
  if(result.error)throw Object.assign(Error(result.error),{code:result.error});return result;
  }catch(error){throw Object.assign(Error(),{code:error.code||error.response?.data?.error||'service_unavailable'});}
