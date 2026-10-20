@@ -45,7 +45,8 @@ const LAYER_TO_FIELD = Object.fromEntries(
    this side they carry their own names, so the map is the identity. */
 const PALM_FIELDS = {
   palm: 'palm', web: 'web', back1: 'back1', back9: 'back9',
-  welting: 'welting', binding: 'binding', laces: 'laces'
+  welting: 'welting', binding: 'binding', laces: 'laces', stitching:'stitching',
+  back3:'back3',back4:'back4',back6:'back6',back7:'back7',belt:'belt',thumb_loops:'thumb_loops'
 };
 /* The thumb and pinky sides name their zones' order fields in their own
    data (build_side_views.py), so their maps are read from there. */
@@ -56,9 +57,8 @@ const sideData = () => (SIDE_VIEWS.includes(S.view) && R && R.views[S.view]
   ? (R.view === S.view || (S.view === 'thumb' && typeof R.view === 'string' && R.view.startsWith('thumbEstimated:'))
       ? R.DATA : R.views[S.view].DATA)
   : null);
-/* A PALM-P1 insert brings its own thread (zone 8), so the stitching colour is
-   a palm field only while one is drawn. The palm body's own thread is baked
-   into the photograph and is never offered as recolourable. */
+/* Native traced palm thread and PALM-P1 insert thread share the order's
+   stitching field. Additional traced finger/trim fields remain independent. */
 const palmFields = () => R && R.view === 'palm' && R.DATA.palmWebs?.entries?.[R.web]
   ? { ...PALM_FIELDS, stitching: 'stitching' } : PALM_FIELDS;
 const viewLayerField = () => {
@@ -159,7 +159,7 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders(window.__SSK_RENDER_REVISION__,window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-palm-r01',window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
   S.thumbText,S.thumbNumber,S.pinkyText]);
@@ -177,13 +177,13 @@ function prepareSideFrame(view) {
   const work=async()=>{
     try {
       if(visualKey()!==signature || S.view===view || S.step===3) return;
-      const data=R.views[view].DATA;
+      let data=R.views[view].DATA;
       const saved=signature===defaultVisual ? await publicRenders.read('default:'+view,data.w,data.h) : null;
       if(visualKey()!==signature || S.view===view || S.step===3) return;
       // A separate renderer cannot move the displayed glove or its picking map.
       const renderer=new GloveRenderer({ ...R.views.back,views:R.views });
       renderer._flags=R._flags;renderer.setView(view);
-      renderer.setFlag(flagArt(),null,S.flagPosition);renderer.setWeb(null);renderer.setWebMarked(false);
+      renderer.setFlag(flagArt(),null,S.flagPosition);renderer.setWeb(null);renderer.setWebMarked(false);data=renderer.DATA;
       renderer.setPad(PAD_PART[S.pad] || null,S.colors.pad_color ? hexOf('pad_color') : null);
       const map=view==='palm' ? PALM_FIELDS : Object.fromEntries(data.zones.map(z=>[z.id,z.field]));
       renderer.setMaterials(layerMaterials(data,map));

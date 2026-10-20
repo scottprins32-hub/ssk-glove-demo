@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Webstiksel compileren</title><canvas id="c" width="1534" height="1400"></canvas><img id="result"><p id="status">Laden</p><script type="module">
+const c=document.querySelector('canvas'),g=c.getContext('2d'),im=new Image(),mask=new Image();im.src='../outputs/palm-scott-trace-r01/generated-stitches.png';mask.src='../glove_builder/customiser/assets/palm-scott-trace-r01/web.webp';await Promise.all([im.decode(),mask.decode()]);
+const paths=[];const curve=(a,b,bow=0)=>Array.from({length:101},(_,i)=>{const t=i/100,dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),n=Math.sin(Math.PI*t)*bow;return[a[0]+dx*t-dy/len*n,a[1]+dy*t+dx/len*n]});
+const offset=(pts,n)=>pts.map((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);return[p[0]-dy/len*n,p[1]+dx/len*n]});
+const top=curve([304,309],[599,175],-4),middle=curve([427,577],[632,448],-4);paths.push(top,offset(top,15),middle,offset(middle,15),curve([519,788],[667,666],0));
+for(const p of paths){const len=[0];for(let i=1;i<p.length;i++)len.push(len[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));for(let d=4;d<len.at(-1)-4;d+=8.5){let i=len.findIndex(x=>x>=d);const a=p[i-1],b=p[i],t=(d-len[i-1])/(len[i]-len[i-1]);g.save();g.translate(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t);g.rotate(Math.atan2(b[1]-a[1],b[0]-a[0]));g.drawImage(im,65,286,42,28,-3,-1.5,6,3);g.restore();}}
+g.globalCompositeOperation='destination-in';g.drawImage(mask,0,0);document.querySelector('#result').src=c.toDataURL('image/png');document.querySelector('#status').textContent='Klaar · twee boven, twee midden, één onder';
+</script>

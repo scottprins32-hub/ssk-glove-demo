@@ -433,12 +433,12 @@ export class GloveRenderer {
     return true;
   }
 
-  // User H-web contours are native-H-only. Alternate thumb inserts keep the
-  // original photographed base; never leak the H perimeter into another web.
+  // User H-web contours are native-H-only. Alternate palm/thumb inserts keep
+  // their registered base; never leak an H-specific perimeter into another web.
   syncNativeHContour() {
     const base = this.views[this.view];
-    const def = base.DATA.nativeHContour;
-    const active = this.view === 'thumb' && !this.web && !this.webMarked && def;
+    const def = this.view === 'palm' ? base.DATA.nativePalmTrace : base.DATA.nativeHContour;
+    const active = ['thumb','palm'].includes(this.view) && !this.web && !this.webMarked && def;
     const key = this.view + '|' + (active ? def.revision : 'base');
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     if (this.nativeContourKey === key && !newTexture) return;
@@ -453,7 +453,8 @@ export class GloveRenderer {
           bbox: { ...base.DATA.bbox, ...def.bbox },
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
-          fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown },
+          fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
+          ...(this.view === 'palm' ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }
       Object.assign(this, { DATA:this.nativeContourBundle.DATA,
@@ -913,7 +914,7 @@ export class GloveRenderer {
   }
 
   // Whether the chosen web is one a side view has no photograph of.
-  setWebMarked(on) { this.webMarked = !!on; }
+  setWebMarked(on) { this.webMarked = !!on; if(this.view === 'palm')this.syncNativeHContour(); }
 
   // Grey stripes in the shape of a layer's alpha, cached per layer.
   hatch(id) {

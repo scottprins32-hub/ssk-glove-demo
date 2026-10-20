@@ -1,0 +1,63 @@
+{
+  "sha256": "005319756e3b3581f700f05352ff895eb5630b03e8363262e2b48dc0f953fdd4",
+  "inputShapes": 1514,
+  "palmShapes": 88,
+  "cutoutShapes": 7,
+  "laceContourCount": 40,
+  "view": "palm",
+  "web": "native H only",
+  "files": {
+    "palm": {
+      "bytes": 153418,
+      "alphaPixels": 651081
+    },
+    "web": {
+      "bytes": 48034,
+      "alphaPixels": 164512
+    },
+    "back1": {
+      "bytes": 36362,
+      "alphaPixels": 51402
+    },
+    "back9": {
+      "bytes": 27820,
+      "alphaPixels": 30127
+    },
+    "back3": {
+      "bytes": 9008,
+      "alphaPixels": 6114
+    },
+    "back4": {
+      "bytes": 11622,
+      "alphaPixels": 15104
+    },
+    "back6": {
+      "bytes": 8728,
+      "alphaPixels": 13421
+    },
+    "back7": {
+      "bytes": 10360,
+      "alphaPixels": 8703
+    },
+    "belt": {
+      "bytes": 40860,
+      "alphaPixels": 47803
+    },
+    "binding": {
+      "bytes": 16214,
+      "alphaPixels": 11315
+    },
+    "welting": {
+      "bytes": 55498,
+      "alphaPixels": 47388
+    },
+    "thumb_loops": {
+      "bytes": 19436,
+      "alphaPixels": 36880
+    },
+    "laces": {
+      "bytes": 135828,
+      "alphaPixels": 177077
+    }
+  }
+}
