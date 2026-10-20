@@ -115,7 +115,23 @@
     "welting_edge_original_hi": "assets/quality-audit-r01/palm/welting_hi.png",
     "clean_edge_heal_binding": "assets/clean-edges-r01/palm-heal-binding.png",
     "clean_edge_heal_palm": "assets/clean-edges-r01/palm-heal-palm.png",
-    "clean_edge_heal_laces": "assets/clean-edges-r01/palm-heal-laces.png"
+    "clean_edge_heal_laces": "assets/clean-edges-r01/palm-heal-laces.png",
+    "scott_palm_palm": "assets/palm-scott-trace-r01/palm.webp",
+    "scott_palm_web": "assets/palm-scott-trace-r01/web.webp",
+    "scott_palm_back1": "assets/palm-scott-trace-r01/back1.webp",
+    "scott_palm_back9": "assets/palm-scott-trace-r01/back9.webp",
+    "scott_palm_back3": "assets/palm-scott-trace-r01/back3.webp",
+    "scott_palm_back4": "assets/palm-scott-trace-r01/back4.webp",
+    "scott_palm_back6": "assets/palm-scott-trace-r01/back6.webp",
+    "scott_palm_back7": "assets/palm-scott-trace-r01/back7.webp",
+    "scott_palm_belt": "assets/palm-scott-trace-r01/belt.webp",
+    "scott_palm_binding": "assets/palm-scott-trace-r01/binding.webp",
+    "scott_palm_welting": "assets/palm-scott-trace-r01/welting.webp",
+    "scott_palm_thumb_loops": "assets/palm-scott-trace-r01/thumb_loops.webp",
+    "scott_palm_laces": "assets/palm-scott-trace-r01/laces.webp",
+    "scott_palm_stitching": "assets/palm-scott-trace-r01/stitching.webp",
+    "scott_palm_glove": "assets/palm-scott-trace-r01/empty.webp",
+    "scott_palm_idmap": "assets/palm-scott-trace-r01/idmap.png"
   },
   "bbox": {
     "glove": [
@@ -816,5 +832,419 @@
       "clean_edge_heal_laces",
       "laces"
     ]
-  ]
+  ],
+  "nativePalmTrace": {
+    "revision": "SCOTT-PALM-TRACE-R02",
+    "assets": {
+      "palm": "scott_palm_palm",
+      "web": "scott_palm_web",
+      "back1": "scott_palm_back1",
+      "back9": "scott_palm_back9",
+      "back3": "scott_palm_back3",
+      "back4": "scott_palm_back4",
+      "back6": "scott_palm_back6",
+      "back7": "scott_palm_back7",
+      "belt": "scott_palm_belt",
+      "binding": "scott_palm_binding",
+      "welting": "scott_palm_welting",
+      "thumb_loops": "scott_palm_thumb_loops",
+      "laces": "scott_palm_laces",
+      "stitching": "scott_palm_stitching",
+      "glove": "scott_palm_glove",
+      "_idmap": "scott_palm_idmap"
+    },
+    "bbox": {
+      "palm": [
+        216,
+        59,
+        1282,
+        1303
+      ],
+      "scott_palm_palm": [
+        216,
+        59,
+        1282,
+        1303
+      ],
+      "web": [
+        179,
+        76,
+        690,
+        826
+      ],
+      "scott_palm_web": [
+        179,
+        76,
+        690,
+        826
+      ],
+      "back1": [
+        180,
+        313,
+        491,
+        1106
+      ],
+      "scott_palm_back1": [
+        180,
+        313,
+        491,
+        1106
+      ],
+      "back9": [
+        1248,
+        200,
+        1338,
+        968
+      ],
+      "scott_palm_back9": [
+        1248,
+        200,
+        1338,
+        968
+      ],
+      "back3": [
+        630,
+        149,
+        693,
+        643
+      ],
+      "scott_palm_back3": [
+        630,
+        149,
+        693,
+        643
+      ],
+      "back4": [
+        814,
+        190,
+        882,
+        636
+      ],
+      "scott_palm_back4": [
+        814,
+        190,
+        882,
+        636
+      ],
+      "back6": [
+        936,
+        68,
+        1037,
+        659
+      ],
+      "scott_palm_back6": [
+        936,
+        68,
+        1037,
+        659
+      ],
+      "back7": [
+        1108,
+        101,
+        1195,
+        747
+      ],
+      "scott_palm_back7": [
+        1108,
+        101,
+        1195,
+        747
+      ],
+      "belt": [
+        457,
+        877,
+        1277,
+        1343
+      ],
+      "scott_palm_belt": [
+        457,
+        877,
+        1277,
+        1343
+      ],
+      "binding": [
+        754,
+        57,
+        1005,
+        650
+      ],
+      "scott_palm_binding": [
+        754,
+        57,
+        1005,
+        650
+      ],
+      "welting": [
+        209,
+        52,
+        1295,
+        963
+      ],
+      "scott_palm_welting": [
+        209,
+        52,
+        1295,
+        963
+      ],
+      "thumb_loops": [
+        268,
+        775,
+        554,
+        1378
+      ],
+      "scott_palm_thumb_loops": [
+        268,
+        775,
+        554,
+        1378
+      ],
+      "laces": [
+        57,
+        67,
+        1448,
+        1354
+      ],
+      "scott_palm_laces": [
+        57,
+        67,
+        1448,
+        1354
+      ],
+      "stitching": [
+        0,
+        0,
+        1534,
+        1400
+      ],
+      "scott_palm_stitching": [
+        0,
+        0,
+        1534,
+        1400
+      ]
+    },
+    "zones": [
+      {
+        "id": "palm",
+        "field": "palm",
+        "n": 1,
+        "group": "leather",
+        "label": "palm"
+      },
+      {
+        "id": "web",
+        "field": "web",
+        "n": 2,
+        "group": "leather",
+        "label": "web"
+      },
+      {
+        "id": "back1",
+        "field": "back1",
+        "n": 3,
+        "group": "leather",
+        "label": "back1"
+      },
+      {
+        "id": "back9",
+        "field": "back9",
+        "n": 4,
+        "group": "leather",
+        "label": "back9"
+      },
+      {
+        "id": "back3",
+        "field": "back3",
+        "n": 5,
+        "group": "leather",
+        "label": "back3"
+      },
+      {
+        "id": "back4",
+        "field": "back4",
+        "n": 6,
+        "group": "leather",
+        "label": "back4"
+      },
+      {
+        "id": "back6",
+        "field": "back6",
+        "n": 7,
+        "group": "leather",
+        "label": "back6"
+      },
+      {
+        "id": "back7",
+        "field": "back7",
+        "n": 8,
+        "group": "leather",
+        "label": "back7"
+      },
+      {
+        "id": "belt",
+        "field": "belt",
+        "n": 9,
+        "group": "leather",
+        "label": "belt"
+      },
+      {
+        "id": "binding",
+        "field": "binding",
+        "n": 10,
+        "group": "lace",
+        "label": "binding"
+      },
+      {
+        "id": "welting",
+        "field": "welting",
+        "n": 11,
+        "group": "lace",
+        "label": "welting"
+      },
+      {
+        "id": "thumb_loops",
+        "field": "thumb_loops",
+        "n": 12,
+        "group": "leather",
+        "label": "thumb_loops"
+      },
+      {
+        "id": "laces",
+        "field": "laces",
+        "n": 13,
+        "group": "lace",
+        "label": "laces"
+      },
+      {
+        "id": "stitching",
+        "field": "stitching",
+        "n": 14,
+        "group": "stitching",
+        "label": "stitching"
+      }
+    ],
+    "fieldsShown": [
+      "palm",
+      "web",
+      "back1",
+      "back9",
+      "back3",
+      "back4",
+      "back6",
+      "back7",
+      "belt",
+      "binding",
+      "welting",
+      "thumb_loops",
+      "laces",
+      "stitching"
+    ],
+    "materialResponse": {
+      "palm": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "web": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back1": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back9": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back3": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back4": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back6": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back7": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "belt": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "binding": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "welting": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "thumb_loops": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "laces": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      }
+    },
+    "traceSha256": "16be5a33ed3c7b1d58f2e5f17e12b99a86a129776855290a47756adf38bd2190"
+  }
 }

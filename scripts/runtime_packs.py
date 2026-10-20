@@ -38,6 +38,10 @@ for(const view of ['back','palm','thumb','pinky']) {
  const file=view==='back'?'glove':view;
  const data=JSON.parse(await readFile(new URL('assets/'+file+'-data.json',process.argv[2])));
  groups[view]=renderAssets(data,true).map(key=>data.assets[key]);
+ // The traced native H palm uses its empty plate and individual cutouts.
+ // Keep the old full-photo plate available as an individual fallback for
+ // alternate webs, without also duplicating it in the eager native pack.
+ if(view==='palm' && data.nativePalmTrace)groups[view]=groups[view].filter(name=>name!==data.assets.glove);
 }
 groups['web-options']=[...WEBS.filter(w=>w.sizes.includes('11.75"')),...WEB_REFERENCES].filter(w=>w.img?.endsWith('.jpg')).map(w=>w.img);
 console.log(JSON.stringify(groups));"""
