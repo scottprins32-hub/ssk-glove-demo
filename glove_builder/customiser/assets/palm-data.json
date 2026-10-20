@@ -834,7 +834,7 @@
     ]
   ],
   "nativePalmTrace": {
-    "revision": "SCOTT-PALM-TRACE-R01",
+    "revision": "SCOTT-PALM-TRACE-R02",
     "assets": {
       "palm": "scott_palm_palm",
       "web": "scott_palm_web",
@@ -1245,6 +1245,6 @@
         }
       }
     },
-    "traceSha256": "005319756e3b3581f700f05352ff895eb5630b03e8363262e2b48dc0f953fdd4"
+    "traceSha256": "16be5a33ed3c7b1d58f2e5f17e12b99a86a129776855290a47756adf38bd2190"
   }
 }

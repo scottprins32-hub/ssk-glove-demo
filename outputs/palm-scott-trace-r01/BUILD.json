@@ -1,5 +1,5 @@
 {
-  "sha256": "005319756e3b3581f700f05352ff895eb5630b03e8363262e2b48dc0f953fdd4",
+  "sha256": "16be5a33ed3c7b1d58f2e5f17e12b99a86a129776855290a47756adf38bd2190",
   "inputShapes": 1514,
   "palmShapes": 88,
   "cutoutShapes": 7,
@@ -12,8 +12,8 @@
       "alphaPixels": 651081
     },
     "web": {
-      "bytes": 48034,
-      "alphaPixels": 164512
+      "bytes": 48144,
+      "alphaPixels": 164864
     },
     "back1": {
       "bytes": 36362,

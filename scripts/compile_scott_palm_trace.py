@@ -55,5 +55,5 @@ Image.new('RGBA',(W,H)).save(out/'empty.webp',lossless=True);assets['scott_palm_
 a=np.zeros((H,W,4),np.uint8);a[:,:,:3]=ids[:,:,None];a[:,:,3]=255;Image.fromarray(a).save(out/'idmap.png');assets['scott_palm_idmap']='assets/palm-scott-trace-r01/idmap.png'
 # Keep both untouched JSON and source-specific provenance outside the shipped asset tree.
 audit=base/'outputs/palm-scott-trace-r01';audit.mkdir(exist_ok=True);(audit/'trace-original.json').write_bytes(raw);(audit/'BUILD.json').write_text(json.dumps(report,indent=2))
-meta['assets'].update(assets);meta['nativePalmTrace']={'revision':'SCOTT-PALM-TRACE-R01','assets':{**{z['id']:'scott_palm_'+z['id']for z in zones},'glove':'scott_palm_glove','_idmap':'scott_palm_idmap'},'bbox':bbox,'zones':zones,'fieldsShown':[z['field']for z in zones],'materialResponse':responses,'traceSha256':report['sha256']};(app/'assets/palm-data.json').write_text(json.dumps(meta,indent=2)+'\n')
+meta['assets'].update(assets);meta['nativePalmTrace']={'revision':'SCOTT-PALM-TRACE-R02','assets':{**{z['id']:'scott_palm_'+z['id']for z in zones},'glove':'scott_palm_glove','_idmap':'scott_palm_idmap'},'bbox':bbox,'zones':zones,'fieldsShown':[z['field']for z in zones],'materialResponse':responses,'traceSha256':report['sha256']};(app/'assets/palm-data.json').write_text(json.dumps(meta,indent=2)+'\n')
 print(json.dumps(report,indent=2))

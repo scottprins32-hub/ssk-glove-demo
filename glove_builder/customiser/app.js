@@ -159,7 +159,7 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-palm-r01',window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-palm-r02',window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
   S.thumbText,S.thumbNumber,S.pinkyText]);
