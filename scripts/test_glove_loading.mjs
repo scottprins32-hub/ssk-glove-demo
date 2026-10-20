@@ -18,7 +18,7 @@ async function harness({ failures = {}, imageFailures = {}, manualImages = false
     requests.set(url, count);
     if (count <= (failures[url] || 0)) return { ok: false };
     if (packData && url === 'native.pack') return {ok:true,arrayBuffer:async()=>packData.buffer};
-    return { ok: true, json: async () => structuredClone(metadata || { w: 1, h: 1, palettes: {}, zones: [],
+    return { ok: true, json: async () => structuredClone((typeof metadata === 'function' ? metadata(url) : metadata) || { w: 1, h: 1, palettes: {}, zones: [],
       assets: { glove: 'body.png', _idmap: 'id.png' } }) };
   };
   globalThis.Image = class {
@@ -402,4 +402,18 @@ test('removed catalogue cards release their unused blob URL',async()=>{
   const original=URL.revokeObjectURL;let released=0;URL.revokeObjectURL=()=>released++;
   try {const image={isConnected:false};h.setImageSource(image,'photo.jpg');await settle();assert.equal(released,1);assert.equal(image.src,undefined);}
   finally {URL.revokeObjectURL=original;}
+});
+
+
+test('native palm aliases remain unready after a missing image and retry safely', async () => {
+  const basic = {w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png'}};
+  const palm = {...basic,assets:{...basic.assets, traced_laces:'trace-laces.png'},nativePalmTrace:{assets:{laces:'traced_laces'}}};
+  const h = await harness({metadata:url=>url==='assets/palm-data.json'?palm:basic,imageFailures:{'trace-laces.png':1}});
+  const bundle = await h.loadGlove({progressive:true});
+  await assert.rejects(bundle.views.palm.load(),/body could not be loaded/);
+  assert.equal(bundle.views.palm.ready,false);
+  await bundle.views.palm.load();
+  assert.equal(bundle.views.palm.ready,true);
+  assert.ok(bundle.views.palm.imgs.traced_laces);
+  assert.equal(h.images.get('trace-laces.png'),2);
 });

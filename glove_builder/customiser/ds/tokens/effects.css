@@ -1,9 +1,9 @@
 :root{
 --radius-sm:3px;--radius-md:6px;--radius-lg:10px;--radius-pill:999px;
---shadow-card:0 1px 2px rgba(11,31,58,.06),0 2px 8px rgba(11,31,58,.06);
---shadow-raised:0 4px 16px rgba(11,31,58,.12);
---shadow-overlay:0 12px 40px rgba(11,31,58,.22);
---focus-ring:0 0 0 3px rgba(31,72,120,.35);--focus-ring-color:rgba(31,72,120,.55);
+--shadow-card:0 1px 2px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.06);
+--shadow-raised:0 4px 16px rgba(0,0,0,.12);
+--shadow-overlay:0 12px 40px rgba(0,0,0,.22);
+--focus-ring:0 0 0 3px rgba(200,16,46,.35);--focus-ring-color:rgba(200,16,46,.55);
 --ease-out:cubic-bezier(.2,.7,.3,1); /* @kind other */
 --dur-fast:120ms; /* @kind other */
 --dur-med:200ms; /* @kind other */

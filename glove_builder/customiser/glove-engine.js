@@ -223,7 +223,8 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         await loadAssets(renderAssets(DATA, progressive), priority);
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
-          ...Object.values(DATA.nativeHContour?.assets || {})];
+          ...Object.values(DATA.nativeHContour?.assets || {}),
+          ...Object.values(DATA.nativePalmTrace?.assets || {})];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded');
         const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
         const g = ic.getContext('2d', { willReadFrequently: true });
