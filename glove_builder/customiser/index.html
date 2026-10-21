@@ -4,13 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SSK Europe — Handschoen samenstellen</title>
+<meta name="description" content="Stel je eigen SSK Pro Custom honkbalhandschoen samen: web, leer, veters, logo's en naam, per onderdeel zichtbaar op de handschoen.">
+<meta property="og:title" content="SSK Pro Custom — stel je eigen handschoen samen">
+<meta property="og:description" content="Kies web, leer, veters, logo's en naam. Elke keuze zie je meteen op de handschoen.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/ui/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#111111">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="ds/tokens/fonts.css">
 <link rel="stylesheet" href="ds/tokens/colors.css?v=ssk-brand-r01">
 <link rel="stylesheet" href="ds/tokens/typography.css">
 <link rel="stylesheet" href="ds/tokens/spacing.css">
-<link rel="stylesheet" href="ds/tokens/effects.css?v=ssk-brand-r01">
-<link rel="stylesheet" href="app.css?v=ssk-brand-r01">
+<link rel="stylesheet" href="ds/tokens/effects.css?v=ssk-brand-r02">
+<link rel="stylesheet" href="app.css?v=ssk-brand-r02">
 <link rel="stylesheet" href="commerce.css?v=ssk-brand-r01">
 <!-- Critical images start alongside modules; same full-quality files. -->
 <link rel="preload" href="assets/glove.webp" as="image" fetchpriority="high">
@@ -25,8 +32,10 @@
 <link rel="modulepreload" href="render-cache.js">
 <link rel="modulepreload" href="gallery-store.js">
 <link rel="modulepreload" href="commerce-pricing.js">
+<link rel="modulepreload" href="stage-interact.js">
 </head>
 <body>
+<a class="skip" href="#body" data-t="skipToChoices">Naar de keuzes</a>
 
 <header class="hdr">
   <div class="hdr-brand">
@@ -34,10 +43,13 @@
     <span class="hdr-rule"></span>
     <span class="hdr-title">
       <b data-t="builder">Handschoen samenstellen</b>
-      <i data-t="model">SSK Pro Custom · achterzijde</i>
+      <i data-t="model">SSK Pro Custom</i>
     </span>
   </div>
-  <div class="hdr-tools">
+  <button id="more" class="icon-btn hdr-more" type="button" aria-expanded="false" aria-controls="tools" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="hdr-tools" id="tools">
     <div class="lang" role="group" aria-label="Taal / Language">
       <button id="lang-en" class="lang-btn" type="button">EN</button>
       <button id="lang-nl" class="lang-btn is-on" type="button">NL</button>
@@ -47,24 +59,30 @@
     <button id="summary" aria-controls="sumdrawer" aria-expanded="false" class="btn btn-ghost" type="button" data-t="summary">Overzicht</button>
     <button id="share" class="btn btn-ghost" type="button" data-t="share">Ontwerp delen</button>
     <div class="ref">
-      <span class="ref-lab" data-t="reference">Referentie</span>
+      <span class="ref-lab" data-t="reference">Ontwerpcode</span>
       <span class="ref-code" id="refcode">SSK2-00</span>
     </div>
-    <div class="price">
-      <span class="price-lab" data-t="totalPrice">Totaal</span>
-      <span class="price-val" id="price">—</span>
-    </div>
   </div>
+  <button class="price" id="pricebtn" type="button" aria-expanded="false" aria-controls="pricepop">
+    <span class="price-lab" data-t="totalPrice">Totaal</span>
+    <span class="price-val" id="price">—</span>
+  </button>
+  <div class="price-pop" id="pricepop" hidden></div>
 </header>
 
 <nav class="steps" id="steps" aria-label="Stappen"></nav>
 
 <main class="wrap">
-  <section class="stage">
+  <section class="stage" id="stage">
     <div class="stage-tag" id="stagetag" hidden></div>
     <div class="stage-view" id="stageview" hidden role="group"></div>
-    <canvas id="glove" width="929" height="1100" aria-label="Handschoen"></canvas>
+    <div class="stage-frame" id="stageframe">
+      <canvas id="glove" width="929" height="1100" aria-label="Handschoen" tabindex="0"></canvas>
+      <canvas id="hover" width="929" height="1100" aria-hidden="true"></canvas>
+      <div class="stage-label" id="stagelabel" hidden></div>
+    </div>
     <p class="stage-hint" id="stagehint"></p>
+    <p class="stage-turn" id="stageturn" data-t="turnHint">Sleep om te draaien</p>
   </section>
 
   <aside class="panel">
@@ -82,6 +100,7 @@
   <div class="bar-progress">
     <span class="bar-count"><b id="donecount">0</b> / <span id="totalcount">36</span></span>
     <span class="bar-track"><span class="bar-fill" id="barfill"></span></span>
+    <span class="bar-saved" id="saved" role="status" aria-live="polite"></span>
   </div>
   <div class="bar-acts">
     <button id="prev" class="btn btn-ghost" type="button" data-t="backStep">Terug</button>
@@ -99,10 +118,11 @@
     <p id="sheetstatus" class="note" role="status"></p>
     <div id="spechost"></div>
     <div class="sheet-acts">
+      <button class="btn btn-primary" id="webshare" type="button" data-t="shareCard" hidden>Deel de kaart</button>
       <button class="btn btn-primary" id="copy" type="button" data-t="copy">Kopieer specificatie</button>
       <button class="btn btn-ghost" id="copylink" type="button" data-t="copyLink">Kopieer link</button>
+      <button class="btn btn-ghost" id="sheetimg" type="button" data-t="downloadCard">Kaart downloaden</button>
       <button class="btn btn-ghost" id="download" type="button" data-t="download">Specificatie downloaden</button>
-      <button class="btn btn-ghost" id="sheetimg" type="button" data-t="downloadImage">Afbeelding downloaden</button>
       <a class="btn btn-ghost" href="gallery.html" data-t="myDesigns">Mijn ontwerpen</a>
       <button class="btn btn-ghost" id="keep" type="button" data-t="keep">Verder bouwen</button>
     </div>
@@ -116,7 +136,7 @@
   </div>
   <div class="sum-body" id="sumbody"></div>
   <div class="sum-foot">
-    <button class="btn btn-primary" id="sumimg" type="button" data-t="downloadImage">Afbeelding downloaden</button>
+    <button class="btn btn-primary" id="sumimg" type="button" data-t="downloadCard">Kaart downloaden</button>
   </div>
 </aside>
 
