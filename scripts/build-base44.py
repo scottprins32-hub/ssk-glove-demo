@@ -26,7 +26,7 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'r
                'order.html','order.js','merchant.html','merchant.js','merchant-auth.bundle.js',
                'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
                'performance.html', 'performance.js')
-FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
+FOLDERS = ('ds', 'assets/ui', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
 HOSTED_ARTWORK = ROOT / 'base44' / 'hosted-artwork.json'
 ARTWORK_PREFIX = 'https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/'
 
