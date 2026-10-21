@@ -1,0 +1,362 @@
+[
+  {
+    "name": "Edge Gold",
+    "art": "",
+    "tint": "#C9A227",
+    "thumb": "assets/thumbs/hd-edge-gold-r01.webp",
+    "material": "rubber",
+    "active": true,
+    "asset": "edge_gold",
+    "sourceBox": [
+      0,
+      28,
+      1760,
+      859
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/edge-gold.webp"
+  },
+  {
+    "name": "Edge Silver",
+    "art": "",
+    "tint": "#C0C4CC",
+    "thumb": "assets/thumbs/hd-edge-silver-r01.webp",
+    "material": "rubber",
+    "active": true,
+    "asset": "edge_silver",
+    "sourceBox": [
+      0,
+      43,
+      1762,
+      844
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/edge-silver.webp"
+  },
+  {
+    "name": "Edge Gun Metal",
+    "art": "",
+    "tint": "#5A6068",
+    "thumb": "assets/thumbs/hd-edge-gunmetal-r01.webp",
+    "material": "rubber",
+    "active": true,
+    "asset": "edge_gunmetal",
+    "sourceBox": [
+      0,
+      33,
+      1736,
+      864
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/edge-gunmetal.webp"
+  },
+  {
+    "name": "White/Gold",
+    "art": "",
+    "tint": "#E9E5DC",
+    "thumb": "assets/thumbs/hd-white-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_whitegold",
+    "sourceBox": [
+      18,
+      31,
+      1732,
+      842
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/white-gold.webp"
+  },
+  {
+    "name": "Red/Gold",
+    "art": "",
+    "tint": "#BC2628",
+    "thumb": "assets/thumbs/hd-red-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_redgold",
+    "sourceBox": [
+      31,
+      17,
+      1716,
+      858
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/red-gold.webp"
+  },
+  {
+    "name": "Red/Green",
+    "art": "",
+    "tint": "#BC2628",
+    "thumb": "assets/thumbs/hd-red-green-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_redgreen",
+    "sourceBox": [
+      0,
+      13,
+      1725,
+      876
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/red-green.webp"
+  },
+  {
+    "name": "Rainbow",
+    "art": "",
+    "tint": null,
+    "thumb": "assets/thumbs/hd-rainbow-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_rainbow",
+    "sourceBox": [
+      31,
+      47,
+      1689,
+      854
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/rainbow.webp"
+  },
+  {
+    "name": "Black/Gold",
+    "art": "",
+    "tint": "#A38350",
+    "thumb": "assets/thumbs/hd-black-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_blackgold",
+    "sourceBox": [
+      0,
+      0,
+      1748,
+      889
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/black-gold.webp"
+  },
+  {
+    "name": "Black/Pink",
+    "art": "",
+    "tint": "#E45F8E",
+    "thumb": "assets/thumbs/hd-black-pink-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_blackpink",
+    "sourceBox": [
+      0,
+      0,
+      1760,
+      889
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/black-pink.webp"
+  },
+  {
+    "name": "Black/Purple",
+    "art": "",
+    "tint": "#533283",
+    "thumb": "assets/thumbs/hd-black-purple-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_blackpurple",
+    "sourceBox": [
+      0,
+      0,
+      1751,
+      889
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/black-purple.webp"
+  },
+  {
+    "name": "Black/Silver",
+    "art": "",
+    "tint": "#9AA0A8",
+    "thumb": "assets/thumbs/hd-black-silver-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_blacksilver",
+    "sourceBox": [
+      0,
+      0,
+      1756,
+      889
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/black-silver.webp"
+  },
+  {
+    "name": "Green/Gold",
+    "art": "",
+    "tint": "#14703F",
+    "thumb": "assets/thumbs/hd-green-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_greengold",
+    "sourceBox": [
+      22,
+      31,
+      1730,
+      840
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/green-gold.webp"
+  },
+  {
+    "name": "Winered/Gold",
+    "art": "",
+    "tint": "#86303A",
+    "thumb": "assets/thumbs/hd-winered-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_wineredgold",
+    "sourceBox": [
+      0,
+      17,
+      1749,
+      873
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/winered-gold.webp"
+  },
+  {
+    "name": "Blue/Gold",
+    "art": "",
+    "tint": "#1857A6",
+    "thumb": "assets/thumbs/hd-blue-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_bluegold",
+    "sourceBox": [
+      0,
+      32,
+      1752,
+      843
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/blue-gold.webp"
+  },
+  {
+    "name": "Navy/Gold",
+    "art": "",
+    "tint": "#1B2545",
+    "thumb": "assets/thumbs/hd-navy-gold-r01.webp",
+    "material": "embroidered",
+    "active": true,
+    "asset": "bullet_navygold",
+    "sourceBox": [
+      0,
+      32,
+      1735,
+      841
+    ],
+    "mountSize": [
+      235,
+      155
+    ],
+    "mountOffset": [
+      20,
+      -12
+    ],
+    "source": "assets/hd-logos-r01/navy-gold.webp"
+  }
+]
