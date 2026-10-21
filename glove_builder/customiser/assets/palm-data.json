@@ -125,7 +125,6 @@
     "scott_palm_back6": "assets/palm-scott-trace-r03/back6.webp",
     "scott_palm_back7": "assets/palm-scott-trace-r03/back7.webp",
     "scott_palm_belt": "assets/palm-scott-trace-r03/belt.webp",
-    "scott_palm_binding": "assets/palm-scott-trace-r03/binding.webp",
     "scott_palm_welting": "assets/palm-scott-trace-r03/welting.webp",
     "scott_palm_thumb_loops": "assets/palm-scott-trace-r03/thumb_loops.webp",
     "scott_palm_laces": "assets/palm-scott-trace-r03/laces.webp",
@@ -845,7 +844,6 @@
       "back6": "scott_palm_back6",
       "back7": "scott_palm_back7",
       "belt": "scott_palm_belt",
-      "binding": "scott_palm_binding",
       "welting": "scott_palm_welting",
       "thumb_loops": "scott_palm_thumb_loops",
       "laces": "scott_palm_laces",
@@ -915,14 +913,14 @@
         643
       ],
       "back4": [
-        814,
-        190,
+        754,
+        57,
         882,
         636
       ],
       "scott_palm_back4": [
-        814,
-        190,
+        754,
+        57,
         882,
         636
       ],
@@ -961,18 +959,6 @@
         877,
         1277,
         1343
-      ],
-      "binding": [
-        754,
-        57,
-        830,
-        159
-      ],
-      "scott_palm_binding": [
-        754,
-        57,
-        830,
-        159
       ],
       "welting": [
         209,
@@ -1088,13 +1074,6 @@
         "label": "belt"
       },
       {
-        "id": "binding",
-        "field": "binding",
-        "n": 10,
-        "group": "lace",
-        "label": "binding"
-      },
-      {
         "id": "welting",
         "field": "welting",
         "n": 11,
@@ -1133,7 +1112,6 @@
       "back6",
       "back7",
       "belt",
-      "binding",
       "welting",
       "thumb_loops",
       "laces",
@@ -1212,14 +1190,6 @@
           "high": 255
         }
       },
-      "binding": {
-        "grainStrength": 0,
-        "calibration": {
-          "lo": 235,
-          "mid": 246,
-          "high": 255
-        }
-      },
       "welting": {
         "grainStrength": 0,
         "calibration": {
@@ -1245,7 +1215,7 @@
         }
       }
     },
-    "traceSha256": "e2ad55e9420c9d9799af014c3d6ce89150918b0fb3fc6f4544a4d1b3475c630c",
+    "traceSha256": "1d34fb40fc0b766661289183295ac79459e3e1f878d6bf6894ebcb5945796528",
     "embParts": []
   }
 }

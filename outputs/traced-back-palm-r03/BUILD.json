@@ -1,5 +1,5 @@
 {
-  "sha256": "e2ad55e9420c9d9799af014c3d6ce89150918b0fb3fc6f4544a4d1b3475c630c",
+  "sha256": "1d34fb40fc0b766661289183295ac79459e3e1f878d6bf6894ebcb5945796528",
   "scope": "native H back and palm only",
   "views": {
     "back": {
@@ -262,7 +262,6 @@
         "back6",
         "back7",
         "belt",
-        "binding",
         "welting",
         "thumb_loops",
         "laces",
