@@ -2,7 +2,7 @@
 import {loadGlove,GloveRenderer} from './glove-engine.js?r03-reviewed-2';
 const bundle=await loadGlove({progressive:true});await bundle.views.palm.load();
 for(const view of ['back','palm'])for(const mirror of [false,true]){
- const r=new GloveRenderer(bundle);r.setView(view);r.setWeb(null);r.setWebMarked(false);r.syncNativeHContour();const d=r.DATA;console.log(view,!!d.nativeBackTrace,!!d.tracedSeams,d.nativeBackTrace?.revision,d.nativePalmTrace?.revision); 
+ const r=new GloveRenderer(bundle);r.setView(view);r.setWeb(null);r.setWebMarked(false);r.syncNativeHContour();const d=r.DATA;console.log(view,!!d.nativeBackTrace,!!d.tracedSeams,d.nativeBackTrace?.revision,d.nativePalmTrace?.revision);
  const state=Object.fromEntries(d.zones.map(z=>[z.id,new URLSearchParams(location.search).has('white')?'10':z.id==='web'?'20':z.id==='palm'?'50':['laces','welting','stitching','binding'].includes(z.id)?'10':'70']));
  const c=document.createElement('canvas');c.width=d.w;c.height=d.h;document.body.append(c);r.draw(c.getContext('2d'),state,null,null,false,mirror);c.dataset.view=view;c.dataset.mirror=mirror;
 }
