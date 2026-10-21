@@ -847,7 +847,8 @@ export class GloveRenderer {
         const [mw,mh] = opt.mountSize || [x1-x0,y1-y0];
         const scale = Math.min(mw/sw,mh/sh);
         const w=sw*scale,h=sh*scale;
-        ctx.drawImage(imgs[opt.asset], sx,sy,sw,sh, (x0+x1-w)/2,(y0+y1-h)/2,w,h);
+        const [dx,dy] = opt.mountOffset || [0,0];
+        ctx.drawImage(imgs[opt.asset], sx,sy,sw,sh, (x0+x1-w)/2+dx,(y0+y1-h)/2+dy,w,h);
       } else ctx.drawImage(imgs[opt.asset], 0, 0);
       return;
     }

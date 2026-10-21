@@ -21,8 +21,8 @@ test('first HD silicone contours use uniform scale on either hand',()=>{
   const b=data.bullets[index],image={},calls=[],ctx={save(){},restore(){},translate(){},scale(){},drawImage(...a){calls.push(a);}},r={DATA:data,imgs:{bullet_logo:{},[b.asset]:image}};
   GloveRenderer.prototype.unmirror.call(r,ctx,data.bulletBox[0],data.bulletBox[2],mirror,()=>GloveRenderer.prototype.drawBullet.call(r,ctx,index));
   const[im,sx,sy,sw,sh,x,y,w,h]=calls[0];assert.equal(im,image);assert.ok(Math.abs(w/sw-h/sh)<1e-12);assert.ok(Math.abs(w-235)<1e-10);assert.ok(h>139&&h<=155);
-  assert.ok(Math.abs(x+w/2-(data.bulletBox[0]+data.bulletBox[2])/2)<1e-10);
-  assert.ok(Math.abs(y+h/2-(data.bulletBox[1]+data.bulletBox[3])/2)<1e-10);
+  assert.ok(Math.abs(x+w/2-(data.bulletBox[0]+data.bulletBox[2])/2-b.mountOffset[0])<1e-10);
+  assert.ok(Math.abs(y+h/2-(data.bulletBox[1]+data.bulletBox[3])/2-b.mountOffset[1])<1e-10);
  }
 });
 test('new silicone drafts save while default checkout remains blocked before CCV access',async()=>{
