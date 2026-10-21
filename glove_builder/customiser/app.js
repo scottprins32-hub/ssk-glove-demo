@@ -708,6 +708,7 @@ function draw(target = ctx, highlight = S.step === 3) {
   if (target === ctx) {
     $('#glove').classList.add('is-ready');
     interact?.refresh();
+    paintCompare();
   }
   if (target === ctx && !initialRendered) {
     initialRendered = true;
@@ -1323,7 +1324,7 @@ function renderColours(b) {
       p.title = tsub('partDesc', f);
       p.setAttribute('aria-pressed', String(S.part === f));
       p.onclick = () => {
-        S.part = f;
+        S.part = f; tick();
         colourView(f);
         draw(); paint();                 // the tint follows the chosen part
       };
@@ -1380,7 +1381,7 @@ function swatchFamilies(field, note) {
     sw.setAttribute('aria-pressed', String(value === num));
     sw.dataset.key = `${label}|${num}`;
     sw.innerHTML = `<span class="chip" style="background:${hx}"></span><span class="num">${num}.</span><span class="nm">${name}</span>`;
-    sw.onclick = () => pick(num);
+    sw.onclick = () => { tick(); pick(num); };
     return sw;
   };
   const used = [...new Set(COLOUR_ORDER.filter(x => PALETTE_OF(x) === PALETTE_OF(field)).map(x => S.colors[x]).filter(Boolean))]
@@ -1662,21 +1663,27 @@ function renderReview(b) {
 }
 
 async function captureOrderViews() {
-  const snapshot=structuredClone(S),web=WEBS.find(w=>w.id===snapshot.webType),previews=[];
+  const snapshot=structuredClone(S),previews=[];
   const art=flagArt(),renderer=new GloveRenderer({...R.views.back,views:R.views});
   await renderer.preloadFlags(art?[art]:[]);
-  for(const view of ['back','palm','thumb','pinky']) {
+  for(const view of ['back','palm','thumb','pinky']) previews.push(await renderDesignView(snapshot,view,renderer));
+  return previews;
+}
+/* One side of one design, drawn by its own renderer so the stage never moves. */
+async function renderDesignView(snapshot,view,renderer) {
+  const web=WEBS.find(w=>w.id===snapshot.webType),art=(FLAGS.find(f=>f.id===snapshot.flag)||{}).art||null;
+  {
     const bundle=R.views[view];
     if(bundle?.load)await bundle.load();
     registerThumbViews();
     if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'),snapshot.bullet);
     registerThumbViews();
     const availability=viewAvailability(view,web);
-    if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
+    if(!availability.ok)return {view,available:false,notes:[vt(availability.reason)]};
     const angle=view==='thumb'&&thumbEstimatedViewOf(web)||view;
     renderer.views=R.views;
     if(!renderer.setView(angle))throw new Error('View unavailable');
-    renderer.setWeb(web?.render);renderer.setWebMarked(web?.id!==NATIVE_WEB);
+    renderer.setWeb(web?.render);renderer.setWebMarked(!!web&&web.id!==NATIVE_WEB);
     renderer.setFlag(art,null,snapshot.flagPosition);
     const padColour=DATA.palettes.leather.find(c=>c[0]===snapshot.colors.pad_color)?.[2]||null;
     renderer.setPad(PAD_PART[snapshot.pad]||null,padColour);
@@ -1689,9 +1696,8 @@ async function captureOrderViews() {
     const notes=availability.note?[vt(availability.note)]:[];
     notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
     if(snapshot.thumbText||snapshot.pinkyText)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
-    previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
+    return {view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes};
   }
-  return previews;
 }
 
 /* --------------------------------------------------------------- widgets */
@@ -1921,14 +1927,15 @@ function embName(num) {
   return c ? `${c[0]}. ${c[1]}` : null;
 }
 function buildSpec() {
-  const wrap = el('div', 'spec'), dl = el('dl');
+  const wrap = el('div', 'spec');
+  let dl = null;
   for (const [k, v] of specRows()) {
-    if (k === '#') { dl.appendChild(el('h3', null, v)); continue; }
+    if (k === '#') { wrap.appendChild(el('h2', null, v)); dl = el('dl'); wrap.appendChild(dl); continue; }
+    if (!dl) { dl = el('dl'); wrap.appendChild(dl); }
     const term = el('dt'), value = el('dd');
     term.textContent = k; value.textContent = v;
     dl.append(term, value);
   }
-  wrap.appendChild(dl);
   return wrap;
 }
 /* Design completeness and contact completeness are separate facts. */
@@ -2073,8 +2080,95 @@ document.addEventListener('keydown', ev => {
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
 });
 
+/* -------------------------------------------------------------- compare */
+/* One kept version, beside the live glove. Kept on this device only, like
+   the draft; it never travels with a link or an order. */
+const KEPT_KEY = 'ssk-glove-kept-v1';
+let kept = null, compareOn = false, ghostRenderer = null, ghostKey = '';
+function loadKept() {   // after the catalogue is up: cleanState needs it
+  try { const k = JSON.parse(localStorage.getItem(KEPT_KEY)); if (k && k.state) kept = { ...k, state: cleanState(k.state) || null }; if (kept && !kept.state) kept = null; } catch { kept = null; }
+}
+const keptCode = () => kept ? encodeV4(kept.state, kept.state.bullet == null ? null : (DATA.bullets[kept.state.bullet] || {}).name ?? null) : '';
+function keepVersion() {
+  if (flushText()) paint();
+  const state = structuredClone(S); for (const k of PRIVATE) delete state[k];
+  kept = { state, when: new Date().toISOString() };
+  try { localStorage.setItem(KEPT_KEY, JSON.stringify(kept)); } catch {}
+  compareOn = true; ghostKey = ''; paintCompare(); paintSummary();
+}
+function clearKept() {
+  kept = null; compareOn = false; ghostKey = '';
+  try { localStorage.removeItem(KEPT_KEY); } catch {}
+  paintCompare(); paintSummary();
+}
+function restoreKept() {
+  if (!kept) return;
+  snapshot();
+  const keepStep = S.step, keepLang = S.lang;
+  Object.assign(S, structuredClone(kept.state), { step: keepStep, lang: keepLang });
+  draw(); paint();
+}
+async function paintCompare() {
+  const stage = $('#stage'), ghost = $('#ghost');
+  const on = !!(kept && compareOn && R);
+  stage.classList.toggle('is-compare', on);
+  ghost.hidden = !on;
+  if (!on) return;
+  $('#ghostcode').textContent = keptCode();
+  const key = [S.view, JSON.stringify(kept.state), S.lang].join('|');
+  if (key === ghostKey) return;
+  ghostKey = key;
+  try {
+    ghostRenderer ||= new GloveRenderer({ ...R.views.back, views: R.views });
+    const art = (FLAGS.find(f => f.id === kept.state.flag) || {}).art || null;
+    await ghostRenderer.preloadFlags(art ? [art] : []);
+    const p = await renderDesignView(kept.state, S.view, ghostRenderer);
+    if (ghostKey !== key) return;
+    $('#ghostimg').src = p.available ? p.dataUrl : '';
+    $('#ghostimg').alt = p.available ? t('kept') : (p.notes || []).join(' ');
+  } catch { if (ghostKey === key) $('#ghostimg').removeAttribute('src'); }
+}
+$('#ghostimg').onclick = restoreKept;
+function paintCompareControls() {
+  const box = $('#sumcompare'); if (!box) return;
+  box.textContent = '';
+  const keepBtn = el('button', 'btn btn-ghost', t('keepVersion')); keepBtn.type = 'button'; keepBtn.onclick = keepVersion;
+  box.appendChild(keepBtn);
+  if (!kept) return;
+  const cmp = el('button', 'btn btn-ghost', t('compareOn')); cmp.type = 'button';
+  cmp.setAttribute('aria-pressed', String(compareOn));
+  cmp.onclick = () => { compareOn = !compareOn; paintCompare(); paintSummary(); };
+  const back = el('button', 'btn btn-ghost', t('restoreKept')); back.type = 'button'; back.onclick = restoreKept;
+  const clear = el('button', 'btn btn-ghost', t('clearKept')); clear.type = 'button'; clear.onclick = clearKept;
+  const when = new Date(kept.when);
+  const info = el('span', 'sum-kept', `${keptCode()} · ${t('keptAt').replace('%s', isNaN(when) ? '—' : when.toLocaleString(S.lang === 'nl' ? 'nl-NL' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }))}`);
+  box.append(cmp, back, clear, info);
+}
+
+/* ---------------------------------------------------------------- resume */
+/* The draft came back on its own. Say so once, with the way out. */
+function showResume() {
+  const box = $('#resume'); if (!box) return;
+  $('#resumetext').innerHTML = `${t('resumed')} <span>· <code>${code()}</code></span>`;
+  box.hidden = false;
+  clearTimeout(showResume.t); showResume.t = setTimeout(() => { box.hidden = true; }, 12000);
+}
+function startOver() {
+  snapshot();
+  const keepers = { lang: S.lang, name: S.name, phone: S.phone };
+  Object.assign(S, { step: 0, part: 'web', bullet: 7, view: 'back', colors: {}, materials: {}, hand: null, size: '11.75"',
+    pad: 'None', webType: NATIVE_WEB, withdrawnWeb: null, thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
+    thumbNumber: '', circle: null, numberColor: null, flag: null, flagPosition: 'index', flagOther: '', pinkyText: '',
+    personalCheck: false, startId: STARTERS[0].id }, keepers);
+  applyStarter(STARTERS[0], true);
+  $('#resume').hidden = true;
+  draw(); paint();
+}
+$('#startover').onclick = startOver;
+
 /* ------------------------------------------------------ summary drawer */
 function paintSummary() {
+  paintCompareControls();
   const body = $('#sumbody');
   if (!body || $('#sumdrawer').hidden) return;
   body.textContent = '';
@@ -2363,6 +2457,15 @@ $('#redo').onclick = () => {
   undoStack.push(JSON.stringify(S));
   restore(redoStack.pop()); paint();
 };
+// ⌘Z / Ctrl+Z and ⌘⇧Z / Ctrl+Y, anywhere a text field is not taking them.
+document.addEventListener('keydown', ev => {
+  if (!(ev.metaKey || ev.ctrlKey) || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+  const k = ev.key.toLowerCase();
+  if (k === 'z' && !ev.shiftKey) { ev.preventDefault(); $('#undo').click(); }
+  else if ((k === 'z' && ev.shiftKey) || k === 'y') { ev.preventDefault(); $('#redo').click(); }
+});
+// A short tick on a phone when a part or a colour is chosen. Nothing on desktops.
+const tick = () => { try { navigator.vibrate?.(8); } catch {} };
 
 let starterFlagsReady = false;
 const savedDraft = load();
@@ -2393,12 +2496,14 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if (DATA.palettes[PALETTE_OF(field)].some(c => c[0] === '10')) S.colors[field] = '10';
   }
   defaultVisual=visualKey();
+  loadKept();
   const o = cleanState(shared);
   if (o) Object.assign(S, o, { step: 0 });
   else {
     const draft = cleanState(savedDraft);
     if (draft) Object.assign(S, draft, { step: Number.isInteger(savedDraft.step)
       && savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 });
+    if (draft && (S.step > 0 || visualKey() !== defaultVisual)) setTimeout(showResume, 600);
   }
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
@@ -2426,6 +2531,8 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     },
     onTurn: dir => {
       const list = shownViews(); if (list.length < 2) return;
+      $('#stageturn').hidden = true;
+      try { localStorage.setItem('ssk-turned', '1'); } catch {}
       const i = list.indexOf(S.view);
       turnTo(list[(i + dir + list.length) % list.length], dir);
     }
@@ -2457,6 +2564,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       vw.appendChild(b);
     }
   } else $('#stageturn').hidden = true;
+  try { if (localStorage.getItem('ssk-turned')) $('#stageturn').hidden = true; } catch {}
 
   if(visualKey()===defaultVisual && S.view==='back') {
     const image=await publicRenders.read('default:back',DATA.w,DATA.h);

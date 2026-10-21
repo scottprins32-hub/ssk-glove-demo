@@ -170,6 +170,8 @@ export const T = {
   en: {
     builder: 'Custom glove builder', model: 'SSK Pro Custom',
     skipToChoices: 'Skip to the choices', turnHint: 'Drag to turn',
+    now: 'Now', kept: 'Kept', keepVersion: 'Keep this version', restoreKept: 'Back to the kept version', compareOn: 'Compare', clearKept: 'Clear',
+    keptAt: 'Kept at %s', resumed: 'Your design is back', startOver: 'Start over',
     shareCard: 'Share the card', downloadCard: 'Download card',
     heroKick: 'SSK Pro Custom · made to order',
     heroLine: 'Build your glove the way SSK builds it: leather, web, lacing, logos, name.',
@@ -289,6 +291,8 @@ export const T = {
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
     skipToChoices: 'Naar de keuzes', turnHint: 'Sleep om te draaien',
+    now: 'Nu', kept: 'Vastgelegd', keepVersion: 'Deze versie vastleggen', restoreKept: 'Terug naar vastgelegd', compareOn: 'Vergelijk', clearKept: 'Wissen',
+    keptAt: 'Vastgelegd om %s', resumed: 'Je ontwerp is hervat', startOver: 'Opnieuw beginnen',
     shareCard: 'Deel de kaart', downloadCard: 'Kaart downloaden',
     heroKick: 'SSK Pro Custom · op bestelling gemaakt',
     heroLine: 'Bouw je handschoen zoals SSK hem bouwt: leer, web, veters, logo\'s, naam.',
