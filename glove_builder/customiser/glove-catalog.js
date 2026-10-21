@@ -84,7 +84,10 @@ export const FLAGS = [
 
 export const CIRCLE_COLORS = [
   ['Black', '#17161A'], ['Navy', '#1D3A8F'], ['Yellow', '#E8B84C'],
-  ['Red', '#C8102E'], ['Blue', '#2145D6'], ['White', '#F2F0EA']
+  ['Red', '#C8102E'], ['Blue', '#2145D6'], ['White', '#F2F0EA'],
+  ['Gold', '#C9A227'], ['Silver', '#C5C8CC'], ['Green', '#17633A'],
+  ['Purple', '#603487'], ['Orange', '#ED722A'], ['Pink', '#E79DB9'],
+  ['Grey', '#85858A'], ['Maroon', '#6B2639']
 ];
 
 // Which palette a colour field is picked from. Binding, welting and laces are
@@ -241,7 +244,7 @@ export const T = {
     webRefNote: 'Not available to order or preview here yet, so these cannot be selected.',
     webRefBadge: 'Picture only: no preview yet',
     webWithdrawn: 'Your saved design used the %s, which cannot be ordered here. Choose one of the available webs; the rest of your design is kept.',
-    limPersonal: 'Embroidery text, thumb number and circle colour are specified in the list, not drawn on the picture.',
+    limPersonal: 'Name embroidery follows the specification. The circle preview is indicative and is shown on the traced thumb view.',
     limOtherFlag: 'Other flag (%s) is not drawn on the picture.',
     limSize: 'Size %s is ordered as chosen; the picture is one representative glove size.',
     limBack8: 'Back 7 and Back 8 are separate colours; the Back and Pinky side views show them apart.',
@@ -334,7 +337,7 @@ export const T = {
     webRefNote: 'Nog niet te bestellen of te bekijken hier, dus niet te kiezen.',
     webRefBadge: 'Alleen afbeelding: nog geen voorbeeld',
     webWithdrawn: 'Je opgeslagen ontwerp had het %s, dat hier niet te bestellen is. Kies een van de beschikbare webs; de rest van je ontwerp blijft bewaard.',
-    limPersonal: 'Borduurtekst, duimnummer en cirkelkleur staan in de lijst, maar zijn niet op de afbeelding getekend.',
+    limPersonal: 'Naamborduring volgt de specificatie. De cirkelpreview is indicatief en staat op de getraceerde duimzijde.',
     limOtherFlag: 'Andere vlag (%s) is niet op de afbeelding getekend.',
     limSize: 'Maat %s wordt besteld zoals gekozen; de afbeelding toont één representatieve maat.',
     limBack8: 'Back 7 en Back 8 zijn aparte kleuren; de achterkant en pinkzijde tonen ze apart.',

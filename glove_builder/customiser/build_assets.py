@@ -1414,9 +1414,9 @@ def main():
                 entry["thumb"] = to_data_uri(t, quality=80, method=4)
             # Scott selected the first HD silicone artwork with its original
             # proportions. Retain its registered crop/mount on future rebuilds.
-            if name.startswith("Silicone"):
-                registry = json.loads(pathlib.Path(__file__).with_name(
-                    'silicone-badges.json').read_text())
+            if name.startswith("Silicone") or name in {b["name"] for b in json.loads(pathlib.Path(__file__).with_name("hd-wrist-badges.json").read_text())}:
+                registry_file = "silicone-badges.json" if name.startswith("Silicone") else "hd-wrist-badges.json"
+                registry = json.loads(pathlib.Path(__file__).with_name(registry_file).read_text())
                 selected = next(b for b in registry if b['name'] == name)
                 folder = pathlib.Path(__file__).parent
                 assets[selected['asset']] = 'data:image/webp;base64,' + base64.b64encode(

@@ -47,7 +47,7 @@ const RC_V2 = {
     'Navy/Gold', 'White/Gold', 'Red/Gold'],
   flag: ['None', 'Netherlands', 'Belgium', 'Germany', 'Italy',
     'United States', 'Japan', 'Curaçao', 'Aruba', 'Sint Maarten', 'Other Flag'],
-  circle: ['Black', 'Navy', 'Yellow', 'Red', 'Blue', 'White'],
+  circle: ['Black', 'Navy', 'Yellow', 'Red', 'Blue', 'White', 'Gold', 'Silver', 'Green', 'Purple', 'Orange', 'Pink', 'Grey', 'Maroon'],
   thumbFont: ['Block', 'Script', 'Brush', 'Kanji', 'Block with Outline',
     'Script with Outline', 'Brush with Outline', 'Kanji with Outline',
     'Block with Shadow', 'Script with Shadow', 'Brush with Shadow',

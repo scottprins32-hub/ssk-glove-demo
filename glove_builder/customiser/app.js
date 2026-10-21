@@ -160,10 +160,10 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03',window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03|thumb-r12',window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
-  S.thumbText,S.thumbNumber,S.pinkyText]);
+  S.thumbText,S.thumbNumber,S.pinkyText,S.circle,S.numberColor]);
 const nativeFrameKey=(view,renderer=R)=>view+'|'+!!renderer.flagImg+'|'+Object.keys(renderer.views[view]?.imgs || {}).length;
 const rememberPublic=(key,image)=>{
   const write=()=>publicRenders.write(key,image);
@@ -389,6 +389,7 @@ function layerState(D = R ? R.DATA : DATA, map = viewLayerField()) {
     out[z.id] = S.colors[f] || DATA.palettes[z.group][0][0];
   }
   out.palm = S.colors.palm || '10';
+  out.thumbMark = {text:S.thumbNumber,circle:CIRCLE_COLORS.find(c=>c[0]===S.circle)?.[1],thread:DATA.palettes.embroidery.find(c=>c[0]===S.numberColor)?.[2]};
   return out;
 }
 // The order's reference: the form's answers, whatever view is on screen.
@@ -578,11 +579,11 @@ let selectionRequest = null, initialRendered = false;
 const selectedAssets = () => {
   const web = selectedWeb()?.render || null;
   const snake = Object.values(S.materials || {}).includes('snakeskin');
-  return { view: R.views[S.view], web, snake, key: JSON.stringify([S.view, web, snake]) };
+  return { view: R.views[S.view], web, snake, bullet: S.bullet, key: JSON.stringify([S.view, web, snake, S.bullet]) };
 };
 const selectionIsReady = () => {
-  const { view, web, snake } = selectedAssets();
-  return !!view?.selectionReady(web, snake);
+  const { view, web, snake, bullet } = selectedAssets();
+  return !!view?.selectionReady(web, snake, bullet);
 };
 const selectionMessage = failed => S.lang === 'nl'
   ? (failed ? 'Deze optie kon niet laden. Probeer het opnieuw.' : 'Gekozen optie laden…')
@@ -601,7 +602,7 @@ function selectionRetry(show) {
 }
 function gateSelection(target) {
   const selected = selectedAssets();
-  if (selected.view.selectionReady(selected.web, selected.snake)) return false;
+  if (selected.view.selectionReady(selected.web, selected.snake, selected.bullet)) return false;
   if (target !== ctx) throw new Error('Selected option is still loading');
   if (selectionRequest?.key !== selected.key) selectionRequest = { key: selected.key };
   const request = selectionRequest;
@@ -610,7 +611,7 @@ function gateSelection(target) {
   $('#stagehint').textContent = selectionMessage(!!request.error);
   selectionRetry(!!request.error);
   if (!request.pending && !request.error) {
-    request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
+    request.pending = selected.view.loadSelection(selected.web, selected.snake, selected.bullet).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
       if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     }).catch(error => {
@@ -1041,7 +1042,7 @@ function liveThumbs(field, items, box, jobFor) {
     for (const [it, card, setUp] of todo) {
       setUp(previewR);
       const pending = R.views.back.loadSelection(previewR.web,
-        Object.values(S.materials || {}).includes('snakeskin'));
+        Object.values(S.materials || {}).includes('snakeskin'), S.bullet);
       prepared.set(it.id, pending); pending.catch(() => {});
     }
   });
@@ -1054,7 +1055,7 @@ function liveThumbs(field, items, box, jobFor) {
     const [it, card, setUp] = job;
     setUp(previewR);
     try {
-      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin')));
+      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'), S.bullet));
     } catch {
       if (field.isConnected && key === thumbKey) {
         if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
@@ -1351,14 +1352,14 @@ function renderPersonal(b) {
   }
   const twoChars = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
   const circleField = textField(t('thumbNumber'), S.thumbNumber, 2,
-    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); return changed; },
+    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); draw(); return changed; },
     false, 'text', twoChars, 'thumb');
   circleField.appendChild(el('p', 'note', t('circleHint')));
   b.appendChild(circleField);
   b.appendChild(choiceField(t('circle'), CIRCLE_COLORS.map(([n, hx]) => ({
     id: n, label: n, swatch: hx
-  })), S.circle, v => { snapshot(); S.circle = v; paint(); }, !!S.thumbNumber));
-  if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
+  })), S.circle, v => { snapshot(); S.circle = v; draw(); paint(); }, !!S.thumbNumber));
+  if (S.thumbNumber) b.appendChild(swatchGrid(t('numberColor'), DATA.palettes.embroidery.filter(c=>['10','20','25','35','39','50','60','70','80','90','95','48'].includes(c[0])), S.numberColor, v=>{snapshot();S.numberColor=v;draw();paint();},true,null));
   // Pinky embroidery is not one of the 36 questions on SSK's form, but it is
   // orderable — Scott's own glove reads "Modern Pitching" there, and Pim has
   // confirmed it. Font and thread follow the thumb's; if the pinky can carry
@@ -1496,7 +1497,7 @@ async function captureOrderViews() {
     const bundle=R.views[view];
     if(bundle?.load)await bundle.load();
     registerThumbViews();
-    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'));
+    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'),snapshot.bullet);
     registerThumbViews();
     const availability=viewAvailability(view,web);
     if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
@@ -1510,11 +1511,12 @@ async function captureOrderViews() {
     const D=renderer.DATA,map=view==='back'?LAYER_TO_FIELD:view==='palm'?{...PALM_FIELDS,stitching:'stitching'}:Object.fromEntries(D.zones.map(z=>[z.id,z.field]));
     renderer.setMaterials(Object.fromEntries(D.zones.map(z=>[z.id,snapshot.materials?.[map[z.id]]||'standard'])));
     const state=Object.fromEntries(D.zones.map(z=>[z.id,snapshot.colors[map[z.id]]||DATA.palettes[z.group][0][0]]));state.palm=snapshot.colors.palm||'10';
+    state.thumbMark={text:snapshot.thumbNumber,circle:CIRCLE_COLORS.find(c=>c[0]===snapshot.circle)?.[1],thread:DATA.palettes.embroidery.find(c=>c[0]===snapshot.numberColor)?.[2]};
     const canvas=document.createElement('canvas');canvas.width=D.w;canvas.height=D.h;
     renderer.draw(canvas.getContext('2d'),state,snapshot.bullet,null,hasFlag(snapshot),/^L/.test(snapshot.hand));
     const notes=availability.note?[vt(availability.note)]:[];
     notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
-    if(snapshot.thumbText||snapshot.pinkyText||snapshot.thumbNumber)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
+    if(snapshot.thumbText||snapshot.pinkyText)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
     previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
   }
   return previews;
@@ -1784,7 +1786,7 @@ async function readyForExport() {
     try {
       await selected.view.load();
       registerThumbViews();
-      if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
+      if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake, selected.bullet);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
         selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);

@@ -63,7 +63,7 @@ export function renderAssets(DATA, baseOnly = false) {
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
-    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']);
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']).filter(key => !baseOnly || !DATA.bullets?.some(b => b.hdArtwork && b.asset === key));
 }
 function selectionAssets(DATA, web, snake, palmManifest) {
   const palm = palmManifest?.entries?.[web];
@@ -191,15 +191,16 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       // Its compiled contract and every selected asset still have to verify.
       v.hasPendingSelection = web => !!palmManifest?.entries?.[web]
         && !!PALM_P3.webs[web] && !v.DATA.palmWebs?.entries?.[web];
-      v.selectionReady = (web, snake = false) => v.ready
+      const selectedKeys = (web, snake, bullet) => [...new Set([...selectionAssets(v.DATA, web, snake, palmManifest), ...assetDependencies(v.DATA, [v.DATA.bullets?.[bullet]?.asset])])];
+      v.selectionReady = (web, snake = false, bullet = null) => v.ready
         && !v.hasPendingSelection(web)
-        && selectionAssets(v.DATA, web, snake, palmManifest).every(key => !!v.imgs[key]);
-      v.loadSelection = (web, snake = false) => {
-        const key = JSON.stringify([web || null, !!snake]);
+        && selectedKeys(web, snake, bullet).every(key => !!v.imgs[key]);
+      v.loadSelection = (web, snake = false, bullet = null) => {
+        const key = JSON.stringify([web || null, !!snake, bullet]);
         if (selections.has(key)) return selections.get(key);
         const pending = (async () => {
           await v.load();
-          const keys = selectionAssets(v.DATA, web, snake, palmManifest);
+          const keys = selectedKeys(web, snake, bullet);
           await loadAssets(keys);
           if (keys.some(key => !v.imgs[key])) throw new Error('Selected option could not be loaded');
           if (palmManifest?.entries?.[web]) {
@@ -459,7 +460,7 @@ export class GloveRenderer {
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
           ...(['back','palm'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
-          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true} : {}) },
+          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true,...(this.view === 'thumb' ? {nativeHDetail:null,thumbWingtip:null,thumbLaceCorrection:null,nativeHWhiteWindows:null,nativeHTransparentWindows:null} : {})} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }
       Object.assign(this, { DATA:this.nativeContourBundle.DATA,
@@ -830,6 +831,21 @@ export class GloveRenderer {
     ctx.restore();
   }
 
+  drawWristBadge(ctx, bulletSel, mirror) {
+    const bb = this.DATA.bulletBox;
+    if (!bb) return;
+    const [dx,dy] = this.DATA.bullets[bulletSel]?.mountOffset || [0,0];
+    const cx = (bb[0]+bb[2])/2+dx, cy = (bb[1]+bb[3])/2+dy;
+    this.unmirror(ctx, cx, cx, mirror, () => {
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.scale(0.9,0.9);
+      ctx.translate(-cx,-cy);
+      this.drawBullet(ctx,bulletSel);
+      ctx.restore();
+    });
+  }
+
   drawBullet(ctx, bulletSel) {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
@@ -839,15 +855,16 @@ export class GloveRenderer {
     if (opt && opt.asset && imgs[opt.asset]) {
       if (opt.sourceBox) {
         // Standalone silicone cutouts retain their native detail and proportions.
-        // Fit inside the existing wrist-badge area; all older registered plates
+        // Centre on the existing wrist-badge area; all older registered plates
         // keep their original full-canvas placement.
         const [sx,sy,sw,sh] = opt.sourceBox, [x0,y0,x1,y1] = this.DATA.bulletBox;
         // Mount size is a limit, never a forced width/height pair. One scale
         // preserves every original contour and the thickness of both ribbons.
         const [mw,mh] = opt.mountSize || [x1-x0,y1-y0];
-        const scale = Math.min((x1-x0)/sw, (y1-y0)/sh,mw/sw,mh/sh);
+        const scale = Math.min(mw/sw,mh/sh);
         const w=sw*scale,h=sh*scale;
-        ctx.drawImage(imgs[opt.asset], sx,sy,sw,sh, (x0+x1-w)/2,(y0+y1-h)/2,w,h);
+        const [dx,dy] = opt.mountOffset || [0,0];
+        ctx.drawImage(imgs[opt.asset], sx,sy,sw,sh, (x0+x1-w)/2+dx,(y0+y1-h)/2+dy,w,h);
       } else ctx.drawImage(imgs[opt.asset], 0, 0);
       return;
     }
@@ -1557,7 +1574,7 @@ export class GloveRenderer {
       this.unmirror(ctx, M.cx - r, M.cx + r, mirror,
                     () => this.drawFlag(ctx, mirror));
     }
-    if (mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
+    if (!(D.thumbBadge && D.tracedSeams) && mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
       const badge = D.thumbCircle;
       ctx.save();
       // Keep glyphs readable while aligning the badge plane with the
@@ -1571,18 +1588,37 @@ export class GloveRenderer {
       ctx.drawImage(this.imgs.thumb_circle_art, -badge.cx, -badge.cy);
       ctx.restore();
     }
-    if (D.thumbBadgeThread) {
+    if (!(D.thumbBadge && D.tracedSeams) && D.thumbBadgeThread) {
       const b=D.thumbBadgeThread;
       ctx.save();ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);
       ctx.beginPath();ctx.ellipse(0,0,b.rx,b.ry,0,0,Math.PI*2);
       ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=1.55;
       ctx.lineCap='round';ctx.setLineDash([2.65,3.5]);ctx.stroke();ctx.restore();
     }
-    const bb = D.bulletBox;
-    if (bb) {
-      this.unmirror(ctx, bb[0], bb[2], mirror,
-                    () => this.drawBullet(ctx, bulletSel));
+    if (D.tracedSeams && D.thumbBadge && this.imgs[D.thumbBadge.asset]) {
+      const b = D.thumbBadge, [sx,sy,sw,sh] = b.sourceBox;
+      const mark = state.thumbMark || {}, text = /^[A-Z0-9]{1,2}$/.test(mark.text || '') ? mark.text : '';
+      this.unmirror(ctx,b.cx,b.cx,mirror,()=>{
+        ctx.save();ctx.beginPath();ctx.arc(b.cx,b.cy,b.radius,0,Math.PI*2);ctx.clip();
+        ctx.translate(b.cx,b.cy);ctx.rotate((mirror?-1:1)*(b.artAngleDegrees||0)*Math.PI/180);ctx.translate(-b.cx,-b.cy);
+        if (!text) ctx.drawImage(this.imgs[b.asset],sx,sy,sw,sh,b.cx-b.radius,b.cy-b.radius,b.radius*2,b.radius*2);
+        else {
+          const colour = /^#[0-9a-f]{6}$/i.test(mark.circle || '') ? mark.circle : '#17161A';
+          const thread = /^#[0-9a-f]{6}$/i.test(mark.thread || '') ? mark.thread : '#F2F0EA';
+          ctx.fillStyle=colour;ctx.fillRect(b.cx-b.radius,b.cy-b.radius,b.radius*2,b.radius*2);
+          const tile=document.createElement('canvas');tile.width=tile.height=256;const t=tile.getContext('2d');
+          t.textAlign='center';t.textBaseline='middle';t.font='900 '+(text.length===2?152:186)+'px Arial, sans-serif';
+          t.fillStyle=thread;t.fillText(text,128,137,214);
+          t.globalCompositeOperation='source-atop';t.strokeStyle='rgba(255,255,255,.22)';t.lineWidth=.8;
+          for(let y=0;y<256;y+=3){t.beginPath();t.moveTo(0,y);t.lineTo(256,y-28);t.stroke();}
+          ctx.drawImage(tile,b.cx-b.radius*.82,b.cy-b.radius*.82,b.radius*1.64,b.radius*1.64);
+        }
+        ctx.restore();
+      });
+      ctx.save();ctx.beginPath();ctx.arc(b.cx,b.cy,b.stitchRadius,0,Math.PI*2);
+      ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=b.stitchWidth;ctx.lineCap='round';ctx.setLineDash(b.dash);ctx.stroke();ctx.restore();
     }
+    if (D.bulletBox) this.drawWristBadge(ctx, bulletSel, mirror);
     if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
       let c = this.tinted(highlight.id, '#ffffff');
       if (D.surfaceDetails?.length) {

@@ -20,8 +20,9 @@ test('first HD silicone contours use uniform scale on either hand',()=>{
  for(const index of[15,16])for(const mirror of[false,true]){
   const b=data.bullets[index],image={},calls=[],ctx={save(){},restore(){},translate(){},scale(){},drawImage(...a){calls.push(a);}},r={DATA:data,imgs:{bullet_logo:{},[b.asset]:image}};
   GloveRenderer.prototype.unmirror.call(r,ctx,data.bulletBox[0],data.bulletBox[2],mirror,()=>GloveRenderer.prototype.drawBullet.call(r,ctx,index));
-  const[im,sx,sy,sw,sh,x,y,w,h]=calls[0];assert.equal(im,image);assert.ok(Math.abs(w/sw-h/sh)<1e-12);assert.ok(Math.abs(w-185)<1e-10);assert.ok(h>105&&h<=121);
-  assert.ok(x>=data.bulletBox[0]&&y>=data.bulletBox[1]&&x+w<=data.bulletBox[2]&&y+h<=data.bulletBox[3]);
+  const[im,sx,sy,sw,sh,x,y,w,h]=calls[0];assert.equal(im,image);assert.ok(Math.abs(w/sw-h/sh)<1e-12);assert.ok(Math.abs(w-235)<1e-10);assert.ok(h>139&&h<=155);
+  assert.ok(Math.abs(x+w/2-(data.bulletBox[0]+data.bulletBox[2])/2-b.mountOffset[0])<1e-10);
+  assert.ok(Math.abs(y+h/2-(data.bulletBox[1]+data.bulletBox[3])/2-b.mountOffset[1])<1e-10);
  }
 });
 test('new silicone drafts save while default checkout remains blocked before CCV access',async()=>{
@@ -33,4 +34,23 @@ test('new silicone drafts save while default checkout remains blocked before CCV
   assert.ok(draft.id);await assert.rejects(service({action:'checkout',id:draft.id,token:draft.checkoutToken}),/checkout_approval_pending/);
  }
  assert.equal((await service({action:'config'})).checkoutEnabled,false);assert.equal(posts,0);assert.equal(rows,2);
+});
+
+test('offset badge reflection keeps its actual centre on the mirrored wrist',()=>{
+ for(const b of data.bullets.filter(b=>b.sourceBox)){
+  const dx=b.mountOffset[0],bb=data.bulletBox,cx=(bb[0]+bb[2])/2+dx,calls=[];
+  GloveRenderer.prototype.unmirror.call({}, {save(){},restore(){},translate(x,y){calls.push([x,y])},scale(){}},bb[0]+dx,bb[2]+dx,true,()=>{});
+  assert.equal(calls[0][0]-cx,cx);
+ }
+});
+
+test('all wrist badge options shrink uniformly about their own mount on both hands',()=>{
+ for(let i=0;i<data.bullets.length;i++)for(const mirror of [false,true]){
+  const calls=[],ctx={save(){},restore(){},translate(...v){calls.push(['translate',...v])},scale(...v){calls.push(['scale',...v])}};
+  const r={DATA:data,unmirror:GloveRenderer.prototype.unmirror,drawBullet(c,sel){assert.equal(c,ctx);assert.equal(sel,i)}};
+  GloveRenderer.prototype.drawWristBadge.call(r,ctx,i,mirror);
+  assert.equal(calls.filter(v=>v[0]==='scale'&&v[1]===0.9&&v[2]===0.9).length,1);
+  const b=data.bullets[i],cx=(data.bulletBox[0]+data.bulletBox[2])/2+(b.mountOffset?.[0]||0);
+  if(mirror)assert.deepEqual(calls[0],['translate',2*cx,0]);
+ }
 });

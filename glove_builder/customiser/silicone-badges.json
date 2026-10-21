@@ -14,10 +14,14 @@
       822
     ],
     "mountSize": [
-      185,
-      121
+      235,
+      155
     ],
-    "source": "assets/silicone_gold-original-hd-r03.webp"
+    "source": "assets/silicone_gold-original-hd-r03.webp",
+    "mountOffset": [
+      20,
+      -12
+    ]
   },
   {
     "name": "Silicone Silver",
@@ -34,9 +38,13 @@
       766
     ],
     "mountSize": [
-      185,
-      121
+      235,
+      155
     ],
-    "source": "assets/silicone_silver-original-hd-r03.webp"
+    "source": "assets/silicone_silver-original-hd-r03.webp",
+    "mountOffset": [
+      20,
+      -12
+    ]
   }
 ]

@@ -1,0 +1,189 @@
+{
+  "traceSha256": "a978c3222c7af16311502ea2037b7eeff70e6ec0cc8efcaf3ba112a56317b736",
+  "shapes": 75,
+  "paths": [
+    {
+      "name": "Open stiklijn 1",
+      "points": 8,
+      "dashes": 44
+    },
+    {
+      "name": "Open stiklijn 2",
+      "points": 8,
+      "dashes": 44
+    },
+    {
+      "name": "Open stiklijn 3",
+      "points": 10,
+      "dashes": 17
+    },
+    {
+      "name": "Open stiklijn 4",
+      "points": 12,
+      "dashes": 23
+    },
+    {
+      "name": "Open stiklijn 5",
+      "points": 10,
+      "dashes": 16
+    },
+    {
+      "name": "Open stiklijn 6",
+      "points": 10,
+      "dashes": 15
+    },
+    {
+      "name": "Open stiklijn 7",
+      "points": 9,
+      "dashes": 21
+    },
+    {
+      "name": "Open stiklijn 8",
+      "points": 10,
+      "dashes": 22
+    },
+    {
+      "name": "Open stiklijn 9",
+      "points": 23,
+      "dashes": 91
+    },
+    {
+      "name": "Open stiklijn 10",
+      "points": 18,
+      "dashes": 72
+    },
+    {
+      "name": "Open stiklijn 11",
+      "points": 3,
+      "dashes": 4
+    },
+    {
+      "name": "Open stiklijn 12",
+      "points": 11,
+      "dashes": 121
+    },
+    {
+      "name": "Open stiklijn 13",
+      "points": 2,
+      "dashes": 5
+    },
+    {
+      "name": "Open stiklijn 14",
+      "points": 2,
+      "dashes": 4
+    },
+    {
+      "name": "Open stiklijn 15",
+      "points": 2,
+      "dashes": 10
+    },
+    {
+      "name": "Open stiklijn 16",
+      "points": 2,
+      "dashes": 10
+    },
+    {
+      "name": "Open stiklijn 17",
+      "points": 4,
+      "dashes": 32
+    },
+    {
+      "name": "Open stiklijn 18",
+      "points": 2,
+      "dashes": 2
+    },
+    {
+      "name": "Open stiklijn 19",
+      "points": 9,
+      "dashes": 82
+    },
+    {
+      "name": "Open stiklijn 20",
+      "points": 8,
+      "dashes": 82
+    },
+    {
+      "name": "Open stiklijn 21",
+      "points": 9,
+      "dashes": 85
+    },
+    {
+      "name": "Open stiklijn 22",
+      "points": 9,
+      "dashes": 86
+    },
+    {
+      "name": "Open stiklijn 23",
+      "points": 4,
+      "dashes": 17
+    },
+    {
+      "name": "Open stiklijn 24",
+      "points": 2,
+      "dashes": 5
+    },
+    {
+      "name": "Open stiklijn 25",
+      "points": 2,
+      "dashes": 5
+    },
+    {
+      "name": "Open stiklijn 26",
+      "points": 4,
+      "dashes": 33
+    },
+    {
+      "name": "Open stiklijn 27",
+      "points": 2,
+      "dashes": 12
+    },
+    {
+      "name": "Open stiklijn 28",
+      "points": 2,
+      "dashes": 11
+    },
+    {
+      "name": "Open stiklijn 29",
+      "points": 2,
+      "dashes": 8
+    },
+    {
+      "name": "Open stiklijn 30",
+      "points": 2,
+      "dashes": 8
+    },
+    {
+      "name": "Open stiklijn 31",
+      "points": 2,
+      "dashes": 8
+    },
+    {
+      "name": "Open stiklijn 32",
+      "points": 2,
+      "dashes": 8
+    },
+    {
+      "name": "Open stiklijn 33",
+      "points": 11,
+      "dashes": 33
+    },
+    {
+      "name": "Open stiklijn 34",
+      "points": 9,
+      "dashes": 18
+    }
+  ],
+  "roles": [
+    "palm",
+    "back1",
+    "back2",
+    "back3",
+    "web",
+    "belt",
+    "binding",
+    "welting",
+    "thumb_loops",
+    "laces",
+    "stitching"
+  ]
+}
