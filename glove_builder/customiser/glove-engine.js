@@ -63,7 +63,7 @@ export function renderAssets(DATA, baseOnly = false) {
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
-    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']);
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']).filter(key => !baseOnly || !DATA.assets[key]?.startsWith('assets/hd-logos-r01/'));
 }
 function selectionAssets(DATA, web, snake, palmManifest) {
   const palm = palmManifest?.entries?.[web];
@@ -191,15 +191,16 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
       // Its compiled contract and every selected asset still have to verify.
       v.hasPendingSelection = web => !!palmManifest?.entries?.[web]
         && !!PALM_P3.webs[web] && !v.DATA.palmWebs?.entries?.[web];
-      v.selectionReady = (web, snake = false) => v.ready
+      const selectedKeys = (web, snake, bullet) => [...new Set([...selectionAssets(v.DATA, web, snake, palmManifest), ...assetDependencies(v.DATA, [v.DATA.bullets?.[bullet]?.asset])])];
+      v.selectionReady = (web, snake = false, bullet = null) => v.ready
         && !v.hasPendingSelection(web)
-        && selectionAssets(v.DATA, web, snake, palmManifest).every(key => !!v.imgs[key]);
-      v.loadSelection = (web, snake = false) => {
-        const key = JSON.stringify([web || null, !!snake]);
+        && selectedKeys(web, snake, bullet).every(key => !!v.imgs[key]);
+      v.loadSelection = (web, snake = false, bullet = null) => {
+        const key = JSON.stringify([web || null, !!snake, bullet]);
         if (selections.has(key)) return selections.get(key);
         const pending = (async () => {
           await v.load();
-          const keys = selectionAssets(v.DATA, web, snake, palmManifest);
+          const keys = selectedKeys(web, snake, bullet);
           await loadAssets(keys);
           if (keys.some(key => !v.imgs[key])) throw new Error('Selected option could not be loaded');
           if (palmManifest?.entries?.[web]) {

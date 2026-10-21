@@ -578,11 +578,11 @@ let selectionRequest = null, initialRendered = false;
 const selectedAssets = () => {
   const web = selectedWeb()?.render || null;
   const snake = Object.values(S.materials || {}).includes('snakeskin');
-  return { view: R.views[S.view], web, snake, key: JSON.stringify([S.view, web, snake]) };
+  return { view: R.views[S.view], web, snake, bullet: S.bullet, key: JSON.stringify([S.view, web, snake, S.bullet]) };
 };
 const selectionIsReady = () => {
-  const { view, web, snake } = selectedAssets();
-  return !!view?.selectionReady(web, snake);
+  const { view, web, snake, bullet } = selectedAssets();
+  return !!view?.selectionReady(web, snake, bullet);
 };
 const selectionMessage = failed => S.lang === 'nl'
   ? (failed ? 'Deze optie kon niet laden. Probeer het opnieuw.' : 'Gekozen optie laden…')
@@ -601,7 +601,7 @@ function selectionRetry(show) {
 }
 function gateSelection(target) {
   const selected = selectedAssets();
-  if (selected.view.selectionReady(selected.web, selected.snake)) return false;
+  if (selected.view.selectionReady(selected.web, selected.snake, selected.bullet)) return false;
   if (target !== ctx) throw new Error('Selected option is still loading');
   if (selectionRequest?.key !== selected.key) selectionRequest = { key: selected.key };
   const request = selectionRequest;
@@ -610,7 +610,7 @@ function gateSelection(target) {
   $('#stagehint').textContent = selectionMessage(!!request.error);
   selectionRetry(!!request.error);
   if (!request.pending && !request.error) {
-    request.pending = selected.view.loadSelection(selected.web, selected.snake).then(() => {
+    request.pending = selected.view.loadSelection(selected.web, selected.snake, selected.bullet).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
       if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
     }).catch(error => {
@@ -1041,7 +1041,7 @@ function liveThumbs(field, items, box, jobFor) {
     for (const [it, card, setUp] of todo) {
       setUp(previewR);
       const pending = R.views.back.loadSelection(previewR.web,
-        Object.values(S.materials || {}).includes('snakeskin'));
+        Object.values(S.materials || {}).includes('snakeskin'), S.bullet);
       prepared.set(it.id, pending); pending.catch(() => {});
     }
   });
@@ -1054,7 +1054,7 @@ function liveThumbs(field, items, box, jobFor) {
     const [it, card, setUp] = job;
     setUp(previewR);
     try {
-      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin')));
+      await (prepared.get(it.id) || R.views.back.loadSelection(previewR.web, Object.values(S.materials || {}).includes('snakeskin'), S.bullet));
     } catch {
       if (field.isConnected && key === thumbKey) {
         if (!card.querySelector('.preview-error')) card.appendChild(el('span', 'note preview-error',
@@ -1496,7 +1496,7 @@ async function captureOrderViews() {
     const bundle=R.views[view];
     if(bundle?.load)await bundle.load();
     registerThumbViews();
-    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'));
+    if(bundle?.loadSelection)await bundle.loadSelection(web?.render,Object.values(snapshot.materials||{}).includes('snakeskin'),snapshot.bullet);
     registerThumbViews();
     const availability=viewAvailability(view,web);
     if(!availability.ok){previews.push({view,available:false,notes:[vt(availability.reason)]});continue;}
@@ -1784,7 +1784,7 @@ async function readyForExport() {
     try {
       await selected.view.load();
       registerThumbViews();
-      if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake);
+      if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake, selected.bullet);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
         selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);

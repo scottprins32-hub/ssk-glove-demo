@@ -165,8 +165,9 @@ test('real back metadata follows selected material dependencies without loading 
   const bundle = await h.loadGlove({ progressive: true });
   const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0); // Back 2 and its legacy highlight also become dependencies.
   const silicone = metadata.bullets.filter(b => b.name.startsWith('Silicone')).length;
-  assert.equal(Object.keys(bundle.imgs).length, 99 + traced + silicone);
-  assert.equal(h.images.size, 97 + traced + silicone);
+  assert.equal(Object.keys(bundle.imgs).length, 84 + traced + silicone);
+  assert.equal(h.images.size, 82 + traced + silicone);
+  for (const b of metadata.bullets.slice(0,15)) assert.equal(bundle.imgs[b.asset], undefined);
   const deferred = ['palm_bridge_original_smk_body_heal', 'palm_bridge_original_smk_body_heal_hi',
     'smlee_r03_laces', 'smlee_r02_laces', 'smlee_r03_material_region'];
   for (const key of deferred) assert.equal(bundle.imgs[key], undefined, key);
@@ -179,8 +180,15 @@ test('real back metadata follows selected material dependencies without loading 
     assert.equal(bundle.views.back.selectionReady(web), true);
   }
   await bundle.views.back.loadSelection(null, true);
-  assert.equal(Object.keys(bundle.imgs).length, 158 + traced + silicone);
-  assert.equal(h.images.size, 156 + traced + silicone);
+  assert.equal(Object.keys(bundle.imgs).length, 143 + traced + silicone);
+  assert.equal(h.images.size, 141 + traced + silicone);
+  assert.equal(bundle.views.back.selectionReady(null,false,0),false);
+  await bundle.views.back.loadSelection(null,false,0);
+  assert.equal(bundle.views.back.selectionReady(null,false,0),true);
+  assert.ok(bundle.imgs[metadata.bullets[0].asset]);
+  for (const b of metadata.bullets.slice(1,15)) assert.equal(bundle.imgs[b.asset],undefined);
+  await bundle.views.back.loadSelection(null,false,0);
+  assert.equal(h.images.get(metadata.assets[metadata.bullets[0].asset]),1);
 });
 
 test('pinky material plates are ready with the view while Crocodile texture stays deferred', async () => {
