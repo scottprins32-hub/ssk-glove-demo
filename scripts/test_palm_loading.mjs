@@ -278,11 +278,12 @@ test('actual app keeps pending palm selectable but gates drawing until verificat
   assert.ok(drawSource.startsWith('function draw(target = ctx,'));
   const ui = new Function('R', `
     const S = { view:'palm', webType:'smk', materials:{}, colors:{}, lang:'en' }, NATIVE_WEB='H-Web';
-    const WEBS=[{id:'smk',render:'smk'}], PAD_PART={};
+    const WEBS=[{id:'smk',render:'smk'}], PAD_PART={}, DATA=R.DATA;
+    const stageBackground=()=> '#949494';
     const selectedWeb = () => ({id:S.webType, render:S.webType}), draws=[];
     const nodes = {'#glove':{setAttribute(){},removeAttribute(){}}, '#stagehint':{}};
     const $ = key => nodes[key], el = () => ({}), paint = () => {};
-    const document = {querySelector:()=>({appendChild:node=>{nodes['#'+node.id]=node;}})};
+    const document = {querySelector:()=>({style:{setProperty(){}},appendChild:node=>{nodes['#'+node.id]=node;}})};
     const ctx = {canvas:{width:1,height:1},clearRect(){}};
     const flagArt=()=>null, layerMaterials=()=>({}), layerState=()=>({}), hasFlag=()=>false, isLefty=()=>false;
     const visualKey=()=>'test',nativeFrameKey=()=>'',defaultVisual=null;
