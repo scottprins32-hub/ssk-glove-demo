@@ -5,6 +5,7 @@
 import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } from './glove-engine.js';
 import { NativeFrames, PublicRenders } from './render-cache.js';
+import { stageBackground } from './stage-background.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
@@ -684,6 +685,13 @@ function draw(target = ctx, highlight = S.step === 3) {
     if(signature===defaultVisual && !Object.keys(R.views[S.view]?.assetErrors || {}).length)
       rememberPublic('default:'+view,image);
   } else R.draw(target,layerState(),S.bullet,selected,hasFlag(),isLefty());
+  if (target === ctx) {
+    const state = layerState();
+    const colours = R.DATA.zones
+      .map(z => (DATA.palettes[z.group] || []).find(c => c[0] === state[z.id])?.[2]);
+    if (R.pad && R.imgs[R.pad] && R.DATA.bbox[R.pad]) colours.push(R.padHex);
+    document.querySelector('.stage').style.setProperty('--glove-background', stageBackground(colours));
+  }
   if (target === ctx && !initialRendered) {
     initialRendered = true;
     performance.mark('ssk-ready');
@@ -1301,7 +1309,7 @@ function renderLogos(b) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(i === S.bullet));
     c.dataset.key = 'bullet|' + i;
-    c.innerHTML = `<img src="${assetURL(bl.thumb)}" alt="" loading="lazy">` +
+    c.innerHTML = `<img src="${assetURL(bl.thumb)}" alt="" loading="lazy"${bl.sourceBox ? ' style="object-fit:contain;padding:8px;box-sizing:border-box"' : ''}>` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
       (bl.active === false
         ? `<span class="sub">${t(bl.pending ? 'askPim' : 'notShown')}</span>` : '') + `</span>`;

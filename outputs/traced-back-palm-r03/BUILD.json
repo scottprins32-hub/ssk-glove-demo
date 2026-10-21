@@ -1,5 +1,5 @@
 {
-  "sha256": "1b3d9333a496a3c275f40167b7a3c6e3353ce2db046d5669852504a69d47a4fe",
+  "sha256": "bbf96c51ebe1f360a655055d1f835a7dcc5cb41244e8e58c54717f90a4c4be48",
   "scope": "native H back and palm only",
   "views": {
     "back": {
@@ -173,6 +173,7 @@
         "back3",
         "web",
         "belt",
+        "lining",
         "binding",
         "welting",
         "pinky_loops",

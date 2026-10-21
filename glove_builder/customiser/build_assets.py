@@ -101,11 +101,8 @@ BULLET_OPTIONS = [
     ("Edge Gold", "", "Edge_Gold.jpg", "#C9A227"),
     ("Edge Silver", "", "Edge_Silver.jpg", "#C0C4CC"),
     ("Edge Gun Metal", "", "Edge_Gun_Metal.jpg", "#5A6068"),
-    # The reference code packs this index into four bits, so the list holds
-    # sixteen. The two silicone patches that used to sit here were never
-    # selectable ("not shown"); their slots now carry two patches SSK had on
-    # the shelf at the store shoot, so every code issued so far still reads
-    # the same. Tints are the median thread colour of the catalogue photos.
+    # Preserve catalogue indices. New silicone choices append below; current
+    # reference codes use the frozen name tables in refcode.js.
     ("White/Gold", "", None, "#E9E5DC"),
     ("Red/Gold", "", None, "#BC2628"),
     ("Red/Green", "", "Red_Green.jpg", "#BC2628"),
@@ -118,6 +115,8 @@ BULLET_OPTIONS = [
     ("Winered/Gold", "", "Winered_Gold.jpg", "#86303A"),
     ("Blue/Gold", "", "Blue_Gold.jpg", "#1857A6"),
     ("Navy/Gold", "", "Navy_Gold.jpg", "#1B2545"),
+    ("Silicone Gold", "", None, "#C9A227"),
+    ("Silicone Silver", "", None, "#C0C4CC"),
 ]
 
 # Webs photographed without the knotted lace across the lower web. Scott,
@@ -1413,6 +1412,18 @@ def main():
                 t = Image.open(thumb_dir / thumb).convert("RGB")
                 t.thumbnail((140, 140))
                 entry["thumb"] = to_data_uri(t, quality=80, method=4)
+            # Scott selected the first HD silicone artwork with its original
+            # proportions. Retain its registered crop/mount on future rebuilds.
+            if name.startswith("Silicone"):
+                registry = json.loads(pathlib.Path(__file__).with_name(
+                    'silicone-badges.json').read_text())
+                selected = next(b for b in registry if b['name'] == name)
+                folder = pathlib.Path(__file__).parent
+                assets[selected['asset']] = 'data:image/webp;base64,' + base64.b64encode(
+                    (folder / selected['source']).read_bytes()).decode()
+                entry.update({k:v for k,v in selected.items() if k not in ['source','thumb']})
+                entry['thumb'] = 'data:image/webp;base64,' + base64.b64encode(
+                    (folder / selected['thumb']).read_bytes()).decode()
             bullets.append(entry)
 
     idmap_img = Image.fromarray(idmap, "L")

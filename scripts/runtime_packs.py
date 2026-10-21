@@ -52,5 +52,14 @@ console.log(JSON.stringify(groups));"""
     # entries. This removes request overhead without duplicating enough bytes
     # to exceed the host's 50 MB archive limit. Nothing is transcoded.
     groups['thumb']=[name for name in groups['thumb'] if (root/name).stat().st_size<=32_768]
+    # Large full-resolution textures/badges already have individual versioned
+    # URLs. Avoid storing a second copy inside the eager back pack; the loader
+    # requests those original files directly, without transcoding any pixels.
+    groups['back']=[name for name in groups['back'] if (root/name).stat().st_size<=131_072]
+    # Shared HD surfaces are used by every view. Keep one individually cached
+    # original rather than moving their duplicate from the back pack to palm.
+    data=json.loads((root/'assets/glove-data.json').read_text())
+    surfaces={data['assets'][key] for key in ['_hdLeather','_hdLace'] if key in data['assets']}
+    groups={view:[name for name in names if name not in surfaces] for view,names in groups.items()}
     groups['back'].extend(str(p.relative_to(root)) for p in (root/'assets/flags').glob('*.svg'))
     return write_packs(root,groups)

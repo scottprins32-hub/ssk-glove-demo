@@ -164,8 +164,9 @@ test('real back metadata follows selected material dependencies without loading 
   const h = await harness({ metadata });
   const bundle = await h.loadGlove({ progressive: true });
   const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0); // Back 2 and its legacy highlight also become dependencies.
-  assert.equal(Object.keys(bundle.imgs).length, 99 + traced);
-  assert.equal(h.images.size, 97 + traced);
+  const silicone = metadata.bullets.filter(b => b.name.startsWith('Silicone')).length;
+  assert.equal(Object.keys(bundle.imgs).length, 99 + traced + silicone);
+  assert.equal(h.images.size, 97 + traced + silicone);
   const deferred = ['palm_bridge_original_smk_body_heal', 'palm_bridge_original_smk_body_heal_hi',
     'smlee_r03_laces', 'smlee_r02_laces', 'smlee_r03_material_region'];
   for (const key of deferred) assert.equal(bundle.imgs[key], undefined, key);
@@ -178,8 +179,8 @@ test('real back metadata follows selected material dependencies without loading 
     assert.equal(bundle.views.back.selectionReady(web), true);
   }
   await bundle.views.back.loadSelection(null, true);
-  assert.equal(Object.keys(bundle.imgs).length, 158 + traced);
-  assert.equal(h.images.size, 156 + traced);
+  assert.equal(Object.keys(bundle.imgs).length, 158 + traced + silicone);
+  assert.equal(h.images.size, 156 + traced + silicone);
 });
 
 test('pinky material plates are ready with the view while Crocodile texture stays deferred', async () => {

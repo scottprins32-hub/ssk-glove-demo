@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from PIL import Image,ImageDraw
 ROOT=Path(__file__).resolve().parents[1];APP=ROOT/'glove_builder/customiser';AUDIT=ROOT/'outputs/traced-back-palm-r03';SS=4
-p=argparse.ArgumentParser();p.add_argument('--tracer');args=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--tracer');p.add_argument('--view',choices=['back','palm']);args=p.parse_args()
 if args.tracer:
  d=json.loads(re.search(r'const DATA = (.*);',Path(args.tracer).read_text()).group(1));(AUDIT/'view-sources.json').write_text(json.dumps({v:d['views'][v]for v in ['back','palm']}))
 sources=json.loads((AUDIT/'view-sources.json').read_text());raw=(AUDIT/'trace-original.json').read_bytes();trace=json.loads(raw);report={'sha256':hashlib.sha256(raw).hexdigest(),'scope':'native H back and palm only','views':{}}
@@ -15,7 +15,8 @@ def role(s,view):
   m=re.search(r'Back\s*([1-9])',s['name'],re.I);r='back'+m.group(1)if m else'palm'
  return {'back7':'back78','ring_emb':'embroidery'}.get(r,r)if view=='back'else r
 def poly(im,pts,fill):ImageDraw.Draw(im).polygon([(round(x*SS),round(y*SS))for x,y in pts],fill=fill)
-for view in ['back','palm']:
+if args.view and (AUDIT/'BUILD.json').exists():report['views']=json.loads((AUDIT/'BUILD.json').read_text())['views']
+for view in ([args.view] if args.view else ['back','palm']):
  src=sources[view];W,H=src['w'],src['h'];parts=[s for s in trace['shapes']if s['view']==view];metaFile=APP/f"assets/{'glove'if view=='back'else view}-data.json";meta=json.loads(metaFile.read_text())
  fields=(['palm','back2','back78','back8','back6','back5','back4','back3','web','belt','lining','binding','welting','pinky_loops','laces','embroidery','stitching'] if view=='back'else['palm','web','back1','back9','back3','back4','back6','back7','belt','binding','welting','thumb_loops','laces','stitching']);ns={f:i+1 for i,f in enumerate(fields)}
  out=APP/f'assets/{view}-scott-trace-r03';out.mkdir(exist_ok=True);cut=Image.new('L',(W*SS,H*SS));own=Image.new('L',cut.size)
@@ -39,7 +40,16 @@ for view in ['back','palm']:
   mask=Image.eval(own,lambda p:255 if p==n else 0).resize((W,H),Image.Resampling.LANCZOS);alpha=np.minimum(np.array(mask),255-cutAlpha)
   if not np.any(alpha):continue
   masks[r]=alpha
-  if r in ['laces','embroidery']:
+  if r=='laces' and view=='back':
+   # The traced laces cross obsolete palm/finger/web ownership in the old
+   # idmap. Their rendered RGB still carries the single lace palette colour.
+   # Divide by that colour throughout, rather than the unrelated owner under
+   # each pixel. This preserves knot relief without introducing two dyes.
+   lace=next(z for z in src['legend'] if z.get('field')=='laces')
+   c=np.array([int(lace['hex'][j:j+2],16) for j in [1,3,5]])
+   laceRef=max(30,float(c@[.2126,.7152,.0722]))
+   tone=np.clip((img@[.2126,.7152,.0722])/laceRef,.26,1.12)
+  elif r in ['laces','embroidery']:
    tone=np.clip(light,.26,1.12) # preserve photographed lace/embroidered relief
   else:
    # Remove baked dark specks/seams and photographic colour-boundary shadows.
