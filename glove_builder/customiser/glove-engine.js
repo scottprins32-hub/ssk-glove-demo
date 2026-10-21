@@ -830,6 +830,21 @@ export class GloveRenderer {
     ctx.restore();
   }
 
+  drawWristBadge(ctx, bulletSel, mirror) {
+    const bb = this.DATA.bulletBox;
+    if (!bb) return;
+    const [dx,dy] = this.DATA.bullets[bulletSel]?.mountOffset || [0,0];
+    const cx = (bb[0]+bb[2])/2+dx, cy = (bb[1]+bb[3])/2+dy;
+    this.unmirror(ctx, cx, cx, mirror, () => {
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.scale(0.9,0.9);
+      ctx.translate(-cx,-cy);
+      this.drawBullet(ctx,bulletSel);
+      ctx.restore();
+    });
+  }
+
   drawBullet(ctx, bulletSel) {
     const opt = this.DATA.bullets[bulletSel];
     const imgs = this.imgs;
@@ -1579,12 +1594,7 @@ export class GloveRenderer {
       ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=1.55;
       ctx.lineCap='round';ctx.setLineDash([2.65,3.5]);ctx.stroke();ctx.restore();
     }
-    const bb = D.bulletBox;
-    if (bb) {
-      const badgeOffsetX = D.bullets[bulletSel]?.mountOffset?.[0] || 0;
-      this.unmirror(ctx, bb[0] + badgeOffsetX, bb[2] + badgeOffsetX, mirror,
-                    () => this.drawBullet(ctx, bulletSel));
-    }
+    if (D.bulletBox) this.drawWristBadge(ctx, bulletSel, mirror);
     if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
       let c = this.tinted(highlight.id, '#ffffff');
       if (D.surfaceDetails?.length) {
