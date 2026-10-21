@@ -11,6 +11,7 @@ import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FL
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 import { addDesign } from './gallery-store.js';
+import { initStage } from './stage-interact.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -213,6 +214,8 @@ const el = (tag, cls, html) => {
   return e;
 };
 const t = k => T[S.lang][k] || k;
+const tsub = (k, sub) => (T[S.lang][k] || T.en[k] || {})[sub] || '';
+let interact = null;        // stage-interact, once the glove is up
 
 /* ------------------------------------------------------------------ state */
 function answered(q) {
@@ -299,6 +302,7 @@ function cleanState(o) {
     const pal = DATA.palettes[PALETTE_OF(f)] || [];
     if (pal.some((c) => c[0] === src[f])) colors[f] = src[f];
   }
+  if (colors.palm) colors.back2 = colors.palm;      // one leather, one colour
 
   const clean = {
     lang: o.lang === 'en' ? 'en' : 'nl',
@@ -371,6 +375,12 @@ function save() {
   try {
     const o = { ...S, schemaVersion: 1 };
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
+    const saved = $('#saved');
+    if (saved && save.last && save.last !== JSON.stringify(o)) {
+      saved.textContent = t('savedNow'); saved.classList.add('is-on');
+      clearTimeout(save.t); save.t = setTimeout(() => saved.classList.remove('is-on'), 1400);
+    }
+    save.last = JSON.stringify(o);
   } catch (e) { /* no storage: the session still works, it just won't persist */ }
 }
 function load() {
@@ -445,7 +455,8 @@ function paintView() {
   if (!vw || vw.hidden) return;
   for (const b of vw.children) {
     b.hidden = !R.hasView(b.dataset.view);
-    b.textContent = t(VIEW_KEYS[b.dataset.view]);
+    b.querySelector('span').textContent = t(VIEW_KEYS[b.dataset.view]);
+    b.setAttribute('aria-label', t(VIEW_KEYS[b.dataset.view]));
     b.classList.toggle('is-on', b.dataset.view === S.view);
     b.setAttribute('aria-pressed', String(b.dataset.view === S.view));
     const a = viewAvailability(b.dataset.view);
@@ -643,6 +654,7 @@ function draw(target = ctx, highlight = S.step === 3) {
         window.__SSK_PERF__?.failure(error);
         if (S.view === requested) {
           $('#glove').removeAttribute('aria-busy');
+          $('#glove').classList.add('is-ready');
           drawUnavailable(ctx, 'viewNotLoaded');
           $('#stagehint').textContent = viewLoadMessage();
           paintView();
@@ -657,7 +669,7 @@ function draw(target = ctx, highlight = S.step === 3) {
   // no asset on this side, and the engine skips each of them on that basis.
   const w = WEBS.find(w => w.id === S.webType);
   const avail = viewAvailability(S.view, w);
-  if (!avail.ok) { drawUnavailable(target, avail.reason); return; }
+  if (!avail.ok) { drawUnavailable(target, avail.reason); if (target === ctx) $('#glove').classList.add('is-ready'); return; }
   if (gateSelection(target)) return;
   if (target === ctx) $('#glove').removeAttribute('aria-busy');
   // The webs C3 covers are drawn on the estimated body of their family, not the
@@ -691,6 +703,10 @@ function draw(target = ctx, highlight = S.step === 3) {
       .map(z => (DATA.palettes[z.group] || []).find(c => c[0] === state[z.id])?.[2]);
     if (R.pad && R.imgs[R.pad] && R.DATA.bbox[R.pad]) colours.push(R.padHex);
     document.querySelector('.stage').style.setProperty('--glove-background', stageBackground(colours));
+  }
+  if (target === ctx) {
+    $('#glove').classList.add('is-ready');
+    interact?.refresh();
   }
   if (target === ctx && !initialRendered) {
     initialRendered = true;
@@ -807,6 +823,20 @@ function renderStart(b) {
   starterR.setWeb(null); starterR.setWebMarked(false);
   // Reuse decoded flag images; thumbnail draws are synchronous.
   starterR._flags = R._flags || {};
+  const hero = el('div', 'hero');
+  hero.appendChild(el('span', 'hero-kick', t('heroKick')));
+  hero.appendChild(el('p', 'hero-line', t('heroLine')));
+  const facts = el('ul', 'hero-facts');
+  facts.innerHTML = `<li><b>${money(priceBreakdown({ ...S, flag: null }).base)}</b>${t('heroFrom')}</li>`
+    + `<li><b>${COLOUR_ORDER.length - 1}</b>${t('heroParts')}</li>`
+    + `<li><b>${Object.keys(VIEW_KEYS).filter(v => v === 'back' || R.hasView(v)).length}</b>${t('heroViews')}</li>`;
+  hero.appendChild(facts);
+  const start = el('button', 'btn btn-primary', `${t('heroStart')} →`);
+  start.type = 'button'; start.dataset.key = 'hero|start';
+  start.onclick = () => { flushText(); S.step = 1; paint(); };
+  hero.appendChild(start);
+  b.appendChild(hero);
+  b.appendChild(el('span', 'field-lab', t('starters')));
   const grid = el('div', 'cards starter-cards');
   const pendingStarters = [], showWhenMounted = [];
   const groups = { built: t('built'), national: t('national'),
@@ -880,7 +910,7 @@ function renderStart(b) {
     pendingStarters.forEach(([cv]) => observer.observe(cv));
   });
 
-  const f = el('div', 'field');
+  const f = el('div', 'field hero-open');
   f.appendChild(el('span', 'field-lab', t('open')));
   const row = el('div', 'opts');
   const inp = el('input'); inp.type = 'text'; inp.placeholder = t('paste');
@@ -932,6 +962,7 @@ function applyStarter(st, quiet) {
     if (!pal.some(c => c[0] === v)) v = pal[0][0];
     S.colors[f] = v;
   }
+  if (S.colors.palm) S.colors.back2 = S.colors.palm;
   if (st.bullet != null) S.bullet = st.bullet;
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
@@ -1246,6 +1277,24 @@ const thumbEstimatedViewOf = w => (w && w.id !== NATIVE_WEB && w.render
 const estimatesThumb = w => !!thumbEstimatedViewOf(w);
 
 /* ----------------------------------------------------------- 4. colours */
+/* The twenty parts, grouped the way a hand is: the back, the palm side,
+   and the lacing that finishes it. */
+const PART_GROUPS = [
+  ['groupBack', ['web', 'back1', 'back2', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'back9']],
+  ['groupPalm', ['palm', 'belt', 'lining', 'thumb_loops', 'pinky_loops']],
+  ['groupTrim', ['binding', 'welting', 'laces', 'stitching', 'ring_emb']]
+];
+/* The palette, by family. SSK numbers its colours; the families are only a
+   way to find one faster, and the metallics sit apart because they are. */
+const FAMILY_OF = (num, name) => /gold|silver|foil/i.test(name) ? 'metal'
+  : ['10', '90', '93'].includes(num) ? 'neutral'
+  : ['25', '80'].includes(num) ? 'purple'
+  : +num >= 20 && +num <= 39 ? 'warm'
+  : +num >= 40 && +num <= 49 ? 'earth'
+  : +num >= 50 && +num <= 52 ? 'green'
+  : +num >= 55 && +num <= 79 ? 'blue' : 'neutral';
+const FAMILY_ORDER = ['neutral', 'warm', 'earth', 'green', 'blue', 'purple', 'metal'];
+const PART_SEEN = new Set();
 function renderColours(b) {
   if (MATERIAL_FIELDS.includes(S.part)) {
     const material = choiceField(S.lang === 'nl' ? 'Leertype' : 'Leather finish', [
@@ -1259,34 +1308,42 @@ function renderColours(b) {
     material.prepend(el('p', 'material-part', colourLabel(S.part)));
     b.appendChild(material);
   }
-  const parts = el('div', 'parts');
-  for (const f of COLOUR_ORDER) {
-    if (f === 'pad_color') continue;
-    if (colourPart(f) !== f) continue;   // merged into back3
-    const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
-    p.type = 'button';
-    p.dataset.key = 'part|' + f;
-    p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` +
-                  colourLabel(f);
-    p.setAttribute('aria-pressed', String(S.part === f));
-    p.onclick = () => {
-      S.part = f;
-      colourView(f);
-      draw(); paint();                 // the tint follows the chosen part
-    };
-    parts.appendChild(p);
+  for (const [groupKey, fields] of PART_GROUPS) {
+    const group = el('div', 'part-group');
+    group.appendChild(el('span', 'part-group-lab', t(groupKey)));
+    const parts = el('div', 'parts');
+    for (const f of fields) {
+      if (colourPart(f) !== f) continue;   // merged into back3 / back5
+      const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
+      p.type = 'button';
+      p.dataset.key = 'part|' + f;
+      p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` + colourLabel(f)
+        + (f === 'back2' ? ` <small>· ${t('tiedPalm')}</small>` : '');
+      p.title = tsub('partDesc', f);
+      p.setAttribute('aria-pressed', String(S.part === f));
+      p.onclick = () => {
+        S.part = f;
+        colourView(f);
+        draw(); paint();                 // the tint follows the chosen part
+      };
+      parts.appendChild(p);
+    }
+    group.appendChild(parts);
+    b.appendChild(group);
   }
-  b.appendChild(parts);
-  b.appendChild(swatchField(
+  const desc = tsub('partDesc', S.part);
+  if (desc) b.appendChild(el('p', 'part-desc', `<b>${colourLabel(S.part)}</b> — ${desc}`));
+  b.appendChild(swatchFamilies(
     S.part,
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
       : (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
       : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
-      : (R.DATA.zones.some(z=>z.id===FIELD_TO_LAYER[S.part]) ? null : OFFSTAGE[S.part] || null),
-    true));
-
+      : (R.DATA.zones.some(z=>z.id===FIELD_TO_LAYER[S.part]) ? null : OFFSTAGE[S.part] || null)));
+  // Thread the colour of the leather it runs through disappears into it.
+  if (S.part === 'stitching' && S.colors.stitching && [S.colors.palm, S.colors.back3, S.colors.back5, S.colors.web]
+      .filter(Boolean).every(c => c === S.colors.stitching))
+    b.appendChild(el('p', 'note', t('stitchContrast')));
   b.appendChild(el('p', 'note swatch-note', t('swatchNote')));
-
   if (/^back/.test(S.part)) {
     const all = el('button', 'btn btn-ghost', t('applyAll'));
     all.type = 'button'; all.style.alignSelf = 'flex-start';
@@ -1294,10 +1351,61 @@ function renderColours(b) {
       snapshot();
       const v = S.colors[S.part];
       for (let i = 1; i <= 9; i++) S.colors['back' + i] = v;
+      S.colors.palm = S.colors.back2;
       draw(); paint();
     };
     b.appendChild(all);
   }
+}
+/* The swatch grid for one part: the colours already on this glove first,
+   then the palette by family. Same buttons and keys as swatchGrid, so the
+   keyboard and the checks find them where they were. */
+function swatchFamilies(field, note) {
+  const pal = DATA.palettes[PALETTE_OF(field)], label = colourLabel(field), value = S.colors[field];
+  const pick = v => {
+    snapshot();
+    S.colors[field] = v;
+    if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) S.colors.back3 = S.colors.back4 = v;
+    if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) S.colors.back5 = S.colors.back6 = v;
+    if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
+    draw(); paint();
+  };
+  const f = el('div', 'field');
+  f.appendChild(labelRow(label, true, value != null));
+  if (note) f.appendChild(el('p', 'note', note));
+  const button = ([num, name, hx]) => {
+    const sw = el('button', 'sw' + (value === num ? ' is-on' : ''));
+    sw.type = 'button';
+    sw.setAttribute('aria-pressed', String(value === num));
+    sw.dataset.key = `${label}|${num}`;
+    sw.innerHTML = `<span class="chip" style="background:${hx}"></span><span class="num">${num}.</span><span class="nm">${name}</span>`;
+    sw.onclick = () => pick(num);
+    return sw;
+  };
+  const used = [...new Set(COLOUR_ORDER.filter(x => PALETTE_OF(x) === PALETTE_OF(field)).map(x => S.colors[x]).filter(Boolean))]
+    .map(num => pal.find(c => c[0] === num)).filter(Boolean);
+  if (used.length > 1) {
+    const g = el('div', 'sw-group');
+    g.appendChild(el('span', 'sw-group-lab', t('inUse')));
+    const row = el('div', 'sw-used'); row.setAttribute('role', 'group'); row.setAttribute('aria-label', t('inUse'));
+    for (const c of used) { const sw = button(c); sw.dataset.key = `${label}|used|${c[0]}`; row.appendChild(sw); }
+    g.appendChild(row); f.appendChild(g);
+  }
+  const families = new Map();
+  for (const c of pal) {
+    const fam = FAMILY_OF(c[0], c[1]);
+    if (!families.has(fam)) families.set(fam, []);
+    families.get(fam).push(c);
+  }
+  for (const fam of FAMILY_ORDER) {
+    const list = families.get(fam); if (!list) continue;
+    const g = el('div', 'sw-group');
+    if (families.size > 2) g.appendChild(el('span', 'sw-group-lab', tsub('family', fam)));
+    const grid = el('div', 'swatches'); grid.setAttribute('role', 'group'); grid.setAttribute('aria-label', `${label} · ${tsub('family', fam)}`);
+    for (const c of list) grid.appendChild(button(c));
+    g.appendChild(grid); f.appendChild(g);
+  }
+  return f;
 }
 
 /* ------------------------------------------------------------- 5. logos */
@@ -1463,17 +1571,75 @@ function saveToGalleryField() {
   box.append(nameInput, saveBtn, status);
   return box;
 }
+/* What each open question is called, and where it is answered. */
+function questionLabel(q) {
+  if (q.id.startsWith('c:')) return colourLabel(colourPart(q.id.slice(2)));
+  const key = { hand: 'hand', size: 'size', pad: 'pad', webType: 'webType', bullet: 'bullet',
+    name: 'name', phone: 'phone', thumbFont: 'thumbFont', thumbMain: 'thumbMain', thumbOutline: 'thumbOutline',
+    circle: 'circle', numberColor: 'numberColor', flagOther: 'flagOther', personalCheck: 'personalCheck' }[q.id];
+  return key ? t(key) : q.id;
+}
+const questionStep = q => Math.max(0, STEP_FIELDS.findIndex(fields => fields.includes(q.id)));
+function missingList(open) {
+  const box = el('div', 'field');
+  box.appendChild(el('span', 'field-lab', `${t('missingTitle')} <span class="req">${open.length}</span>`));
+  const list = el('div', 'missing');
+  for (const q of open) {
+    const a = el('a'); a.href = '#'; a.dataset.key = 'missing|' + q.id;
+    a.innerHTML = `<span>${questionLabel(q)}</span><small>${t('goFix')} · ${t(STEPS[questionStep(q)].title)} →</small>`;
+    a.onclick = ev => {
+      ev.preventDefault(); flushText();
+      S.step = questionStep(q);
+      if (q.id.startsWith('c:')) { S.part = colourPart(q.id.slice(2)); colourView(S.part); draw(); }
+      paint();
+    };
+    list.appendChild(a);
+  }
+  box.appendChild(list);
+  return box;
+}
+/* The glove from its four sides, drawn once per design and kept until the
+   design changes. A side the chosen web has no picture of says so. */
+let stripJob = null;
+function reviewStrip() {
+  const wrap = el('div', 'field');
+  wrap.appendChild(el('span', 'field-lab', t('fourSides')));
+  const strip = el('div', 'review-strip');
+  const key = visualKey() + '|' + S.lang;
+  const views = Object.keys(VIEW_KEYS).filter(v => v === 'back' || R.hasView(v));
+  const figs = {};
+  for (const v of views) {
+    const fig = el('figure');
+    const wait = el('div', 'strip-wait', '…');
+    fig.append(wait, el('figcaption', null, t(VIEW_KEYS[v])));
+    figs[v] = fig; strip.appendChild(fig);
+  }
+  wrap.appendChild(strip);
+  const show = previews => {
+    for (const p of previews) {
+      const fig = figs[p.view]; if (!fig) continue;
+      const slot = fig.firstChild;
+      if (p.available) {
+        const img = el('img'); img.src = p.dataUrl; img.alt = t(VIEW_KEYS[p.view]); img.loading = 'lazy';
+        img.onclick = () => { S.view = p.view; draw(); paint(false); };
+        fig.replaceChild(img, slot);
+      } else slot.textContent = t(VIEW_KEYS[p.view]) + ': —';
+    }
+  };
+  if (reviewStrip.cache?.key === key) { show(reviewStrip.cache.previews); return wrap; }
+  const job = stripJob = { key };
+  captureOrderViews().then(previews => {
+    if (stripJob !== job || !strip.isConnected) return;
+    reviewStrip.cache = { key, previews }; show(previews);
+  }).catch(() => { for (const fig of Object.values(figs)) fig.firstChild.textContent = '—'; });
+  return wrap;
+}
 function renderReview(b) {
   const open = requiredQuestions().filter(q => !answered(q));
-  if (open.length) {
-    b.appendChild(el('p', 'note',
-      `${t('required')}: ${open.length}`));
-  } else {
-    b.appendChild(el('p', 'note', t('allSet')));
-  }
+  b.appendChild(reviewStrip());
+  if (open.length) b.appendChild(missingList(open));
+  else b.appendChild(el('p', 'note note-ok', t('allSet')));
   if (S.flag === 'Other Flag' && S.flagOther.trim()) b.appendChild(el('p', 'note', t('flagPending')));
-  b.appendChild(el('p', 'note', t(contactOpen() ? 'contactMissing' : 'contactReady')));
-  b.appendChild(limitsBlock());
   b.appendChild(buildSpec());
   const commerceHost=document.createElement('div');b.appendChild(commerceHost);
   import('./commerce-ui.js').then(({mountCommerce})=>{
@@ -1481,11 +1647,17 @@ function renderReview(b) {
       getDesign:()=>structuredClone(S),capture:captureOrderViews});
     reportPerformance();
   }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
+  if (contactOpen()) b.appendChild(el('p', 'note', t('contactMissing')));
   b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
   go.onclick = openSheet;
   b.appendChild(go);
+  const lim = limitsBlock();
+  const det = el('details', 'limits');
+  det.appendChild(el('summary', null, t('limitsSummary')));
+  while (lim.firstChild) { const c = lim.firstChild; if (c.tagName === 'STRONG') { lim.removeChild(c); continue; } det.appendChild(c); }
+  b.appendChild(det);
 }
 
 async function captureOrderViews() {
@@ -1607,6 +1779,8 @@ function swatchField(field, note, required) {
       if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) {
         S.colors.back5 = S.colors.back6 = v;
       }
+      // Back 2 is cut from the palm leather (Scott, 25 Sep 2026): one colour.
+      if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
       draw(); paint();
     }, required, note);
 }
@@ -1776,6 +1950,73 @@ function specText() {
   return lines.join('\n');
 }
 
+/* ----------------------------------------------------------- share card */
+/* The picture people send each other: the glove on a dark ground, the
+   player's name, the design code, and the colours that make it. Everything
+   on it comes from the design; the limitations travel in the specification. */
+const CARD_FONTS = ['800 72px "Barlow Condensed"', '600 28px "Barlow Condensed"', '500 22px "IBM Plex Mono"', '400 24px Barlow'];
+async function cardImage() {
+  try { await Promise.all(CARD_FONTS.map(f => document.fonts.load(f))); } catch {}
+  const glove = document.createElement('canvas');
+  draw(glove.getContext('2d'), false);
+  draw();                                       // draw() switched the renderer's shared state
+  const W = 1200, H = 1500, out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const g = out.getContext('2d');
+  g.fillStyle = '#121212'; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W / 2, 560, 80, W / 2, 560, 760);
+  glow.addColorStop(0, 'rgba(255,255,255,.14)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  // stitch line across the top
+  g.strokeStyle = '#C8102E'; g.lineWidth = 6; g.setLineDash([26, 18]); g.lineCap = 'round';
+  g.beginPath(); g.moveTo(72, 96); g.lineTo(W - 72, 96); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#C8102E'; g.font = '500 22px "IBM Plex Mono", monospace'; g.textBaseline = 'alphabetic';
+  g.fillText((S.lang === 'nl' ? 'SSK PRO CUSTOM · OP BESTELLING' : 'SSK PRO CUSTOM · MADE TO ORDER'), 72, 160);
+  // the glove, fitted to the middle band
+  const band = { x: 100, y: 190, w: W - 200, h: 860 };
+  const k = Math.min(band.w / glove.width, band.h / glove.height);
+  const gw = glove.width * k, gh = glove.height * k;
+  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 60; g.shadowOffsetY = 30;
+  g.drawImage(glove, band.x + (band.w - gw) / 2, band.y + (band.h - gh) / 2, gw, gh);
+  g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  // name, code, colours
+  const name = (S.thumbText.trim() || S.name.trim() || (S.lang === 'nl' ? 'Mijn handschoen' : 'My glove')).toUpperCase();
+  g.fillStyle = '#FFFFFF'; g.font = '800 72px "Barlow Condensed", Impact, sans-serif';
+  let size = 72; while (g.measureText(name).width > W - 144 && size > 40) { size -= 4; g.font = `800 ${size}px "Barlow Condensed", Impact, sans-serif`; }
+  g.fillText(name, 72, 1150);
+  const w = WEBS.find(w => w.id === S.webType);
+  g.fillStyle = '#B9BCC1'; g.font = '400 24px Barlow, "Helvetica Neue", Arial, sans-serif';
+  g.fillText([S.size, w ? w.id : null, S.hand ? HANDS.find(h => h.id === S.hand)?.[S.lang] : null].filter(Boolean).join('  ·  '), 72, 1192);
+  const chips = ['palm', 'web', 'back3', 'laces', 'welting', 'binding'].map(f => [f, hexOf(f), S.colors[f]]).filter(c => c[2]);
+  let cx = 72; const cy = 1226;
+  for (const [f, hx, num] of chips) {
+    g.fillStyle = hx; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(cx, cy, 56, 56, 8); g.fill(); g.stroke();
+    g.fillStyle = '#9A9A9A'; g.font = '500 16px "IBM Plex Mono", monospace';
+    g.fillText(num, cx, cy + 86);
+    cx += 84;
+  }
+  // code plate
+  const codeText = code();
+  g.font = '500 22px "IBM Plex Mono", monospace';
+  const cw = Math.min(W - 144, g.measureText(codeText).width + 48), ch = 56, px = 72, py = 1352;
+  g.strokeStyle = '#C8102E'; g.lineWidth = 3; g.setLineDash([10, 8]);
+  g.beginPath(); g.roundRect(px, py, cw, ch, 6); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#FFFFFF'; g.fillText(codeText, px + 24, py + 36);
+  g.fillStyle = '#737373'; g.font = '500 14px "IBM Plex Mono", monospace';
+  g.fillText(t('reference').toUpperCase(), px, py - 12);
+  g.fillStyle = '#737373'; g.font = '400 20px Barlow, "Helvetica Neue", Arial, sans-serif';
+  g.fillText('SSK Europe', 72, H - 40);
+  g.textAlign = 'right';
+  g.fillText(money(priceBreakdown().total), W - 72, H - 40);
+  g.textAlign = 'left';
+  return out;
+}
+async function cardBlob() {
+  const c = await cardImage();
+  return new Promise(r => c.toBlob(r, 'image/png'));
+}
+
 /* ---------------------------------------------------------------- sheet */
 let sheetReturnFocus;
 async function readyForExport() {
@@ -1799,8 +2040,12 @@ async function openSheet() {
   if (!await readyForExport()) return;
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
-  $('#shot').src = proofImage().toDataURL('image/png');
-  $('#shot').alt = [t('limitsTitle'), ...proofLimits()].join(' ');
+  const card = await cardImage();
+  $('#shot').src = card.toDataURL('image/png');
+  $('#shot').alt = [t('sendTitle'), code()].join(' ');
+  // The card goes out through the phone's own share sheet where there is one.
+  const ws = $('#webshare');
+  ws.hidden = !(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] }));
   const host = $('#spechost');
   host.textContent = '';
   host.appendChild(limitsBlock());
@@ -1894,14 +2139,50 @@ $('#download').onclick = () => {
 async function downloadImage() {
   if (flushText()) paint();
   if (!await readyForExport()) return;
-  proofImage().toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = el('a'); a.href = url; a.download = 'SSK-glove-design.png';
-    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, 'image/png');
+  const blob = await cardBlob();
+  const url = URL.createObjectURL(blob);
+  const a = el('a'); a.href = url; a.download = `SSK-${code()}.png`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 $('#sheetimg').onclick = downloadImage;
 $('#sumimg').onclick = downloadImage;
+$('#webshare').onclick = async ev => {
+  const b = ev.currentTarget;
+  try {
+    const file = new File([await cardBlob()], `SSK-${code()}.png`, { type: 'image/png' });
+    await navigator.share({ files: [file], title: t('sendTitle'), text: `${t('reference')}: ${code()}\n${shareLink()}` });
+  } catch (e) { if (e?.name !== 'AbortError') copyToClipboard({ currentTarget: b }, shareLink()); }
+};
+
+/* ------------------------------------------------------- price & menu */
+function paintPricePop() {
+  const pop = $('#pricepop'), price = priceBreakdown();
+  pop.innerHTML = `<dl><dt>${t('baseGlove')}</dt><dd>${money(price.base)}</dd>`
+    + (price.flag ? `<dt>${t('flagExtra')}</dt><dd>${money(price.flag)}</dd>` : '')
+    + `<dt class="tot">${t('totalPrice')}</dt><dd class="tot">${money(price.total)}</dd></dl>`
+    + `<p>${t('flagPriceNote').replace('%s', money(PRICE_CENTS.flag))}</p>`;
+}
+function togglePricePop(open) {
+  const pop = $('#pricepop'), on = open ?? pop.hidden;
+  pop.hidden = !on; $('#pricebtn').setAttribute('aria-expanded', String(on));
+  if (on) paintPricePop();
+}
+$('#pricebtn').onclick = () => togglePricePop();
+$('#more').onclick = () => {
+  const open = document.querySelector('.hdr').classList.toggle('is-open');
+  $('#more').setAttribute('aria-expanded', String(open));
+};
+document.addEventListener('pointerdown', ev => {
+  if (!$('#pricepop').hidden && !ev.target.closest('#pricepop, #pricebtn')) togglePricePop(false);
+  const hdr = document.querySelector('.hdr');
+  if (hdr.classList.contains('is-open') && !ev.target.closest('.hdr')) { hdr.classList.remove('is-open'); $('#more').setAttribute('aria-expanded', 'false'); }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Escape') return;
+  if (!$('#pricepop').hidden) togglePricePop(false);
+  const hdr = document.querySelector('.hdr');
+  if (hdr.classList.contains('is-open')) { hdr.classList.remove('is-open'); $('#more').setAttribute('aria-expanded', 'false'); }
+});
 
 /* ----------------------------------------------------------------- paint */
 /* Every paint rebuilds the step nav and the body from scratch, which destroys
@@ -1919,15 +2200,6 @@ const focusKey = (e) => e && e !== document.body && e.dataset
 
 function paint(rebuildBody = true) {
   if (!R) return; // Controls can be clicked while optional views are still loading.
-  // On short phones start the material step with the smaller preview.
-  // The user can expand it; never override that explicit preference.
-  const previewSize = document.querySelector('.stage-size');
-  if (S.step === 3 && MATERIAL_FIELDS.includes(S.part) && previewSize
-      && !previewSize.dataset.manual && matchMedia('(max-width: 900px) and (max-height: 740px)').matches) {
-    document.querySelector('.stage').classList.add('is-compact');
-    previewSize.setAttribute('aria-pressed', 'true');
-    previewSize.dataset.t = 'previewLarger';
-  }
   const L = S.lang;
   document.documentElement.lang = L;
   $('#sumx').setAttribute('aria-label', L === 'en' ? 'Close summary' : 'Sluiten');
@@ -1947,7 +2219,8 @@ function paint(rebuildBody = true) {
   const nav = $('#steps'); nav.textContent = '';
   STEPS.forEach((st, i) => {
     const open = stepOpen(i);
-    const b = el('button', 'step' + (i === S.step ? ' is-on' : ''));
+    const b = el('button', 'step' + (i === S.step ? ' is-on' : '')
+      + (STEP_FIELDS[i].length || st.key === 'you' ? (open ? ' is-todo' : ' is-done') : ''));
     b.type = 'button';
     b.dataset.key = 'step|' + i;
     b.innerHTML = `<span class="n">${i + 1}</span>${t(st.title)}` +
@@ -1955,6 +2228,8 @@ function paint(rebuildBody = true) {
     b.onclick = () => { flushText(); S.step = i; paint(); };
     nav.appendChild(b);
   });
+  // The rail scrolls sideways on a phone: keep the current step in view.
+  nav.querySelector('.is-on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
 
   const st = STEPS[S.step];
   $('#stepnum').textContent = String(S.step + 1).padStart(2, '0');
@@ -1968,6 +2243,13 @@ function paint(rebuildBody = true) {
 
   // Entering or leaving Colours adds or removes the selection tint.
   if (wasStep !== undefined && wasStep !== S.step && (wasStep === 3 || S.step === 3)) draw();
+  // A new step rises into place; a repaint of the same one stays put.
+  if (wasStep !== S.step) {
+    const panel = document.querySelector('.panel');
+    panel.classList.remove('is-entering'); void panel.offsetWidth; panel.classList.add('is-entering');
+    clearTimeout(paint.enterT); paint.enterT = setTimeout(() => panel.classList.remove('is-entering'), 900);
+    interact?.clear();
+  }
   if (rebuildBody) {
     const b = $('#body');
     // A choice repaints the same step: keep the reader where they were.
@@ -2000,7 +2282,12 @@ function paint(rebuildBody = true) {
 
   // header + bar
   $('#refcode').textContent = code();
-  $('#price').textContent = money(priceBreakdown().total);
+  const total = money(priceBreakdown().total);
+  if ($('#price').textContent !== total && $('#price').textContent !== '—') {
+    const pb = $('#pricebtn'); pb.classList.remove('is-bumped'); void pb.offsetWidth; pb.classList.add('is-bumped');
+  }
+  $('#price').textContent = total;
+  if (!$('#pricepop').hidden) paintPricePop();
   const d = doneCount();
   $('#donecount').textContent = d;
   $('#totalcount').textContent = countedQuestions().length;
@@ -2114,21 +2401,32 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');
-  cv.addEventListener('click', ev => {
-    if (!viewAvailability(S.view).ok || !selectionIsReady()) return;
-    const r = cv.getBoundingClientRect();
-    const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
-    const f = id && viewLayerField()[id];
-    if (!f) return;
-    S.step = 3; S.part = colourPart(f); draw(); paint();
-  });
-  cv.addEventListener('pointermove', ev => {
-    if (S.step !== 3 || !viewAvailability(S.view).ok || !selectionIsReady()) { cv.style.cursor = 'default'; return; }
-    const r = cv.getBoundingClientRect();
-    const id = R.zoneAt((ev.clientX - r.left) * cv.width / r.width,
-                        (ev.clientY - r.top) * cv.height / r.height, isLefty());
-    cv.style.cursor = id ? 'pointer' : 'default';
+  const VIEW_ORDER = ['back', 'thumb', 'palm', 'pinky'];
+  const shownViews = () => VIEW_ORDER.filter(v => v === 'back' || R.hasView(v));
+  const turnTo = (view, direction) => {
+    if (!R.hasView(view) || view === S.view) return;
+    const swap = () => { S.view = view; draw(); paint(S.step !== 0); };
+    if (interact) interact.flip(direction, swap); else swap();
+  };
+  interact = initStage({
+    canvas: cv, hover: $('#hover'), label: $('#stagelabel'), stage: $('#stage'),
+    renderer: () => R, mirror: isLefty,
+    zoneOf: (x, y) => (viewAvailability(S.view).ok && selectionIsReady()) ? R.zoneAt(x, y, isLefty()) : null,
+    describe: id => {
+      const f = id && viewLayerField()[id]; if (!f) return null;
+      const part = colourPart(f);
+      return { name: colourLabel(part), colour: colName(part) || '' };
+    },
+    onPick: id => {
+      const f = id && viewLayerField()[id];
+      if (!f) return;
+      S.step = 3; S.part = colourPart(f); draw(); paint();
+    },
+    onTurn: dir => {
+      const list = shownViews(); if (list.length < 2) return;
+      const i = list.indexOf(S.view);
+      turnTo(list[(i + dir + list.length) % list.length], dir);
+    }
   });
 
   // Which side of the glove. Each view past the back is a separate data file
@@ -2140,11 +2438,11 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     for (const id of views) {
       const b = el('button');
       b.type = 'button'; b.dataset.view = id;
+      b.innerHTML = `<img src="${assetURL('assets/ui/view-' + id + '.png')}" alt="" width="26" height="26"><span></span>`;
       b.onclick = () => {
         if (!R.hasView(id)) return;
-        // Start cards always show the back. Preserve their native canvases
-        // when only the stage angle changes, instead of copying them all again.
-        S.view = id; draw(); paint(S.step !== 0);
+        const list = shownViews();
+        turnTo(id, list.indexOf(id) >= list.indexOf(S.view) ? 1 : -1);
       };
       // Warm an angle on intent. Avoid competing with the selected web by
       // immediately downloading all side views after the first frame.
@@ -2156,22 +2454,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       b.addEventListener('focus', warmView);
       vw.appendChild(b);
     }
-  }
-
-  // Phones: the preview can be made smaller to give the choices room. Only
-  // shown by the stylesheet on narrow screens; nothing else is hidden.
-  const size = el('button', 'btn btn-ghost stage-size');
-  size.type = 'button';
-  size.setAttribute('aria-pressed', 'false');
-  size.dataset.t = 'previewSmaller';
-  size.onclick = () => {
-    size.dataset.manual = 'true';
-    const small = document.querySelector('.stage').classList.toggle('is-compact');
-    size.setAttribute('aria-pressed', String(small));
-    size.dataset.t = small ? 'previewLarger' : 'previewSmaller';
-    size.textContent = t(size.dataset.t);
-  };
-  document.querySelector('.stage').appendChild(size);
+  } else $('#stageturn').hidden = true;
 
   if(visualKey()===defaultVisual && S.view==='back') {
     const image=await publicRenders.read('default:back',DATA.w,DATA.h);
