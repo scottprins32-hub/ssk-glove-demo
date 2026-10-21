@@ -445,3 +445,14 @@ test('a lazily verified palm web switches from native aliases on the first selec
  r.setWeb('standard-i');r.setWebMarked(true);assert.equal(r.web,'standard-i');assert.equal(r.DATA,bundle.views.palm.DATA);
  r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);
 });
+
+test('HD badge deferral survives rebuilt asset paths', async () => {
+  const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json', import.meta.url)));
+  for (const b of metadata.bullets.filter(b => b.hdArtwork)) metadata.assets[b.asset] = 'assets/' + b.asset + '.webp';
+  const h = await harness({metadata});
+  const bundle = await h.loadGlove({progressive:true});
+  for (const b of metadata.bullets.filter(b => b.hdArtwork)) assert.equal(bundle.imgs[b.asset],undefined);
+  await bundle.views.back.loadSelection(null,false,0);
+  assert.ok(bundle.imgs[metadata.bullets[0].asset]);
+  assert.equal(bundle.imgs[metadata.bullets[1].asset],undefined);
+});

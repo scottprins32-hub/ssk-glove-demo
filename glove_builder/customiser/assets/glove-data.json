@@ -657,7 +657,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Edge Silver",
@@ -680,7 +681,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Edge Gun Metal",
@@ -703,7 +705,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "White/Gold",
@@ -726,7 +729,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Red/Gold",
@@ -749,7 +753,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Red/Green",
@@ -772,7 +777,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Rainbow",
@@ -795,7 +801,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Black/Gold",
@@ -818,7 +825,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Black/Pink",
@@ -841,7 +849,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Black/Purple",
@@ -864,7 +873,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Black/Silver",
@@ -887,7 +897,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Green/Gold",
@@ -910,7 +921,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Winered/Gold",
@@ -933,7 +945,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Blue/Gold",
@@ -956,7 +969,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Navy/Gold",
@@ -979,7 +993,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "hdArtwork": true
     },
     {
       "name": "Silicone Gold",

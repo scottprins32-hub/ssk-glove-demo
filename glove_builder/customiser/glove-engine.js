@@ -63,7 +63,7 @@ export function renderAssets(DATA, baseOnly = false) {
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
-    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']).filter(key => !baseOnly || !DATA.assets[key]?.startsWith('assets/hd-logos-r01/'));
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']).filter(key => !baseOnly || !DATA.bullets?.some(b => b.hdArtwork && b.asset === key));
 }
 function selectionAssets(DATA, web, snake, palmManifest) {
   const palm = palmManifest?.entries?.[web];
