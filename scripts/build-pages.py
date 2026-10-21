@@ -10,7 +10,7 @@ SOURCE = ROOT / 'glove_builder' / 'customiser'
 OUTPUT = ROOT / '_site'
 
 
-def build():
+def build(stage_assets=None):
     if OUTPUT.exists():
         shutil.rmtree(OUTPUT)
     OUTPUT.mkdir()
@@ -57,6 +57,7 @@ def build():
     inline = '<script>window.__SSK_IMAGE_PACKS__='+json.dumps(packs,separators=(',',':'))+';window.__GLOVE_DATA__='+json.dumps(metadata,separators=(',',':'))+';</script>'
     index = index.replace('</head>', preloads+inline+'\n</head>')
     (OUTPUT/'index.html').write_text(index)
+    if stage_assets: stage_assets(OUTPUT)
     versions = version_site(OUTPUT)
     print(f'Pages package ready; {count} asset references checked; {len(versions)} content-versioned assets.')
 

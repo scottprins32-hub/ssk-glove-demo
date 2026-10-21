@@ -4,6 +4,7 @@ Run from any directory: python3 scripts/build-base44.py
 Output: _base44/ and _base44-manifest.json. Does not deploy or touch backend data.
 """
 import hashlib
+from urllib.parse import urlparse
 import json
 import pathlib
 import re
@@ -26,6 +27,33 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'r
                'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
                'performance.html', 'performance.js')
 FOLDERS = ('ds', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs')
+HOSTED_ARTWORK = ROOT / 'base44' / 'hosted-artwork.json'
+ARTWORK_PREFIX = 'https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/'
+
+def hosted_artwork():
+    if not HOSTED_ARTWORK.is_file(): return []
+    rows = json.loads(HOSTED_ARTWORK.read_text())
+    for row in rows:
+        url = row['url']
+        if not url.startswith(ARTWORK_PREFIX) or '/' in url[len(ARTWORK_PREFIX):] or urlparse(url).query or urlparse(url).fragment:
+            raise ValueError('Untrusted hosted artwork URL')
+    return rows
+
+def stage_hosted_artwork(source):
+    rows = hosted_artwork()
+    replacements = {}
+    for row in rows:
+        path = (source / row['path']).resolve()
+        if not path.is_relative_to(source.resolve()) or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != row['sha256']:
+            raise ValueError('Hosted artwork differs from source: '+row['path'])
+        replacements[row['path']] = row['url']
+    # Only the generated package changes; original artwork/geometry stay local.
+    for name in ['index.html'] + ['assets/'+v+'-data.json' for v in ['glove','palm','thumb','pinky']]:
+        path = source / name
+        text = path.read_text()
+        for local, remote in replacements.items(): text = text.replace(json.dumps(local), json.dumps(remote))
+        path.write_text(text)
+
 MAX_ARCHIVE_BYTES = 50_000_000
 MAX_EXTRACTED_BYTES = 50_000_000
 
@@ -42,7 +70,8 @@ def dependencies(source):
         filename = f'assets/{view}-data.json'
         keep.add(filename)
         data = json.loads((source / filename).read_text())
-        keep.update(v for v in data['assets'].values() if not v.startswith('data:'))
+        approved = {r['url'] for r in hosted_artwork()}
+        keep.update(v for v in data['assets'].values() if not v.startswith('data:') and v not in approved)
         keep.update(b['thumb'] for b in data.get('bullets', []) if b.get('thumb'))
     keep.update(str(p.relative_to(source)) for p in (source/'assets/runtime').rglob('*') if p.is_file())
     for name in keep:
@@ -132,7 +161,7 @@ document.write('<!doctype html>'+doc.documentElement.outerHTML);"""
         if archive_bytes >= MAX_ARCHIVE_BYTES:
             raise ValueError(f'Archive is {archive_bytes:,} bytes; Base44 limit is 50 MB')
         result = {'files': entries, 'fileCount': len(entries),
-                  'bytes': sum(e['bytes'] for e in entries), 'archiveBytes': archive_bytes}
+                  'bytes': sum(e['bytes'] for e in entries), 'archiveBytes': archive_bytes, 'hostedArtwork': hosted_artwork()}
         # These are disposable build outputs; source photos/traces stay in source.
         if output.exists():
             shutil.rmtree(output)
@@ -142,7 +171,7 @@ document.write('<!doctype html>'+doc.documentElement.outerHTML);"""
 
 
 def build():
-    runpy.run_path(str(ROOT / 'scripts/build-pages.py'), run_name='__main__')
+    runpy.run_path(str(ROOT / 'scripts/build-pages.py'))['build'](stage_assets=stage_hosted_artwork)
     result = package()
     print(f"Base44 package ready: {result['fileCount']} files, "
           f"{result['bytes']:,} bytes; archive {result['archiveBytes']:,} bytes.")

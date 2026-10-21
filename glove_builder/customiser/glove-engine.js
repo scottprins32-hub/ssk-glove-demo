@@ -105,6 +105,8 @@ function decodeImage(source, priority = 'auto') {
   if (!decodedImages.has(src)) decodedImages.set(src, new Promise((resolve, reject) => {
     const start = packed => {
     const im = new Image(); im.fetchPriority = priority;
+    // Hosted artwork must remain exportable from the glove canvas.
+    if (/^https?:\/\//i.test(src)) im.crossOrigin = 'anonymous';
     const release = () => { if (packed) URL.revokeObjectURL(packed); };
     im.onload = () => { release(); resolve(im); };
     im.onerror = () => {

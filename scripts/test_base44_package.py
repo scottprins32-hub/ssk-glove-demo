@@ -1,6 +1,7 @@
 """Packaging failure guards, independent of the full glove assets."""
 import importlib.util
 import json
+import hashlib
 import pathlib
 import tempfile
 import unittest
@@ -87,6 +88,43 @@ class PackageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Extracted site'):
                 self.package()
         self.assertTrue((self.output / 'previous').is_file())
+
+    def test_hosted_artwork_keeps_original_bytes_and_rewrites_only_package(self):
+        local='assets/layer.webp'; path=self.source/local
+        original=path.read_bytes(); row={'path':local,'sha256':hashlib.sha256(original).hexdigest(),'url':build.ARTWORK_PREFIX+'verified.webp'}
+        registry=self.root/'hosted.json';registry.write_text(json.dumps([row]))
+        with patch.object(build,'HOSTED_ARTWORK',registry):
+            build.stage_hosted_artwork(self.source)
+            self.assertEqual(path.read_bytes(),original)
+            result=self.package()
+            self.assertEqual(json.loads((self.output/'assets/glove-data.json').read_text())['assets']['glove'],row['url'])
+            self.assertFalse((self.output/local).exists())
+            self.assertEqual(result['hostedArtwork'],[row])
+
+    def test_hosted_metadata_is_versioned_after_rewriting(self):
+        import sys
+        sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+        from version_site import version_site
+        local='assets/layer.webp';row={'path':local,'sha256':hashlib.sha256((self.source/local).read_bytes()).hexdigest(),'url':build.ARTWORK_PREFIX+'verified.webp'}
+        registry=self.root/'hosted.json';registry.write_text(json.dumps([row]))
+        with patch.object(build,'HOSTED_ARTWORK',registry):build.stage_hosted_artwork(self.source)
+        versions=version_site(self.source)
+        metadata=self.source/'assets/glove-data.json'
+        self.assertEqual(versions['assets/glove-data.json'],hashlib.sha256(metadata.read_bytes()).hexdigest()[:16])
+        self.assertNotIn(row['url'],versions)
+
+    def test_changed_hosted_source_is_rejected_before_rewriting(self):
+        registry=self.root/'hosted.json';registry.write_text(json.dumps([{'path':'assets/layer.webp','sha256':'0'*64,'url':build.ARTWORK_PREFIX+'verified.webp'}]))
+        original=(self.source/'assets/glove-data.json').read_bytes()
+        with patch.object(build,'HOSTED_ARTWORK',registry):
+            with self.assertRaisesRegex(ValueError,'differs from source'):build.stage_hosted_artwork(self.source)
+        self.assertEqual((self.source/'assets/glove-data.json').read_bytes(),original)
+
+    def test_hosted_artwork_rejects_another_host_or_app(self):
+        for url in ['https://example.com/logo.webp',build.ARTWORK_PREFIX+'../private.webp',build.ARTWORK_PREFIX+'image.webp?token=bad']:
+            registry=self.root/'hosted.json';registry.write_text(json.dumps([{'url':url}]))
+            with patch.object(build,'HOSTED_ARTWORK',registry):
+                with self.assertRaisesRegex(ValueError,'Untrusted'):build.hosted_artwork()
 
     def test_external_reference_is_rejected(self):
         (self.root / 'private.txt').write_text('private')
