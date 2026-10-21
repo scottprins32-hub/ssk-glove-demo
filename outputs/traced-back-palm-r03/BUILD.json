@@ -1,0 +1,272 @@
+{
+  "sha256": "1b3d9333a496a3c275f40167b7a3c6e3353ce2db046d5669852504a69d47a4fe",
+  "scope": "native H back and palm only",
+  "views": {
+    "back": {
+      "shapes": 72,
+      "laceContours": 16,
+      "cutouts": 2,
+      "paths": [
+        {
+          "name": "Open stiklijn 1",
+          "points": 11,
+          "length": 150.91929992652265,
+          "dashes": 26
+        },
+        {
+          "name": "Open stiklijn 2",
+          "points": 13,
+          "length": 150.34802101313508,
+          "dashes": 26
+        },
+        {
+          "name": "Open stiklijn 3",
+          "points": 17,
+          "length": 153.6555123169742,
+          "dashes": 27
+        },
+        {
+          "name": "Open stiklijn 4",
+          "points": 17,
+          "length": 142.40701487731803,
+          "dashes": 25
+        },
+        {
+          "name": "Open stiklijn 5",
+          "points": 26,
+          "length": 207.13330733395316,
+          "dashes": 36
+        },
+        {
+          "name": "Open stiklijn 6",
+          "points": 20,
+          "length": 171.4863615478258,
+          "dashes": 30
+        },
+        {
+          "name": "Open stiklijn 7",
+          "points": 17,
+          "length": 138.96446561442372,
+          "dashes": 24
+        },
+        {
+          "name": "Open stiklijn 8",
+          "points": 7,
+          "length": 33.431943055848905,
+          "dashes": 6
+        },
+        {
+          "name": "Open stiklijn 9",
+          "points": 7,
+          "length": 35.91438862470929,
+          "dashes": 6
+        },
+        {
+          "name": "Open stiklijn 10",
+          "points": 17,
+          "length": 104.09057271202244,
+          "dashes": 18
+        },
+        {
+          "name": "Open stiklijn 11",
+          "points": 17,
+          "length": 103.90960931128492,
+          "dashes": 18
+        },
+        {
+          "name": "Open stiklijn 12",
+          "points": 32,
+          "length": 351.5278414300631,
+          "dashes": 62
+        },
+        {
+          "name": "Open stiklijn 13",
+          "points": 29,
+          "length": 311.48675489600276,
+          "dashes": 55
+        },
+        {
+          "name": "Open stiklijn 14",
+          "points": 15,
+          "length": 398.60493123561196,
+          "dashes": 70
+        },
+        {
+          "name": "Open stiklijn 15",
+          "points": 12,
+          "length": 387.28119207820936,
+          "dashes": 68
+        },
+        {
+          "name": "Open stiklijn 16",
+          "points": 2,
+          "length": 66.84885937695572,
+          "dashes": 12
+        },
+        {
+          "name": "Open stiklijn 17",
+          "points": 2,
+          "length": 64.85260210662331,
+          "dashes": 11
+        },
+        {
+          "name": "Open stiklijn 18",
+          "points": 2,
+          "length": 61.702917273010655,
+          "dashes": 11
+        },
+        {
+          "name": "Open stiklijn 19",
+          "points": 2,
+          "length": 61.576943737083894,
+          "dashes": 11
+        },
+        {
+          "name": "Open stiklijn 20",
+          "points": 9,
+          "length": 365.3360768033424,
+          "dashes": 64
+        },
+        {
+          "name": "Open stiklijn 21",
+          "points": 10,
+          "length": 373.1925676116938,
+          "dashes": 66
+        },
+        {
+          "name": "Open stiklijn 22",
+          "points": 5,
+          "length": 79.75437170936928,
+          "dashes": 14
+        },
+        {
+          "name": "Open stiklijn 23",
+          "points": 6,
+          "length": 78.50374049132158,
+          "dashes": 14
+        },
+        {
+          "name": "Open stiklijn 24",
+          "points": 13,
+          "length": 240.9892553958279,
+          "dashes": 42
+        },
+        {
+          "name": "Open stiklijn 25",
+          "points": 11,
+          "length": 198.67632537114181,
+          "dashes": 35
+        }
+      ],
+      "visibleThreadPixels": 3822,
+      "dashLength": 4,
+      "gap": 1.68,
+      "width": 1.36,
+      "roles": [
+        "palm",
+        "back2",
+        "back78",
+        "back8",
+        "back6",
+        "back5",
+        "back4",
+        "back3",
+        "web",
+        "belt",
+        "binding",
+        "welting",
+        "pinky_loops",
+        "laces",
+        "embroidery",
+        "stitching"
+      ]
+    },
+    "palm": {
+      "shapes": 98,
+      "laceContours": 40,
+      "cutouts": 7,
+      "paths": [
+        {
+          "name": "Open stiklijn 1",
+          "points": 7,
+          "length": 349.0401054581597,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 2",
+          "points": 7,
+          "length": 348.52971810082255,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 3",
+          "points": 6,
+          "length": 347.89911757012703,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 4",
+          "points": 7,
+          "length": 345.91853538164406,
+          "dashes": 40
+        },
+        {
+          "name": "Open stiklijn 5",
+          "points": 5,
+          "length": 265.8735164752961,
+          "dashes": 31
+        },
+        {
+          "name": "Open stiklijn 6",
+          "points": 5,
+          "length": 263.2114679017325,
+          "dashes": 31
+        },
+        {
+          "name": "Open stiklijn 7",
+          "points": 5,
+          "length": 257.6649689593621,
+          "dashes": 30
+        },
+        {
+          "name": "Open stiklijn 8",
+          "points": 5,
+          "length": 254.59849992386137,
+          "dashes": 30
+        },
+        {
+          "name": "Open stiklijn 9",
+          "points": 4,
+          "length": 196.94366762313336,
+          "dashes": 23
+        },
+        {
+          "name": "Open stiklijn 10",
+          "points": 4,
+          "length": 177.51922180120164,
+          "dashes": 21
+        }
+      ],
+      "visibleThreadPixels": 3535,
+      "dashLength": 6,
+      "gap": 2.52,
+      "width": 2.04,
+      "roles": [
+        "palm",
+        "web",
+        "back1",
+        "back9",
+        "back3",
+        "back4",
+        "back6",
+        "back7",
+        "belt",
+        "binding",
+        "welting",
+        "thumb_loops",
+        "laces",
+        "stitching"
+      ]
+    }
+  }
+}

@@ -31,7 +31,7 @@ const money = cents => new Intl.NumberFormat(S.lang === 'nl' ? 'nl-NL' : 'en-IE'
 /* Which render layer each colour field drives. Fields absent from this map
    are real order fields the back view cannot show — see OFFSTAGE. */
 const FIELD_TO_LAYER = {
-  web: 'web', palm: 'palm', back3: 'back3', back4: 'back4', back5: 'back5',
+  web: 'web', palm: 'palm', back2:'back2', back3: 'back3', back4: 'back4', back5: 'back5',
   back6: 'back6', back7: 'back78', back8: 'back8', belt: 'belt', lining: 'lining',
   binding: 'binding', welting: 'welting', laces: 'laces',
   thumb_loops: 'thumb_loops', pinky_loops: 'pinky_loops',
@@ -159,7 +159,7 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-palm-r02',window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03',window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
   S.thumbText,S.thumbNumber,S.pinkyText]);
@@ -524,7 +524,7 @@ function editView(view) {
   return true;
 }
 function colourView(field) {
-  if (field === 'back8' && S.view === 'back' && viewAvailability('back').ok) return false;
+  if ((field==='back8' || (R.DATA.tracedSeams && ['back2','palm'].includes(field))) && S.view === 'back' && viewAvailability('back').ok) return false;
   // These parts are most clearly separated in their side view.
   const preferred = { back1: 'thumb', back2: 'thumb', back8: 'pinky',
     back9: 'pinky', palm: 'palm' }[field];
@@ -796,6 +796,7 @@ function renderStart(b) {
   starterObserver?.disconnect();
   // Starter cards always show the back and never mutate the active view.
   const starterR = starterRenderer || (starterRenderer = new GloveRenderer(R.views.back));
+  starterR.setWeb(null); starterR.setWebMarked(false);
   // Reuse decoded flag images; thumbnail draws are synchronous.
   starterR._flags = R._flags || {};
   const grid = el('div', 'cards starter-cards');
@@ -832,7 +833,7 @@ function renderStart(b) {
         try {
           applyStarter(st, true);
           starterR.setFlag(flagArt(), null, S.flagPosition);
-          starterR.draw(image.getContext('2d'), layerState(DATA, LAYER_TO_FIELD),
+          starterR.draw(image.getContext('2d'), layerState(starterR.DATA, LAYER_TO_FIELD),
             S.bullet, null, hasFlag(), isLefty());
         } finally { Object.assign(S, prev); }
         if(starterFlagsReady) rememberPublic('starter:'+key,image);
@@ -1057,7 +1058,8 @@ function liveThumbs(field, items, box, jobFor) {
     }
     if (!field.isConnected || key !== thumbKey) return;
     card.querySelector('.preview-error')?.remove();
-    previewR.draw(tc, layerState(DATA, LAYER_TO_FIELD), S.bullet, null, hasFlag(), isLefty());
+    previewR.setMaterials(layerMaterials(previewR.DATA,LAYER_TO_FIELD));
+    previewR.draw(tc, layerState(previewR.DATA, LAYER_TO_FIELD), S.bullet, null, hasFlag(), isLefty());
     const cv = document.createElement('canvas');
     cv.width = 300; cv.height = 400;
     cv.getContext('2d').drawImage(tmp, sx, sy, sw, sh, 0, 0, 300, 400);
@@ -1272,7 +1274,7 @@ function renderColours(b) {
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
       : (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
       : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
-      : (OFFSTAGE[S.part] || null),
+      : (R.DATA.zones.some(z=>z.id===FIELD_TO_LAYER[S.part]) ? null : OFFSTAGE[S.part] || null),
     true));
 
   b.appendChild(el('p', 'note swatch-note', t('swatchNote')));

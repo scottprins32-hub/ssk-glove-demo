@@ -1174,7 +1174,25 @@
     "back8": "assets/back8-split-r01/back8.png",
     "back8_hi": "assets/back8-split-r01/back8_hi.png",
     "clean_edge_heal_back8": "assets/back8-split-r01/clean_edge_heal_back8.png",
-    "back78_heal_original": "assets/clean-edges-r01/back-heal-back78.png"
+    "back78_heal_original": "assets/clean-edges-r01/back-heal-back78.png",
+    "scott_back_palm": "assets/back-scott-trace-r03/palm.webp",
+    "scott_back_back2": "assets/back-scott-trace-r03/back2.webp",
+    "scott_back_back78": "assets/back-scott-trace-r03/back78.webp",
+    "scott_back_back8": "assets/back-scott-trace-r03/back8.webp",
+    "scott_back_back6": "assets/back-scott-trace-r03/back6.webp",
+    "scott_back_back5": "assets/back-scott-trace-r03/back5.webp",
+    "scott_back_back4": "assets/back-scott-trace-r03/back4.webp",
+    "scott_back_back3": "assets/back-scott-trace-r03/back3.webp",
+    "scott_back_web": "assets/back-scott-trace-r03/web.webp",
+    "scott_back_belt": "assets/back-scott-trace-r03/belt.webp",
+    "scott_back_binding": "assets/back-scott-trace-r03/binding.webp",
+    "scott_back_welting": "assets/back-scott-trace-r03/welting.webp",
+    "scott_back_pinky_loops": "assets/back-scott-trace-r03/pinky_loops.webp",
+    "scott_back_laces": "assets/back-scott-trace-r03/laces.webp",
+    "scott_back_embroidery": "assets/back-scott-trace-r03/embroidery.webp",
+    "scott_back_stitching": "assets/back-scott-trace-r03/stitching.webp",
+    "scott_back_glove": "assets/back-scott-trace-r03/empty.webp",
+    "scott_back_idmap": "assets/back-scott-trace-r03/idmap.png"
   },
   "bbox": {
     "back2": [
@@ -2670,5 +2688,503 @@
       "clean_edge_heal_belt",
       "belt"
     ]
-  ]
+  ],
+  "nativeBackTrace": {
+    "revision": "SCOTT-BACK-PALM-R03",
+    "assets": {
+      "palm": "scott_back_palm",
+      "back2": "scott_back_back2",
+      "back78": "scott_back_back78",
+      "back8": "scott_back_back8",
+      "back6": "scott_back_back6",
+      "back5": "scott_back_back5",
+      "back4": "scott_back_back4",
+      "back3": "scott_back_back3",
+      "web": "scott_back_web",
+      "belt": "scott_back_belt",
+      "binding": "scott_back_binding",
+      "welting": "scott_back_welting",
+      "pinky_loops": "scott_back_pinky_loops",
+      "laces": "scott_back_laces",
+      "embroidery": "scott_back_embroidery",
+      "stitching": "scott_back_stitching",
+      "glove": "scott_back_glove",
+      "_idmap": "scott_back_idmap"
+    },
+    "bbox": {
+      "palm": [
+        543,
+        623,
+        756,
+        882
+      ],
+      "scott_back_palm": [
+        543,
+        623,
+        756,
+        882
+      ],
+      "back2": [
+        646,
+        737,
+        777,
+        935
+      ],
+      "scott_back_back2": [
+        646,
+        737,
+        777,
+        935
+      ],
+      "back78": [
+        154,
+        100,
+        333,
+        832
+      ],
+      "scott_back_back78": [
+        154,
+        100,
+        333,
+        832
+      ],
+      "back8": [
+        138,
+        199,
+        237,
+        878
+      ],
+      "scott_back_back8": [
+        138,
+        199,
+        237,
+        878
+      ],
+      "back6": [
+        254,
+        77,
+        372,
+        802
+      ],
+      "scott_back_back6": [
+        254,
+        77,
+        372,
+        802
+      ],
+      "back5": [
+        301,
+        44,
+        467,
+        792
+      ],
+      "scott_back_back5": [
+        301,
+        44,
+        467,
+        792
+      ],
+      "back4": [
+        404,
+        41,
+        545,
+        790
+      ],
+      "scott_back_back4": [
+        404,
+        41,
+        545,
+        790
+      ],
+      "back3": [
+        492,
+        33,
+        642,
+        789
+      ],
+      "scott_back_back3": [
+        492,
+        33,
+        642,
+        789
+      ],
+      "web": [
+        590,
+        23,
+        829,
+        752
+      ],
+      "scott_back_web": [
+        590,
+        23,
+        829,
+        752
+      ],
+      "belt": [
+        291,
+        883,
+        712,
+        1077
+      ],
+      "scott_back_belt": [
+        291,
+        883,
+        712,
+        1077
+      ],
+      "binding": [
+        226,
+        783,
+        685,
+        1088
+      ],
+      "scott_back_binding": [
+        226,
+        783,
+        685,
+        1088
+      ],
+      "welting": [
+        200,
+        29,
+        597,
+        816
+      ],
+      "scott_back_welting": [
+        200,
+        29,
+        597,
+        816
+      ],
+      "pinky_loops": [
+        12,
+        689,
+        280,
+        1004
+      ],
+      "scott_back_pinky_loops": [
+        12,
+        689,
+        280,
+        1004
+      ],
+      "laces": [
+        97,
+        13,
+        920,
+        1021
+      ],
+      "scott_back_laces": [
+        97,
+        13,
+        920,
+        1021
+      ],
+      "embroidery": [
+        170,
+        212,
+        267,
+        600
+      ],
+      "scott_back_embroidery": [
+        170,
+        212,
+        267,
+        600
+      ],
+      "stitching": [
+        549,
+        68,
+        816,
+        968
+      ],
+      "scott_back_stitching": [
+        549,
+        68,
+        816,
+        968
+      ]
+    },
+    "zones": [
+      {
+        "id": "palm",
+        "field": "palm",
+        "n": 1,
+        "group": "leather",
+        "label": "palm"
+      },
+      {
+        "id": "back2",
+        "field": "back2",
+        "n": 2,
+        "group": "leather",
+        "label": "back2"
+      },
+      {
+        "id": "back78",
+        "field": "back7",
+        "n": 3,
+        "group": "leather",
+        "label": "back7"
+      },
+      {
+        "id": "back8",
+        "field": "back8",
+        "n": 4,
+        "group": "leather",
+        "label": "back8"
+      },
+      {
+        "id": "back6",
+        "field": "back6",
+        "n": 5,
+        "group": "leather",
+        "label": "back6"
+      },
+      {
+        "id": "back5",
+        "field": "back5",
+        "n": 6,
+        "group": "leather",
+        "label": "back5"
+      },
+      {
+        "id": "back4",
+        "field": "back4",
+        "n": 7,
+        "group": "leather",
+        "label": "back4"
+      },
+      {
+        "id": "back3",
+        "field": "back3",
+        "n": 8,
+        "group": "leather",
+        "label": "back3"
+      },
+      {
+        "id": "web",
+        "field": "web",
+        "n": 9,
+        "group": "leather",
+        "label": "web"
+      },
+      {
+        "id": "belt",
+        "field": "belt",
+        "n": 10,
+        "group": "leather",
+        "label": "belt"
+      },
+      {
+        "id": "binding",
+        "field": "binding",
+        "n": 12,
+        "group": "lace",
+        "label": "binding"
+      },
+      {
+        "id": "welting",
+        "field": "welting",
+        "n": 13,
+        "group": "lace",
+        "label": "welting"
+      },
+      {
+        "id": "pinky_loops",
+        "field": "pinky_loops",
+        "n": 14,
+        "group": "leather",
+        "label": "pinky_loops"
+      },
+      {
+        "id": "laces",
+        "field": "laces",
+        "n": 15,
+        "group": "lace",
+        "label": "laces"
+      },
+      {
+        "id": "embroidery",
+        "field": "ring_emb",
+        "n": 16,
+        "group": "embroidery",
+        "label": "ring_emb"
+      },
+      {
+        "id": "stitching",
+        "field": "stitching",
+        "n": 17,
+        "group": "stitching",
+        "label": "stitching"
+      }
+    ],
+    "fieldsShown": [
+      "palm",
+      "back2",
+      "back7",
+      "back8",
+      "back6",
+      "back5",
+      "back4",
+      "back3",
+      "web",
+      "belt",
+      "binding",
+      "welting",
+      "pinky_loops",
+      "laces",
+      "ring_emb",
+      "stitching"
+    ],
+    "materialResponse": {
+      "palm": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back2": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back78": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back8": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back6": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back5": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back4": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "back3": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "web": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "belt": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "binding": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "welting": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "pinky_loops": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "laces": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
+      "embroidery": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      }
+    },
+    "traceSha256": "1b3d9333a496a3c275f40167b7a3c6e3353ce2db046d5669852504a69d47a4fe",
+    "embParts": [
+      [
+        174,
+        521,
+        244,
+        599
+      ],
+      [
+        172,
+        442,
+        240,
+        521
+      ],
+      [
+        175,
+        368,
+        242,
+        447
+      ],
+      [
+        176,
+        214,
+        266,
+        372
+      ]
+    ]
+  }
 }
