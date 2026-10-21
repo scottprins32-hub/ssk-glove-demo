@@ -46,11 +46,12 @@ test('offset badge reflection keeps its actual centre on the mirrored wrist',()=
 
 test('all wrist badge options shrink uniformly about their own mount on both hands',()=>{
  for(let i=0;i<data.bullets.length;i++)for(const mirror of [false,true]){
-  const calls=[],ctx={save(){},restore(){},translate(...v){calls.push(['translate',...v])},scale(...v){calls.push(['scale',...v])}};
+  const calls=[],ctx={save(){},restore(){},translate(...v){calls.push(['translate',...v])},scale(...v){calls.push(['scale',...v])},rotate(a){calls.push(['rotate',a])}};
   const r={DATA:data,unmirror:GloveRenderer.prototype.unmirror,drawBullet(c,sel){assert.equal(c,ctx);assert.equal(sel,i)}};
   GloveRenderer.prototype.drawWristBadge.call(r,ctx,i,mirror);
   assert.equal(calls.filter(v=>v[0]==='scale'&&v[1]===0.9&&v[2]===0.9).length,1);
   const b=data.bullets[i],cx=(data.bulletBox[0]+data.bulletBox[2])/2+(b.mountOffset?.[0]||0);
   if(mirror)assert.deepEqual(calls[0],['translate',2*cx,0]);
+  assert.ok(calls.some(v=>v[0]==='rotate'&&Math.abs(v[1]-(b.artAngleDegrees||0)*Math.PI/180)<1e-12));
  }
 });

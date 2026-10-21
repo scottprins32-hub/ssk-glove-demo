@@ -21,7 +21,8 @@
     "mountOffset": [
       20,
       -12
-    ]
+    ],
+    "artAngleDegrees": 0.39
   },
   {
     "name": "Silicone Silver",
@@ -45,6 +46,7 @@
     "mountOffset": [
       20,
       -12
-    ]
+    ],
+    "artAngleDegrees": -0.0
   }
 ]

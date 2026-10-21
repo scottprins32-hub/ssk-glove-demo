@@ -16,6 +16,6 @@ test('one/two digits or initials and independent circle/thread colours survive v
 });
 test('legacy circle slots remain append-only; Navy remains available',()=>{assert.deepEqual(CIRCLE_COLORS.slice(0,6).map(c=>c[0]),['Black','Navy','Yellow','Red','Blue','White']);assert.ok(CIRCLE_COLORS.length<16)});
 test('thumb badge source crop excludes transparent outlier pixels and uses one centre',()=>{
- const b=data.thumbBadge;assert.deepEqual(b.sourceBox,[143,118,982,982]);assert.equal(b.artAngleDegrees,-60);assert.equal(b.cx,390);assert.equal(b.cy,844);assert.ok(b.stitchRadius>b.radius);assert.equal(b.stitchRadius-b.radius,5);
+ const b=data.thumbBadge;assert.deepEqual(b.sourceBox,[143,118,982,982]);assert.equal(b.artAngleDegrees,-60);assert.equal(b.sskAngleDegrees,40);assert.equal(b.sskLeftAngleDegrees,-16);assert.equal(b.cx,390);assert.equal(b.cy,844);assert.ok(b.stitchRadius>b.radius);assert.equal(b.stitchRadius-b.radius,5);
  assert.equal(data.nativeHContour.traceSha256.length,64);
 });

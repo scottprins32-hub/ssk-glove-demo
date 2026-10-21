@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>SSK logo orientation audit</title><style>body{font:15px system-ui;background:#eeeae5;margin:24px}main{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}figure{margin:0;background:#faf9f6;text-align:center;padding:10px}canvas{width:100%;height:auto}h1{font-size:24px}</style><h1>SSK polslogo’s · horizontale plaatsing · beide handen</h1><main></main><script type="module">
+import {GloveRenderer} from './glove-engine.js';
+const d=await(await fetch('./assets/glove-data.json')).json(),imgs={};for(const key of ['bullet_logo',...d.bullets.map(b=>b.asset)]){const im=new Image();im.src=d.assets[key];await im.decode();imgs[key]=im;}
+for(let i=0;i<d.bullets.length;i++)for(const mirror of [false,true]){
+ const b=d.bullets[i],dx=b.mountOffset?.[0]||0,dy=b.mountOffset?.[1]||0,cx=(d.bulletBox[0]+d.bulletBox[2])/2+dx,cy=(d.bulletBox[1]+d.bulletBox[3])/2+dy;
+ const c=document.createElement('canvas');c.width=320;c.height=200;const g=c.getContext('2d');g.translate(160,100);if(mirror)g.scale(-1,1);g.translate(-cx,-cy);
+ const r={DATA:d,imgs,unmirror:GloveRenderer.prototype.unmirror,drawBullet:GloveRenderer.prototype.drawBullet};GloveRenderer.prototype.drawWristBadge.call(r,g,i,mirror);
+ const f=document.createElement('figure');f.append(c);const cap=document.createElement('p');cap.textContent=b.name+' · '+(mirror?'LHT':'RHT');f.append(cap);document.querySelector('main').append(f);
+}
+</script>

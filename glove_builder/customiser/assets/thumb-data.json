@@ -2400,6 +2400,8 @@
       2.1
     ],
     "sourceRegistration": "Opaque disc bounds (alpha >=128), square centred on (634,609), excluding stray transparent shadow pixels",
-    "artAngleDegrees": -60
+    "artAngleDegrees": -60,
+    "sskAngleDegrees": 40,
+    "sskLeftAngleDegrees": -16
   }
 }

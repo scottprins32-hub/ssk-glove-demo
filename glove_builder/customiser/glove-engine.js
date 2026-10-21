@@ -840,6 +840,9 @@ export class GloveRenderer {
       ctx.save();
       ctx.translate(cx,cy);
       ctx.scale(0.9,0.9);
+      const angle = this.DATA.bullets[bulletSel]?.artAngleDegrees || 0;
+      // unmirror already cancels the outer reflection: use the same art correction on both hands.
+      ctx.rotate(angle*Math.PI/180);
       ctx.translate(-cx,-cy);
       this.drawBullet(ctx,bulletSel);
       ctx.restore();
@@ -1600,7 +1603,9 @@ export class GloveRenderer {
       const mark = state.thumbMark || {}, text = /^[A-Z0-9]{1,2}$/.test(mark.text || '') ? mark.text : '';
       this.unmirror(ctx,b.cx,b.cx,mirror,()=>{
         ctx.save();ctx.beginPath();ctx.arc(b.cx,b.cy,b.radius,0,Math.PI*2);ctx.clip();
-        ctx.translate(b.cx,b.cy);ctx.rotate((mirror?-1:1)*(b.artAngleDegrees||0)*Math.PI/180);ctx.translate(-b.cx,-b.cy);
+        // The source S has an intrinsic tilt; its left-hand target is calibrated separately.
+        const angle = text ? (mirror?-1:1)*(b.artAngleDegrees||0) : (mirror ? b.sskLeftAngleDegrees ?? -(b.sskAngleDegrees||0) : b.sskAngleDegrees||0);
+        ctx.translate(b.cx,b.cy);ctx.rotate(angle*Math.PI/180);ctx.translate(-b.cx,-b.cy);
         if (!text) ctx.drawImage(this.imgs[b.asset],sx,sy,sw,sh,b.cx-b.radius,b.cy-b.radius,b.radius*2,b.radius*2);
         else {
           const colour = /^#[0-9a-f]{6}$/i.test(mark.circle || '') ? mark.circle : '#17161A';

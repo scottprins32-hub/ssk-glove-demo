@@ -22,7 +22,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/edge-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -26.825
   },
   {
     "name": "Edge Silver",
@@ -47,7 +48,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/edge-silver.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -32.596
   },
   {
     "name": "Edge Gun Metal",
@@ -72,7 +74,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/edge-gunmetal.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -30.441
   },
   {
     "name": "White/Gold",
@@ -97,7 +100,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/white-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -4
   },
   {
     "name": "Red/Gold",
@@ -122,7 +126,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/red-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -13.935
   },
   {
     "name": "Red/Green",
@@ -147,7 +152,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/red-green.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -15.501
   },
   {
     "name": "Rainbow",
@@ -172,7 +178,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/rainbow.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -12.967
   },
   {
     "name": "Black/Gold",
@@ -197,7 +204,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/black-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -16.379
   },
   {
     "name": "Black/Pink",
@@ -222,7 +230,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/black-pink.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -15.099
   },
   {
     "name": "Black/Purple",
@@ -247,7 +256,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/black-purple.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -3.784
   },
   {
     "name": "Black/Silver",
@@ -272,7 +282,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/black-silver.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -13.83
   },
   {
     "name": "Green/Gold",
@@ -297,7 +308,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/green-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -0.577
   },
   {
     "name": "Winered/Gold",
@@ -322,7 +334,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/winered-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -13.827
   },
   {
     "name": "Blue/Gold",
@@ -347,7 +360,8 @@
       -12
     ],
     "source": "assets/hd-logos-r01/blue-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -9.576
   },
   {
     "name": "Navy/Gold",
@@ -372,6 +386,7 @@
       -12
     ],
     "source": "assets/hd-logos-r01/navy-gold.webp",
-    "hdArtwork": true
+    "hdArtwork": true,
+    "artAngleDegrees": -14.606
   }
 ]

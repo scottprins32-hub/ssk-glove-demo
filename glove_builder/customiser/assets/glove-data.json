@@ -658,7 +658,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -26.825
     },
     {
       "name": "Edge Silver",
@@ -682,7 +683,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -32.596
     },
     {
       "name": "Edge Gun Metal",
@@ -706,7 +708,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -30.441
     },
     {
       "name": "White/Gold",
@@ -730,7 +733,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -4
     },
     {
       "name": "Red/Gold",
@@ -754,7 +758,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -13.935
     },
     {
       "name": "Red/Green",
@@ -778,7 +783,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -15.501
     },
     {
       "name": "Rainbow",
@@ -802,7 +808,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -12.967
     },
     {
       "name": "Black/Gold",
@@ -826,7 +833,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -16.379
     },
     {
       "name": "Black/Pink",
@@ -850,7 +858,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -15.099
     },
     {
       "name": "Black/Purple",
@@ -874,7 +883,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -3.784
     },
     {
       "name": "Black/Silver",
@@ -898,7 +908,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -13.83
     },
     {
       "name": "Green/Gold",
@@ -922,7 +933,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -0.577
     },
     {
       "name": "Winered/Gold",
@@ -946,7 +958,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -13.827
     },
     {
       "name": "Blue/Gold",
@@ -970,7 +983,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -9.576
     },
     {
       "name": "Navy/Gold",
@@ -994,7 +1008,8 @@
         20,
         -12
       ],
-      "hdArtwork": true
+      "hdArtwork": true,
+      "artAngleDegrees": -14.606
     },
     {
       "name": "Silicone Gold",
@@ -1017,7 +1032,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "artAngleDegrees": 0.39
     },
     {
       "name": "Silicone Silver",
@@ -1040,7 +1056,8 @@
       "mountOffset": [
         20,
         -12
-      ]
+      ],
+      "artAngleDegrees": -0.0
     }
   ],
   "bulletBox": [
