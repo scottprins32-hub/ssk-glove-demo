@@ -35,3 +35,11 @@ test('new silicone drafts save while default checkout remains blocked before CCV
  }
  assert.equal((await service({action:'config'})).checkoutEnabled,false);assert.equal(posts,0);assert.equal(rows,2);
 });
+
+test('offset badge reflection keeps its actual centre on the mirrored wrist',()=>{
+ for(const b of data.bullets.filter(b=>b.sourceBox)){
+  const dx=b.mountOffset[0],bb=data.bulletBox,cx=(bb[0]+bb[2])/2+dx,calls=[];
+  GloveRenderer.prototype.unmirror.call({}, {save(){},restore(){},translate(x,y){calls.push([x,y])},scale(){}},bb[0]+dx,bb[2]+dx,true,()=>{});
+  assert.equal(calls[0][0]-cx,cx);
+ }
+});

@@ -1581,7 +1581,8 @@ export class GloveRenderer {
     }
     const bb = D.bulletBox;
     if (bb) {
-      this.unmirror(ctx, bb[0], bb[2], mirror,
+      const badgeOffsetX = D.bullets[bulletSel]?.mountOffset?.[0] || 0;
+      this.unmirror(ctx, bb[0] + badgeOffsetX, bb[2] + badgeOffsetX, mirror,
                     () => this.drawBullet(ctx, bulletSel));
     }
     if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
