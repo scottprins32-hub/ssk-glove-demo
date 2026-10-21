@@ -160,10 +160,10 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03',window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03|thumb-r12',window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
-  S.thumbText,S.thumbNumber,S.pinkyText]);
+  S.thumbText,S.thumbNumber,S.pinkyText,S.circle,S.numberColor]);
 const nativeFrameKey=(view,renderer=R)=>view+'|'+!!renderer.flagImg+'|'+Object.keys(renderer.views[view]?.imgs || {}).length;
 const rememberPublic=(key,image)=>{
   const write=()=>publicRenders.write(key,image);
@@ -389,6 +389,7 @@ function layerState(D = R ? R.DATA : DATA, map = viewLayerField()) {
     out[z.id] = S.colors[f] || DATA.palettes[z.group][0][0];
   }
   out.palm = S.colors.palm || '10';
+  out.thumbMark = {text:S.thumbNumber,circle:CIRCLE_COLORS.find(c=>c[0]===S.circle)?.[1],thread:DATA.palettes.embroidery.find(c=>c[0]===S.numberColor)?.[2]};
   return out;
 }
 // The order's reference: the form's answers, whatever view is on screen.
@@ -1351,14 +1352,14 @@ function renderPersonal(b) {
   }
   const twoChars = v => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
   const circleField = textField(t('thumbNumber'), S.thumbNumber, 2,
-    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); return changed; },
+    v => { const changed = !!S.thumbNumber !== !!twoChars(v); S.thumbNumber = twoChars(v); draw(); return changed; },
     false, 'text', twoChars, 'thumb');
   circleField.appendChild(el('p', 'note', t('circleHint')));
   b.appendChild(circleField);
   b.appendChild(choiceField(t('circle'), CIRCLE_COLORS.map(([n, hx]) => ({
     id: n, label: n, swatch: hx
-  })), S.circle, v => { snapshot(); S.circle = v; paint(); }, !!S.thumbNumber));
-  if (S.thumbNumber) b.appendChild(threadField('numberColor', t('numberColor')));
+  })), S.circle, v => { snapshot(); S.circle = v; draw(); paint(); }, !!S.thumbNumber));
+  if (S.thumbNumber) b.appendChild(swatchGrid(t('numberColor'), DATA.palettes.embroidery.filter(c=>['10','20','25','35','39','50','60','70','80','90','95','48'].includes(c[0])), S.numberColor, v=>{snapshot();S.numberColor=v;draw();paint();},true,null));
   // Pinky embroidery is not one of the 36 questions on SSK's form, but it is
   // orderable — Scott's own glove reads "Modern Pitching" there, and Pim has
   // confirmed it. Font and thread follow the thumb's; if the pinky can carry
@@ -1510,11 +1511,12 @@ async function captureOrderViews() {
     const D=renderer.DATA,map=view==='back'?LAYER_TO_FIELD:view==='palm'?{...PALM_FIELDS,stitching:'stitching'}:Object.fromEntries(D.zones.map(z=>[z.id,z.field]));
     renderer.setMaterials(Object.fromEntries(D.zones.map(z=>[z.id,snapshot.materials?.[map[z.id]]||'standard'])));
     const state=Object.fromEntries(D.zones.map(z=>[z.id,snapshot.colors[map[z.id]]||DATA.palettes[z.group][0][0]]));state.palm=snapshot.colors.palm||'10';
+    state.thumbMark={text:snapshot.thumbNumber,circle:CIRCLE_COLORS.find(c=>c[0]===snapshot.circle)?.[1],thread:DATA.palettes.embroidery.find(c=>c[0]===snapshot.numberColor)?.[2]};
     const canvas=document.createElement('canvas');canvas.width=D.w;canvas.height=D.h;
     renderer.draw(canvas.getContext('2d'),state,snapshot.bullet,null,hasFlag(snapshot),/^L/.test(snapshot.hand));
     const notes=availability.note?[vt(availability.note)]:[];
     notes.push(snapshot.lang==='nl'?`Maat ${snapshot.size} wordt besteld; de afbeelding toont een representatieve maat.`:`Size ${snapshot.size} is ordered; this image shows a representative size.`);
-    if(snapshot.thumbText||snapshot.pinkyText||snapshot.thumbNumber)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
+    if(snapshot.thumbText||snapshot.pinkyText)notes.push(snapshot.lang==='nl'?'Personalisatie wordt volgens de specificatie gemaakt en is niet op deze afbeelding getekend.':'Personalization follows the specification and is not drawn in this preview.');
     previews.push({view,available:true,dataUrl:canvas.toDataURL('image/webp',.92),notes});
   }
   return previews;

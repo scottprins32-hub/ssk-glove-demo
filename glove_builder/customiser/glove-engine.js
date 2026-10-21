@@ -460,7 +460,7 @@ export class GloveRenderer {
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
           ...(['back','palm'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
-          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true} : {}) },
+          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true,...(this.view === 'thumb' ? {nativeHDetail:null,thumbWingtip:null,thumbLaceCorrection:null,nativeHWhiteWindows:null,nativeHTransparentWindows:null} : {})} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }
       Object.assign(this, { DATA:this.nativeContourBundle.DATA,
@@ -1574,7 +1574,7 @@ export class GloveRenderer {
       this.unmirror(ctx, M.cx - r, M.cx + r, mirror,
                     () => this.drawFlag(ctx, mirror));
     }
-    if (mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
+    if (!(D.thumbBadge && D.tracedSeams) && mirror && D.thumbCircle && this.imgs.thumb_circle_art) {
       const badge = D.thumbCircle;
       ctx.save();
       // Keep glyphs readable while aligning the badge plane with the
@@ -1588,12 +1588,35 @@ export class GloveRenderer {
       ctx.drawImage(this.imgs.thumb_circle_art, -badge.cx, -badge.cy);
       ctx.restore();
     }
-    if (D.thumbBadgeThread) {
+    if (!(D.thumbBadge && D.tracedSeams) && D.thumbBadgeThread) {
       const b=D.thumbBadgeThread;
       ctx.save();ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);
       ctx.beginPath();ctx.ellipse(0,0,b.rx,b.ry,0,0,Math.PI*2);
       ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=1.55;
       ctx.lineCap='round';ctx.setLineDash([2.65,3.5]);ctx.stroke();ctx.restore();
+    }
+    if (D.tracedSeams && D.thumbBadge && this.imgs[D.thumbBadge.asset]) {
+      const b = D.thumbBadge, [sx,sy,sw,sh] = b.sourceBox;
+      const mark = state.thumbMark || {}, text = /^[A-Z0-9]{1,2}$/.test(mark.text || '') ? mark.text : '';
+      this.unmirror(ctx,b.cx,b.cx,mirror,()=>{
+        ctx.save();ctx.beginPath();ctx.arc(b.cx,b.cy,b.radius,0,Math.PI*2);ctx.clip();
+        ctx.translate(b.cx,b.cy);ctx.rotate((mirror?-1:1)*(b.artAngleDegrees||0)*Math.PI/180);ctx.translate(-b.cx,-b.cy);
+        if (!text) ctx.drawImage(this.imgs[b.asset],sx,sy,sw,sh,b.cx-b.radius,b.cy-b.radius,b.radius*2,b.radius*2);
+        else {
+          const colour = /^#[0-9a-f]{6}$/i.test(mark.circle || '') ? mark.circle : '#17161A';
+          const thread = /^#[0-9a-f]{6}$/i.test(mark.thread || '') ? mark.thread : '#F2F0EA';
+          ctx.fillStyle=colour;ctx.fillRect(b.cx-b.radius,b.cy-b.radius,b.radius*2,b.radius*2);
+          const tile=document.createElement('canvas');tile.width=tile.height=256;const t=tile.getContext('2d');
+          t.textAlign='center';t.textBaseline='middle';t.font='900 '+(text.length===2?152:186)+'px Arial, sans-serif';
+          t.fillStyle=thread;t.fillText(text,128,137,214);
+          t.globalCompositeOperation='source-atop';t.strokeStyle='rgba(255,255,255,.22)';t.lineWidth=.8;
+          for(let y=0;y<256;y+=3){t.beginPath();t.moveTo(0,y);t.lineTo(256,y-28);t.stroke();}
+          ctx.drawImage(tile,b.cx-b.radius*.82,b.cy-b.radius*.82,b.radius*1.64,b.radius*1.64);
+        }
+        ctx.restore();
+      });
+      ctx.save();ctx.beginPath();ctx.arc(b.cx,b.cy,b.stitchRadius,0,Math.PI*2);
+      ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=b.stitchWidth;ctx.lineCap='round';ctx.setLineDash(b.dash);ctx.stroke();ctx.restore();
     }
     if (D.bulletBox) this.drawWristBadge(ctx, bulletSel, mirror);
     if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
