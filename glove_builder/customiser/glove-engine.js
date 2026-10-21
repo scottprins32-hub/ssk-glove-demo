@@ -474,7 +474,17 @@ export class GloveRenderer {
     const z = this.DATA.zones.find(z => z.id === zoneId);
     const pal = this.DATA.palettes[z.group];
     const c = pal.find(c => c[0] === state[zoneId]);
-    return c ? c[2] : '#C4C9D0';   // --gray-300, matching app.js
+    const colour = c ? c[2] : '#C4C9D0';
+    // The lining sits inside the hand opening. A small lighting difference
+    // separates it from a matching binding without changing order colours.
+    if (zoneId === 'lining' && c && this.imgs?.lining && this.imgs?.binding) {
+      const binding = this.DATA.zones.find(z => z.id === 'binding');
+      const match = this.DATA.palettes[binding?.group]?.find(c => c[0] === state.binding);
+      if (match && match[2].toLowerCase() === colour.toLowerCase())
+        return '#' + [1,3,5].map(i => Math.round(parseInt(colour.slice(i,i+2),16)*.84)
+          .toString(16).padStart(2,'0')).join('');
+    }
+    return colour;
   }
 
   // The photographed hood covers web lacing at the index finger. Mask in
@@ -1573,7 +1583,7 @@ export class GloveRenderer {
       this.unmirror(ctx, bb[0], bb[2], mirror,
                     () => this.drawBullet(ctx, bulletSel));
     }
-    if (highlight && highlight.id && D.bbox[highlight.id]) {
+    if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
       let c = this.tinted(highlight.id, '#ffffff');
       if (D.surfaceDetails?.length) {
         const combined=document.createElement('canvas');combined.width=D.w;combined.height=D.h;
