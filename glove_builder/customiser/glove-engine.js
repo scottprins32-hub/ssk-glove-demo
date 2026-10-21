@@ -224,7 +224,8 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
         const core = ['glove','_idmap', ...DATA.zones.map(z => z.id),
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {}),
-          ...Object.values(DATA.nativePalmTrace?.assets || {})];
+          ...Object.values(DATA.nativePalmTrace?.assets || {}),
+          ...Object.values(DATA.nativeBackTrace?.assets || {})];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded');
         const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
         const g = ic.getContext('2d', { willReadFrequently: true });
@@ -438,8 +439,8 @@ export class GloveRenderer {
   // their registered base; never leak an H-specific perimeter into another web.
   syncNativeHContour() {
     const base = this.views[this.view];
-    const def = this.view === 'palm' ? base.DATA.nativePalmTrace : base.DATA.nativeHContour;
-    const active = ['thumb','palm'].includes(this.view) && !this.web && !this.webMarked && def;
+    const def = this.view === 'back' ? base.DATA.nativeBackTrace : this.view === 'palm' ? base.DATA.nativePalmTrace : base.DATA.nativeHContour;
+    const active = ['back','thumb','palm'].includes(this.view) && !this.web && !this.webMarked && def;
     const key = this.view + '|' + (active ? def.revision : 'base');
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     if (this.nativeContourKey === key && !newTexture) return;
@@ -447,7 +448,9 @@ export class GloveRenderer {
     if (active) {
       if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture) {
         const imgs = { ...base.imgs };
-        for (const [zone, asset] of Object.entries(def.assets)) imgs[zone] = base.imgs[asset];
+        for (const [zone, asset] of Object.entries(def.assets)) { imgs[zone] = base.imgs[asset]; if (def.revision === 'SCOTT-BACK-PALM-R03') delete imgs[zone+'_hi']; }
+        if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
+        if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
         this.nativeContourBundle = { base, imgs, DATA: { ...base.DATA,
@@ -455,7 +458,8 @@ export class GloveRenderer {
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
-          ...(this.view === 'palm' ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}) },
+          ...(['back','palm'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
+          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }
       Object.assign(this, { DATA:this.nativeContourBundle.DATA,
@@ -915,7 +919,7 @@ export class GloveRenderer {
   }
 
   // Whether the chosen web is one a side view has no photograph of.
-  setWebMarked(on) { this.webMarked = !!on; if(this.view === 'palm')this.syncNativeHContour(); }
+  setWebMarked(on) { this.webMarked = !!on; if (this.views?.[this.view]) this.syncNativeHContour(); }
 
   // Grey stripes in the shape of a layer's alpha, cached per layer.
   hatch(id) {
@@ -941,8 +945,11 @@ export class GloveRenderer {
 
   // Which web to render, by slug, or null for the glove's own.
   setWeb(slug) {
-    this.web = slug && (this.DATA.webs?.[slug] || this.DATA.thumbWebs?.[slug]
-      || this.DATA.palmWebs?.entries?.[slug]) ? slug : null;
+    // Lazy inserts update the base metadata after a native alias was built.
+    const data = this.views?.[this.view]?.DATA || this.DATA;
+    this.web = slug && (data.webs?.[slug] || data.thumbWebs?.[slug]
+      || data.palmWebs?.entries?.[slug]) ? slug : null;
+    if (this.views?.[this.view]) this.syncNativeHContour();
   }
 
   // Fill only slivers vacated by a refined welt with their adjacent panel.

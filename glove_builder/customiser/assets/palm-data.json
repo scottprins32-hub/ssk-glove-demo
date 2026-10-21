@@ -116,22 +116,22 @@
     "clean_edge_heal_binding": "assets/clean-edges-r01/palm-heal-binding.png",
     "clean_edge_heal_palm": "assets/clean-edges-r01/palm-heal-palm.png",
     "clean_edge_heal_laces": "assets/clean-edges-r01/palm-heal-laces.png",
-    "scott_palm_palm": "assets/palm-scott-trace-r01/palm.webp",
-    "scott_palm_web": "assets/palm-scott-trace-r01/web.webp",
-    "scott_palm_back1": "assets/palm-scott-trace-r01/back1.webp",
-    "scott_palm_back9": "assets/palm-scott-trace-r01/back9.webp",
-    "scott_palm_back3": "assets/palm-scott-trace-r01/back3.webp",
-    "scott_palm_back4": "assets/palm-scott-trace-r01/back4.webp",
-    "scott_palm_back6": "assets/palm-scott-trace-r01/back6.webp",
-    "scott_palm_back7": "assets/palm-scott-trace-r01/back7.webp",
-    "scott_palm_belt": "assets/palm-scott-trace-r01/belt.webp",
-    "scott_palm_binding": "assets/palm-scott-trace-r01/binding.webp",
-    "scott_palm_welting": "assets/palm-scott-trace-r01/welting.webp",
-    "scott_palm_thumb_loops": "assets/palm-scott-trace-r01/thumb_loops.webp",
-    "scott_palm_laces": "assets/palm-scott-trace-r01/laces.webp",
-    "scott_palm_stitching": "assets/palm-scott-trace-r01/stitching.webp",
-    "scott_palm_glove": "assets/palm-scott-trace-r01/empty.webp",
-    "scott_palm_idmap": "assets/palm-scott-trace-r01/idmap.png"
+    "scott_palm_palm": "assets/palm-scott-trace-r03/palm.webp",
+    "scott_palm_web": "assets/palm-scott-trace-r03/web.webp",
+    "scott_palm_back1": "assets/palm-scott-trace-r03/back1.webp",
+    "scott_palm_back9": "assets/palm-scott-trace-r03/back9.webp",
+    "scott_palm_back3": "assets/palm-scott-trace-r03/back3.webp",
+    "scott_palm_back4": "assets/palm-scott-trace-r03/back4.webp",
+    "scott_palm_back6": "assets/palm-scott-trace-r03/back6.webp",
+    "scott_palm_back7": "assets/palm-scott-trace-r03/back7.webp",
+    "scott_palm_belt": "assets/palm-scott-trace-r03/belt.webp",
+    "scott_palm_binding": "assets/palm-scott-trace-r03/binding.webp",
+    "scott_palm_welting": "assets/palm-scott-trace-r03/welting.webp",
+    "scott_palm_thumb_loops": "assets/palm-scott-trace-r03/thumb_loops.webp",
+    "scott_palm_laces": "assets/palm-scott-trace-r03/laces.webp",
+    "scott_palm_stitching": "assets/palm-scott-trace-r03/stitching.webp",
+    "scott_palm_glove": "assets/palm-scott-trace-r03/empty.webp",
+    "scott_palm_idmap": "assets/palm-scott-trace-r03/idmap.png"
   },
   "bbox": {
     "glove": [
@@ -834,7 +834,7 @@
     ]
   ],
   "nativePalmTrace": {
-    "revision": "SCOTT-PALM-TRACE-R02",
+    "revision": "SCOTT-BACK-PALM-R03",
     "assets": {
       "palm": "scott_palm_palm",
       "web": "scott_palm_web",
@@ -1011,16 +1011,16 @@
         1354
       ],
       "stitching": [
-        0,
-        0,
-        1534,
-        1400
+        278,
+        168,
+        672,
+        809
       ],
       "scott_palm_stitching": [
-        0,
-        0,
-        1534,
-        1400
+        278,
+        168,
+        672,
+        809
       ]
     },
     "zones": [
@@ -1245,6 +1245,7 @@
         }
       }
     },
-    "traceSha256": "16be5a33ed3c7b1d58f2e5f17e12b99a86a129776855290a47756adf38bd2190"
+    "traceSha256": "1b3d9333a496a3c275f40167b7a3c6e3353ce2db046d5669852504a69d47a4fe",
+    "embParts": []
   }
 }

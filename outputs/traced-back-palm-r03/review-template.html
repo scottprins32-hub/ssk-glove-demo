@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Trace R03 controle</title><style>body{margin:0;background:#eee;font:16px system-ui}canvas{width:25%;height:auto}#status{position:sticky;top:0;background:white}</style><div id="status">Laden</div><script type="module">
+import {loadGlove,GloveRenderer} from './glove-engine.js?r03-reviewed-2';
+const bundle=await loadGlove({progressive:true});await bundle.views.palm.load();
+for(const view of ['back','palm'])for(const mirror of [false,true]){
+ const r=new GloveRenderer(bundle);r.setView(view);r.setWeb(null);r.setWebMarked(false);r.syncNativeHContour();const d=r.DATA;console.log(view,!!d.nativeBackTrace,!!d.tracedSeams,d.nativeBackTrace?.revision,d.nativePalmTrace?.revision);
+ const state=Object.fromEntries(d.zones.map(z=>[z.id,new URLSearchParams(location.search).has('white')?'10':z.id==='web'?'20':z.id==='palm'?'50':['laces','welting','stitching','binding'].includes(z.id)?'10':'70']));
+ const c=document.createElement('canvas');c.width=d.w;c.height=d.h;document.body.append(c);r.draw(c.getContext('2d'),state,null,null,false,mirror);c.dataset.view=view;c.dataset.mirror=mirror;
+}
+document.querySelector('#status').textContent='Klaar · R03 achterkant/palm · RHT/LHT';
+</script>

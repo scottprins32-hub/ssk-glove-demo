@@ -163,8 +163,9 @@ test('real back metadata follows selected material dependencies without loading 
   const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json', import.meta.url)));
   const h = await harness({ metadata });
   const bundle = await h.loadGlove({ progressive: true });
-  assert.equal(Object.keys(bundle.imgs).length, 99);
-  assert.equal(h.images.size, 97);
+  const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0); // Back 2 and its legacy highlight also become dependencies.
+  assert.equal(Object.keys(bundle.imgs).length, 99 + traced);
+  assert.equal(h.images.size, 97 + traced);
   const deferred = ['palm_bridge_original_smk_body_heal', 'palm_bridge_original_smk_body_heal_hi',
     'smlee_r03_laces', 'smlee_r02_laces', 'smlee_r03_material_region'];
   for (const key of deferred) assert.equal(bundle.imgs[key], undefined, key);
@@ -177,8 +178,8 @@ test('real back metadata follows selected material dependencies without loading 
     assert.equal(bundle.views.back.selectionReady(web), true);
   }
   await bundle.views.back.loadSelection(null, true);
-  assert.equal(Object.keys(bundle.imgs).length, 158);
-  assert.equal(h.images.size, 156);
+  assert.equal(Object.keys(bundle.imgs).length, 158 + traced);
+  assert.equal(h.images.size, 156 + traced);
 });
 
 test('pinky material plates are ready with the view while Crocodile texture stays deferred', async () => {
@@ -416,4 +417,22 @@ test('native palm aliases remain unready after a missing image and retry safely'
   assert.equal(bundle.views.palm.ready,true);
   assert.ok(bundle.views.palm.imgs.traced_laces);
   assert.equal(h.images.get('trace-laces.png'),2);
+});
+
+// A partially downloaded traced back must never be accepted as ready.
+test('native back aliases fail closed and retry the missing image', async()=>{
+ const metadata={w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png',trace:'native-back.png'},nativeBackTrace:{assets:{laces:'trace'}}};
+ const h=await harness({metadata,imageFailures:{'native-back.png':1}});
+ await assert.rejects(h.loadGlove({progressive:true}),/body could not be loaded/);
+ const bundle=await h.loadGlove({progressive:true});assert.equal(bundle.views.back.ready,true);assert.ok(bundle.imgs.trace);
+});
+
+test('a lazily verified palm web switches from native aliases on the first selection',async()=>{
+ const basic={w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png'}};
+ const palm={...basic,nativePalmTrace:{revision:'SCOTT-BACK-PALM-R03',assets:{glove:'glove',_idmap:'_idmap'},zones:[]}};
+ const h=await harness({metadata:url=>url==='assets/palm-data.json'?palm:basic});const bundle=await h.loadGlove({progressive:true});await bundle.views.palm.load();
+ const r=new h.GloveRenderer(bundle);r.setView('palm');r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);
+ bundle.views.palm.DATA.palmWebs={entries:{'standard-i':{}}};
+ r.setWeb('standard-i');r.setWebMarked(true);assert.equal(r.web,'standard-i');assert.equal(r.DATA,bundle.views.palm.DATA);
+ r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);
 });
