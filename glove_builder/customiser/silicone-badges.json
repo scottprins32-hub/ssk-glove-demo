@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Silicone Gold",
+    "art": "",
+    "tint": "#C9A227",
+    "thumb": "assets/thumbs/silicone_gold-original-hd-r03.webp",
+    "material": "plastic",
+    "active": true,
+    "asset": "silicone_gold",
+    "sourceBox": [
+      93,
+      137,
+      1288,
+      822
+    ],
+    "mountSize": [
+      185,
+      121
+    ],
+    "source": "assets/silicone_gold-original-hd-r03.webp"
+  },
+  {
+    "name": "Silicone Silver",
+    "art": "",
+    "tint": "#C0C4CC",
+    "thumb": "assets/thumbs/silicone_silver-original-hd-r03.webp",
+    "material": "plastic",
+    "active": true,
+    "asset": "silicone_silver",
+    "sourceBox": [
+      82,
+      165,
+      1292,
+      766
+    ],
+    "mountSize": [
+      185,
+      121
+    ],
+    "source": "assets/silicone_silver-original-hd-r03.webp"
+  }
+]

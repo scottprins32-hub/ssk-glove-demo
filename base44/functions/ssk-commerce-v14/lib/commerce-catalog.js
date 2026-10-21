@@ -470,6 +470,16 @@ export const COMMERCE_CATALOG = {
       "index": 14,
       "name": "Navy/Gold",
       "active": true
+    },
+    {
+      "index": 15,
+      "name": "Silicone Gold",
+      "active": true
+    },
+    {
+      "index": 16,
+      "name": "Silicone Silver",
+      "active": true
     }
   ]
 };

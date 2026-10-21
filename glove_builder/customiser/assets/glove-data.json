@@ -770,6 +770,44 @@
       "material": "embroidered",
       "active": true,
       "asset": "bullet_navygold"
+    },
+    {
+      "name": "Silicone Gold",
+      "art": "",
+      "tint": "#C9A227",
+      "thumb": "assets/thumbs/silicone_gold-original-hd-r03.webp",
+      "material": "plastic",
+      "active": true,
+      "asset": "silicone_gold",
+      "sourceBox": [
+        93,
+        137,
+        1288,
+        822
+      ],
+      "mountSize": [
+        185,
+        121
+      ]
+    },
+    {
+      "name": "Silicone Silver",
+      "art": "",
+      "tint": "#C0C4CC",
+      "thumb": "assets/thumbs/silicone_silver-original-hd-r03.webp",
+      "material": "plastic",
+      "active": true,
+      "asset": "silicone_silver",
+      "sourceBox": [
+        82,
+        165,
+        1292,
+        766
+      ],
+      "mountSize": [
+        185,
+        121
+      ]
     }
   ],
   "bulletBox": [
@@ -1175,6 +1213,8 @@
     "back8_hi": "assets/back8-split-r01/back8_hi.png",
     "clean_edge_heal_back8": "assets/back8-split-r01/clean_edge_heal_back8.png",
     "back78_heal_original": "assets/clean-edges-r01/back-heal-back78.png",
+    "silicone_gold": "assets/silicone_gold-original-hd-r03.webp",
+    "silicone_silver": "assets/silicone_silver-original-hd-r03.webp",
     "scott_back_palm": "assets/back-scott-trace-r03/palm.webp",
     "scott_back_back2": "assets/back-scott-trace-r03/back2.webp",
     "scott_back_back78": "assets/back-scott-trace-r03/back78.webp",
@@ -1185,6 +1225,7 @@
     "scott_back_back3": "assets/back-scott-trace-r03/back3.webp",
     "scott_back_web": "assets/back-scott-trace-r03/web.webp",
     "scott_back_belt": "assets/back-scott-trace-r03/belt.webp",
+    "scott_back_lining": "assets/back-scott-trace-r03/lining.webp",
     "scott_back_binding": "assets/back-scott-trace-r03/binding.webp",
     "scott_back_welting": "assets/back-scott-trace-r03/welting.webp",
     "scott_back_pinky_loops": "assets/back-scott-trace-r03/pinky_loops.webp",
@@ -2702,6 +2743,7 @@
       "back3": "scott_back_back3",
       "web": "scott_back_web",
       "belt": "scott_back_belt",
+      "lining": "scott_back_lining",
       "binding": "scott_back_binding",
       "welting": "scott_back_welting",
       "pinky_loops": "scott_back_pinky_loops",
@@ -2751,14 +2793,14 @@
       "back8": [
         138,
         199,
-        237,
-        878
+        241,
+        884
       ],
       "scott_back_back8": [
         138,
         199,
-        237,
-        878
+        241,
+        884
       ],
       "back6": [
         254,
@@ -2776,25 +2818,25 @@
         301,
         44,
         467,
-        792
+        793
       ],
       "scott_back_back5": [
         301,
         44,
         467,
-        792
+        793
       ],
       "back4": [
         404,
         41,
         545,
-        790
+        789
       ],
       "scott_back_back4": [
         404,
         41,
         545,
-        790
+        789
       ],
       "back3": [
         492,
@@ -2832,15 +2874,27 @@
         712,
         1077
       ],
+      "lining": [
+        247,
+        801,
+        627,
+        917
+      ],
+      "scott_back_lining": [
+        247,
+        801,
+        627,
+        917
+      ],
       "binding": [
         226,
-        783,
+        784,
         685,
         1088
       ],
       "scott_back_binding": [
         226,
-        783,
+        784,
         685,
         1088
       ],
@@ -2977,6 +3031,13 @@
         "label": "belt"
       },
       {
+        "id": "lining",
+        "field": "lining",
+        "n": 11,
+        "group": "leather",
+        "label": "lining"
+      },
+      {
         "id": "binding",
         "field": "binding",
         "n": 12,
@@ -3030,6 +3091,7 @@
       "back3",
       "web",
       "belt",
+      "lining",
       "binding",
       "welting",
       "pinky_loops",
@@ -3118,6 +3180,14 @@
           "high": 255
         }
       },
+      "lining": {
+        "grainStrength": 0,
+        "calibration": {
+          "lo": 235,
+          "mid": 246,
+          "high": 255
+        }
+      },
       "binding": {
         "grainStrength": 0,
         "calibration": {
@@ -3159,7 +3229,7 @@
         }
       }
     },
-    "traceSha256": "1b3d9333a496a3c275f40167b7a3c6e3353ce2db046d5669852504a69d47a4fe",
+    "traceSha256": "bbf96c51ebe1f360a655055d1f835a7dcc5cb41244e8e58c54717f90a4c4be48",
     "embParts": [
       [
         174,

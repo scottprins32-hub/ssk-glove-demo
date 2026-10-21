@@ -1301,7 +1301,7 @@ function renderLogos(b) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(i === S.bullet));
     c.dataset.key = 'bullet|' + i;
-    c.innerHTML = `<img src="${assetURL(bl.thumb)}" alt="" loading="lazy">` +
+    c.innerHTML = `<img src="${assetURL(bl.thumb)}" alt="" loading="lazy"${bl.sourceBox ? ' style="object-fit:contain;padding:8px;box-sizing:border-box"' : ''}>` +
       `<span class="cap"><span class="nm">${bl.name}</span>` +
       (bl.active === false
         ? `<span class="sub">${t(bl.pending ? 'askPim' : 'notShown')}</span>` : '') + `</span>`;
