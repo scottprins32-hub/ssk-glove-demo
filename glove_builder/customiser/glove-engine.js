@@ -839,13 +839,13 @@ export class GloveRenderer {
     if (opt && opt.asset && imgs[opt.asset]) {
       if (opt.sourceBox) {
         // Standalone silicone cutouts retain their native detail and proportions.
-        // Fit inside the existing wrist-badge area; all older registered plates
+        // Centre on the existing wrist-badge area; all older registered plates
         // keep their original full-canvas placement.
         const [sx,sy,sw,sh] = opt.sourceBox, [x0,y0,x1,y1] = this.DATA.bulletBox;
         // Mount size is a limit, never a forced width/height pair. One scale
         // preserves every original contour and the thickness of both ribbons.
         const [mw,mh] = opt.mountSize || [x1-x0,y1-y0];
-        const scale = Math.min((x1-x0)/sw, (y1-y0)/sh,mw/sw,mh/sh);
+        const scale = Math.min(mw/sw,mh/sh);
         const w=sw*scale,h=sh*scale;
         ctx.drawImage(imgs[opt.asset], sx,sy,sw,sh, (x0+x1-w)/2,(y0+y1-h)/2,w,h);
       } else ctx.drawImage(imgs[opt.asset], 0, 0);
