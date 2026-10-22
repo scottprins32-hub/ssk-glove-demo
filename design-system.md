@@ -24,6 +24,24 @@ yet](#what-this-system-does-not-answer-yet) and the pattern is described under
 
 ---
 
+## Reference material
+
+| What | Where | Use it for |
+|---|---|---|
+| **SSK 2026 baseball general catalogue** ("2026年SSK野球総合カタログ", Japanese, e-book) | <https://my.ebook5.net/ssksports/26sougou/> | The manufacturer's own product range, model names and photography. The source to check when a model, colour name or product photo in either configurator is in doubt. It is the maker's book, not SSK Europe's price list: prices and what is actually stocked come from Pim and the SSK Europe shop. |
+
+Rules for using it:
+
+- **Colours and shapes**: match the booklet's colour names to the catalogue
+  entries (`COLOURS`, photo sets) rather than inventing a name.
+- **Never copy a price from it.** Prices in the configurators come from the
+  SSK Europe shop and Pim's list (see `docs/pim-assortment.md` in the teamwear
+  repo).
+- **Photography stays licensed material.** Link to the booklet; do not copy its
+  pages into either repository.
+
+---
+
 ## The five ideas the interface is built on
 
 These are behavioural, and they matter more than any hex value. A second
