@@ -705,7 +705,9 @@ function draw(target = ctx, highlight = S.step === 3) {
     const colours = R.DATA.zones
       .map(z => (DATA.palettes[z.group] || []).find(c => c[0] === state[z.id])?.[2]);
     if (R.pad && R.imgs[R.pad] && R.DATA.bbox[R.pad]) colours.push(R.padHex);
-    document.querySelector('.stage').style.setProperty('--glove-background', stageBackground(colours));
+    const stage = document.querySelector('.stage');
+    stage.style.setProperty('--glove-background', stageBackground(colours, studioDark()));
+    stage.style.setProperty('--glow', S.colors.palm ? hexOf('palm') : 'transparent');
   }
   if (target === ctx) {
     $('#glove').classList.add('is-ready');
@@ -1324,7 +1326,9 @@ function renderColours(b) {
       p.title = tsub('partDesc', f);
       p.setAttribute('aria-pressed', String(S.part === f));
       p.onclick = () => {
-        S.part = f; tick();
+        tick();
+        if (paintPart(f)) return;
+        S.part = f;
         colourView(f);
         draw(); paint();                 // the tint follows the chosen part
       };
@@ -1362,19 +1366,76 @@ function renderColours(b) {
 /* The swatch grid for one part: the colours already on this glove first,
    then the palette by family. Same buttons and keys as swatchGrid, so the
    keyboard and the checks find them where they were. */
+/* One colour onto one part, with the parts that are cut from the same
+   leather following, then the stitch runs round it on the glove. */
+function setColour(field, v) {
+  snapshot();
+  S.colors[field] = v;
+  if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) S.colors.back3 = S.colors.back4 = v;
+  if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) S.colors.back5 = S.colors.back6 = v;
+  if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
+  if (held && PALETTE_OF(field) === held.palette) { held = { ...held, num: v, hex: hexOf(field), label: colName(field) }; }
+  draw(); paint();
+  const layer = viewFieldLayer()[field];
+  if (layer && R.DATA.zones.some(z => z.id === layer)) interact?.pulse(layer);
+}
+/* Paint mode: a colour is held, and every part clicked takes it. */
+let held = null, swatchQuery = '';
+function holdColour(field) {
+  const num = S.colors[field];
+  if (!num) return;
+  held = { num, hex: hexOf(field), label: colName(field), palette: PALETTE_OF(field) };
+  interact?.hold({ hex: held.hex, label: held.label });
+  $('#stage').classList.add('is-holding');
+  paint();
+}
+function releaseColour() {
+  if (!held) return;
+  held = null; interact?.hold(null);
+  $('#stage').classList.remove('is-holding');
+  paint();
+}
+// A held colour onto a part, if the part takes colours from that palette.
+function paintPart(field) {
+  if (!held || PALETTE_OF(field) !== held.palette) return false;
+  S.part = field;
+  setColour(field, held.num);
+  return true;
+}
+function filterSwatches(root) {
+  const q = swatchQuery.trim().toLowerCase();
+  let any = false;
+  for (const g of root.querySelectorAll('.sw-group')) {
+    let shown = 0;
+    for (const sw of g.querySelectorAll('.sw')) {
+      const hit = !q || sw.textContent.toLowerCase().includes(q);
+      sw.hidden = !hit; if (hit) shown++;
+    }
+    g.hidden = !shown; any ||= shown > 0;
+  }
+  root.querySelector('.sw-none').hidden = any || !q;
+}
 function swatchFamilies(field, note) {
   const pal = DATA.palettes[PALETTE_OF(field)], label = colourLabel(field), value = S.colors[field];
-  const pick = v => {
-    snapshot();
-    S.colors[field] = v;
-    if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) S.colors.back3 = S.colors.back4 = v;
-    if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) S.colors.back5 = S.colors.back6 = v;
-    if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
-    draw(); paint();
-  };
+  const pick = v => setColour(field, v);
   const f = el('div', 'field');
   f.appendChild(labelRow(label, true, value != null));
   if (note) f.appendChild(el('p', 'note', note));
+  const tools = el('div', 'sw-tools');
+  const search = el('input'); search.type = 'search'; search.placeholder = t('searchColour'); search.value = swatchQuery;
+  search.setAttribute('aria-label', t('searchColour')); search.dataset.key = 'swsearch';
+  search.oninput = () => { swatchQuery = search.value; filterSwatches(f); };
+  const holdBtn = el('button', 'sw-hold'); holdBtn.type = 'button'; holdBtn.dataset.key = 'hold';
+  const holdsThis = held && held.palette === PALETTE_OF(field);
+  holdBtn.setAttribute('aria-pressed', String(!!holdsThis));
+  holdBtn.innerHTML = holdsThis
+    ? `<span class="chip" style="background:${held.hex}"></span>${t('holding')} ${held.label} · ${t('release')}`
+    : `<span class="chip" style="background:${value ? hexOf(field) : 'transparent'}"></span>${t('hold')}`;
+  holdBtn.disabled = !holdsThis && !value;
+  holdBtn.onclick = () => holdsThis ? releaseColour() : holdColour(field);
+  tools.append(search, holdBtn);
+  f.appendChild(tools);
+  f.appendChild(el('p', 'sw-none', t('noColour')));
   const button = ([num, name, hx]) => {
     const sw = el('button', 'sw' + (value === num ? ' is-on' : ''));
     sw.type = 'button';
@@ -1407,6 +1468,7 @@ function swatchFamilies(field, note) {
     for (const c of list) grid.appendChild(button(c));
     g.appendChild(grid); f.appendChild(g);
   }
+  filterSwatches(f);
   return f;
 }
 
@@ -2264,6 +2326,31 @@ function togglePricePop(open) {
   if (on) paintPricePop();
 }
 $('#pricebtn').onclick = () => togglePricePop();
+/* The code, short: first and last group. A click copies the whole thing. */
+function paintCode() {
+  const full = code(), g = full.split('-');
+  $('#refcode').textContent = full;
+  $('#refshort').textContent = g.length > 3 ? `${g[0]}-${g[1]}…${g.at(-1)}` : full;
+}
+$('#refbtn').onclick = async () => {
+  const b = $('#refbtn'), lab = b.querySelector('.ref-lab'), was = t('reference');
+  b.classList.add('is-full');
+  try { await navigator.clipboard.writeText(code()); lab.textContent = t('codeCopied'); b.classList.add('is-copied'); } catch {}
+  clearTimeout(paintCode.t);
+  paintCode.t = setTimeout(() => { b.classList.remove('is-full', 'is-copied'); lab.textContent = was; }, 2600);
+};
+/* The studio: a dark ground under the glove. Remembered on this device. */
+const studioDark = () => document.documentElement.dataset.studio === 'dark';
+function setStudio(dark) {
+  document.documentElement.dataset.studio = dark ? 'dark' : '';
+  if (!dark) delete document.documentElement.dataset.studio;
+  $('#studio').setAttribute('aria-pressed', String(dark));
+  $('#studio').title = t(dark ? 'studioOff' : 'studio'); $('#studio').setAttribute('aria-label', t(dark ? 'studioOff' : 'studio'));
+  try { localStorage.setItem('ssk-studio', dark ? 'dark' : 'light'); } catch {}
+  if (R) draw();
+}
+$('#studio').onclick = () => setStudio(!studioDark());
+try { if (localStorage.getItem('ssk-studio') === 'dark') setStudio(true); } catch {}
 $('#more').onclick = () => {
   const open = document.querySelector('.hdr').classList.toggle('is-open');
   $('#more').setAttribute('aria-expanded', String(open));
@@ -2275,6 +2362,7 @@ document.addEventListener('pointerdown', ev => {
 });
 document.addEventListener('keydown', ev => {
   if (ev.key !== 'Escape') return;
+  if (held) releaseColour();
   if (!$('#pricepop').hidden) togglePricePop(false);
   const hdr = document.querySelector('.hdr');
   if (hdr.classList.contains('is-open')) { hdr.classList.remove('is-open'); $('#more').setAttribute('aria-expanded', 'false'); }
@@ -2339,6 +2427,7 @@ function paint(rebuildBody = true) {
   // Entering or leaving Colours adds or removes the selection tint.
   if (wasStep !== undefined && wasStep !== S.step && (wasStep === 3 || S.step === 3)) draw();
   // A new step rises into place; a repaint of the same one stays put.
+  if (wasStep !== S.step && S.step !== 3 && held) { held = null; interact?.hold(null); $('#stage').classList.remove('is-holding'); }
   if (wasStep !== S.step) {
     const panel = document.querySelector('.panel');
     panel.classList.remove('is-entering'); void panel.offsetWidth; panel.classList.add('is-entering');
@@ -2376,7 +2465,8 @@ function paint(rebuildBody = true) {
     : palmNote;
 
   // header + bar
-  $('#refcode').textContent = code();
+  paintCode();
+  $('#studio').title = t(studioDark() ? 'studioOff' : 'studio');
   const total = money(priceBreakdown().total);
   if ($('#price').textContent !== total && $('#price').textContent !== '—') {
     const pb = $('#pricebtn'); pb.classList.remove('is-bumped'); void pb.offsetWidth; pb.classList.add('is-bumped');
@@ -2526,6 +2616,8 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     onPick: id => {
       const f = id && viewLayerField()[id];
       if (!f) return;
+      tick();
+      if (S.step === 3 && paintPart(colourPart(f))) return;
       S.step = 3; S.part = colourPart(f); draw(); paint();
     },
     onTurn: dir => {
@@ -2570,6 +2662,16 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if(image) { nativeFrames.select(defaultVisual);nativeFrames.put(nativeFrameKey('back'),image); }
   }
   draw(); paint();
+  // The opening: until someone touches the page, the glove turns to its next
+  // side every few seconds. The first touch, key or scroll ends it for good.
+  let idle = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stopIdle = () => { idle = false; clearInterval(idleTimer); };
+  for (const type of ['pointerdown', 'keydown', 'wheel', 'touchstart']) document.addEventListener(type, stopIdle, { once: true, capture: true, passive: true });
+  const idleTimer = setInterval(() => {
+    if (!idle || S.step !== 0 || document.hidden || !selectionIsReady()) return;
+    const list = shownViews(); if (list.length < 2) return;
+    turnTo(list[(list.indexOf(S.view) + 1) % list.length], 1);
+  }, 3800);
   R.preloadFlags(FLAGS.map(f => f.art)).then(() => {
     starterFlagsReady = true;
     // Flag selection keeps its own decoded callback; only starter cards need
