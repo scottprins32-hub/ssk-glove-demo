@@ -1327,8 +1327,8 @@
     "webfinger_standard-i_hi": "assets/webfinger_standard-i_hi.webp",
     "pad": "assets/pad.webp",
     "pad_hi": "assets/pad_hi.webp",
-    "hood": "assets/hood.webp",
-    "hood_hi": "assets/hood_hi.webp",
+    "hood": "assets/hood-thread-r02/hood.webp",
+    "hood_hi": "assets/hood-thread-r02/empty.webp",
     "bullet_logo": "assets/bullet_logo.webp",
     "bullet_logo_tb": "assets/bullet_logo_tb.webp",
     "edge_gold": "assets/hd-logos-r01/edge-gold.webp",
@@ -1415,7 +1415,7 @@
     "_hdLeather": "assets/hd-material-r02/leather-texture.webp",
     "_snakeLeather": "assets/hd-material-r02/snakeskin.webp",
     "_hdLace": "assets/hd-material-r02/lace-height.webp",
-    "hood_stitching": "assets/hood-thread-r01/hood-stitching.png",
+    "hood_stitching": "assets/hood-thread-r02/stitching.png",
     "trapeze_hd_web": "assets/web-refinement-r03/trapeze-hd-web.png",
     "trapeze_hd_laces": "assets/web-refinement-r03/trapeze-hd-laces.png",
     "trapeze_hd_palm": "assets/web-refinement-r03/trapeze-hd-palm.png",
@@ -2394,10 +2394,10 @@
       1100
     ],
     "hood_stitching": [
-      431,
-      435,
-      564,
-      820
+      430,
+      438,
+      560,
+      737
     ],
     "trapeze_hd_web": [
       0,
