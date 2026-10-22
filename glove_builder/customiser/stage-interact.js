@@ -1,9 +1,11 @@
 /* The glove as the control. Three things live here, all presentation:
 
-   - hover: the part under the pointer gets an outline on a second canvas
-     laid over the glove, and a label at the cursor that names it and its
-     colour. The outline is read off the same ownership maps a click uses,
-     so what lights up is what a click would change.
+   - hover: the part under the pointer lights up on a second canvas laid over
+     the glove, and a label at the cursor names it and its colour. The marking
+     is read off the same ownership maps a click uses, so what lights up is
+     what a click would change. It is drawn inside the part, on the glove's own
+     box rather than the frame around it, and parts cross-fade, so a sweep
+     across the glove reads as one highlight travelling.
    - turn: dragging across the glove (or swiping on a phone, or the arrow
      keys with the glove focused) moves to the next side. The app decides
      which sides exist; this only reports the direction.
@@ -29,6 +31,17 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     if (R.view === 'back') return { data: R.backOwners(m), stride: 1, fold: false, W, H, D };
     return { data: R.idData, stride: 4, fold: m, W, H, D };
   }
+  // The overlay spans the frame, which letterboxes the picture, so its box is
+  // taken from the glove itself. The marking then sits on the leather wherever
+  // the two boxes disagree, and the outline is drawn at the size it is seen.
+  function align() {
+    if (!hover.offsetParent || canvas.offsetParent !== hover.offsetParent) return;
+    hover.style.left = canvas.offsetLeft + 'px';
+    hover.style.top = canvas.offsetTop + 'px';
+    hover.style.width = canvas.offsetWidth + 'px';
+    hover.style.height = canvas.offsetHeight + 'px';
+  }
+
   function outlineFor(id) {
     const R = renderer(); if (!R) return null;
     const own = owners(); if (!own || !own.data) return null;
@@ -37,41 +50,106 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     let c = outlines.get(key);
     if (c) { outlines.delete(key); outlines.set(key, c); return c; }
     const { data, stride, fold, W, H } = own, n = z.n;
-    const mask = new Uint8Array(W * H);
+    // The part's own box, found once: only its pixels are read and drawn from
+    // here on, so a sweep across the glove never pays for the canvas around it.
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
     for (let y = 0; y < H; y++) {
       const row = y * W;
       for (let x = 0; x < W; x++) {
-        const sx = fold ? W - 1 - x : x;
-        if (data[(row + sx) * stride] === n) mask[row + x] = 1;
+        if (data[(row + (fold ? W - 1 - x : x)) * stride] !== n) continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
       }
     }
-    const img = hctx.createImageData(W, H), px = img.data;
-    const at = (x, y) => x >= 0 && y >= 0 && x < W && y < H && mask[y * W + x];
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const i = y * W + x, o = i * 4;
+    if (x1 < 0) return null;
+    // A single empty pixel all round: that margin is the only place the ring
+    // may touch the glove, and it is what lets the neighbour tests below run
+    // without bounds checks.
+    const bw = x1 - x0 + 3, bh = y1 - y0 + 3;
+    const mask = new Uint8Array(bw * bh);
+    for (let y = y0; y <= y1; y++) {
+      const row = y * W, gy = (y - y0 + 1) * bw;
+      for (let x = x0; x <= x1; x++) {
+        if (data[(row + (fold ? W - 1 - x : x)) * stride] === n) mask[gy + x - x0 + 1] = 1;
+      }
+    }
+    // A hairline on the part's own edge, a light wash across the leather
+    // behind it, and a whisper of dark just outside so pale leather still
+    // shows the edge. Nothing is drawn away from the part.
+    const img = hctx.createImageData(bw, bh), px = img.data;
+    for (let i = 0, o = 0; i < mask.length; i++, o += 4) {
       if (mask[i]) {
-        const edge = !at(x - 1, y) || !at(x + 1, y) || !at(x, y - 1) || !at(x, y + 1)
-          || !at(x - 2, y) || !at(x + 2, y) || !at(x, y - 2) || !at(x, y + 2);
-        if (edge) { px[o] = 255; px[o + 1] = 255; px[o + 2] = 255; px[o + 3] = 235; }
-        else { px[o] = 255; px[o + 1] = 255; px[o + 2] = 255; px[o + 3] = 46; }
-      } else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1) || at(x - 2, y) || at(x + 2, y) || at(x, y - 2) || at(x, y + 2)) {
-        px[o] = 17; px[o + 1] = 17; px[o + 2] = 17; px[o + 3] = 150;
+        const edge = !mask[i - bw] || !mask[i + bw] || !mask[i - 1] || !mask[i + 1];
+        px[o] = px[o + 1] = px[o + 2] = 255;
+        px[o + 3] = edge ? 200 : 38;
+      } else if (mask[i - bw] || mask[i + bw] || mask[i - 1] || mask[i + 1]) {
+        px[o] = px[o + 1] = px[o + 2] = 17;
+        px[o + 3] = 86;
       }
     }
-    c = document.createElement('canvas'); c.width = W; c.height = H;
-    c.getContext('2d').putImageData(img, 0, 0);
+    const cv = document.createElement('canvas');
+    cv.width = bw; cv.height = bh;
+    cv.getContext('2d').putImageData(img, 0, 0);
+    c = { c: cv, x: x0 - 1, y: y0 - 1 };
     outlines.set(key, c);
     if (outlines.size > MIRROR_ZONES) outlines.delete(outlines.keys().next().value);
     return c;
   }
-  function showHover(id) {
+  // What the overlay is showing: one entry per outline, each with its own
+  // presence. A part rises as the part it replaces falls, so a sweep reads as
+  // one highlight travelling instead of a series of swaps, and a highlight is
+  // never cut off mid-flight by the next one arriving.
+  const FADE = 130;
+  const live = new Map();
+  let anim = 0;
+  function paint() {
+    hctx.clearRect(0, 0, hover.width, hover.height);
+    for (const [c, l] of live) { hctx.globalAlpha = l.a; hctx.drawImage(c, l.x, l.y); }
+    hctx.globalAlpha = 1;
+  }
+  function settle() {
+    for (const l of live.values()) l.a = l.want;
+    for (const c of [...live.keys()]) if (!live.get(c).want) live.delete(c);
+    paint();
+  }
+  function fade() {
+    cancelAnimationFrame(anim);
+    if (reduced() || !live.size) { settle(); return; }
+    let last = performance.now();
+    const step = now => {
+      const take = Math.min(48, now - last) / FADE; last = now;
+      let moving = false;
+      for (const l of live.values()) {
+        const away = l.want - l.a;
+        if (Math.abs(away) <= take) l.a = l.want;
+        else { l.a += Math.sign(away) * take; moving = true; }
+      }
+      for (const c of [...live.keys()]) { const l = live.get(c); if (!l.a && !l.want) live.delete(c); }
+      paint();
+      if (moving) anim = requestAnimationFrame(step); else settle();
+    };
+    anim = requestAnimationFrame(step);
+  }
+  // `snap` is for a repaint under the marking -- the glove changed, so the
+  // shape that would fade from is the old one. Everything else cross-fades.
+  function showHover(id, snap) {
     if (id === hovered) return;
     hovered = id;
-    if (hover.width !== canvas.width || hover.height !== canvas.height) { hover.width = canvas.width; hover.height = canvas.height; }
-    hctx.clearRect(0, 0, hover.width, hover.height);
+    if (hover.width !== canvas.width || hover.height !== canvas.height) {
+      align();
+      hover.width = canvas.width; hover.height = canvas.height;
+    }
+    const box = id ? outlineFor(id) : null;
+    for (const l of live.values()) l.want = 0;
+    if (box) {
+      const hit = live.get(box.c);
+      if (hit) hit.want = 1;
+      else live.set(box.c, { x: box.x, y: box.y, a: 0, want: 1 });
+    }
+    if (snap || reduced()) settle(); else fade();
     if (!id) { label.hidden = true; return; }
-    const c = outlineFor(id);
-    if (c) hctx.drawImage(c, 0, 0);
     const d = describe(id);
     if (!d) { label.hidden = true; return; }
     label.innerHTML = '';
@@ -92,7 +170,7 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     const r = canvas.getBoundingClientRect();
     return [(ev.clientX - r.left) * canvas.width / r.width, (ev.clientY - r.top) * canvas.height / r.height];
   }
-  function clear() { showHover(null); }
+  function clear(snap) { showHover(null, snap); }
 
   canvas.addEventListener('pointermove', ev => {
     pointer = ev;
@@ -135,7 +213,7 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
   /* --------------------------------------------------------------- flip */
   // `swap` draws the new side. Returns once the glove has settled.
   async function flip(direction, swap) {
-    clear();
+    clear(true);
     if (reduced() || !canvas.animate) { swap(); return; }
     const out = canvas.animate(
       [{ transform: 'perspective(1400px) rotateY(0deg)', opacity: 1 },
@@ -151,5 +229,19 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     await back.finished.catch(() => {});
   }
 
-  return { clear, flip, refresh: () => { const id = hovered; hovered = null; showHover(id); if (pointer) placeLabel(pointer); } };
+  // The overlay follows the glove: a window that changes size, or a stage that
+  // switches in or out of the compare layout, moves it with the picture.
+  align();
+  if (window.ResizeObserver) new ResizeObserver(align).observe(canvas);
+  addEventListener('resize', align);
+
+  return {
+    clear, flip,
+    refresh: () => {
+      const id = hovered; hovered = null;
+      if (id) showHover(id, true);                  // the same part, freshly read
+      else { cancelAnimationFrame(anim); live.clear(); paint(); }
+      if (pointer) placeLabel(pointer);
+    }
+  };
 }
