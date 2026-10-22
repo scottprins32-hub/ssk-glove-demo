@@ -191,7 +191,7 @@ for (const [what, poison, step] of [
     await page.waitForTimeout(600);
     palm = await read();
   }
-  check(/^SSK2-/.test(back) && back === palm,
+  check(/^SSK[2-9]-/.test(back) && back === palm,
     'the reference code is the same on the back and the palm view',
     `back ${back} / palm ${palm}${views.length > 1 ? '' : ' (no palm view)'}`);
   await ctx.close();
@@ -221,7 +221,7 @@ for (const [what, poison, step] of [
     !!document.querySelectorAll('#steps .step')[5]?.querySelector('.dot.todo'));
   check(openAfterPaste, 'after a pasted code the personalisation step asks to be checked');
 
-  await box.fill('SSK2-' + back.slice(5, -1) + (back.endsWith('0') ? '1' : '0'));
+  await box.fill(back.slice(0, -1) + (back.endsWith('0') ? '1' : '0'));
   await box.locator('xpath=following-sibling::button').first().click();
   await second.page.waitForTimeout(400);
   const after = await second.page.evaluate(() => document.querySelector('#refcode').textContent);

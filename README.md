@@ -31,6 +31,7 @@ asset embedded, and no outbound requests at all.
 | `glove_builder/render_check.mjs` | Paints the glove one colour and checks every zone comes back that colour |
 | `glove_builder/state_check.mjs` | Poisons a saved draft field by field and checks the page still comes up |
 | `glove_builder/keyboard_check.mjs` | Builds the glove with Tab and Enter and checks focus survives every repaint |
+| `glove_builder/render_starters.mjs` | Draws the ten starter cards and the blank first frame once, both hands, so a first visit shows pictures instead of rendering them; rerun after a colourway, badge, flag or back-view change |
 | `glove_builder/qa_strip.mjs` | Renders designs from four sides into one sheet, next to an earlier build, so a regression is a pair of pictures that differ |
 | `glove_builder/customiser/stage-interact.js` | The glove as the control: hover outline and label, drag or arrow keys to turn, the flip between sides |
 | `glove_builder/order_check.mjs` | Builds a two-glove order, sends it, and reads Pim's workbook back cell by cell |
@@ -78,6 +79,8 @@ node glove_builder/state_check.mjs
 node glove_builder/keyboard_check.mjs
 # every starter from four sides, one sheet; --base <earlier run> puts the old pictures beside the new
 NODE_PATH=$(npm root -g) node glove_builder/qa_strip.mjs
+# the starter pictures, after anything that changes how a starter looks
+NODE_PATH=$(npm root -g) node glove_builder/render_starters.mjs
 # reference codes: old SSK- codes still decode as issued, SSK2- round-trips
 node glove_builder/refcode_check.mjs
 

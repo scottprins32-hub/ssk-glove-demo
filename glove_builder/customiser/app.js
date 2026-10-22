@@ -202,7 +202,8 @@ function prepareSideFrame(view) {
     } catch { /* Preparing an angle is optional; selection retains its normal path. */ }
     finally {sideFrameJobs.delete(job);}
   };
-  if(window.requestIdleCallback) requestIdleCallback(work,{timeout:1000}); else setTimeout(work,32);
+  // Late enough that a first visit is interactive before the sides are drawn.
+  if(window.requestIdleCallback) requestIdleCallback(work,{timeout:8000}); else setTimeout(work,3000);
 }
 /* The web question reads unanswered while S.withdrawnWeb is set; this says why. */
 const withdrawnNote = () => (S.withdrawnWeb && !S.webType)
@@ -817,6 +818,31 @@ function stepOpen(i) {
 }
 
 /* ------------------------------------------------------------- 1. start */
+/* Shipped starter pictures (render_starters.mjs). Used only while the key
+   they were drawn from still matches: what a starter looks like depends on
+   the back-view data, the colourways and the catalogue's starters. */
+const starterKey = () => {
+  const s = JSON.stringify([DATA.w, DATA.h, DATA.presets, DATA.materialFinish, DATA.materialResponse,
+    STARTERS.map(st => [st.id, st.colors, st.bullet, st.flag, st.flagPosition]), DATA.bullets.map(b => [b.name, b.active, b.asset])]);
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(16).padStart(8, '0') + '-' + s.length.toString(36);
+};
+let shippedStarters = null;   // { width, hands: { RHT: [...ids], LHT: [...] } } or false
+async function loadShippedStarters() {
+  if (shippedStarters !== null) return shippedStarters;
+  shippedStarters = false;
+  try {
+    const r = await fetch(assetURL('assets/starters/manifest.json'), { cache: 'force-cache' });
+    if (r.ok) { const m = await r.json(); if (m && m.key === starterKey() && m.hands) shippedStarters = m; }
+  } catch {}
+  return shippedStarters;
+}
+const shippedStarter = st => {
+  const hand = isLefty() ? 'LHT' : 'RHT';
+  return shippedStarters && shippedStarters.hands?.[hand]?.includes(st.id)
+    ? assetURL(`assets/starters/${st.id.replace(/[^A-Za-z0-9_-]+/g, '_')}-${hand}.webp`) : null;
+};
 // Full-resolution starter renders survive UI repaint. Render only visible
 // cards, one animation frame at a time; detached cards cannot queue more work.
 const starterImages = new Map();
@@ -852,6 +878,20 @@ function renderStart(b) {
     c.type = 'button';
     c.setAttribute('aria-pressed', String(S.startId === st.id));
     c.dataset.key = 'starter|' + st.id;
+    const shipped = shippedStarter(st);
+    if (shipped) {
+      // Drawn once by render_starters.mjs: no render on the customer's device.
+      const img = el('img'); img.src = shipped; img.alt = ''; img.decoding = 'async';
+      img.loading = grid.children.length < 2 ? 'eager' : 'lazy';   // the first row is in view
+      img.width = shippedStarters.width; img.height = Math.round(DATA.h * shippedStarters.width / DATA.w);
+      img.style.width = '100%'; img.style.aspectRatio = DATA.w + '/' + DATA.h;
+      c.appendChild(img);
+      c.appendChild(el('span', 'cap',
+        `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
+      c.onclick = () => { applyStarter(st); paint(); };
+      grid.appendChild(c);
+      continue;
+    }
     // Keep the source pixels: a 200px bitmap blurs on Retina and browser zoom.
     // CSS controls the card size; the backing canvas retains the full render.
     const cv = el('canvas'); cv.width = DATA.w; cv.height = DATA.h;
@@ -2111,9 +2151,6 @@ async function openSheet() {
   if (!await readyForExport()) return;
   sheetReturnFocus = document.activeElement;
   $('#sheetcode').textContent = code();
-  const card = await cardImage();
-  $('#shot').src = card.toDataURL('image/png');
-  $('#shot').alt = [t('sendTitle'), code()].join(' ');
   // The card goes out through the phone's own share sheet where there is one.
   const ws = $('#webshare');
   ws.hidden = !(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] }));
@@ -2122,9 +2159,16 @@ async function openSheet() {
   host.appendChild(limitsBlock());
   host.appendChild(buildSpec());
   $('#sheetstatus').textContent = designStatus();
+  // The sheet opens at once; the card (fonts, a full draw) fills in after.
+  $('#shot').removeAttribute('src'); $('#shot').alt = '';
   $('#scrim').hidden = false;
   for (const e of document.querySelectorAll('body > header, body > nav, body > main, body > footer')) e.inert = true;
   $('#sheetx').focus();
+  const opened = openSheet.n = (openSheet.n || 0) + 1;
+  const card = await cardImage();
+  if (openSheet.n !== opened || $('#scrim').hidden) return;
+  $('#shot').src = card.toDataURL('image/png');
+  $('#shot').alt = [t('sendTitle'), code()].join(' ');
 }
 function closeSheet() {
   $('#scrim').hidden = true;
@@ -2312,6 +2356,58 @@ $('#webshare').onclick = async ev => {
   } catch (e) { if (e?.name !== 'AbortError') copyToClipboard({ currentTarget: b }, shareLink()); }
 };
 
+/* The bar names the next open choice and takes you to it. */
+function paintBarNext() {
+  const a = $('#barnext'); if (!a) return;
+  const open = requiredQuestions().filter(q => !answered(q));
+  a.hidden = false;
+  if (!open.length) { a.innerHTML = `<b>${t('allChosen')}</b>`; a.classList.add('is-done'); a.onclick = ev => { ev.preventDefault(); S.step = STEPS.length - 1; paint(); }; return; }
+  a.classList.remove('is-done');
+  const q = open[0];
+  a.innerHTML = `<b>${t('stillToChoose').replace('%n', open.length)}</b><span>${questionLabel(q)}</span>`;
+  a.title = `${t('goFix')} · ${t(STEPS[questionStep(q)].title)}`;
+  a.onclick = ev => {
+    ev.preventDefault(); flushText();
+    S.step = questionStep(q);
+    if (q.id.startsWith('c:')) { S.part = colourPart(q.id.slice(2)); colourView(S.part); draw(); }
+    paint();
+    const field = [...document.querySelectorAll('#body .field-lab')].find(l => l.textContent.trim().startsWith(questionLabel(q)));
+    field?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+}
+
+/* First visit: three short hints, one at a time, once per device. */
+const COACH = [['turn', '#stageview'], ['pick', '#glove'], ['compare', '#summary']];
+function coachMarks() {
+  try { if (localStorage.getItem('ssk-coached')) return; } catch { return; }
+  if (matchMedia('(max-width: 900px)').matches) { try { localStorage.setItem('ssk-coached', '1'); } catch {} return; }
+  let i = 0;
+  const box = el('div', 'coach'); box.setAttribute('role', 'status');
+  const text = el('span'), btn = el('button', 'btn btn-primary'); btn.type = 'button';
+  const dots = el('span', 'coach-dots');
+  box.append(text, dots, btn); document.body.appendChild(box);
+  const place = () => {
+    const [key, sel] = COACH[i];
+    text.textContent = tsub('coach', key); btn.textContent = i < COACH.length - 1 ? '→' : t('gotIt');
+    dots.innerHTML = COACH.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+    const target = document.querySelector(sel), r = target?.getBoundingClientRect();
+    if (!r) { next(); return; }
+    box.style.visibility = 'hidden'; box.hidden = false;
+    const w = box.offsetWidth, h = box.offsetHeight;
+    let x = r.left + r.width / 2 - w / 2, y = r.bottom + 12;
+    if (sel === '#glove') { x = r.left + r.width / 2 - w / 2; y = r.top + r.height * .55; }
+    x = Math.max(12, Math.min(window.innerWidth - w - 12, x)); y = Math.min(window.innerHeight - h - 12, y);
+    box.style.left = x + 'px'; box.style.top = y + 'px'; box.style.visibility = '';
+    document.querySelectorAll('.is-coached').forEach(e => e.classList.remove('is-coached'));
+    target.classList.add('is-coached');
+  };
+  const done = () => { box.remove(); document.querySelectorAll('.is-coached').forEach(e => e.classList.remove('is-coached')); try { localStorage.setItem('ssk-coached', '1'); } catch {} };
+  const next = () => { i++; if (i >= COACH.length) done(); else place(); };
+  btn.onclick = next;
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && box.isConnected) done(); });
+  place();
+}
+
 /* ------------------------------------------------------- price & menu */
 function paintPricePop() {
   const pop = $('#pricepop'), price = priceBreakdown();
@@ -2367,6 +2463,26 @@ document.addEventListener('keydown', ev => {
   const hdr = document.querySelector('.hdr');
   if (hdr.classList.contains('is-open')) { hdr.classList.remove('is-open'); $('#more').setAttribute('aria-expanded', 'false'); }
 });
+
+/* A roving tab stop over a group of buttons: the chosen one (or the first)
+   takes the Tab, arrows walk the rest. */
+function roving(buttons) {
+  if (buttons.length < 2) return;
+  const on = buttons.find(x => x.getAttribute('aria-pressed') === 'true') || buttons[0];
+  for (const x of buttons) x.tabIndex = x === on ? 0 : -1;
+  const move = (from, d) => {
+    const vis = buttons.filter(x => !x.hidden && x.offsetParent !== null);
+    const i = Math.max(0, vis.indexOf(from)), to = vis[(i + d + vis.length) % vis.length];
+    if (!to) return;
+    for (const x of buttons) x.tabIndex = -1;
+    to.tabIndex = 0; to.focus();
+  };
+  for (const x of buttons) x.addEventListener('keydown', ev => {
+    const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+    if (!d) return;
+    ev.preventDefault(); move(x, d);
+  });
+}
 
 /* ----------------------------------------------------------------- paint */
 /* Every paint rebuilds the step nav and the body from scratch, which destroys
@@ -2440,6 +2556,11 @@ function paint(rebuildBody = true) {
     const keep = wasStep === S.step && !revealMaterial ? b.scrollTop : 0;
     const keepPage = wasStep === S.step ? document.scrollingElement.scrollTop : null;
     b.textContent = ''; st.render(b); b.scrollTop = keep;
+    // The palette and the part pills are one tab stop each; the arrow keys
+    // move inside them. Thirty swatches as thirty stops put the next step
+    // out of reach of a Tab key.
+    for (const f of b.querySelectorAll('.field')) roving([...f.querySelectorAll('.sw')]);
+    roving([...b.querySelectorAll('.part')]);
     if (keepPage != null) document.scrollingElement.scrollTop = keepPage;
   }
 
@@ -2477,6 +2598,8 @@ function paint(rebuildBody = true) {
   $('#donecount').textContent = d;
   $('#totalcount').textContent = countedQuestions().length;
   $('#barfill').style.width = (100 * d / countedQuestions().length) + '%';
+  paintBarNext();
+  const body = $('#body'); body.dataset.code = code(); body.dataset.when = new Date().toLocaleDateString(S.lang === 'nl' ? 'nl-NL' : 'en-GB');
   $('#prev').disabled = S.step === 0;
   $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
     : `${t(STEPS[S.step + 1].title)} →`;
@@ -2585,6 +2708,8 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if (DATA.palettes[PALETTE_OF(field)].some(c => c[0] === '10')) S.colors[field] = '10';
   }
   defaultVisual=visualKey();
+  window.__SSK_STARTER_KEY__ = starterKey();     // read by render_starters.mjs
+  await loadShippedStarters();
   loadKept();
   const o = cleanState(shared);
   if (o) Object.assign(S, o, { step: 0 });
@@ -2658,10 +2783,28 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   try { if (localStorage.getItem('ssk-turned')) $('#stageturn').hidden = true; } catch {}
 
   if(visualKey()===defaultVisual && S.view==='back') {
-    const image=await publicRenders.read('default:back',DATA.w,DATA.h);
+    let image=await publicRenders.read('default:back',DATA.w,DATA.h);
+    // No cached frame on this device: the shipped picture of the blank glove
+    // (render_starters.mjs) is the first frame, and the engine draws nothing
+    // until a choice changes it.
+    if(!image && shippedStarters?.defaultBack && !isLefty()) {
+      try {
+        const img=new Image(); img.src=assetURL('assets/starters/'+shippedStarters.defaultBack); await img.decode();
+        if(img.naturalWidth===DATA.w && img.naturalHeight===DATA.h) {
+          image=document.createElement('canvas'); image.width=DATA.w; image.height=DATA.h;
+          image.getContext('2d').drawImage(img,0,0);
+        }
+      } catch { image=null; }
+    }
     if(image) { nativeFrames.select(defaultVisual);nativeFrames.put(nativeFrameKey('back'),image); }
   }
   draw(); paint();
+  setTimeout(coachMarks, 1600);
+  // The pick map costs ten draws; take it in idle time so the first hover
+  // over the glove does not pay for it.
+  const warmOwners = () => { try { if (S.view === 'back' && selectionIsReady()) R.backOwners(isLefty()); } catch {} };
+  (window.requestIdleCallback || (f => setTimeout(f, 2500)))(warmOwners, { timeout: 9000 });
+  $('#stage').addEventListener('pointerenter', warmOwners, { once: true });
   // The opening: until someone touches the page, the glove turns to its next
   // side every few seconds. The first touch, key or scroll ends it for good.
   let idle = !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2681,7 +2824,12 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   // The selected back is decoded and drawn. Prepare angles while starter
   // cards render, at low network priority; a customer may switch immediately.
   // Failures remain retryable through the normal selected-view load path.
-  setTimeout(() => {
+  // The other sides are several megabytes. They come after the first touch,
+  // or after six seconds of looking, whichever is first; never before the
+  // page is usable. A tab on a side loads it on intent as before.
+  let sidesWarmed = false;
+  const warmSides = () => {
+    if (sidesWarmed) return; sidesWarmed = true;
     for (const view of ['palm','pinky']) {
       R.views[view]?.load({priority:'low'}).then(()=>{
         registerThumbViews();
@@ -2690,7 +2838,9 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     }
     // Thumb's many individual plates stay on its existing intent/selection
     // path, so optional downloads cannot flood the Web step's requests.
-  }, 0);
+  };
+  for (const type of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(type, warmSides, { once: true, capture: true, passive: true });
+  setTimeout(warmSides, 6000);
   setTimeout(() => { import('./commerce-ui.js').catch(() => {}); }, 1200);
 }).catch(error => {
   console.error('Glove initialization failed', error);

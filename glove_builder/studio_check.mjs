@@ -15,17 +15,20 @@ try {
   await page.goto(base);
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   await page.locator('#lang-en').click();
-  // An accepted blank SSK2 design must remain blank when shared as a link.
+  // An accepted blank SSK2 design must survive being shared as a link: the
+  // page re-issues it in the current code generation, and the link must
+  // give that same code back.
   await page.locator('#body input').fill('SSK2-00');
   await page.locator('#body .field button').click();
-  assert.equal(await page.locator('#refcode').textContent(), 'SSK2-00');
+  const blankCode = await page.locator('#refcode').textContent();
+  assert.match(blankCode, /^SSK[2-9]-/, 'an SSK2 blank opens as a design');
   await page.locator('#share').click();
   const blankLink = await page.evaluate(() => navigator.clipboard.readText());
   await page.evaluate(() => localStorage.clear());
   await page.goto('about:blank'); // force startup restoration, not a hash-only navigation
   await page.goto(blankLink);
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
-  assert.equal(await page.locator('#refcode').textContent(), 'SSK2-00', 'blank design survives shared link');
+  assert.equal(await page.locator('#refcode').textContent(), blankCode, 'blank design survives shared link');
   await page.locator('#steps button').nth(5).click();
   assert.ok(await page.getByRole('button', { name: 'Personalisation is correct' }).isVisible(), 'blank shared design retains required personalisation check');
   await page.evaluate(() => localStorage.clear());
@@ -40,7 +43,8 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(state.webType, null, 'incompatible size/web must be cleared');
-  assert.notEqual(state.colors.palm, state.colors.back2, 'independent palm and thumb colours survive');
+  // Back 2 is cut from the palm leather (Scott, 25 Sep 2026): one colour.
+  assert.equal(state.colors.back2, state.colors.palm, 'Back 2 follows the palm colour');
   const beforeInvalid = await page.evaluate(() => localStorage.getItem('ssk-glove-v1'));
   await page.locator('#body input').fill('https://example.com/#e30');
   await page.locator('#body .field button').click();
