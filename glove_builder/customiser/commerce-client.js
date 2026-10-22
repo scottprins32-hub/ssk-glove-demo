@@ -34,6 +34,27 @@ export function readOrderFragment(hash=location.hash) {
   const m=/^#?([A-Za-z0-9_-]{8,80})\.([a-f0-9]{64})$/.exec(hash);
   return m?{id:m[1],token:m[2]}:null;
 }
+// Several gloves in one order: the fragment lists each snapshot with its own
+// view capability, comma separated, in the order they go to the shop.
+export const MAX_ORDER_ITEMS=6;
+export const orderItemsFragment=items=>items.map(i=>orderFragment(i.id,i.token||i.viewToken)).join(',');
+export function readOrderItems(hash=location.hash) {
+  const parts=String(hash).replace(/^#/,'').split(',').filter(Boolean);
+  if(!parts.length||parts.length>MAX_ORDER_ITEMS)return null;
+  const items=parts.map(p=>readOrderFragment('#'+p));
+  if(items.some(i=>!i)||new Set(items.map(i=>i.id)).size!==items.length)return null;
+  return items;
+}
+/* The gloves parked for one order, on this device. Each entry is a saved
+   snapshot with its own code; the checkout keys stay in sessionStorage. */
+const CART_KEY='ssk-cart-v1';
+export function loadCart() {
+  try{const list=JSON.parse(localStorage.getItem(CART_KEY)||'[]');return Array.isArray(list)?list.filter(i=>i&&typeof i.id==='string'&&typeof i.viewToken==='string').slice(0,MAX_ORDER_ITEMS):[];}catch{return [];}
+}
+export function saveCart(items) {try{if(items.length)localStorage.setItem(CART_KEY,JSON.stringify(items.slice(0,MAX_ORDER_ITEMS)));else localStorage.removeItem(CART_KEY);}catch{}}
+export function addToCart(item) {const items=loadCart().filter(i=>i.id!==item.id);items.push({id:item.id,viewToken:item.viewToken,reference:item.reference,total:item.total,when:new Date().toISOString()});saveCart(items);return items;}
+export function removeFromCart(id) {const items=loadCart().filter(i=>i.id!==id);saveCart(items);return items;}
+export function clearCart() {saveCart([]);}
 export function saveCheckoutKey(id,key) {try{sessionStorage.setItem('ssk-checkout:'+id,key);}catch{}}
 export function getCheckoutKey(id) {try{return sessionStorage.getItem('ssk-checkout:'+id);}catch{return null;}}
 export function restoreLink(design) {

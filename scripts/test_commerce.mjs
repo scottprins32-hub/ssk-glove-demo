@@ -20,7 +20,7 @@ export function harness(ccvOverrides={},options={}) {
     claim:async(id)=>{const d=data.get(id);if(d.status!=='draft')return false;d.status='submitting';return true;}};
   const ccv={configured:true,product:async()=>({id:896372573,name:'SSK Custom Glove',price:374.95,discount:0}),
     prepare:async(d)=>{posts++;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout?basket=example'};},
-    order:async(id,d)=>({id,is_completed:false,paid:false,checkout_href:'https://sskeurope.ccvshop.nl/checkout',reservationnumber:'SSK-'+d.id,currency:'EUR',total_orderrow_price:d.quote.total/100,order_row_taxes_included:true}),...ccvOverrides};
+    order:async(id,d)=>{const lead=[].concat(d)[0];return {id,is_completed:false,paid:false,checkout_href:'https://sskeurope.ccvshop.nl/checkout',reservationnumber:'SSK-'+lead.id,currency:'EUR',total_orderrow_price:[].concat(d).reduce((n,x)=>n+x.quote.total,0)/100,order_row_taxes_included:true,verifiedRows:[].concat(d).map(()=>({tax:21}))};},...ccvOverrides};
   const run=createCommerce({store,ccv,requireAdmin:async u=>{if(u?.role!=='admin')throw Object.assign(Error('admin_required'),{status:403});},appUrl:'https://example.com/',checkoutEnabled:true,...options});
   const save=()=>run({action:'create',confirmed:true,design:fixture(),previews:previews()});
   return {run,save,data,store,ccv,get posts(){return posts;}};
@@ -249,4 +249,58 @@ test('known CCV ID is retained for reconciliation after a post-write verificatio
  const h=harness({prepare:async()=>{const e=Object.assign(Error('checkout_verification_failed'),{ccvOrderId:77});throw e;}}),d=await h.save();
  await assert.rejects(h.run({action:'checkout',id:d.id,token:d.checkoutToken}),/checkout_needs_review/);
  assert.equal(h.data.get(d.id).ccv_order_id,77);assert.equal(h.data.get(d.id).status,'uncertain');
+});
+
+/* ---------------------------------------------- several gloves, one order */
+test('several gloves check out as one CCV order with one row per glove, each with its own code and specification',async()=>{
+  let drafts,memos,posts=0;const h=harness({prepare:async(d,m)=>{posts++;drafts=d;memos=m;return {id:901,url:'https://sskeurope.ccvshop.nl/checkout?basket=team'};}});
+  const a=await h.save(),b=await h.run({action:'create',confirmed:true,design:{...fixture(),flag:'Japan',thumbText:'TWO',thumbFont:'Block',thumbMain:'10'},previews:previews()});
+  const request={action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:b.id,token:b.checkoutToken}]};
+  assert.match((await h.run(request)).url,/basket=team/);
+  assert.equal(posts,1);assert.equal(drafts.length,2);assert.equal(memos.length,2);
+  assert.match(memos[0],/Glove 1 of 2 in this order/);assert.match(memos[1],/Glove 2 of 2 in this order/);
+  assert.ok(memos[0].includes('Snapshot: '+a.id)&&!memos[0].includes('Snapshot: '+b.id));
+  assert.ok(memos[1].includes('Snapshot: '+b.id)&&memos[1].includes('thumbText: TWO')&&memos[1].includes('Flag: Japan'));
+  assert.ok(memos[0].includes('SSK Custom Glove | '+a.reference)&&memos[1].includes('SSK Custom Glove | '+b.reference));
+  for(const id of [a.id,b.id]){const row=h.data.get(id);assert.equal(row.status,'ready');assert.equal(row.ccv_order_id,901);assert.deepEqual(row.bundle,[a.id,b.id]);}
+  // the same order again: no second basket
+  assert.match((await h.run(request)).url,/basket=team/);assert.equal(posts,1);
+  const status=await h.run({action:'status',id:b.id,token:b.checkoutToken});assert.equal(status.gloves,2);assert.equal(status.paid,false);
+  const check=await h.run({action:'admin-order-check',id:b.id},{user:{role:'admin'}});assert.equal(check.gloves,2);assert.equal(check.orderGloveTotal,37495+37995);
+});
+test('a glove already in another checkout blocks the team order and releases the rest',async()=>{
+  const h=harness(),a=await h.save(),b=await h.save();
+  h.data.get(b.id).status='submitting';
+  await assert.rejects(h.run({action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:b.id,token:b.checkoutToken}]}),/checkout_processing/);
+  assert.equal(h.data.get(a.id).status,'draft');assert.equal(h.posts,0);
+  const c=await h.save();h.data.get(c.id).expires_at='2000-01-01T00:00:00Z';
+  await assert.rejects(h.run({action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:c.id,token:c.checkoutToken}]}),/design_expired/);
+  await assert.rejects(h.run({action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:a.id,token:a.checkoutToken}]}),/invalid_request/);
+  await assert.rejects(h.run({action:'checkout',items:[{id:a.id,token:a.viewToken},{id:b.id,token:b.checkoutToken}]}),/design_not_found/);
+  assert.equal(h.posts,0);
+});
+test('an interrupted team POST marks every glove uncertain with the bundle kept',async()=>{
+  const h=harness({prepare:async()=>{throw Object.assign(Error('timeout'),{ccvOrderId:55});}}),a=await h.save(),b=await h.save();
+  await assert.rejects(h.run({action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:b.id,token:b.checkoutToken}]}),/checkout_needs_review/);
+  for(const id of [a.id,b.id]){assert.equal(h.data.get(id).status,'uncertain');assert.equal(h.data.get(id).ccv_order_id,55);assert.deepEqual(h.data.get(id).bundle,[a.id,b.id]);}
+});
+test('CCV adapter posts one row per glove and verifies every row against its own glove',async()=>{
+  const one={id:'draft_one',design:fixture(),quote:quoteDesign(fixture())},two={id:'draft_two',design:{...fixture(),flag:'Japan'},quote:quoteDesign({flag:'Japan'})};
+  const memoOf=d=>['Snapshot: '+d.id,...specification(d.design).map(([k,v])=>k+': '+v)].join('\n');
+  const rowOf=d=>({order_id:78,product_id:896372573,count:1,discount:0,price:d.quote.total/100,total_price:d.quote.total/100,tax:21,memo:memoOf(d)});
+  let body,rows=[rowOf(one),rowOf(two)];
+  const ccv=createCcv({key:'public',secret:'secret',fetcher:async(url,options)=>{
+    if(url.includes('/products/'))return Response.json({id:896372573,name:'SSK Custom Glove',price:374.95});
+    if(options.method==='POST'){body=JSON.parse(options.body);return Response.json({id:78});}
+    if(url.endsWith('/orderrows/'))return Response.json({items:rows});
+    return Response.json({id:78,reservationnumber:'SSK-draft_one',currency:'EUR',total_orderrow_price:7.5,order_row_taxes_included:true,is_completed:false,paid:false,checkout_href:'https://sskeurope.ccvshop.nl/checkout'});
+  }});
+  const result=await ccv.prepare([one,two],[memoOf(one),memoOf(two)]);
+  assert.equal(result.id,78);assert.equal(body.reservationnumber,'SSK-draft_one');assert.equal(body.orderrows.length,2);
+  assert.equal(body.orderrows[1].price,379.95);assert.equal(body.orderrows[1].memo,memoOf(two));
+  // rows out of order still verify; a missing, doubled or swapped-price row does not
+  rows=[rowOf(two),rowOf(one)];assert.equal((await ccv.order(78,[one,two])).verifiedRows[1].memo,memoOf(two));
+  for(const bad of [[rowOf(one)],[rowOf(one),rowOf(one)],[rowOf(one),{...rowOf(two),price:374.95,total_price:374.95}],[rowOf(one),rowOf(two),rowOf(two)]]){rows=bad;await assert.rejects(ccv.order(78,[one,two]),/checkout_verification_failed/);}
+  rows=[rowOf(one)];assert.equal((await ccv.order(78,one)).verifiedRow.memo,memoOf(one));
+  await assert.rejects(ccv.prepare([one,two],[memoOf(one)]),/invalid_request/);
 });

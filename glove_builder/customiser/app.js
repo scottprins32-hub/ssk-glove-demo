@@ -7,7 +7,7 @@ import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } fro
 import { NativeFrames, PublicRenders } from './render-cache.js';
 import { stageBackground } from './stage-background.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
-import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
+import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, POSITIONS, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 import { addDesign } from './gallery-store.js';
@@ -151,7 +151,7 @@ const QUESTIONS = [
 const S = {
   lang: 'nl', step: 0, part: 'web', bullet: 7,
   view: 'back',
-  colors: {}, materials: {}, hand: null, size: '11.75"', pad: null, webType: NATIVE_WEB,
+  colors: {}, materials: {}, hand: null, size: '11.75"', position: null, pad: null, webType: NATIVE_WEB,
   thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
   thumbNumber: '', circle: null, numberColor: null, flag: null, flagPosition: 'index', flagOther: '',
   pinkyText: '',
@@ -317,6 +317,7 @@ function cleanState(o) {
     colors, materials: cleanMaterials(o.materials),
     hand: byId(HANDS, o.hand),
     size: inList(SIZES, o.size),
+    position: byId(POSITIONS, o.position),   // advice only; never ordered
     pad: byId(PADS, o.pad),
     webType: byId(WEBS, o.webType),
     thumbFont: byId(EMB_FONTS, o.thumbFont),
@@ -1026,7 +1027,13 @@ function renderFit(b) {
     id: h.id, label: h[S.lang], sub: h.sub
   })), S.hand, v => { snapshot(); S.hand = v; draw(); paint(); }, true));
 
-  b.appendChild(choiceField(t('size'), SIZES.map(s => ({ id: s, label: s })),
+  const pos = POSITIONS.find(p => p.id === S.position);
+  const posF = choiceField(t('position'), POSITIONS.map(p => ({ id: p.id, label: p[S.lang], sub: p.sizes.join(' · ') })),
+    S.position, v => { snapshot(); S.position = S.position === v ? null : v; paint(); }, false);
+  posF.appendChild(el('p', 'size-advice', pos ? t('sizeAdvice') : t('positionLead')));
+  b.appendChild(posF);
+
+  b.appendChild(choiceField(t('size'), SIZES.map(s => ({ id: s, label: s, rec: !!pos && pos.sizes.includes(s) })),
     S.size, v => {
       snapshot(); S.size = v;
       if (S.webType && !WEBS.find(w => w.id === S.webType)?.sizes.includes(v)) S.webType = null;
@@ -1292,7 +1299,7 @@ function renderColours(b) {
     b.appendChild(group);
   }
   const desc = tsub('partDesc', S.part);
-  if (desc) b.appendChild(el('p', 'part-desc', `<b>${colourLabel(S.part)}</b> — ${desc}`));
+  if (desc) b.appendChild(el('p', 'part-desc', `${partIcon(S.part)}<span><b>${colourLabel(S.part)}</b> — ${desc}</span>`));
   b.appendChild(swatchFamilies(
     S.part,
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
@@ -1660,7 +1667,7 @@ function renderReview(b) {
   const commerceHost=document.createElement('div');b.appendChild(commerceHost);
   import('./commerce-ui.js').then(({mountCommerce})=>{
     if(commerceHost.isConnected)mountCommerce(commerceHost,{lang:S.lang,complete:!open.length,
-      getDesign:()=>structuredClone(S),capture:captureOrderViews});
+      getDesign:()=>structuredClone(S),capture:captureOrderViews,onParked:parkedGlove});
     reportPerformance();
   }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
   if (contactOpen()) b.appendChild(el('p', 'note', t('contactMissing')));
@@ -1741,7 +1748,7 @@ function choiceField(label, opts, value, onPick, required) {
     b.dataset.key = `${label}|${o.id}`;
     b.innerHTML = (o.swatch
       ? `<span class="chip" style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${o.swatch};border:1px solid rgba(0,0,0,.25);vertical-align:-1px;margin-right:6px"></span>` : '') +
-      o.label + (o.sub ? `<small>${o.sub}</small>` : '');
+      o.label + (o.sub ? `<small>${o.sub}</small>` : '') + (o.rec ? `<span class="rec">${t('recommended')}</span>` : '');
     b.onclick = () => onPick(o.id);
     row.appendChild(b);
   }
@@ -1995,13 +2002,26 @@ async function cardImage() {
   g.beginPath(); g.moveTo(72, 96); g.lineTo(W - 72, 96); g.stroke(); g.setLineDash([]);
   g.fillStyle = '#C8102E'; g.font = '500 22px "IBM Plex Mono", monospace'; g.textBaseline = 'alphabetic';
   g.fillText((S.lang === 'nl' ? 'SSK PRO CUSTOM · OP BESTELLING' : 'SSK PRO CUSTOM · MADE TO ORDER'), 72, 160);
-  // the glove, fitted to the middle band
-  const band = { x: 100, y: 190, w: W - 200, h: 860 };
-  const k = Math.min(band.w / glove.width, band.h / glove.height);
-  const gw = glove.width * k, gh = glove.height * k;
-  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 60; g.shadowOffsetY = 30;
-  g.drawImage(glove, band.x + (band.w - gw) / 2, band.y + (band.h - gh) / 2, gw, gh);
-  g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  // All four sides: the back large on the left, the palm, thumb and pinky
+  // sides stacked on the right. A side without a picture gets its name.
+  const sides = await captureOrderViews().catch(() => []);
+  const pic = v => sides.find(x => x.view === v && x.available);
+  const loadPic = v => new Promise(r => { const d = pic(v); if (!d) return r(null); const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = d.dataUrl; });
+  const smalls = await Promise.all(['palm', 'thumb', 'pinky'].map(loadPic));
+  const fit = (img, box, shadow) => {
+    const k = Math.min(box.w / img.width, box.h / img.height), gw = img.width * k, gh = img.height * k;
+    if (shadow) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 60; g.shadowOffsetY = 30; }
+    g.drawImage(img, box.x + (box.w - gw) / 2, box.y + (box.h - gh) / 2, gw, gh);
+    g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  };
+  fit(glove, { x: 72, y: 190, w: 720, h: 860 }, true);
+  ['palm', 'thumb', 'pinky'].forEach((v, i) => {
+    const box = { x: 820, y: 200 + i * 285, w: 308, h: 260 };
+    const img = smalls[i];
+    if (img) fit(img, box, false);
+    g.fillStyle = '#9A9A9A'; g.font = '500 16px "IBM Plex Mono", monospace'; g.textAlign = 'center';
+    g.fillText(t(VIEW_KEYS[v]).toUpperCase(), box.x + box.w / 2, box.y + box.h + 16); g.textAlign = 'left';
+  });
   // name, code, colours
   const name = (S.thumbText.trim() || S.name.trim() || (S.lang === 'nl' ? 'Mijn handschoen' : 'My glove')).toUpperCase();
   g.fillStyle = '#FFFFFF'; g.font = '800 72px "Barlow Condensed", Impact, sans-serif';
@@ -2035,6 +2055,80 @@ async function cardImage() {
   g.textAlign = 'left';
   return out;
 }
+/* The part icons: one sprite, in the order the generator wrote it. */
+const PART_ICONS = ['web', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'belt', 'lining', 'binding', 'welting', 'laces',
+  'pinky_loops', 'stitching', 'ring_emb', 'palm', 'back1', 'back9', 'thumb_loops', 'back2'];
+const partIcon = part => { const i = PART_ICONS.indexOf(part); return i < 0 ? '' : `<i class="pico" style="--i:${i}" aria-hidden="true"></i>`; };
+
+/* ------------------------------------------------------- turntable clip */
+/* A few seconds of the glove turning through its sides, 4:5 for Instagram
+   and WhatsApp, recorded off a canvas. Shared where the phone can, saved
+   otherwise. */
+const CLIP_MIMES = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+const clipMime = () => CLIP_MIMES.find(m => window.MediaRecorder?.isTypeSupported?.(m)) || null;
+const clipSupported = () => !!(clipMime() && HTMLCanvasElement.prototype.captureStream);
+async function turnClip(ev) {
+  const b = ev.currentTarget, was = b.textContent, mime = clipMime();
+  if (!mime || b.disabled) return;
+  b.disabled = true; b.textContent = t('clipBusy');
+  try {
+    if (flushText()) paint();
+    if (!await readyForExport()) throw new Error('not ready');
+    const views = (await captureOrderViews()).filter(v => v.available);
+    if (!views.length) throw new Error('no views');
+    const frames = await Promise.all(views.map(v => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = v.dataUrl; })));
+    const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const HOLD = 900, FLIP = 320, total = frames.length * (HOLD + FLIP);
+    const band = { x: 60, y: 120, w: W - 120, h: 980 };
+    const plate = code();
+    const drawFrame = (img, scaleX, alpha) => {
+      const k = Math.min(band.w / img.width, band.h / img.height), gw = img.width * k, gh = img.height * k;
+      g.save(); g.globalAlpha = alpha; g.translate(W / 2, band.y + band.h / 2); g.scale(scaleX, 1);
+      g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 50; g.shadowOffsetY = 24;
+      g.drawImage(img, -gw / 2, -gh / 2, gw, gh); g.restore();
+    };
+    const paintAt = ms => {
+      g.fillStyle = '#121212'; g.fillRect(0, 0, W, H);
+      const glow = g.createRadialGradient(W / 2, 560, 60, W / 2, 560, 700);
+      glow.addColorStop(0, 'rgba(255,255,255,.13)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = glow; g.fillRect(0, 0, W, H);
+      const slot = Math.min(frames.length - 1, Math.floor(ms / (HOLD + FLIP))), inSlot = ms - slot * (HOLD + FLIP);
+      if (inSlot < HOLD || slot === frames.length - 1) drawFrame(frames[slot], 1, 1);
+      else {   // a short turn: this side folds away, the next unfolds
+        const p = (inSlot - HOLD) / FLIP;
+        if (p < .5) drawFrame(frames[slot], Math.cos(p * Math.PI), 1 - p);
+        else drawFrame(frames[slot + 1], Math.cos((1 - p) * Math.PI), p);
+      }
+      g.fillStyle = '#C8102E'; g.font = '500 26px "IBM Plex Mono", monospace';
+      g.fillText(S.lang === 'nl' ? 'SSK PRO CUSTOM · OP BESTELLING' : 'SSK PRO CUSTOM · MADE TO ORDER', 60, 80);
+      g.fillStyle = '#FFFFFF'; g.font = '500 30px "IBM Plex Mono", monospace'; g.fillText(plate, 60, H - 110);
+      g.fillStyle = '#9A9A9A'; g.font = '400 24px Barlow, "Helvetica Neue", Arial, sans-serif';
+      g.fillText('SSK Europe', 60, H - 56);
+      g.textAlign = 'right'; g.fillText(money(priceBreakdown().total), W - 60, H - 56); g.textAlign = 'left';
+    };
+    paintAt(0);
+    const stream = c.captureStream(30), rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+    const chunks = []; rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    const done = new Promise(r => { rec.onstop = r; });
+    rec.start(200);
+    const t0 = performance.now();
+    await new Promise(r => { const step = () => { const ms = performance.now() - t0; paintAt(Math.min(ms, total)); if (ms < total + 120) requestAnimationFrame(step); else r(); }; requestAnimationFrame(step); });
+    rec.stop(); await done;
+    const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
+    const file = new File(chunks, `SSK-${plate}.${ext}`, { type: mime.split(';')[0] });
+    let shared = false;
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: t('sendTitle'), text: `${t('reference')}: ${plate}` }); shared = true; }
+      catch (e) { if (e?.name === 'AbortError') shared = true; }
+    }
+    if (!shared) { const u = URL.createObjectURL(file); const a = el('a'); a.href = u; a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 2000); }
+    b.textContent = t('clipDone');
+  } catch (e) { b.textContent = t('clipFailed'); }
+  setTimeout(() => { b.textContent = was; b.disabled = false; }, 1800);
+}
+$('#turnclip').onclick = turnClip;
+
 async function cardBlob() {
   const c = await cardImage();
   return new Promise(r => c.toBlob(r, 'image/png'));
@@ -2066,6 +2160,10 @@ async function openSheet() {
   // The card goes out through the phone's own share sheet where there is one.
   const ws = $('#webshare');
   ws.hidden = !(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] }));
+  // WhatsApp gets the words and the link; the picture comes off the card.
+  $('#whatsapp').href = 'https://wa.me/?text=' + encodeURIComponent(
+    `${t('sendTitle')}\n${t('reference')}: ${code()}\n${money(priceBreakdown().total)}\n${shareLink()}`);
+  $('#turnclip').hidden = !clipSupported();
   const host = $('#spechost');
   host.textContent = '';
   host.appendChild(limitsBlock());
@@ -2092,7 +2190,7 @@ document.addEventListener('keydown', ev => {
   if ($('#scrim').hidden) return;
   if (ev.key === 'Escape') { ev.preventDefault(); closeSheet(); }
   if (ev.key !== 'Tab') return;
-  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled)')];
+  const buttons = [...$('#scrim').querySelectorAll('button:not(:disabled):not([hidden]), a[href]:not([hidden])')];
   const first = buttons[0], last = buttons.at(-1);
   if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
   else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
@@ -2130,6 +2228,7 @@ async function paintCompare() {
   const stage = $('#stage'), ghost = $('#ghost');
   const on = !!(kept && compareOn && R);
   stage.classList.toggle('is-compare', on);
+  if (on && interact) interact.zoomReset(false);
   ghost.hidden = !on;
   if (!on) return;
   $('#ghostcode').textContent = keptCode();
@@ -2170,6 +2269,18 @@ function showResume() {
   $('#resumetext').innerHTML = `${t('resumed')} <span>· <code>${code()}</code></span>`;
   box.hidden = false;
   clearTimeout(showResume.t); showResume.t = setTimeout(() => { box.hidden = true; }, 12000);
+}
+/* A glove was saved into the order; the next one starts from this design,
+   back at the first step, with the way to a blank glove at hand. */
+function parkedGlove(saved, items) {
+  snapshot();
+  S.step = 0; S.personalCheck = false;
+  draw(); paint();
+  const box = $('#resume'); if (!box) return;
+  $('#resumetext').innerHTML = `${t('parked').replace('%n', items.length)} <span>· <code>${saved.reference}</code></span>`;
+  box.hidden = false;
+  clearTimeout(showResume.t); showResume.t = setTimeout(() => { box.hidden = true; }, 15000);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function startOver() {
   snapshot();
@@ -2421,9 +2532,12 @@ function paint(rebuildBody = true) {
   const revealMaterial = false;
   paint.lastPart = S.part;
   paint.lastStep = S.step;
+  if (interact && wasStep !== S.step) interact.zoomReset(false);
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);
   $('#lang-nl').classList.toggle('is-on', L === 'nl');
   $('#lang-en').classList.toggle('is-on', L === 'en');
+  $('#keysbtn').title = t('shortcuts');
+  if (!$('#keyspop').hidden) paintKeys();
   paintView();
 
   // steps
@@ -2480,7 +2594,9 @@ function paint(rebuildBody = true) {
   const tag = $('#stagetag');
   if (S.step === 3) {
     tag.hidden = false;
-    tag.textContent = `${colourLabel(S.part)} · ${colName(S.part) || '—'}`;
+    const ico = partIcon(S.part);
+    tag.classList.toggle('has-ico', !!ico);
+    tag.innerHTML = `${ico}<span>${colourLabel(S.part)} · ${colName(S.part) || '—'}</span>`;
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
@@ -2582,6 +2698,34 @@ $('#redo').onclick = () => {
   restore(redoStack.pop()); paint();
 };
 // ⌘Z / Ctrl+Z and ⌘⇧Z / Ctrl+Y, anywhere a text field is not taking them.
+/* ------------------------------------------------------------ shortcuts */
+/* Digits jump to a step, ? opens the list. Nothing fires while typing. */
+const typing = () => /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+function paintKeys() {
+  const dl = $('#keyslist'); if (!dl) return;
+  const K = T[S.lang].keys || T.en.keys;
+  const rows = [['?', K.help], ['1 – 8', K.steps], ['← →', K.turn], ['scroll · ⌥', K.zoom], ['Esc', K.esc], ['⌘ Z', K.undo], ['⌘ ⇧ Z', K.redo]];
+  dl.innerHTML = rows.map(([k, d]) => `<dt><kbd>${k}</kbd></dt><dd>${d}</dd>`).join('');
+}
+function toggleKeys(on = $('#keyspop').hidden) {
+  const pop = $('#keyspop'); if (!pop) return;
+  if (on) paintKeys();
+  pop.hidden = !on;
+  $('#keysbtn')?.setAttribute('aria-expanded', String(on));
+  if (on) $('#keysclose').focus(); else $('#keysbtn')?.focus();
+}
+$('#keysclose').onclick = () => toggleKeys(false);
+$('#keysbtn').onclick = () => toggleKeys();
+document.addEventListener('keydown', ev => {
+  if (ev.metaKey || ev.ctrlKey || ev.altKey || typing() || !$('#scrim').hidden) return;
+  if (ev.key === '?') { ev.preventDefault(); toggleKeys(); return; }
+  if (ev.key === 'Escape' && !$('#keyspop').hidden) { toggleKeys(false); return; }
+  if (/^[1-8]$/.test(ev.key) && R && $('#keyspop').hidden) {
+    const n = +ev.key - 1; if (n === S.step) return;
+    ev.preventDefault(); if (flushText()) paint(); S.step = n; paint();
+  }
+});
+
 document.addEventListener('keydown', ev => {
   if (!(ev.metaKey || ev.ctrlKey) || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
   const k = ev.key.toLowerCase();
@@ -2624,6 +2768,8 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   if (o) Object.assign(S, o, { step: 0 });
   else {
     const draft = cleanState(savedDraft);
+    // First visit, nothing shared: the browser's language picks the start.
+    if (!draft && !savedDraft) S.lang = /^nl\b/i.test(navigator.language || '') ? 'nl' : 'en';
     if (draft) Object.assign(S, draft, { step: Number.isInteger(savedDraft.step)
       && savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 });
     if (draft && (S.step > 0 || visualKey() !== defaultVisual)) setTimeout(showResume, 600);
@@ -2639,7 +2785,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if (interact) interact.flip(direction, swap); else swap();
   };
   interact = initStage({
-    canvas: cv, label: $('#stagelabel'), stage: $('#stage'),
+    canvas: cv, label: $('#stagelabel'), stage: $('#stage'), frame: $('#stageframe'),
     renderer: () => R, mirror: isLefty,
     zoneOf: (x, y) => (viewAvailability(S.view).ok && selectionIsReady()) ? R.zoneAt(x, y, isLefty()) : null,
     describe: id => {

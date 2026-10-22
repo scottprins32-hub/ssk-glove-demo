@@ -1,0 +1,15 @@
+{
+  "note": "Ten designs the QA strip renders by default (glove_builder/qa_strip.mjs). Each starts from a starter and applies a patch to the saved state; field names are those of app.js S. Edit by hand; keep ten.",
+  "designs": [
+    { "id": "blank-rht", "starter": "blank", "patch": { "hand": "RHT", "size": "11.75\"" } },
+    { "id": "jp-lht", "starter": "jp", "patch": { "hand": "LHT", "size": "12\"" } },
+    { "id": "nl-flag-middle", "starter": "nl", "patch": { "hand": "RHT", "size": "12\"", "flag": "Netherlands", "flagPosition": "middle" } },
+    { "id": "pro-croc", "starter": "pro", "patch": { "hand": "RHT", "size": "12.25\"", "materials": { "back1": "snakeskin", "back2": "snakeskin", "back3": "snakeskin", "back4": "snakeskin", "back5": "snakeskin", "back6": "snakeskin", "back7": "snakeskin", "back8": "snakeskin", "back9": "snakeskin" } } },
+    { "id": "cw-smlee", "starter": "cw", "patch": { "hand": "RHT", "size": "11.75\"", "webType": "SMLEE-Web" } },
+    { "id": "spiral-i-lht", "starter": "blank", "patch": { "hand": "LHT", "size": "11.5\"", "webType": "Spiral I-Web", "colors": { "web": "25", "laces": "GF" } } },
+    { "id": "trapeze-1275", "starter": "Navy / Columbia", "patch": { "hand": "RHT", "size": "12.75\"", "webType": "Trapeze-Web" } },
+    { "id": "mod-trapeze-12", "starter": "Black / Grey", "patch": { "hand": "RHT", "size": "12\"", "webType": "Modified Trapeze-Web", "thumbText": "PRINS", "thumbNumber": "32" } },
+    { "id": "em-rocket-12", "starter": "sig2", "patch": { "hand": "LHT", "size": "12\"", "webType": "Em Rocket-Web" } },
+    { "id": "closed-diamond-hood", "starter": "Pink / White", "patch": { "hand": "RHT", "size": "12.25\"", "webType": "Closed Diamond Net-Web", "pad": "Finger Hood" } }
+  ]
+}

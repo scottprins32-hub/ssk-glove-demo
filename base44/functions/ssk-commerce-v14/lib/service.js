@@ -30,6 +30,25 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
     if(new Date(d.expires_at)<=now()) throw new CommerceError('design_expired',410);
     return d;
   }
+  // The gloves of one checkout: {id, token} for one, {items: [...]} for more.
+  const MAX_ITEMS=6;
+  async function loadItems(body,kind) {
+    const items=Array.isArray(body.items)?body.items:[{id:body.id,token:body.token}];
+    if(!items.length||items.length>MAX_ITEMS||items.some(i=>!i||typeof i!=='object')) throw new CommerceError('invalid_request');
+    if(new Set(items.map(i=>i.id)).size!==items.length) throw new CommerceError('invalid_request');
+    const drafts=[];for(const item of items)drafts.push(await load(item,kind));
+    return drafts;
+  }
+  // The adapter sees one draft for a single glove, a list for a team order.
+  const one=list=>list.length===1?list[0]:list;
+  const sameBundle=(d,ids)=>ids.length===1?!Array.isArray(d.bundle)||d.bundle.length===1:Array.isArray(d.bundle)&&d.bundle.length===ids.length&&d.bundle.every((id,i)=>id===ids[i]);
+  // The whole order a draft belongs to, lead glove first; a lone draft is its own.
+  async function bundleOf(d) {
+    if(!Array.isArray(d.bundle)||d.bundle.length<2) return [d];
+    const drafts=await Promise.all(d.bundle.map(id=>id===d.id?d:store.get(id)));
+    if(drafts.some(x=>!x)) throw new CommerceError('design_not_found',404);
+    return drafts;
+  }
   async function checkPrice() {
     const product=await ccv.product();
     if(Math.round((Number(product.price)-Number(product.discount||0))*100)!==37495) throw new CommerceError('shop_price_changed',409);
@@ -57,32 +76,41 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
           await requireAdmin(user);
           if(acceptanceTestsEnabled!==true||body.confirmed!==true||body.purpose!=='acceptance-test')throw new CommerceError('acceptance_tests_disabled',403);
         }else if(checkoutEnabled!==true)throw new CommerceError('checkout_approval_pending',503);
-        let d=await load(body,'checkout');
-        if(d.design.flag==='Other Flag') throw new CommerceError('flag_requires_confirmation',409);
-        if(d.status==='ready') {
-          const order=await ccv.order(d.ccv_order_id,d);
-          if(order.is_completed){await store.update(d.id,{status:'ordered'});throw new CommerceError('already_ordered',409);}
-          return {url:d.checkout_url};
+        // One glove ({id, token}) or several ({items: [{id, token}, …]}):
+        // one shop order either way, one row per glove.
+        let drafts=await loadItems(body,'checkout');
+        const ids=drafts.map(d=>d.id),lead=drafts[0];
+        if(drafts.some(d=>d.design.flag==='Other Flag')) throw new CommerceError('flag_requires_confirmation',409);
+        if(drafts.every(d=>d.status==='ready'&&d.ccv_order_id===lead.ccv_order_id&&sameBundle(d,ids))) {
+          const order=await ccv.order(lead.ccv_order_id,one(drafts));
+          if(order.is_completed){for(const d of drafts)await store.update(d.id,{status:'ordered'});throw new CommerceError('already_ordered',409);}
+          return {url:lead.checkout_url};
         }
-        if(d.status!=='draft') throw new CommerceError(d.status==='submitting'?'checkout_processing':'checkout_needs_review',409);
+        const busy=drafts.find(d=>d.status!=='draft');
+        if(busy) throw new CommerceError(busy.status==='submitting'?'checkout_processing':busy.status==='ready'?'checkout_needs_review':'checkout_needs_review',409);
         if(!ccv.configured) throw new CommerceError('checkout_not_connected',503);
         await checkPrice(); // A failed read cannot have created an order, so it does not consume the claim.
-        if(!await store.claim(d.id)) {
-          d=await store.get(d.id);
-          if(d.status==='ready') return {url:d.checkout_url};
+        const claimed=[];
+        for(const d of drafts){if(await store.claim(d.id))claimed.push(d.id);else break;}
+        if(claimed.length!==drafts.length) {
+          // Another request holds one of them: give back ours and report.
+          for(const id of claimed)await store.update(id,{status:'draft'}).catch(()=>{});
+          drafts=await Promise.all(ids.map(id=>store.get(id)));
+          if(drafts.every(d=>d.status==='ready'&&d.ccv_order_id===drafts[0].ccv_order_id&&sameBundle(d,ids))) return {url:drafts[0].checkout_url};
           throw new CommerceError('checkout_processing',409);
         }
         try {
-          const memo=[...(acceptanceTest?['ACCEPTANCE TEST — DO NOT FULFIL. Unpaid, incomplete test basket.']:[]),`SSK Custom Glove | ${d.reference}`,`Snapshot: ${d.id}`,`Merchant specification: ${appUrl}merchant.html#${d.id}`,
+          const memos=drafts.map((d,i)=>[...(acceptanceTest?['ACCEPTANCE TEST — DO NOT FULFIL. Unpaid, incomplete test basket.']:[]),`SSK Custom Glove | ${d.reference}`,
+            ...(drafts.length>1?[`Glove ${i+1} of ${drafts.length} in this order`]:[]),`Snapshot: ${d.id}`,`Merchant specification: ${appUrl}merchant.html#${d.id}`,
             ...specification(d.design).map(([k,v])=>`${k}: ${v}`),
             `Glove incl. flag: EUR ${(d.quote.total/100).toFixed(2)}; shipping is calculated by CCV.`,
-            'Specifications are authoritative; previews may be estimated or unavailable.'].join('\n');
-          const result=await ccv.prepare(d,memo);
-          await store.update(d.id,{status:'ready',ccv_order_id:result.id,checkout_url:result.url});
+            'Specifications are authoritative; previews may be estimated or unavailable.'].join('\n'));
+          const result=await ccv.prepare(one(drafts),one(memos));
+          for(const d of drafts)await store.update(d.id,{status:'ready',ccv_order_id:result.id,checkout_url:result.url,...(drafts.length>1?{bundle:ids}:{})});
           return {url:result.url};
         } catch(error) {
           // After claim, any interruption could conceal a successful CCV write. Never retry the POST automatically.
-          await store.update(d.id,{status:'uncertain',last_error:error.code||'checkout_outcome_unknown',
+          for(const d of drafts)await store.update(d.id,{status:'uncertain',last_error:error.code||'checkout_outcome_unknown',...(drafts.length>1?{bundle:ids}:{}),
             ...(Number.isSafeInteger(error.ccvOrderId)&&error.ccvOrderId>0?{ccv_order_id:error.ccvOrderId}:{})}).catch(()=>{});
           const failure=new CommerceError('checkout_needs_review',409);
           failure.upstreamStatus=error.upstreamStatus;failure.upstreamDetail=error.upstreamDetail;
@@ -92,13 +120,13 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
       case 'status': {
         const d=await load(body,'checkout');
         if(!d.ccv_order_id) return {status:d.status,paid:false};
-        const order=await ccv.order(d.ccv_order_id,d);
-        return {status:order.is_completed?'ordered':d.status,paid:order.paid===true};
+        const order=await ccv.order(d.ccv_order_id,one(await bundleOf(d)));
+        return {status:order.is_completed?'ordered':d.status,paid:order.paid===true,gloves:Array.isArray(d.bundle)?d.bundle.length:1};
       }
       case 'admin-list': {
         await requireAdmin(user);
         return {drafts:(await store.list()).map(d=>({id:d.id,reference:d.reference,status:d.status,created:d.created_date,
-          expires:d.expires_at,total:d.quote.total,ccvOrderId:d.ccv_order_id||null,lastError:d.last_error||null}))};
+          expires:d.expires_at,total:d.quote.total,ccvOrderId:d.ccv_order_id||null,lastError:d.last_error||null,gloves:Array.isArray(d.bundle)?d.bundle.length:1}))};
       }
       case 'admin-read': {
         await requireAdmin(user);const d=await store.get(body.id);
@@ -108,22 +136,22 @@ export function createCommerce({store,ccv,requireAdmin,now=()=>new Date(),appUrl
       case 'admin-order-check': {
         await requireAdmin(user);const d=await store.get(body.id);
         if(!d?.ccv_order_id)throw new CommerceError('design_not_found',404);
-        const order=await ccv.order(d.ccv_order_id,d),row=order.verifiedRow;
+        const drafts=await bundleOf(d),order=await ccv.order(d.ccv_order_id,one(drafts)),row=drafts.length===1?order.verifiedRow:order.verifiedRows[drafts.findIndex(x=>x.id===d.id)];
         return {orderId:order.id,paid:order.paid===true,completed:order.is_completed===true,currency:order.currency,
-          gloveTotal:d.quote.total,shipping:Number(order.total_shipping),total:Number(order.total_price),
+          gloveTotal:d.quote.total,gloves:drafts.length,orderGloveTotal:drafts.reduce((n,x)=>n+x.quote.total,0),shipping:Number(order.total_shipping),total:Number(order.total_price),
           taxPercent:Number(row.tax),specificationVerified:true};
       }
       case 'admin-reconcile': {
         await requireAdmin(user);
         const d=await store.get(body.id);
         if(!d||!['submitting','uncertain','ready'].includes(d.status)) throw new CommerceError('reconciliation_not_allowed',409);
-        const order=await ccv.order(Number(body.orderId),d);
+        const drafts=await bundleOf(d),order=await ccv.order(Number(body.orderId),one(drafts));
         if(order.is_completed) {
-          await store.update(d.id,{status:'ordered',ccv_order_id:order.id});
+          for(const x of drafts)await store.update(x.id,{status:'ordered',ccv_order_id:order.id});
           return {status:'ordered',paid:order.paid===true};
         }
         const {safeCheckoutUrl}=await import('./commerce-contract.js');
-        await store.update(d.id,{status:'ready',ccv_order_id:order.id,checkout_url:safeCheckoutUrl(order.checkout_href||order.basket_href)});
+        for(const x of drafts)await store.update(x.id,{status:'ready',ccv_order_id:order.id,checkout_url:safeCheckoutUrl(order.checkout_href||order.basket_href)});
         return {status:'ready',paid:order.paid===true};
       }
       default:throw new CommerceError('unknown_action');

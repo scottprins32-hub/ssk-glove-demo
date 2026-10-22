@@ -22,7 +22,7 @@ async function open(id){
 async function refresh(){
  const {drafts}=await call('admin-list');list.replaceChildren();const table=node('table',null,'commerce-spec');
  const head=node('tr');for(const label of ['Ontwerp','Status','Bedrag','CCV'])head.append(node('th',label));table.append(head);
- for(const d of drafts){const row=node('tr'),cell=node('td'),button=node('button',d.reference,'btn');button.onclick=()=>open(d.id).catch(e=>{status.textContent=errorMessage(e);});cell.append(button);row.append(cell,node('td',d.status+(d.lastError?' · controle nodig':'')),node('td',formatMoney(d.total)),node('td',String(d.ccvOrderId||'—')));table.append(row);}list.append(table);
+ for(const d of drafts){const row=node('tr'),cell=node('td'),button=node('button',d.reference,'btn');button.onclick=()=>open(d.id).catch(e=>{status.textContent=errorMessage(e);});cell.append(button);row.append(cell,node('td',d.status+(d.lastError?' · controle nodig':'')),node('td',formatMoney(d.total)),node('td',String(d.ccvOrderId||'—')+(d.gloves>1?` · ${d.gloves} handschoenen`:'')));table.append(row);}list.append(table);
 }
 async function start(){
  let user;try{user=await client.auth.me();}catch{}

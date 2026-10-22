@@ -37,33 +37,46 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     if(p.id!==SHOP.productId||p.name!==SHOP.productName||p.active===false) throw new CommerceError('shop_product_mismatch',409);
     return p;
   }
-  function verifyOrder(order,draft) {
-    if(!Number.isSafeInteger(order.id)||order.id<1||order.reservationnumber!==`SSK-${draft.id}`||order.currency!=='EUR'||
+  // One order carries one glove or several: one orderrow per glove, each
+  // with its own snapshot id, code and specification in the memo. The
+  // reservation number names the first glove's snapshot.
+  const bundle=drafts=>{const list=[].concat(drafts);if(!list.length||list.length>6)throw new CommerceError('invalid_request');return list;};
+  function verifyOrder(order,drafts) {
+    if(!Number.isSafeInteger(order.id)||order.id<1||order.reservationnumber!==`SSK-${drafts[0].id}`||order.currency!=='EUR'||
       order.order_row_taxes_included!==true) throw new CommerceError('checkout_verification_failed',502);
     return order;
   }
-  async function order(id,draft) {
-    if(!Number.isSafeInteger(id)||id<1) throw new CommerceError('invalid_order_id');
-    const verified=verifyOrder(await request('GET',`/api/rest/v1/orders/${id}/`),draft);
-    // CCV's aggregate total_orderrow_price includes shop shipping. Verify the
-    // actual product row, leaving delivery costs to the shop's checkout.
-    const rows=await request('GET',`/api/rest/v1/orders/${id}/orderrows/`),row=rows.items?.[0];
-    if(verified.id!==id||!Array.isArray(rows.items)||rows.items.length!==1||rows.next||row.order_id!==id||row.product_id!==SHOP.productId||Number(row.count)!==1||
-      Number(row.discount)!==0||Math.round(Number(row.price)*100)!==draft.quote.total||
-      Math.round(Number(row.total_price)*100)!==draft.quote.total||!Number.isFinite(Number(row.tax))||Number(row.tax)<0||Number(row.tax)>100||
-      typeof row.memo!=='string'||!row.memo.includes(`Snapshot: ${draft.id}`)||
-      !specificationLines(draft).every(line=>row.memo.split('\n').includes(line)))throw new CommerceError('checkout_verification_failed',502);
-    return {...verified,verifiedRow:row};
+  function rowMatches(row,draft,id) {
+    return row&&row.order_id===id&&row.product_id===SHOP.productId&&Number(row.count)===1&&
+      Number(row.discount)===0&&Math.round(Number(row.price)*100)===draft.quote.total&&
+      Math.round(Number(row.total_price)*100)===draft.quote.total&&Number.isFinite(Number(row.tax))&&Number(row.tax)>=0&&Number(row.tax)<=100&&
+      typeof row.memo==='string'&&row.memo.includes(`Snapshot: ${draft.id}`)&&
+      specificationLines(draft).every(line=>row.memo.split('\n').includes(line));
   }
-  return {configured,product,order,async prepare(draft,memo) {
+  async function order(id,draftOrDrafts) {
+    if(!Number.isSafeInteger(id)||id<1) throw new CommerceError('invalid_order_id');
+    const drafts=bundle(draftOrDrafts);
+    const verified=verifyOrder(await request('GET',`/api/rest/v1/orders/${id}/`),drafts);
+    // CCV's aggregate total_orderrow_price includes shop shipping. Verify the
+    // actual product rows, leaving delivery costs to the shop's checkout.
+    const rows=await request('GET',`/api/rest/v1/orders/${id}/orderrows/`);
+    if(verified.id!==id||!Array.isArray(rows.items)||rows.items.length!==drafts.length||rows.next)throw new CommerceError('checkout_verification_failed',502);
+    // every glove has exactly its own row, and every row belongs to a glove
+    const verifiedRows=drafts.map(d=>rows.items.filter(row=>typeof row?.memo==='string'&&row.memo.includes(`Snapshot: ${d.id}`)));
+    if(verifiedRows.some((list,i)=>list.length!==1||!rowMatches(list[0],drafts[i],id)))throw new CommerceError('checkout_verification_failed',502);
+    return {...verified,verifiedRow:verifiedRows[0][0],verifiedRows:verifiedRows.map(list=>list[0])};
+  }
+  return {configured,product,order,async prepare(draftOrDrafts,memoOrMemos) {
+    const drafts=bundle(draftOrDrafts),memos=[].concat(memoOrMemos);
+    if(memos.length!==drafts.length)throw new CommerceError('invalid_request');
     await product();
     const created=await request('POST','/api/rest/v1/orders/',{is_completed:false,paid:false,currency:'EUR',
-      taxes_included:true,order_row_taxes_included:true,orderedinlng:draft.design.lang,
-      reservationnumber:`SSK-${draft.id}`,customer:{},
-      orderrows:[{product_id:SHOP.productId,count:1,price:draft.quote.total/100,discount:0,memo}]});
+      taxes_included:true,order_row_taxes_included:true,orderedinlng:drafts[0].design.lang,
+      reservationnumber:`SSK-${drafts[0].id}`,customer:{},
+      orderrows:drafts.map((draft,i)=>({product_id:SHOP.productId,count:1,price:draft.quote.total/100,discount:0,memo:memos[i]}))});
     if(!Number.isSafeInteger(created.id)||created.id<1) throw new CommerceError('checkout_outcome_unknown',502);
     try {
-      const verified=await order(created.id,draft);
+      const verified=await order(created.id,drafts);
       if(verified.is_completed!==false||verified.paid!==false) throw new CommerceError('checkout_verification_failed',502);
       return {id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href)};
     }catch(error){error.ccvOrderId=created.id;throw error;}

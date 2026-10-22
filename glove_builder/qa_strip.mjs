@@ -4,8 +4,10 @@
 //
 //   NODE_PATH=<dir holding playwright> node glove_builder/qa_strip.mjs [design...] [--out DIR] [--base DIR]
 //
-// A design is a design link (…#…), a reference code (SSK4-…), or one of the
-// starter ids (blank, pro, nl, jp …). With none given, every starter runs.
+// A design is a design link (…#…), a reference code (SSK4-…), one of the
+// starter ids (blank, pro, nl, jp …), or the id of one of the ten fixed test
+// designs in glove_builder/fixtures/designs.json. With none given, the ten
+// fixtures run.
 // --out defaults to glove_builder/runs/qa-strip/<git short sha>; --base is an
 // earlier run to put beside it. Exit 1 when any view failed to render.
 import http from 'node:http';
@@ -46,12 +48,35 @@ const errors = []; page.on('pageerror', e => errors.push(e.message));
 await page.goto(url);
 await page.waitForFunction(() => document.getElementById('glove')?.classList.contains('is-ready'));
 const starters = await page.evaluate(async () => (await import('./glove-catalog.js')).STARTERS.map(s => s.id));
-const designs = args.length ? args : starters;
+const FIXTURES = JSON.parse(fs.readFileSync(path.join(HERE, 'fixtures/designs.json'), 'utf8')).designs;
+const fixture = id => FIXTURES.find(f => f.id === id);
+const designs = args.length ? args : FIXTURES.map(f => f.id);
+const ready = () => page.waitForFunction(() => document.getElementById('glove')?.classList.contains('is-ready'));
+// A fixture: its starter, then the patch merged into the saved draft and the
+// page reloaded, so the design goes through the same cleaning a visitor's does.
+async function openFixture(f) {
+  // a clean page first: a restored draft would hide the starters
+  await page.goto(url); await ready();
+  await page.evaluate(() => { localStorage.clear(); localStorage.setItem('ssk-coached', '1'); });
+  await page.reload(); await ready();
+  const clicked = await page.evaluate(id => { const b = document.querySelector(`[data-key="starter|${id}"]`); if (!b) return false; b.click(); return true; }, f.starter);
+  if (!clicked) throw new Error(`${f.id}: starter ${f.starter} not on the page`);
+  await page.waitForTimeout(500);
+  await page.evaluate(patch => {
+    const o = JSON.parse(localStorage.getItem('ssk-glove-v1') || '{}');
+    // colours merge into the starter's; everything else replaces
+    for (const [k, v] of Object.entries(patch)) o[k] = k === 'colors' ? { ...(o.colors || {}), ...v } : v;
+    Object.assign(o, { step: 7, view: 'back' });
+    localStorage.setItem('ssk-glove-v1', JSON.stringify(o));
+  }, f.patch);
+  await page.reload(); await ready();
+}
 let failed = 0;
 const manifest = [];
 for (const design of designs) {
   const name = design.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 40);
   if (design.includes('#')) { await page.goto(url.replace('index.html', '') + design.slice(design.indexOf('#'))); }
+  else if (fixture(design)) await openFixture(fixture(design));
   else {
     await page.goto(url);
     await page.waitForFunction(() => document.getElementById('glove')?.classList.contains('is-ready'));
