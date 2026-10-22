@@ -1,4 +1,9 @@
 [
+  {"path": "assets/side-lossless-r01/palm-glove.png", "sha256": "0547275f44d417ece6c87fb766798d500772537492a0d44cf892bd8278264643", "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/afbf3a9d9_ssk-side-lossless-r01-palm-glove.png", "bytes": 1528379},
+  {"path": "assets/hd-material-r02/lace-height.webp", "sha256": "edc4a7b8e49788e7f407b54a88660bac8169b2ffec943bc6654968c108a97813", "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/f20ee9dfa_ssk-hd-material-r02-lace-height.webp", "bytes": 1118124},
+  {"path": "assets/hd-material-r02/leather-texture.webp", "sha256": "2d81f641f75cdd71e17ad08fedc624e4ab183d30207ef8716534182f201d46d0", "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/ac08f92c1_ssk-hd-material-r02-leather-texture.webp", "bytes": 717562},
+  {"path": "assets/side-lossless-r01/palm-laces.png", "sha256": "d899db3a695b16f25702f73b5c70cb7917204b34935a18a454f97a7c0dce66ed", "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/8c3726475_ssk-side-lossless-r01-palm-laces.png", "bytes": 641701},
+  {"path": "assets/side-lossless-r01/palm-palm.png", "sha256": "482cf6d3b89a3d7b0aff3f9e1fd161a45adb48de49a4412e769e94aeba5d1333", "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/500a94459_ssk-side-lossless-r01-palm-palm.png", "bytes": 560857},
   {
     "path": "assets/hd-material-r02/snakeskin.webp",
     "sha256": "62b6ce0adb70b56533186f0413b89be14960aa71cf7a28ec357229163f4225c6",
