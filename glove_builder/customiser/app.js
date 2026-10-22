@@ -2002,13 +2002,26 @@ async function cardImage() {
   g.beginPath(); g.moveTo(72, 96); g.lineTo(W - 72, 96); g.stroke(); g.setLineDash([]);
   g.fillStyle = '#C8102E'; g.font = '500 22px "IBM Plex Mono", monospace'; g.textBaseline = 'alphabetic';
   g.fillText((S.lang === 'nl' ? 'SSK PRO CUSTOM · OP BESTELLING' : 'SSK PRO CUSTOM · MADE TO ORDER'), 72, 160);
-  // the glove, fitted to the middle band
-  const band = { x: 100, y: 190, w: W - 200, h: 860 };
-  const k = Math.min(band.w / glove.width, band.h / glove.height);
-  const gw = glove.width * k, gh = glove.height * k;
-  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 60; g.shadowOffsetY = 30;
-  g.drawImage(glove, band.x + (band.w - gw) / 2, band.y + (band.h - gh) / 2, gw, gh);
-  g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  // All four sides: the back large on the left, the palm, thumb and pinky
+  // sides stacked on the right. A side without a picture gets its name.
+  const sides = await captureOrderViews().catch(() => []);
+  const pic = v => sides.find(x => x.view === v && x.available);
+  const loadPic = v => new Promise(r => { const d = pic(v); if (!d) return r(null); const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = d.dataUrl; });
+  const smalls = await Promise.all(['palm', 'thumb', 'pinky'].map(loadPic));
+  const fit = (img, box, shadow) => {
+    const k = Math.min(box.w / img.width, box.h / img.height), gw = img.width * k, gh = img.height * k;
+    if (shadow) { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 60; g.shadowOffsetY = 30; }
+    g.drawImage(img, box.x + (box.w - gw) / 2, box.y + (box.h - gh) / 2, gw, gh);
+    g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+  };
+  fit(glove, { x: 72, y: 190, w: 720, h: 860 }, true);
+  ['palm', 'thumb', 'pinky'].forEach((v, i) => {
+    const box = { x: 820, y: 200 + i * 285, w: 308, h: 260 };
+    const img = smalls[i];
+    if (img) fit(img, box, false);
+    g.fillStyle = '#9A9A9A'; g.font = '500 16px "IBM Plex Mono", monospace'; g.textAlign = 'center';
+    g.fillText(t(VIEW_KEYS[v]).toUpperCase(), box.x + box.w / 2, box.y + box.h + 16); g.textAlign = 'left';
+  });
   // name, code, colours
   const name = (S.thumbText.trim() || S.name.trim() || (S.lang === 'nl' ? 'Mijn handschoen' : 'My glove')).toUpperCase();
   g.fillStyle = '#FFFFFF'; g.font = '800 72px "Barlow Condensed", Impact, sans-serif';
