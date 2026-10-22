@@ -218,6 +218,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
   background: var(--navy-900); color: var(--white); box-shadow: var(--shadow-card);
   font-family: var(--font-display); font-size: var(--text-xs); letter-spacing: var(--tracking-caps); text-transform: uppercase;
   white-space: nowrap;
+  /* The name arrives with the marking under it and fades in with it. */
+  animation: fade var(--dur-fast) var(--ease-out);
 }
 .stage-label small { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0; text-transform: none; color: var(--navy-100); }
 .stage-tag {

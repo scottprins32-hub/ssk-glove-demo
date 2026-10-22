@@ -97,14 +97,59 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     if (outlines.size > MIRROR_ZONES) outlines.delete(outlines.keys().next().value);
     return c;
   }
-  function showHover(id) {
+  // What the overlay is showing: one entry per outline, each with its own
+  // presence. A part rises as the part it replaces falls, so a sweep reads as
+  // one highlight travelling instead of a series of swaps, and a highlight is
+  // never cut off mid-flight by the next one arriving.
+  const FADE = 130;
+  const live = new Map();
+  let anim = 0;
+  function paint() {
+    hctx.clearRect(0, 0, hover.width, hover.height);
+    for (const [c, l] of live) { hctx.globalAlpha = l.a; hctx.drawImage(c, l.x, l.y); }
+    hctx.globalAlpha = 1;
+  }
+  function settle() {
+    for (const l of live.values()) l.a = l.want;
+    for (const c of [...live.keys()]) if (!live.get(c).want) live.delete(c);
+    paint();
+  }
+  function fade() {
+    cancelAnimationFrame(anim);
+    if (reduced() || !live.size) { settle(); return; }
+    let last = performance.now();
+    const step = now => {
+      const take = Math.min(48, now - last) / FADE; last = now;
+      let moving = false;
+      for (const l of live.values()) {
+        const away = l.want - l.a;
+        if (Math.abs(away) <= take) l.a = l.want;
+        else { l.a += Math.sign(away) * take; moving = true; }
+      }
+      for (const c of [...live.keys()]) { const l = live.get(c); if (!l.a && !l.want) live.delete(c); }
+      paint();
+      if (moving) anim = requestAnimationFrame(step); else settle();
+    };
+    anim = requestAnimationFrame(step);
+  }
+  // `snap` is for a repaint under the marking -- the glove changed, so the
+  // shape that would fade from is the old one. Everything else cross-fades.
+  function showHover(id, snap) {
     if (id === hovered) return;
     hovered = id;
-    if (hover.width !== canvas.width || hover.height !== canvas.height) { hover.width = canvas.width; hover.height = canvas.height; }
-    hctx.clearRect(0, 0, hover.width, hover.height);
+    if (hover.width !== canvas.width || hover.height !== canvas.height) {
+      align();
+      hover.width = canvas.width; hover.height = canvas.height;
+    }
+    const box = id ? outlineFor(id) : null;
+    for (const l of live.values()) l.want = 0;
+    if (box) {
+      const hit = live.get(box.c);
+      if (hit) hit.want = 1;
+      else live.set(box.c, { x: box.x, y: box.y, a: 0, want: 1 });
+    }
+    if (snap || reduced()) settle(); else fade();
     if (!id) { label.hidden = true; return; }
-    const c = outlineFor(id);
-    if (c) hctx.drawImage(c, 0, 0);
     const d = describe(id);
     if (!d) { label.hidden = true; return; }
     label.innerHTML = '';
@@ -125,7 +170,7 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     const r = canvas.getBoundingClientRect();
     return [(ev.clientX - r.left) * canvas.width / r.width, (ev.clientY - r.top) * canvas.height / r.height];
   }
-  function clear() { showHover(null); }
+  function clear(snap) { showHover(null, snap); }
 
   canvas.addEventListener('pointermove', ev => {
     pointer = ev;
@@ -168,7 +213,7 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
   /* --------------------------------------------------------------- flip */
   // `swap` draws the new side. Returns once the glove has settled.
   async function flip(direction, swap) {
-    clear();
+    clear(true);
     if (reduced() || !canvas.animate) { swap(); return; }
     const out = canvas.animate(
       [{ transform: 'perspective(1400px) rotateY(0deg)', opacity: 1 },
@@ -184,5 +229,19 @@ export function initStage({ canvas, hover, label, stage, renderer, mirror, zoneO
     await back.finished.catch(() => {});
   }
 
-  return { clear, flip, refresh: () => { const id = hovered; hovered = null; showHover(id); if (pointer) placeLabel(pointer); } };
+  // The overlay follows the glove: a window that changes size, or a stage that
+  // switches in or out of the compare layout, moves it with the picture.
+  align();
+  if (window.ResizeObserver) new ResizeObserver(align).observe(canvas);
+  addEventListener('resize', align);
+
+  return {
+    clear, flip,
+    refresh: () => {
+      const id = hovered; hovered = null;
+      if (id) showHover(id, true);                  // the same part, freshly read
+      else { cancelAnimationFrame(anim); live.clear(); paint(); }
+      if (pointer) placeLabel(pointer);
+    }
+  };
 }
