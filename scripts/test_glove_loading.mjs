@@ -163,7 +163,7 @@ test('real back metadata follows selected material dependencies without loading 
   const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json', import.meta.url)));
   const h = await harness({ metadata });
   const bundle = await h.loadGlove({ progressive: true });
-  const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0); // Back 2 and its legacy highlight also become dependencies.
+  const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0) + ['idmapLHT','embroideryLHT'].filter(k=>metadata.nativeBackTrace?.[k]).length + Object.keys(metadata.nativeBackTrace?.leftyRingHeals||{}).length; // Back 2 and its legacy highlight also become dependencies.
   const silicone = metadata.bullets.filter(b => b.name.startsWith('Silicone')).length;
   assert.equal(Object.keys(bundle.imgs).length, 84 + traced + silicone);
   assert.equal(h.images.size, 82 + traced + silicone);
@@ -464,4 +464,8 @@ test('traced pinky retries missing aliases and keeps exact geometry across web c
  await assert.rejects(b.views.pinky.load(),/body could not be loaded/);assert.equal(b.views.pinky.ready,false);await b.views.pinky.load();
  const r=new h.GloveRenderer(b);r.setView('pinky');r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);assert.equal(r.DATA.idmapLHT,null);
  for(const web of [null,'standard-i','spiral-i','smlee','trapeze']){r.setWeb(web);r.setWebMarked(!!web);assert.equal(r.DATA.tracedSeams,true);assert.equal(r.imgs.laces,b.views.pinky.imgs.trace);}
+});
+test('lefty ring leather repairs must load before the view becomes ready',async()=>{
+ const metadata={w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png',heal:'heal.png'},nativeBackTrace:{assets:{},leftyRingHeals:{back78:'heal'}}};
+ const h=await harness({metadata,imageFailures:{'heal.png':1}});await assert.rejects(h.loadGlove({progressive:true}),/body could not be loaded/);const b=await h.loadGlove({progressive:true});assert.equal(b.views.back.ready,true);assert.ok(b.imgs.heal);
 });

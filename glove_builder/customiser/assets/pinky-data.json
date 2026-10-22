@@ -391,7 +391,10 @@
     "scott_pinky_stitching": "assets/pinky-scott-trace-r20/stitching.webp",
     "scott_pinky_glove": "assets/pinky-scott-trace-r20/empty.webp",
     "scott_pinky_idmap": "assets/pinky-scott-trace-r20/idmap.png",
-    "scott_pinky_idmap_lht": "assets/pinky-scott-trace-r20/idmap-lht.png"
+    "scott_pinky_idmap_lht": "assets/pinky-scott-trace-r20/idmap-lht.png",
+    "lefty_ring_pinky_embroideryLHT": "assets/lefty-ring-r21/pinky/embroidery.webp",
+    "lefty_ring_pinky_idmapLHT": "assets/lefty-ring-r21/pinky/idmap.png",
+    "lefty_ring_pinky_back7_heal": "assets/lefty-ring-r21/pinky/back7-heal.webp"
   },
   "sheen": {
     "back4": 1,
@@ -827,6 +830,18 @@
         0,
         737,
         1100
+      ],
+      "lefty_ring_pinky_back7_heal": [
+        238,
+        64,
+        553,
+        823
+      ],
+      "lefty_ring_pinky_embroideryLHT": [
+        371,
+        232,
+        517,
+        577
       ]
     },
     "zones": [
@@ -1064,6 +1079,10 @@
         371
       ]
     ],
-    "idmapLHT": "scott_pinky_idmap_lht"
+    "idmapLHT": "lefty_ring_pinky_idmapLHT",
+    "embroideryLHT": "lefty_ring_pinky_embroideryLHT",
+    "leftyRingHeals": {
+      "back7": "lefty_ring_pinky_back7_heal"
+    }
   }
 }

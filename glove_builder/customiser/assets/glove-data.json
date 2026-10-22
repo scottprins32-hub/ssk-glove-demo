@@ -1483,7 +1483,13 @@
     "scott_back_embroidery": "assets/back-scott-trace-r18/embroidery.webp",
     "scott_back_stitching": "assets/back-scott-trace-r18/stitching.webp",
     "scott_back_glove": "assets/back-scott-trace-r18/empty.webp",
-    "scott_back_idmap": "assets/back-scott-trace-r18/idmap.png"
+    "scott_back_idmap": "assets/back-scott-trace-r18/idmap.png",
+    "lefty_ring_back_embroideryLHT": "assets/lefty-ring-r21/back/embroidery.webp",
+    "lefty_ring_back_idmapLHT": "assets/lefty-ring-r21/back/idmap.png",
+    "lefty_ring_back_back78_heal": "assets/lefty-ring-r21/back/back78-heal.webp",
+    "lefty_ring_back_back8_heal": "assets/lefty-ring-r21/back/back8-heal.webp",
+    "lefty_ring_back_welting_heal": "assets/lefty-ring-r21/back/welting-heal.webp",
+    "lefty_ring_back_laces_heal": "assets/lefty-ring-r21/back/laces-heal.webp"
   },
   "bbox": {
     "back2": [
@@ -3207,6 +3213,36 @@
         68,
         816,
         968
+      ],
+      "lefty_ring_back_back78_heal": [
+        154,
+        100,
+        333,
+        832
+      ],
+      "lefty_ring_back_back8_heal": [
+        138,
+        199,
+        241,
+        884
+      ],
+      "lefty_ring_back_welting_heal": [
+        200,
+        29,
+        597,
+        816
+      ],
+      "lefty_ring_back_laces_heal": [
+        97,
+        13,
+        920,
+        1021
+      ],
+      "lefty_ring_back_embroideryLHT": [
+        169,
+        211,
+        266,
+        603
       ]
     },
     "zones": [
@@ -3507,6 +3543,14 @@
         266,
         372
       ]
-    ]
+    ],
+    "embroideryLHT": "lefty_ring_back_embroideryLHT",
+    "idmapLHT": "lefty_ring_back_idmapLHT",
+    "leftyRingHeals": {
+      "back78": "lefty_ring_back_back78_heal",
+      "back8": "lefty_ring_back_back8_heal",
+      "welting": "lefty_ring_back_welting_heal",
+      "laces": "lefty_ring_back_laces_heal"
+    }
   }
 }

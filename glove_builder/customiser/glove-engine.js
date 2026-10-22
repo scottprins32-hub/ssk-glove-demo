@@ -228,7 +228,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {}),
           ...Object.values(DATA.nativePalmTrace?.assets || {}),
-          ...Object.values(DATA.nativeBackTrace?.assets || {}), ...Object.values(DATA.nativePinkyTrace?.assets || {}), DATA.nativePinkyTrace?.idmapLHT];
+          ...Object.values(DATA.nativeBackTrace?.assets || {}), ...Object.values(DATA.nativePinkyTrace?.assets || {}), DATA.nativePinkyTrace?.idmapLHT, DATA.nativePinkyTrace?.embroideryLHT, DATA.nativeBackTrace?.idmapLHT, DATA.nativeBackTrace?.embroideryLHT, ...Object.values(DATA.nativeBackTrace?.leftyRingHeals||{}), ...Object.values(DATA.nativePinkyTrace?.leftyRingHeals||{})];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded: '+core.filter(key=>DATA.assets[key]&&!v.imgs[key]).join(', '));
         const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
         const g = ic.getContext('2d', { willReadFrequently: true });
@@ -462,8 +462,8 @@ export class GloveRenderer {
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
           ...(['back','palm','pinky'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
-          ...(this.view==='pinky' && def.revision==='SCOTT-BACK-PALM-R03'?{idmapLHT:def.idmapLHT||null}:{}),
-          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true,...(this.view === 'thumb' ? {nativeHDetail:null,thumbWingtip:null,thumbLaceCorrection:null,nativeHWhiteWindows:null,nativeHTransparentWindows:null} : {})} : {}) },
+          ...(def.revision==='SCOTT-BACK-PALM-R03'?{idmapLHT:def.idmapLHT||null}:{}),
+          ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:def.embroideryLHT||null,leftyRingHeals:def.leftyRingHeals||{},embParts:def.embParts,sheen:{}, tracedSeams:true,...(this.view === 'thumb' ? {nativeHDetail:null,thumbWingtip:null,thumbLaceCorrection:null,nativeHWhiteWindows:null,nativeHTransparentWindows:null} : {})} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }
       Object.assign(this, { DATA:this.nativeContourBundle.DATA,
@@ -1282,6 +1282,7 @@ export class GloveRenderer {
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
       if(z.id==='welting')this.drawWeltEdgeHealing(ctx,state);
+      if(mirror && D.leftyRingHeals?.[z.id]){const q=onPad(this.tinted(D.leftyRingHeals[z.id],this.hex(z.id,state),z.id),z.id);ctx.drawImage(q,q._ox,q._oy);}
       let tinted = this.tinted(z.id, this.hex(z.id, state));
       // H thumb windows show a fixed white backing, independent of palm colour.
       // This is a display backing, not additional web leather or lace ownership.
@@ -1951,7 +1952,7 @@ export class GloveRenderer {
     let idData = this.idData;
     // User-traced pinky lettering stays readable on a left-handed glove;
     // its relocated artwork needs the matching visible-material pick map.
-    if (mirror && D.view === 'pinky' && D.idmapLHT && this.imgs[D.idmapLHT]) {
+    if (mirror && D.idmapLHT && this.imgs[D.idmapLHT]) {
       const key = 'pinky-lht-picks|' + D.idmapLHT;
       idData = this.cache.get(key);
       if (!idData) {
