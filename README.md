@@ -177,6 +177,15 @@ Stitching and embroidery keep the chart values throughout. Those are thread,
 and no photograph here resolves a stitch line, so the leather's measurement is
 not theirs to inherit.
 
+### SSK's own catalogue
+
+SSK Japan publishes its 2026 general baseball catalogue (2026年SSK野球総合カタログ)
+as a browsable e-book: <https://my.ebook5.net/ssksports/26sougou/>. It is the
+manufacturer's own reference for models, webs, options and colour names, so check
+it before treating anything here as settled, or before asking Pim something it
+already answers. The bag configurator used pp. 108-111 to close an open question
+in September; nothing in this repo has been checked against it yet.
+
 ## One assumption still standing
 
 The builder moves **Palm** and **Back 2** together, on the assumption that they
