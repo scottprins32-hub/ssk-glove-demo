@@ -1407,7 +1407,7 @@ function renderColours(b) {
    then the palette by family. Same buttons and keys as swatchGrid, so the
    keyboard and the checks find them where they were. */
 /* One colour onto one part, with the parts that are cut from the same
-   leather following, then the stitch runs round it on the glove. */
+   leather following. */
 function setColour(field, v) {
   snapshot();
   S.colors[field] = v;
@@ -1416,8 +1416,6 @@ function setColour(field, v) {
   if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
   if (held && PALETTE_OF(field) === held.palette) { held = { ...held, num: v, hex: hexOf(field), label: colName(field) }; }
   draw(); paint();
-  const layer = viewFieldLayer()[field];
-  if (layer && R.DATA.zones.some(z => z.id === layer)) interact?.pulse(layer);
 }
 /* Paint mode: a colour is held, and every part clicked takes it. */
 let held = null, swatchQuery = '';
@@ -2730,7 +2728,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     if (interact) interact.flip(direction, swap); else swap();
   };
   interact = initStage({
-    canvas: cv, hover: $('#hover'), label: $('#stagelabel'), stage: $('#stage'),
+    canvas: cv, label: $('#stagelabel'), stage: $('#stage'),
     renderer: () => R, mirror: isLefty,
     zoneOf: (x, y) => (viewAvailability(S.view).ok && selectionIsReady()) ? R.zoneAt(x, y, isLefty()) : null,
     describe: id => {
