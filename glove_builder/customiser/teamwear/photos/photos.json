@@ -1,0 +1,205 @@
+{
+ "bsj200": {
+  "black": {
+   "back": {
+    "src": "photos/bsj200-black-back.webp",
+    "w": 731,
+    "h": 1000
+   },
+   "front": {
+    "src": "photos/bsj200-black-front.webp",
+    "w": 726,
+    "h": 1000
+   }
+  },
+  "navy": {
+   "back": {
+    "src": "photos/bsj200-navy-back.webp",
+    "w": 731,
+    "h": 1000
+   },
+   "front": {
+    "src": "photos/bsj200-navy-front.webp",
+    "w": 726,
+    "h": 1000
+   }
+  },
+  "royal": {
+   "back": {
+    "src": "photos/bsj200-royal-back.webp",
+    "w": 731,
+    "h": 1000
+   },
+   "front": {
+    "src": "photos/bsj200-royal-front.webp",
+    "w": 725,
+    "h": 1000
+   }
+  },
+  "scarlet": {
+   "back": {
+    "src": "photos/bsj200-scarlet-back.webp",
+    "w": 731,
+    "h": 1000
+   },
+   "front": {
+    "src": "photos/bsj200-scarlet-front.webp",
+    "w": 726,
+    "h": 1000
+   }
+  }
+ },
+ "bst99": {
+  "black": {
+   "front": {
+    "src": "photos/bst99-black-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "forest-green": {
+   "front": {
+    "src": "photos/bst99-forest-green-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "gold": {
+   "front": {
+    "src": "photos/bst99-gold-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "navy": {
+   "front": {
+    "src": "photos/bst99-navy-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "orange": {
+   "front": {
+    "src": "photos/bst99-orange-front.webp",
+    "w": 636,
+    "h": 1000
+   }
+  },
+  "purple": {
+   "front": {
+    "src": "photos/bst99-purple-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "royal": {
+   "front": {
+    "src": "photos/bst99-royal-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "scarlet": {
+   "front": {
+    "src": "photos/bst99-scarlet-front.webp",
+    "w": 635,
+    "h": 1000
+   }
+  },
+  "white": {
+   "front": {
+    "src": "photos/bst99-white-front.webp",
+    "w": 634,
+    "h": 1000
+   }
+  }
+ },
+ "bst99ls": {
+  "black": {
+   "front": {
+    "src": "photos/bst99ls-black-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "forest-green": {
+   "front": {
+    "src": "photos/bst99ls-forest-green-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "gold": {
+   "front": {
+    "src": "photos/bst99ls-gold-front.webp",
+    "w": 740,
+    "h": 1000
+   }
+  },
+  "navy": {
+   "front": {
+    "src": "photos/bst99ls-navy-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "orange": {
+   "front": {
+    "src": "photos/bst99ls-orange-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "royal": {
+   "front": {
+    "src": "photos/bst99ls-royal-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "scarlet": {
+   "front": {
+    "src": "photos/bst99ls-scarlet-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  },
+  "white": {
+   "front": {
+    "src": "photos/bst99ls-white-front.webp",
+    "w": 739,
+    "h": 1000
+   }
+  }
+ },
+ "hc2": {
+  "scarlet": {
+   "front": {
+    "src": "photos/hc2-scarlet-front.webp",
+    "w": 1561,
+    "h": 1000
+   }
+  },
+  "black": {
+   "front": {
+    "src": "photos/hc2-black-front.webp",
+    "w": 1561,
+    "h": 1000
+   }
+  },
+  "royal": {
+   "front": {
+    "src": "photos/hc2-royal-front.webp",
+    "w": 1561,
+    "h": 1000
+   }
+  },
+  "navy": {
+   "front": {
+    "src": "photos/hc2-navy-front.webp",
+    "w": 1561,
+    "h": 1000
+   }
+  }
+ }
+}

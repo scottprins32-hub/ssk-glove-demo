@@ -17,7 +17,7 @@ def build(stage_assets=None):
     for item in SOURCE.iterdir():
         if item.is_file() and item.suffix.lower() in {'.html', '.js', '.css', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.ico'}:
             shutil.copy2(item, OUTPUT / item.name)
-    for name in ('assets', 'ds'):
+    for name in ('assets', 'ds', 'teamwear'):
         shutil.copytree(SOURCE / name, OUTPUT / name)
     # Pages serves this folder directly; no Jekyll rewriting of assets.
     (OUTPUT / '.nojekyll').touch()

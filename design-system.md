@@ -9,8 +9,36 @@ itself](#where-this-contradicts-itself). Nothing here was invented to fill a
 gap; gaps are listed as gaps in [What this system does not answer
 yet](#what-this-system-does-not-answer-yet).
 
-Companion file: **`tokens.css`** — the same system as plain custom
-properties. One `<link>`, no build step, no framework.
+Companion files: **`tokens.css`** — the same system as plain custom
+properties. One `<link>`, no build step, no framework. **`tokens-teamwear.css`**
+— the black / red / white theme of the teamwear configurator (see
+[Themes](#themes)), same token names, linked after `tokens.css`.
+
+**Two configurators now stand on this system**: the glove configurator
+(`glove_builder/customiser/`, navy) and the teamwear configurator
+(`ssk-custom-kleding`, ink). Sections that describe only one say so. Where the
+teamwear configurator answered a question this document used to list as open,
+the gap is marked *answered* in [What this system does not answer
+yet](#what-this-system-does-not-answer-yet) and the pattern is described under
+[Patterns from the teamwear configurator](#patterns-from-the-teamwear-configurator).
+
+---
+
+## Reference material
+
+| What | Where | Use it for |
+|---|---|---|
+| **SSK 2026 baseball general catalogue** ("2026年SSK野球総合カタログ", Japanese, e-book) | <https://my.ebook5.net/ssksports/26sougou/> | The manufacturer's own product range, model names and photography. The source to check when a model, colour name or product photo in either configurator is in doubt. It is the maker's book, not SSK Europe's price list: prices and what is actually stocked come from Pim and the SSK Europe shop. |
+
+Rules for using it:
+
+- **Colours and shapes**: match the booklet's colour names to the catalogue
+  entries (`COLOURS`, photo sets) rather than inventing a name.
+- **Never copy a price from it.** Prices in the configurators come from the
+  SSK Europe shop and Pim's list (see `docs/pim-assortment.md` in the teamwear
+  repo).
+- **Photography stays licensed material.** Link to the booklet; do not copy its
+  pages into either repository.
 
 ---
 
@@ -53,7 +81,46 @@ one.
 
 ---
 
+## Themes
+
+One component layer, two sets of values. A theme is a file that redefines the
+**same semantic token names**; no component ever changes.
+
+| | **Glove** (`tokens.css`) | **Teamwear** (`tokens-teamwear.css`) |
+|---|---|---|
+| Brand ground | Navy `#0B1F3A` | Ink `#0B0B0C` — there is no navy anywhere |
+| Greys | Warm (tan bias, sits with leather) | Neutral (the shop is black and white) |
+| Action | Stitch red `#C8102E` | Stitch red `#C8102E` — unchanged |
+| Selection | Navy ring / navy fill | Ink ring / ink fill |
+| The rule | Red acts, navy selects | Red acts, **black** selects |
+| Focus ring | Blue `rgb(31 72 120 / .55)` | Red `rgb(200 16 46 / .6)` |
+| Accent | Leather tan (advisory callout) | None |
+| Dark mode | None | `prefers-color-scheme: dark`, stage stays light |
+| High contrast | None | `prefers-contrast: more` |
+| Languages | NL / EN | NL / EN (DE written, switched off) |
+
+**Rule for a new theme:** change values, never names; keep "one colour acts,
+one colour selects"; and keep the product's own colour world (photographs,
+the customer's palette) out of the UI palette — that rule is theme-independent.
+
+**Dark mode, as shipped in teamwear, and its three traps:**
+
+1. The **stage stays light**. It shows product photos cut out on white; a dark
+   ground makes every garment look wrong. Chips that sit on the stage (tag,
+   tool bar) stay light with it.
+2. `--ink-*` flips (headings are ink on light, paper on dark), so
+   `--surface-inverse`, which follows `--ink-900`, would become light. Surfaces
+   that must stay dark — the header — take `--ink-950` literally in dark mode.
+3. **Never override `--white`.** Components use it for "text on a red or black
+   fill"; a dark `--white` turns every button label invisible. Set
+   `--text-inverse` explicitly instead.
+
+---
+
 ## Colour
+
+*(Glove theme values. The teamwear equivalents are in
+[Themes](#themes) and `tokens-teamwear.css`.)*
 
 Four ramps and a semantic layer on top. The ramps are the vocabulary; the
 semantic names are what components should reach for.
@@ -264,6 +331,24 @@ Two behavioural timings are currently magic numbers and belong in the system:
 (`app.css:323`). Note it only covers `transition` — the product happens to
 have no `@keyframes`, so this is currently sufficient by accident. Any
 animation added later needs adding here too.
+
+### Teamwear: motion for orientation, never for the product
+
+The teamwear configurator has keyframes, so the "accident" above no longer
+holds there, and the rule is restated: **move what tells people where they
+are; never delay what they are reading.** The product still repaints at once.
+
+| Token | Value | What moves |
+|---|---|---|
+| `--dur-panel` | 380ms | The panel slides in (28px, fade) when the *phase* changes — not on a section change inside a phase. |
+| `--dur-sheet` | 250ms | Phone sheet height; toast in and out. |
+| `--dur-stage` | 450ms | The previous photo fades out *over* the new one when a colour, view or model changes. The new state is already there underneath; the fade is a cover, not a wait. |
+| `--dur-land` | 500ms | A print landing on the cloth (a small settle). |
+| *price* | ~400ms | The total counts to its new value. |
+
+Every one of these is switched off under `prefers-reduced-motion: reduce`, and
+the opening screen is not shown at all. Tests run with reduced motion for the
+same reason a user might: so nothing is in the way of the first click.
 
 ---
 
@@ -569,6 +654,155 @@ changes on the last step, and a second primary button inside the review body.
 
 ---
 
+## Patterns from the teamwear configurator
+
+Everything below exists and is tested in `ssk-custom-kleding`. Class and
+attribute names are given so a second implementation can match them.
+
+### Phases and sections
+
+Three **phases** — Club → Design → Quote — and inside Design **six sections on
+one scrolling panel** (product, model, colours, logos, names, sizes). This
+keeps idea 1 (one decision at a time) while ending the page-per-step feel:
+
+- The section chips (`.subnav`) scroll-spy; a click scrolls, a scroll lights
+  the chip. On phones the chips are a single scroll row, not a sticky wrap.
+- **The Next button names what comes next and what is still missing**
+  ("Verder: Namen & nummers (nog geen logo)"). It is the cheapest, most-read piece of
+  guidance in the product.
+- A section **summarises itself in one mono line** under its title (`.sec-sum`)
+  and a click on the title **folds it** to that line. Sections above the
+  current one with nothing missing get a tick instead of a number.
+- A **checklist** in the step bar (`.todo`: logo, colours, product, players,
+  contact) is a row of jump links, each ticking itself. It is hidden below
+  1100px; the Next button carries the same information there.
+- Phase changes make history entries; the browser's Back walks them.
+
+### The stage
+
+The product is a control (idea 2), extended:
+
+- **Hotspots** are polygons on the photo (`.hot[data-hot][data-pl]`), keyboard
+  focusable, with an accessible name. A click opens that spot's section.
+- **Hover link, both ways.** Hovering a print spot or part in the panel
+  lights it on the garment, and the reverse (`.is-spot`). Pointer devices
+  only.
+- **Tools** sit top-right, one row: Compare, Lens, Team, Kit, Variants, Note,
+  Background. A tool that cannot apply is *absent*, not greyed (idea 4).
+- **Multi views replace the single garment** and share one container
+  (`.multi`): *Team* (three players of the roster, each with own name and
+  number), *Kit* (every piece of the order side by side, the one being edited
+  marked), *Variants* (A/B/C side by side). A click on a pane opens it.
+- **Notes** are numbered pins in an overlay layer (`#pins`) positioned from
+  fractions of the photo, so they survive resizes; they live on the item and
+  therefore travel in links, mail and the quote, where they are drawn into the
+  picture.
+- **Background** cycles studio / pitch / dark. It is a presentation choice,
+  stored, and it never changes what is ordered.
+- **Keyboard:** the stage takes focus (`tabindex=0`); Tab walks the print
+  spots, Enter opens one, arrows turn the garment. Single keys outside text
+  fields: `1`–`6` sections, `N` note, `T` team, `K` kit, `B` background,
+  `Ctrl+Z` / `Ctrl+Shift+Z` undo and redo, `?` lists them.
+
+### Messages: toast, error bar, offline bar
+
+The glove configurator listed "no confirmation pattern" and "no error states"
+as gaps. Teamwear's answer is four things with four jobs, so a message never
+has to guess its own weight:
+
+| Pattern | Element | `role` | Lasts | Use for |
+|---|---|---|---|---|
+| **Toast** | `.toast` | `status` (polite) | 4s; 10s with an action | A result, and at most **one** next step: "Logo staat op het shirt → Verder naar ontwerp". |
+| **Error bar** | `.errbar` | `alert` | until closed | Once per session. Says the design is saved and offers a report by mail. |
+| **Offline bar** | `.offline` | `status` | while offline | "Je bent offline. Bewerken kan gewoon; versturen zodra je weer verbinding hebt." |
+| **Live region** | `.sr-only#live` | `polite` | — | The total and the section, for screen readers that cannot watch the price tween. |
+
+A toast is dismissed by navigation. A toast never carries a destructive
+action. An error report contains the message, page, browser and the local
+usage counter — **never a logo and never a roster**.
+
+### Overlays
+
+| | Element | Rule |
+|---|---|---|
+| **Opening screen** | `#intro` | Wordmark, one line, ~2.2s; any key or tap skips. Replays on every homepage load; never on a deep link, never with reduced motion. `[hidden]` must beat `display:flex` — a hidden overlay that still intercepts pointer events is the bug to test for. |
+| **Tour** | `#tour` | Four spotlights, first visit only (`ssk-tour-seen`), skippable, restartable from the shortcuts sheet. The hole is a `box-shadow: 0 0 0 9999px` cut-out, not four rectangles. |
+| **Shortcuts** | `<dialog id="keys">` | Native `<dialog>` + `showModal()`: focus move, focus trap, Escape and inert background come for free. This closes most of the "modal semantics stop at the visual" gap below. |
+| **Demo** | `.demobar` | A twenty-second scripted run on a demo club; the visitor's own state is backed up first and restored after, and input is blocked while it runs. |
+
+### The phone: panel as a sheet
+
+At ≤900px the layout does **not** stack and scroll the page; the body is fixed
+and the panel is a **sheet** over the stage:
+
+- The stage is absolutely positioned and shrinks to `bottom: var(--sheet)`;
+  the panel is `height: var(--sheet)` with a 44×5 drag handle.
+- Three snaps: `--sheet-low 34%`, `--sheet-mid 56%`, `--sheet-high 88%`. A tap
+  on the handle flips mid ↔ high; a drag snaps to the nearest.
+- While dragging, transitions are off (`.is-dragging`); otherwise 250ms.
+- The panel title shrinks and the lead is hidden — the Next button and the
+  section summaries carry the guidance.
+- Print, quote and player pages opt out (`position: static`).
+- A web app manifest (`manifest.webmanifest`, 192 and 512 icons) makes it
+  installable; one toast offers it, never on the first step.
+
+### Variants
+
+A **variant** is a named snapshot of the item being built (A, B, C … up to F).
+The current one stays in sync on every save; switching stores the item being
+edited back into its slot; removing one never deletes the item you are
+editing. Variants travel in the draft and the design file, not in links, and
+the **vote link** carries two of them so a team can choose between whole
+designs rather than just colours.
+
+### Links, and what travels in them
+
+Hash forms, all handled by one pack/unpack pair (deflate-raw → base64url, `z`
+prefix; `j` + URI-encoded JSON as fallback):
+
+| Hash | Opens |
+|---|---|
+| `#d=…` | The design (cart, item, club) |
+| `#d=…&r=<section>` | The design **at a section**: the *role links* — board (design), coach (sizes), treasurer (`#q=1&d=…`, the quote page) |
+| `#p=…` | A one-row player form (name, number, size) that returns one line to paste |
+| `#v=…` | A vote page: two colours, or two variants; returns one line |
+| `#c=…` | A club card: name, colours, language. The logo is uploaded again |
+| `#stats` | The usage counter of this browser as a page |
+
+**Logos never travel in a link.** Idea 5 ("personal data never goes in a
+link") is *not* fully met here: see the departures below.
+
+### Printable outputs
+
+The glove configurator listed "no print stylesheet" as a gap. Teamwear prints
+three things through one mechanism — build into `#printsheet`, add `body.printing`
+(which hides everything else), call `window.print()`, clean up on `afterprint`:
+
+- **Quote sheet** — club, each product with mockups, article codes, totals,
+  the needed-by date, notes, and a **QR of the quote link** so the paper
+  reopens the design.
+- **Fitting-night form** — one A4: the model's sizes as chips, 24 rows to
+  write names, numbers, sizes and initials, and the size chart as a QR.
+- **Club card** — name, colour dots, QR; next season's one-scan start.
+
+QR codes use a vendored MIT library (`vendor/qrcode.js`), imported only when a
+sheet is built, so the first screen pays nothing for it.
+
+### Measuring without tracking
+
+A usage counter lives in the browser (`ssk-stats`), is shown at `#stats`, is
+attached to a feedback or error mail only when the visitor sends one, and is
+never transmitted by the page itself. Add a counter for a new feature with
+`track('name')`; do not add a network call.
+
+### Lean mode
+
+On `saveData` or a 2g connection the page skips pre-rendering the other
+colours and the crossfades, and says so in the stage tag. It is a mode, not a
+second UI.
+
+---
+
 ## Where this contradicts itself
 
 Listed worst first. Each names the value to standardise on. `tokens.css`
@@ -694,9 +928,47 @@ neither end of the leading scale, while `--leading-snug: 1.25` is declared and
 unused. **18.** Two image aspect ratios inside the same `.card` element —
 `4/3` in CSS, `200/237` set from JS for starter thumbnails.
 
+### Teamwear: where it departs from the rules above
+
+These are the places the teamwear configurator does not meet this document,
+named so they are decisions and not drift.
+
+**T1. Personal data does travel in a teamwear link.** Idea 5 says a link
+describes the product, not the person. `shareUrl` in teamwear sends the club
+block (contact person, e-mail, phone, notes) and every roster row (names and
+numbers) — the treasurer and coach role links need the roster, but the
+WhatsApp share button sends the same payload to a group chat. **Recommended:**
+two payloads. A *design link* (default, WhatsApp, vote, board role) with colours,
+placements and notes only; a *work link* (coach, treasurer) with the roster,
+shown with a one-line warning. Not yet changed.
+
+**T2. Two dark-mode literals.** The header and the stage chips use literals
+(`#050505`, `#FFFFFF`) in dark mode because the semantic tokens that would
+carry them have just flipped. Honest, documented above, but still literals.
+
+**T3. Toast z-index equals the glove scrim.** `60` for both; fine because they
+never coexist, wrong if a modal ever opens over a toast.
+
+**T4. `ds/tokens/effects.css` in the teamwear repo used to carry navy
+shadows, a blue focus ring and a `var(--navy-900)` link hover** — which is an
+undefined variable in the ink theme, so hovered links lost their colour.
+**Fixed** (shadows black, ring red, hover `--ink-900`). The remaining
+duplication is that the repo keeps its own copy of the token files; the next
+step is to link `tokens.css` + `tokens-teamwear.css` from here instead.
+
 ---
 
 ## What this system does not answer yet
+
+> **Answered by the teamwear configurator** (details under [Patterns from the
+> teamwear configurator](#patterns-from-the-teamwear-configurator)): dark
+> theme (see Themes); a z-index scale above the glove one; a confirmation
+> pattern (toast + live region); error and offline states; modal semantics
+> (native `<dialog>` for the shortcuts sheet); a print stylesheet (three
+> outputs); a text-overflow strategy for the stage tag (ellipsis, capped width). **Still open in both:** icon system, form
+> semantics, canvas pixel-density rule, naming convention, a longer-rail rule.
+> The paragraphs below are the original glove-era wording and are kept as the
+> record of what was missing.
 
 Honest gaps. A second configurator will hit all of these, and this codebase has
 no opinion to copy.
