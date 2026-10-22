@@ -1325,8 +1325,8 @@
     "laceweb_standard-i_hi": "assets/laceweb_standard-i_hi.webp",
     "webfinger_standard-i": "assets/webfinger_standard-i.webp",
     "webfinger_standard-i_hi": "assets/webfinger_standard-i_hi.webp",
-    "pad": "assets/pad.webp",
-    "pad_hi": "assets/pad_hi.webp",
+    "pad": "assets/pad-thread-r01/pad.webp",
+    "pad_hi": "assets/pad-thread-r01/empty.webp",
     "hood": "assets/hood-thread-r02/hood.webp",
     "hood_hi": "assets/hood-thread-r02/empty.webp",
     "bullet_logo": "assets/bullet_logo.webp",
@@ -1490,7 +1490,8 @@
     "lefty_ring_back_back8_heal": "assets/lefty-ring-r21/back/back8-heal.webp",
     "lefty_ring_back_welting_heal": "assets/lefty-ring-r21/back/welting-heal.webp",
     "lefty_ring_back_laces_heal": "assets/lefty-ring-r21/back/laces-heal.webp",
-    "lefty_ring_back_back6_heal": "assets/lefty-ring-r21/back/back6-heal.webp"
+    "lefty_ring_back_back6_heal": "assets/lefty-ring-r21/back/back6-heal.webp",
+    "pad_stitching": "assets/pad-thread-r01/stitching.png"
   },
   "bbox": {
     "back2": [
@@ -1890,16 +1891,16 @@
       486
     ],
     "pad": [
-      435,
+      430,
       445,
-      555,
-      805
+      556,
+      806
     ],
     "pad_hi": [
-      435,
+      430,
       445,
-      555,
-      805
+      556,
+      806
     ],
     "hood": [
       426,
@@ -2680,6 +2681,12 @@
       105,
       308,
       811
+    ],
+    "pad_stitching": [
+      435,
+      448,
+      554,
+      785
     ]
   },
   "knotHeal": {
@@ -2749,7 +2756,8 @@
     "laceSourceSha256": "d6c2abfb25c5c584d680adcc4376e868fa587f895f66bbf55302ab4eeb06fcd3"
   },
   "fingerThread": {
-    "hood": "hood_stitching"
+    "hood": "hood_stitching",
+    "pad": "pad_stitching"
   },
   "materialResponse": {
     "trapeze_hd_laces": {
@@ -3560,5 +3568,11 @@
       "welting": "lefty_ring_back_welting_heal",
       "laces": "lefty_ring_back_laces_heal"
     }
-  }
+  },
+  "padBindingUnder": [
+    430,
+    786,
+    557,
+    1100
+  ]
 }

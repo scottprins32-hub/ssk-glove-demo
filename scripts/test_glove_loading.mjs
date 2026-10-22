@@ -163,7 +163,7 @@ test('real back metadata follows selected material dependencies without loading 
   const metadata = JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json', import.meta.url)));
   const h = await harness({ metadata });
   const bundle = await h.loadGlove({ progressive: true });
-  const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0) + ['idmapLHT','embroideryLHT'].filter(k=>metadata.nativeBackTrace?.[k]).length + Object.keys(metadata.nativeBackTrace?.leftyRingHeals||{}).length; // Back 2 and its legacy highlight also become dependencies.
+  const traced = Object.keys(metadata.nativeBackTrace?.assets || {}).length + (metadata.nativeBackTrace ? 2 : 0) + ['idmapLHT','embroideryLHT'].filter(k=>metadata.nativeBackTrace?.[k]).length + Object.keys(metadata.nativeBackTrace?.leftyRingHeals||{}).length + (metadata.fingerThread?.pad ? 1 : 0); // Back 2 and its legacy highlight also become dependencies.
   const silicone = metadata.bullets.filter(b => b.name.startsWith('Silicone')).length;
   assert.equal(Object.keys(bundle.imgs).length, 84 + traced + silicone);
   assert.equal(h.images.size, 82 + traced + silicone);

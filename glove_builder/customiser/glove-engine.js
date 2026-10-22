@@ -1278,7 +1278,7 @@ export class GloveRenderer {
     // The hood is different: hood.jpg shows its rounded lower cap lying free
     // over the hand opening, so for the hood nothing comes back over it.
     let padOn = false;
-    const padKeep = this.pad === 'pad' ? D.padUnder : null;
+    const padKeep = this.pad === 'pad' ? D.padBindingUnder || D.padUnder : null;
     const onPad = (c, zid) => !padOn ? c : this.underPad(c,
       (zid === 'lining' || zid === 'binding') ? padKeep : null);
     for (const z of D.zones) {
@@ -1400,7 +1400,7 @@ export class GloveRenderer {
         // brought back a spur of welt seam that the segmentation had put on
         // the binding's layer, and on the pad that is a blue dot poking out
         // of the leather with nothing attached to it.
-        const u = D.padUnder;
+        const u = this.pad === 'pad' ? D.padBindingUnder || D.padUnder : D.padUnder;
         ctx.save();
         if (u) {
           ctx.beginPath();
@@ -1745,7 +1745,7 @@ export class GloveRenderer {
       // Selection feedback follows the same visible overlap as the leather.
       // Preserve the pad's binding/lining overlap; the hood covers both.
       c = this.underPad(c, this.pad === 'pad'
-        && ['binding', 'lining'].includes(highlight.id) ? D.padUnder : null);
+        && ['binding', 'lining'].includes(highlight.id) ? D.padBindingUnder || D.padUnder : null);
       const fingerThread = D.fingerThread?.[this.pad];
       if (highlight.id === 'stitching' && fingerThread && this.imgs[fingerThread]) {
         const combined = document.createElement('canvas'); combined.width = D.w; combined.height = D.h;
@@ -1768,11 +1768,11 @@ export class GloveRenderer {
       ctx.restore();
     }
     if (this.imgs.lining && this.DATA.assets.lining?.includes('_refined')) {
-      const lining=this.underPad(this.tinted('lining',this.hex('lining',state)),this.pad==='pad'?D.padUnder:null);
+      const lining=this.underPad(this.tinted('lining',this.hex('lining',state)),this.pad==='pad'?D.padBindingUnder||D.padUnder:null);
       ctx.drawImage(lining,lining._ox,lining._oy);
     }
     if (this.imgs.binding_thread_detail) {
-      const thread=this.underPad(this.tinted('binding_thread_detail',this.hex('stitching',state)),this.pad==='pad'?D.padUnder:null);
+      const thread=this.underPad(this.tinted('binding_thread_detail',this.hex('stitching',state)),this.pad==='pad'?D.padBindingUnder||D.padUnder:null);
       ctx.drawImage(thread,thread._ox,thread._oy);
     }
     if (this.imgs.master_pinky_openings) {
