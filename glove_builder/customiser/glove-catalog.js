@@ -11,6 +11,16 @@ export const HANDS = [
 
 export const SIZES = ['11.5"', '11.75"', '12"', '12.25"', '12.5"', '12.75"'];
 
+// Size advice by position, the way 44 Pro Gloves asks it: position first,
+// then the sizes that suit it. Advice only — every size stays orderable and
+// the position never goes on the order.
+export const POSITIONS = [
+  { id: 'infield', en: 'Infield (2B / SS)', nl: 'Binnenveld (2B / SS)', sizes: ['11.5"', '11.75"'] },
+  { id: 'third', en: 'Third base / pitcher', nl: 'Derde honk / pitcher', sizes: ['11.75"', '12"'] },
+  { id: 'outfield', en: 'Outfield', nl: 'Buitenveld', sizes: ['12.5"', '12.75"'] },
+  { id: 'utility', en: 'Utility / not sure yet', nl: 'Utility / weet ik nog niet', sizes: ['12"', '12.25"'] }
+];
+
 export const PADS = [
   { id: 'None', en: 'None', nl: 'Geen', img: F + 'finger_pad/None.jpg' },
   { id: 'Finger Pad', en: 'Finger pad', nl: 'Vingerpad', img: 'assets/ref/finger_pad.webp' },
@@ -170,6 +180,13 @@ export const T = {
   en: {
     builder: 'Custom glove builder', model: 'SSK Pro Custom',
     skipToChoices: 'Skip to the choices', turnHint: 'Drag to turn',
+    parked: 'Glove %n is in your order. Build the next one from this design, or start blank.',
+    whatsapp: 'Share on WhatsApp', turnClip: 'Turntable clip', clipBusy: 'Recording…', clipDone: 'Clip ready',
+    clipFailed: 'No clip on this browser', shortcuts: 'Keyboard shortcuts', gotIt: 'Got it',
+    position: 'Position', positionLead: 'Where do you play? It narrows the sizes that suit you.',
+    recommended: 'Advised', sizeAdvice: 'Advice only: every size can be ordered. Infield gloves are shorter and close faster; outfield gloves are longer for reach.',
+    keys: { help: 'This panel', steps: 'Go to step 1 – 8', turn: 'Turn the glove (glove focused)', zoom: 'Zoom in and out, double-click to reset',
+      esc: 'Put a held colour down, close a panel', undo: 'Undo', redo: 'Redo' },
     backFinish: 'Back panels, Back 1 to 9', backFinishStdSub: 'Smooth leather', backFinishCrocSub: 'All nine together, no surcharge',
     stillToChoose: '%n to choose', nextChoice: 'Next: %s', allChosen: 'Everything chosen',
     coach: { turn: 'Drag the glove, or swipe, to see every side.', pick: 'Click any part of the glove to colour it. Hover shows its name.', compare: 'Overzicht keeps a version, so you can compare and go back.' }, gotIt: 'Got it',
@@ -296,6 +313,13 @@ export const T = {
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
     skipToChoices: 'Naar de keuzes', turnHint: 'Sleep om te draaien',
+    parked: 'Handschoen %n staat in je bestelling. Bouw de volgende vanuit dit ontwerp, of begin blanco.',
+    whatsapp: 'Deel via WhatsApp', turnClip: 'Draaiclip', clipBusy: 'Opnemen…', clipDone: 'Clip klaar',
+    clipFailed: 'Geen clip in deze browser', shortcuts: 'Sneltoetsen', gotIt: 'Begrepen',
+    position: 'Positie', positionLead: 'Waar speel je? Dat maakt de maatkeuze kleiner.',
+    recommended: 'Advies', sizeAdvice: 'Alleen advies: elke maat is te bestellen. Binnenveldhandschoenen zijn korter en sluiten sneller; buitenveldhandschoenen zijn langer voor bereik.',
+    keys: { help: 'Dit paneel', steps: 'Naar stap 1 – 8', turn: 'Handschoen draaien (handschoen in focus)', zoom: 'In- en uitzoomen, dubbelklik zet terug',
+      esc: 'Vastgehouden kleur loslaten, paneel sluiten', undo: 'Ongedaan maken', redo: 'Opnieuw' },
     backFinish: 'Rugpanelen, Back 1 t/m 9', backFinishStdSub: 'Glad leer', backFinishCrocSub: 'Alle negen tegelijk, zonder meerprijs',
     stillToChoose: 'Nog %n te kiezen', nextChoice: 'Nog %n: %s', allChosen: 'Alles gekozen',
     coach: { turn: 'Sleep de handschoen, of veeg, om elke kant te zien.', pick: 'Klik een onderdeel van de handschoen om het te kleuren. Zweven toont de naam.', compare: 'Via Overzicht leg je een versie vast, om te vergelijken en terug te gaan.' }, gotIt: 'Begrepen',

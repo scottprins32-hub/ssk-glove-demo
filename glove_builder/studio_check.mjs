@@ -13,7 +13,7 @@ try {
   const page = await context.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(base);
-  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button:not([disabled])').length === 8);
   await page.locator('#lang-en').click();
   // An accepted blank SSK2 design must survive being shared as a link: the
   // page re-issues it in the current code generation, and the link must
@@ -27,20 +27,20 @@ try {
   await page.evaluate(() => localStorage.clear());
   await page.goto('about:blank'); // force startup restoration, not a hash-only navigation
   await page.goto(blankLink);
-  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button:not([disabled])').length === 8);
   assert.equal(await page.locator('#refcode').textContent(), blankCode, 'blank design survives shared link');
   await page.locator('#steps button').nth(5).click();
   assert.ok(await page.getByRole('button', { name: 'Personalisation is correct' }).isVisible(), 'blank shared design retains required personalisation check');
   await page.evaluate(() => localStorage.clear());
   await page.goto('about:blank');
   await page.goto(base);
-  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button:not([disabled])').length === 8);
   await page.locator('#lang-en').click();
   const original = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   const hostile = '<img src=x onerror="window.xss=1">';
   await page.evaluate(([state, name]) => localStorage.setItem('ssk-glove-v1', JSON.stringify({ ...state, name, phone: '0612345678', thumbText: 'MY GLOVE', numberColor: '20', thumbOutline: '20', size: '11.5"', webType: 'H-Web', colors: { ...state.colors, palm: '10', back2: '90' } })), [original, hostile]);
   await page.reload();
-  await page.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await page.waitForFunction(() => document.querySelectorAll('#steps button:not([disabled])').length === 8);
   const state = await page.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(state.webType, null, 'incompatible size/web must be cleared');
   // Back 2 is cut from the palm leather (Scott, 25 Sep 2026): one colour.
@@ -76,7 +76,7 @@ try {
   assert.equal(shared.name, undefined); assert.equal(shared.phone, undefined);
   assert.equal(shared.thumbText, 'MY GLOVE');
   const next = await context.newPage();
-  await next.goto(link); await next.waitForFunction(() => document.querySelectorAll('#steps button').length === 8);
+  await next.goto(link); await next.waitForFunction(() => document.querySelectorAll('#steps button:not([disabled])').length === 8);
   const roundtrip = await next.evaluate(() => JSON.parse(localStorage.getItem('ssk-glove-v1')));
   assert.equal(roundtrip.thumbText, state.thumbText);
   assert.deepEqual(roundtrip.colors, state.colors);
