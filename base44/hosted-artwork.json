@@ -1,5 +1,11 @@
 [
   {
+    "path": "assets/hd-material-r02/snakeskin.webp",
+    "sha256": "62b6ce0adb70b56533186f0413b89be14960aa71cf7a28ec357229163f4225c6",
+    "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/f80f0dbb0_ssk-snakeskin-r02.webp",
+    "bytes": 2512284
+  },
+  {
     "path": "assets/hd-logos-r01/edge-gold.webp",
     "sha256": "f1645e8f33310e3449fe920e8af5baf968af9788a7585c704993b134aca1d262",
     "url": "https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/791aede3f_ssk-edge-gold-r13.webp",

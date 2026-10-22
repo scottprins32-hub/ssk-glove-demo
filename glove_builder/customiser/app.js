@@ -11,7 +11,7 @@ import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, PADS, WEBS, EMB_FONTS, FL
          OFFSTAGE, STARTERS, COLOUR_ORDER, NATIVE_WEB, PALETTE_OF,
          UNCONFIRMED_BULLETS, T } from './glove-catalog.js';
 import { addDesign } from './gallery-store.js';
-import { initStage } from './stage-interact.js';
+import { initStage } from './stage-interact.js'; import { chosenColour, markPicked, linkedFields, cleanPicked, whiteBlank } from './picked.js';
 
 /* SSK Europe's prices, confirmed by Pim 2026-08-29: the Pro glove is
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
@@ -223,7 +223,7 @@ let interact = null;        // stage-interact, once the glove is up
 /* ------------------------------------------------------------------ state */
 function answered(q) {
   if (q.id === 'personalCheck') return S.personalCheck !== true;
-  if (q.id.startsWith('c:')) return !!S.colors[q.id.slice(2)];
+  if (q.id.startsWith('c:')) return !!chosenColour(S, q.id.slice(2));
   if (q.id === 'phone') return phoneOk(S.phone);
   const v = S[q.id];
   return v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
@@ -334,7 +334,7 @@ function cleanState(o) {
     name: text(o.name).slice(0, 60),
     phone: text(o.phone).slice(0, 32),     // room for a country code and extension
     view: Object.keys(VIEW_KEYS).includes(o.view) ? o.view : 'back',
-    personalCheck: o.personalCheck === true,
+    personalCheck: o.personalCheck === true, picked: cleanPicked(o.picked),
   };
   if (clean.webType && !WEBS.find(w => w.id === clean.webType).sizes.includes(clean.size)) clean.webType = null;
   // A withdrawn web is never mapped to another one: it is dropped, so the
@@ -443,7 +443,7 @@ function applyPasted(text) {
   if (!o) return 'bad';
   const { lang, part, view, ...order } = o;
   snapshot();                     // only once the code is known to be good
-  Object.assign(S, order);
+  Object.assign(S, order); markPicked(S, ...COLOUR_ORDER);   // a pasted code is a chosen design
   S.part = colourPart(S.part);
   return 'ok';
 }
@@ -1017,7 +1017,7 @@ function applyStarter(st, quiet) {
   // Reset the shared hood/pad colour with the colourway; a later manual
   // choice remains independent until another starter is selected.
   S.colors.pad_color = S.colors.back3;
-  if (!quiet) { S.startId = st.id; draw(); }
+  if (!quiet) { S.startId = st.id; S.picked = {}; draw(); }
 }
 
 /* --------------------------------------------------------------- 2. fit */
@@ -1228,95 +1228,9 @@ function webPreviewNote() {
 const STAGE_NOTES = ['pinkyNoWeb', 'webNoBack', 'webNoPalm', 'thumbAwaitingReview',
                      'webNoThumb', 'viewNotLoaded', 'thumbEstimated', 'palmEstimated'];
 
-/* Contract C3 (outputs/2d-finish-plan/CONTRACT-C3.json). For the webs it
-   lists, the thumb side is drawn on a generated body — never the photograph —
-   and per Scott's 29 Sep correction (draft-3) there are TWO body families,
-   ONE fixed webless body each, and one web-local insert per web:
-     - i  : standard-i, spiral-i share the webless i-fixed body (Standard I r03
-            with its web removed to a bed). Two inserts, one per web. Neither
-            insert has a thumb-side web-leather tab; the index attachment is
-            the inward lace return, two short in/out points.
-     - em : smlee, em-rocket, closed-diamond-net share the webless em-fixed
-            body (EM Rocket r08, web removed to a bed). Three inserts.
-   Both bodies keep a full 360° stitch ring around the SSK thumb-circle
-   badge, delivered as body 'stitching' pixels (n=9) so it follows the
-   stitching colour. The block sits in thumb-data.json as estimatedBody, so
-   bundle.py inlines its assets with the rest. Until the installer writes a
-   REVIEWED block, or if a body's layers or ANY insert of a web in its
-   servesWebs is missing, there is no view for that body and the photographed
-   thumb side, its inserts and its hatch behave exactly as before. */
-const C3_ROLES = ['leather', 'laces', 'stitching', 'palm', 'cut', 'idmap'];
-/* Draft-3: the two accepted bodies and their exact family/servesWebs. The route
-   is driven by this table, not by data-block keys — an attacker who edited
-   thumb-data.json cannot invent a body id, swap a family label or claim an
-   I-web on the em-fixed body. Anything not in this map is ignored. */
-const C3_FAMILIES = Object.freeze({
-  'i-fixed':  Object.freeze({ family: 'i',  servesWebs: Object.freeze(['standard-i', 'spiral-i']) }),
-  'em-fixed': Object.freeze({ family: 'em', servesWebs: Object.freeze(['smlee', 'em-rocket', 'closed-diamond-net']) })
-});
+import { estimatedThumbViews } from './c3-thumb.js';
 /* {slug -> viewName}. Populated at load once the C3 bodies decode. */
 const C3_ROUTE = {};
-function estimatedThumbViews(v) {
-  const B = v && v.ready !== false && v.DATA.estimatedBody;
-  if (!B || B.contractRevision !== 'C3' || B.status !== 'REVIEWED'
-      || B.label !== 'estimated' || !B.bodies) return null;
-  const views = {}, bodyOfWeb = {}, inserts = (B.inserts && typeof B.inserts === 'object') ? B.inserts : {};
-  // Iterate the canonical map, not B.bodies: an unknown bodyId, or a body
-  // whose family / servesWebs disagree with the contract, never gets a view.
-  for (const [bodyId, spec] of Object.entries(C3_FAMILIES)) {
-    const body = B.bodies[bodyId];
-    if (!body || body.family !== spec.family || !body.thumbCircle
-        || !Array.isArray(body.servesWebs)
-        || body.servesWebs.length !== spec.servesWebs.length
-        || !spec.servesWebs.every(s => body.servesWebs.includes(s))) continue;
-    // Defence in depth: the two families' canonical servesWebs sets are
-    // disjoint, so any overlap in bodyOfWeb means the block was tampered
-    // with — drop this body rather than route a slug twice.
-    if (body.servesWebs.some(s => bodyOfWeb[s])) continue;
-    // Every served slug must have an insert entry; missing insert fails closed.
-    if (!body.servesWebs.every(s => inserts[s] && typeof inserts[s] === 'object')) continue;
-    const imgs = {}, bbox = {};
-    // Shared neutral material input carries no photographed geometry or lighting.
-    if (v.imgs._hdLeather) imgs._hdLeather = v.imgs._hdLeather;
-    if (v.imgs._hdLace) imgs._hdLace = v.imgs._hdLace;
-    if (v.imgs._snakeLeather) imgs._snakeLeather = v.imgs._snakeLeather;
-    let ok = true;
-    const take = (name, key) => {
-      if (!key || !v.imgs[key]) { ok = false; return; }
-      imgs[name] = v.imgs[key];
-      if (v.DATA.bbox[key]) bbox[name] = v.DATA.bbox[key];
-    };
-    // Nothing of the photographed body is carried over: a zone's _hi sheen
-    // left behind would light the estimated leather with the photograph.
-    for (const [name, key] of Object.entries(body.layers || {})) take(name, key);
-    for (const s of body.servesWebs) for (const key of Object.values(inserts[s])) take(key, key);
-    // The generated body shows its welting, which the photograph's zones do
-    // not: the one zone C3 may add, and only in this view.
-    const extra = (body.zones || []).filter(z => z.id === 'welting' && z.n === 10
-      && z.field === 'welting' && z.group === 'lace').slice(0, 1);
-    const zones = [...v.DATA.zones, ...extra.filter(z => !v.DATA.zones.some(base => base.id === z.id))];
-    if (!ok || !imgs.glove || !imgs._idmap || !imgs.thumb_circle_art
-        || !zones.every(z => imgs[z.id] && bbox[z.id])
-        || !body.servesWebs.every(s => C3_ROLES.every(r => imgs[inserts[s][r]] && bbox[inserts[s][r]]))) continue;
-    const shown = extra.map(z => z.field);
-    // Every web served by this body gets a thumbWebs entry; the engine's
-    // insert block runs for both families identically.
-    const thumbWebs = Object.fromEntries(body.servesWebs.map(s => [s, inserts[s]]));
-    const DATA = { ...v.DATA, zones, bbox, thumbWebs, thumbCircle: body.thumbCircle,
-                   surfaceDetails: null,
-                   sheen: body.sheen || {}, webMarker: null,
-                   fieldsShown: [...v.DATA.fieldsShown, ...shown],
-                   fieldsNotShown: v.DATA.fieldsNotShown.filter(f => !shown.includes(f)) };
-    const c = document.createElement('canvas');
-    c.width = DATA.w; c.height = DATA.h;
-    const g = c.getContext('2d', { willReadFrequently: true });
-    g.drawImage(imgs._idmap, 0, 0);
-    const viewName = 'thumbEstimated:' + bodyId;
-    views[viewName] = { DATA, imgs, idData: g.getImageData(0, 0, DATA.w, DATA.h).data };
-    for (const s of body.servesWebs) bodyOfWeb[s] = viewName;
-  }
-  return Object.keys(views).length ? { views, bodyOfWeb } : null;
-}
 /* H-Web and every web C3 does not list stay on the photographed side. */
 const thumbEstimatedViewOf = w => (w && w.id !== NATIVE_WEB && w.render
   && C3_ROUTE[w.render] && R?.views?.[C3_ROUTE[w.render]]) ? C3_ROUTE[w.render] : null;
@@ -1397,7 +1311,7 @@ function renderColours(b) {
       snapshot();
       const v = S.colors[S.part];
       for (let i = 1; i <= 9; i++) S.colors['back' + i] = v;
-      S.colors.palm = S.colors.back2;
+      S.colors.palm = S.colors.back2; markPicked(S, 'back1', 'back2', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'back9', 'palm');
       draw(); paint();
     };
     b.appendChild(all);
@@ -1413,7 +1327,7 @@ function setColour(field, v) {
   S.colors[field] = v;
   if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) S.colors.back3 = S.colors.back4 = v;
   if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) S.colors.back5 = S.colors.back6 = v;
-  if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
+  if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v; markPicked(S, field, ...linkedFields(field, indexIsOnePiece(), middleIsOnePiece()));
   if (held && PALETTE_OF(field) === held.palette) { held = { ...held, num: v, hex: hexOf(field), label: colName(field) }; }
   draw(); paint();
 }
@@ -1454,7 +1368,7 @@ function filterSwatches(root) {
   root.querySelector('.sw-none').hidden = any || !q;
 }
 function swatchFamilies(field, note) {
-  const pal = DATA.palettes[PALETTE_OF(field)], label = colourLabel(field), value = S.colors[field];
+  const pal = DATA.palettes[PALETTE_OF(field)], label = colourLabel(field), value = chosenColour(S, field);
   const pick = v => setColour(field, v);
   const f = el('div', 'field');
   f.appendChild(labelRow(label, true, value != null));
@@ -1878,9 +1792,9 @@ function swatchGrid(label, pal, value, onPick, required, note) {
 }
 function swatchField(field, note, required) {
   return swatchGrid(colourLabel(field), DATA.palettes[PALETTE_OF(field)],
-    S.colors[field], v => {
+    chosenColour(S, field), v => {
       snapshot();
-      S.colors[field] = v;
+      S.colors[field] = v; markPicked(S, field, ...linkedFields(field, indexIsOnePiece(), middleIsOnePiece()));
       if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) {
         S.colors.back3 = S.colors.back4 = v;
       }
@@ -2263,8 +2177,8 @@ function startOver() {
   Object.assign(S, { step: 0, part: 'web', bullet: 7, view: 'back', colors: {}, materials: {}, hand: null, size: '11.75"',
     pad: 'None', webType: NATIVE_WEB, withdrawnWeb: null, thumbText: '', thumbFont: null, thumbMain: null, thumbOutline: null,
     thumbNumber: '', circle: null, numberColor: null, flag: null, flagPosition: 'index', flagOther: '', pinkyText: '',
-    personalCheck: false, startId: STARTERS[0].id }, keepers);
-  applyStarter(STARTERS[0], true);
+    personalCheck: false, startId: STARTERS[0].id, picked: {} }, keepers);
+  applyStarter(STARTERS[0], true); whiteBlank(S, DATA);   // exactly the glove the page opens with
   $('#resume').hidden = true;
   draw(); paint();
 }
@@ -2701,10 +2615,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   // glove loads the visitor's own design without a prompt.
   const h = location.hash.slice(1);
   const shared = h ? cleanSharedState(decodeState(h)) : null;
-  S.size = '11.75"'; S.webType = NATIVE_WEB; S.pad = 'None';
-  for (const field of COLOUR_ORDER) {
-    if (DATA.palettes[PALETTE_OF(field)].some(c => c[0] === '10')) S.colors[field] = '10';
-  }
+  S.size = '11.75"'; S.webType = NATIVE_WEB; S.pad = 'None'; S.picked = {}; whiteBlank(S, DATA);
   defaultVisual=visualKey();
   window.__SSK_STARTER_KEY__ = starterKey();     // read by render_starters.mjs
   await loadShippedStarters();
