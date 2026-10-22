@@ -76,7 +76,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
   padding: 5px var(--space-3);
 }
 .ref-lab {
-  font-family: var(--font-display); font-size: 10px; letter-spacing: var(--tracking-wide-caps);
+  font-family: var(--font-display); font-size: var(--text-2xs); letter-spacing: var(--tracking-wide-caps);
   text-transform: uppercase; color: var(--navy-100);
 }
 .ref-code { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--white); font-variant-numeric: tabular-nums; }
@@ -88,7 +88,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
   border-left: 1px solid var(--navy-600);
 }
 .price-lab {
-  display: block; font-family: var(--font-display); font-size: 10px;
+  display: block; font-family: var(--font-display); font-size: var(--text-2xs);
   letter-spacing: var(--tracking-wide-caps); text-transform: uppercase; color: var(--navy-100);
 }
 .price-val {
@@ -193,7 +193,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 .sum-kept { flex: 1 0 100%; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
 /* A returning visitor: their draft is back, and a way out of it. */
 .resume {
-  position: absolute; left: 50%; bottom: var(--space-5); transform: translateX(-50%); z-index: 4;
+  position: absolute; left: 50%; top: var(--space-5); transform: translateX(-50%); z-index: 4;
   display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   background: var(--navy-900); color: var(--white); border-radius: var(--radius-pill); box-shadow: var(--shadow-overlay);
   font-size: var(--text-sm); white-space: nowrap; max-width: calc(100% - 32px);
@@ -258,7 +258,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 }
 .stage-turn {
   position: absolute; right: var(--space-5); bottom: var(--space-4); margin: 0;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+  font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .04em; text-transform: uppercase;
   color: var(--gray-700); background: var(--surface-card); padding: 4px 8px; border-radius: var(--radius-sm);
   pointer-events: none;
 }
@@ -291,6 +291,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
   flex: none; margin: var(--space-2) var(--space-5) 0;
   font-size: var(--text-sm); color: var(--text-muted); max-width: 60ch;
 }
+@media (min-width: 1280px) { .panel-title { font-size: var(--display-md); } .panel-lead { font-size: var(--text-base); } }
 .panel-body {
   flex: 1 1 auto; min-height: 0; overflow-y: auto;
   padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5);
@@ -368,7 +369,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 .cards.is-portrait .card img, .cards.is-portrait .card canvas { aspect-ratio: 3/4; }
 .card .cap { display: block; padding: var(--space-2) var(--space-3); }
 .card .kick {
-  display: block; font-family: var(--font-display); font-size: 10px;
+  display: block; font-family: var(--font-display); font-size: var(--text-2xs);
   letter-spacing: var(--tracking-wide-caps); text-transform: uppercase; color: var(--text-muted);
 }
 .card .nm {
@@ -395,7 +396,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
    on this glove first. */
 .sw-group { display: flex; flex-direction: column; gap: 6px; }
 .sw-group-lab {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .06em; text-transform: uppercase;
   color: var(--text-muted);
 }
 .sw-used { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -404,7 +405,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 .parts { display: flex; flex-wrap: wrap; gap: 6px; }
 .part-group { display: flex; flex-direction: column; gap: 6px; }
 .part-group-lab {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .06em; text-transform: uppercase;
   color: var(--text-muted);
 }
 .part {
@@ -432,7 +433,7 @@ input[type="text"], input[type="tel"], input[type="email"] {
 .hero-kick {
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--red-600);
 }
-.hero-line { margin: 0; font-size: var(--text-md); line-height: var(--leading-snug); color: var(--text-heading); max-width: 34ch; text-wrap: balance; }
+.hero-line { margin: 0; font-size: var(--text-lg); line-height: var(--leading-snug); color: var(--text-heading); max-width: 34ch; text-wrap: balance; }
 .hero-facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: 0; padding: 0; list-style: none; }
 .hero-facts li { font-size: var(--text-xs); color: var(--text-muted); }
 .hero-facts b { display: block; font-family: var(--font-display); font-size: var(--text-lg); font-weight: var(--weight-display-heavy); color: var(--navy-900); letter-spacing: var(--tracking-display); }
@@ -459,7 +460,7 @@ input[type="text"], input[type="tel"], input[type="email"] {
   background: var(--stitch-red);
   transition: width var(--dur-reveal) var(--ease-out-expo);
 }
-.bar-saved { font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); opacity: 0; transition: opacity var(--dur-med) var(--ease-out); white-space: nowrap; }
+.bar-saved { font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); opacity: 0; transition: opacity var(--dur-med) var(--ease-out); white-space: nowrap; }
 .bar-saved.is-on { opacity: 1; }
 .bar-acts { display: flex; gap: var(--space-2); }
 
@@ -488,7 +489,7 @@ input[type="text"], input[type="tel"], input[type="email"] {
   background: var(--glove-background, var(--gray-100)); cursor: pointer;
 }
 .review-strip .strip-wait { display: grid; place-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
-.review-strip figcaption { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); text-align: center; }
+.review-strip figcaption { font-family: var(--font-mono); font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); text-align: center; }
 .missing { display: flex; flex-direction: column; gap: 6px; }
 .missing a {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
@@ -496,7 +497,7 @@ input[type="text"], input[type="tel"], input[type="email"] {
   border-radius: var(--radius-sm); color: var(--navy-900); font-size: var(--text-sm); text-decoration: none;
 }
 .missing a:hover { border-color: var(--red-600); }
-.missing a small { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--red-600); }
+.missing a small { font-family: var(--font-mono); font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: .04em; color: var(--red-600); }
 details.limits { border-left: 3px solid var(--tan-500); background: var(--tan-100); padding: var(--space-2) var(--space-3); font-size: var(--text-xs); color: var(--gray-700); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 details.limits summary { cursor: pointer; font-weight: var(--weight-semibold); }
 .limits ul { margin: var(--space-2) 0 0; padding-left: 1.2em; }
@@ -577,7 +578,7 @@ details.limits summary { cursor: pointer; font-weight: var(--weight-semibold); }
 .resume-dialog .btn { display: block; width: 100%; margin-top: 12px; min-height: 48px; }
 
 /* ----------------------------------------------------------- summary drawer */
-:root { --sum-w: 420px; }
+:root { --sum-w: 420px; --text-2xs: 11px; }
 .sum-drawer {
   position: fixed; top: 0; right: 0; height: 100%;
   width: var(--sum-w); z-index: 70;
@@ -657,7 +658,7 @@ body.sum-open { padding-right: var(--sum-w); }
   .stage-hint { left: var(--space-3); right: var(--space-3); bottom: 6px; max-width: none; font-size: 11px; }
   .stage-hint:not(:empty) { padding: 4px 8px; }
   .stage-turn { display: none; }
-  .resume { bottom: var(--space-2); font-size: var(--text-xs); gap: var(--space-2); }
+  .resume { top: 56px; font-size: var(--text-xs); gap: var(--space-2); }
   .resume span span { display: none; }
   .stage-label { font-size: 11px; }
   .panel { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--border-default); }
