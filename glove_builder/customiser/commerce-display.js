@@ -2,11 +2,15 @@ import {displaySpecification} from './commerce-summary.js';
 import {formatMoney,restoreLink} from './commerce-client.js';
 export function node(tag,text,cls) {const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;}
 export const viewNames={back:'Achterkant',palm:'Palm',thumb:'Duimzijde',pinky:'Pinkzijde'};
-export function displayDraft(draft,host) {
+/* One glove: its four views, specification and price card. With `index` and
+   `count` it is one of several in the same order and the host keeps the
+   gloves before it. Returns the price card, where the order controls go. */
+export function displayDraft(draft,host,{index=0,count=1}={}) {
   const en=draft.design.lang==='en',tr=(nl,english)=>en?english:nl,names=en?{back:'Back',palm:'Palm',thumb:'Thumb side',pinky:'Pinky side'}:viewNames;
-  host.replaceChildren();
+  if(index===0)host.replaceChildren();
   const grid=node('div',null,'commerce-grid'),body=node('div'),aside=node('aside',null,'commerce-card commerce-checkout');
-  body.id='design-proof';
+  body.id=count>1?'design-proof-'+(index+1):'design-proof';
+  if(count>1){const head=node('div',null,'commerce-glove-head');head.append(node('h2',tr(`Handschoen ${index+1} van ${count}`,`Glove ${index+1} of ${count}`)),node('code',draft.reference));body.append(head);}
   const previews=node('div',null,'commerce-previews');
   for(const p of draft.previews) {
     const figure=node('figure');
@@ -32,5 +36,6 @@ export function displayDraft(draft,host) {
     const content=['SSK Custom Glove',draft.reference,...readableRows.map(([k,v])=>`${k}: ${v}`),formatMoney(draft.quote.total,draft.design.lang)].join('\n');
     const url=URL.createObjectURL(new Blob([content],{type:'text/plain;charset=utf-8'})),link=node('a');link.href=url;link.download='SSK-'+draft.id+'.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  actions.append(edit,print,download);body.prepend(actions);grid.append(body,aside);host.append(grid);return aside;
+  actions.append(edit,print,download);if(count>1)body.insertBefore(actions,body.children[1]);else body.prepend(actions);
+  if(count>1)grid.className+=' commerce-glove';grid.append(body,aside);host.append(grid);return aside;
 }
