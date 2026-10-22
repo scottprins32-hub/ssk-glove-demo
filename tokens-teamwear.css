@@ -1,0 +1,132 @@
+/* =========================================================================
+   SSK Europe configurator — TEAMWEAR theme
+   Black / red / white. Same token NAMES as tokens.css, so a configurator
+   switches theme by linking this file AFTER tokens.css (or alone, when it has
+   no navy to override). Components never change; only values do.
+
+       <link rel="stylesheet" href="tokens.css">
+       <link rel="stylesheet" href="tokens-teamwear.css">
+
+   Source of truth for these values: ssk-custom-kleding/theme.css (the shipped
+   teamwear configurator). The reasoning is in design-system.md, section
+   "Themes".
+
+   Differences from the glove theme, in one line each:
+     - the brand ground is INK (near-black), not navy; there is no navy at all
+     - greys are NEUTRAL, not warm: the shop is black and white
+     - red ACTS, black SELECTS (same rule as glove, with black in navy's seat)
+     - the focus ring is red, not blue
+     - there is a dark mode and a high-contrast mode (the glove theme has none)
+   ========================================================================= */
+
+:root {
+
+  /* ---- 1. Ramps ------------------------------------------------------- */
+
+  /* Ink — the brand ground. Header, selection, headings. Takes navy's seat. */
+  --ink-950: #050505; --ink-900: #0B0B0C; --ink-800: #17171A; --ink-700: #26262B;
+  --ink-600: #3A3A40; --ink-500: #55555C; --ink-100: #DCDCDF; --ink-50:  #F1F1F2;
+
+  /* Red — unchanged from the glove theme. */
+  --red-700: #A00D24; --red-600: #C8102E; --red-500: #D6304A;
+  --red-100: #F9DCE1; --red-50:  #FCEEF0;
+
+  /* Neutral greys. The glove theme's greys lean warm to sit with leather; here
+     there is no leather. */
+  --white: #FFFFFF;
+  --gray-900: #141416; --gray-700: #36363B; --gray-600: #55555C; --gray-500: #74747B;
+  --gray-400: #9C9CA3; --gray-300: #C7C7CC; --gray-200: #E0E0E3; --gray-100: #EEEEF0;
+  --gray-50:  #F6F6F7;
+
+  /* ---- 2. Semantic ---------------------------------------------------- */
+
+  --text-heading: var(--ink-900); --text-body: var(--gray-700); --text-muted: var(--gray-600);
+  --text-inverse: var(--white);   --text-inverse-muted: var(--ink-100);
+  --text-link: var(--red-700);    --text-price: var(--ink-900); --text-danger: var(--red-600);
+
+  --surface-page: var(--gray-50); --surface-card: var(--white); --surface-sunken: var(--gray-100);
+  --surface-inverse: var(--ink-900); --surface-inverse-raised: var(--ink-800);
+  --surface-accent-tint: var(--ink-50);
+
+  /* Red acts, black selects. */
+  --action-primary: var(--red-600);   --action-primary-hover: var(--red-700);
+  --action-secondary: var(--ink-900); --action-secondary-hover: var(--ink-700);
+  --state-selected: var(--ink-900);   --state-disabled-opacity: .4;
+
+  --border-default: var(--gray-200); --border-strong: var(--gray-300);
+  --border-inverse: var(--ink-600);  --border-focus: var(--red-600);
+
+  --status-success: #2E7D46; --status-success-bg: #E5F2E9;
+  --status-warning: #B26A0F; --status-warning-bg: #FBF0DD;
+  --status-danger: var(--red-600); --status-danger-bg: var(--red-50);
+
+  --scrim: rgb(5 5 5 / .6);
+  --shadow-card:    0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.06);
+  --shadow-raised:  0 4px 16px rgba(0,0,0,.14);
+  --shadow-overlay: 0 12px 40px rgba(0,0,0,.28);
+  --focus-ring-color: rgba(200,16,46,.6);
+  --stitch-red: repeating-linear-gradient(90deg, var(--red-600) 0 10px, transparent 10px 18px);
+
+  /* ---- 3. Added by the teamwear configurator -------------------------- */
+
+  /* Motion. The glove theme moves almost nothing; teamwear moves orientation
+     (where did the panel go, what changed) and never the product itself. */
+  --dur-panel: 380ms;   /* panel slides in on a change of phase */
+  --dur-sheet: 250ms;   /* phone sheet height, toast in/out */
+  --dur-stage: 450ms;   /* the old photo fading out over the new one */
+  --dur-land:  500ms;   /* a print landing on the cloth */
+
+  /* Layers above the glove scale (which stops at --z-toast: 70). Teamwear's
+     toast sits at 60 because it never coexists with a modal scrim. */
+  --z-banner: 65;   /* error bar */
+  --z-demo:   70;   /* demo pill */
+  --z-tour:   90;   /* tour spotlight */
+  --z-offline: 95;  /* offline bar: above the tour, it is information about reality */
+  --z-intro: 100;   /* opening screen, above everything */
+
+  /* Phone: the panel is a sheet over the stage, three snap heights. */
+  --sheet-low: 34%; --sheet-mid: 56%; --sheet-high: 88%;
+  --sheet: var(--sheet-mid);
+}
+
+/* ==========================================================================
+   DARK MODE — semantic tokens only; the ramps below section 2 do not move
+   except --ink-*, which flip because headings are "ink" on a light page and
+   "paper" on a dark one. Two things the tokens cannot do, and the app does by
+   hand, on purpose:
+     1. The STAGE stays light. It composites product photos (cut out on white)
+        and a dark ground would make every garment look wrong. Chips on the
+        stage (tag, tools) stay light with it.
+     2. Surfaces that must stay dark in dark mode (the header) are set to
+        --ink-950 literally, because --surface-inverse follows --ink-900,
+        which has just become light.
+   And one trap: do NOT override --white. Components use it for "text on a red
+   or black fill"; making it dark turns every button label invisible.
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-page: #141416; --surface-card: #1C1C1F; --surface-sunken: #232327;
+    --surface-inverse: #050505;
+    --text-heading: #F1F1F2; --text-body: #D7D7DA; --text-muted: #9C9CA3;
+    --text-link: #FF5A72; --text-price: #F1F1F2;
+    --text-inverse: #FFFFFF; --text-inverse-muted: #DCDCDF;
+    --ink-900: #F1F1F2; --ink-800: #E4E4E7; --ink-700: #D0D0D4; --ink-50: #2A2A2F;
+    --border-default: #2E2E33; --border-strong: #3C3C42; --state-selected: #F1F1F2;
+    --status-success-bg: #10321C; --status-warning-bg: #3A2A0E; --red-50: #3A1118;
+    --shadow-card: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.4);
+  }
+}
+
+/* ==========================================================================
+   HIGH CONTRAST — `prefers-contrast: more`. Muted text gets as dark as body
+   text, hairlines get strong, option borders thicken to 2px (the component
+   rule lives in the app, the colours here).
+   ========================================================================== */
+
+@media (prefers-contrast: more) {
+  :root { --text-muted: #3A3A40; --border-default: #7A7A84; --border-strong: #3A3A40; --gray-500: #4A4A52; }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root { --text-muted: #D0D0D4; --border-default: #8A8A92; --border-strong: #C4C4CA; }
+}
