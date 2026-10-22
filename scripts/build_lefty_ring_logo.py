@@ -26,7 +26,11 @@ for view,key,prop in [('back','glove','nativeBackTrace'),('pinky','pinky','nativ
  for zone,n in ns.items():
   if zone in ['embroidery','stitching']:continue
   mask=Image.eval(own,lambda x:255 if x==n else 0).resize((w,h),Image.Resampling.LANCZOS)
-  alpha=np.minimum(np.array(mask),cv2.dilate(src[:,:,3],np.ones((15,15),np.uint8)))
+  # Replace the complete ring surface; local patches leave baked source
+  # shadows beyond the original glyph boundary. Alpha stays authored.
+  alpha=np.array(mask) if zone==('back78' if view=='back' else 'back7') else np.minimum(np.array(mask),cv2.dilate(src[:,:,3],np.ones((15,15),np.uint8)))
+  if zone==('back78' if view=='back' else 'back7'):
+   original=np.array(Image.open(A/meta['assets'][d['assets'][zone]]).convert('RGBA'))[:,:,3];alpha=np.maximum(alpha,original)
   if not np.any(alpha):continue
   patch=np.full_like(src,246);patch[:,:,3]=alpha;filename=zone+'-heal.webp';Image.fromarray(patch).save(folder/filename,lossless=True);alias=f'lefty_ring_{view}_{zone}_heal';meta['assets'][alias]=str((folder/filename).relative_to(A));d['leftyRingHeals'][zone]=alias;d['bbox'][alias]=list(mask.getbbox())
  ids=np.array(own.resize((w,h),Image.Resampling.NEAREST));thread=np.array(Image.open(A/meta['assets'][d['assets']['stitching']]))[:,:,3];ids[thread>=128]=ns['stitching'];ids[out[:,:,3]>=128]=ns['embroidery'];Image.fromarray(np.dstack([ids,ids,ids,np.full_like(ids,255)])).save(folder/'idmap.png')

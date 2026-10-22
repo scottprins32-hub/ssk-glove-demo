@@ -1,0 +1,39 @@
+✔ failed optional metadata stays visible and retries without reloading the page (6.865209ms)
+✔ a complete load retains a failed optional view for a later retry (4.971291ms)
+✔ failed back metadata can retry the whole bundle (4.505458ms)
+✔ failed core images can retry while successful images stay cached (4.389083ms)
+✔ preload and repeated flag selections share one decode and latest redraw (5.643459ms)
+✔ late flag cannot replace another selection or restore a removed flag (4.802291ms)
+✔ failed flag decode can retry after preload failure (4.007917ms)
+✔ progressive back defers only web roots and crocodile, with priority core assets first (5.178916ms)
+✔ real back metadata follows selected material dependencies without loading optional webs (9.596416ms)
+✔ pinky material plates are ready with the view while Crocodile texture stays deferred (7.627041ms)
+✔ concurrent options and repeated selection share in-flight image decodes (4.751625ms)
+✔ failed optional image leaves selection unready and retry keeps successful dependencies (4.286958ms)
+✔ default complete API still includes every optional back web and texture (3.8415ms)
+✔ hashed URLs cover metadata, decoded assets and flags while offline/external sources stay unchanged (4.057834ms)
+✔ actual app gate ignores late selection completion and never draws an unready option (0.948125ms)
+✔ actual app gate exposes a retry button and retries only when requested (0.407209ms)
+✔ deferred angle stays selectable until its web availability is verified (0.203042ms)
+✔ ownership maps survive tint invalidation but are bounded and context-specific (4.502834ms)
+✔ pad-mask reuse follows both the immutable input layer and pad image (4.87825ms)
+✔ native images share one package fetch and preserve original source cache keys (4.685709ms)
+✔ failed image package falls back to the original full-quality images (5.073333ms)
+✔ out-of-bounds package entries fall back instead of decoding wrong bytes (5.767625ms)
+✔ full frame reuse snapshots pixels and refreshes picking metadata on a hit (4.979708ms)
+✔ catalogue package failure retains the original image URL (5.779917ms)
+✔ removed catalogue cards release their unused blob URL (6.30975ms)
+✔ native palm aliases remain unready after a missing image and retry safely (5.0175ms)
+✔ native back aliases fail closed and retry the missing image (4.914875ms)
+✔ a lazily verified palm web switches from native aliases on the first selection (5.918917ms)
+✔ HD badge deferral survives rebuilt asset paths (7.816292ms)
+✔ traced pinky retries missing aliases and keeps exact geometry across web choices (5.11725ms)
+✔ lefty ring leather repairs must load before the view becomes ready (5.105625ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 299.6295
