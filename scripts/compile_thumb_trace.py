@@ -4,8 +4,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image,ImageDraw,ImageFilter
 ROOT=Path(__file__).resolve().parents[1];APP=ROOT/'glove_builder/customiser';SS=4
-p=argparse.ArgumentParser();p.add_argument('--trace',required=True);p.add_argument('--sources',required=True);p.add_argument('--report',required=True);a=p.parse_args()
-raw=Path(a.trace).read_bytes();trace=json.loads(raw);src=json.loads(Path(a.sources).read_text())['thumb'];W,H=src['w'],src['h'];parts=[s for s in trace['shapes']if s['view']=='thumb'];metaPath=APP/'assets/thumb-data.json';meta=json.loads(metaPath.read_text());out=APP/'assets/thumb-scott-r12';out.mkdir(exist_ok=True)
+p=argparse.ArgumentParser();p.add_argument('--asset-dir',default='thumb-scott-r12');p.add_argument('--trace',required=True);p.add_argument('--sources',required=True);p.add_argument('--report',required=True);a=p.parse_args()
+raw=Path(a.trace).read_bytes();trace=json.loads(raw);src=json.loads(Path(a.sources).read_text())['thumb'];W,H=src['w'],src['h'];parts=[s for s in trace['shapes']if s['view']=='thumb'];metaPath=APP/'assets/thumb-data.json';meta=json.loads(metaPath.read_text());out=APP/'assets'/a.asset_dir;out.mkdir(exist_ok=True)
 fields=['palm','back1','back2','back3','web','belt','binding','welting','thumb_loops','laces','stitching'];ns={r:i+1 for i,r in enumerate(fields)}
 def role(s):
  if s['cat']=='finger':

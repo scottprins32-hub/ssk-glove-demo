@@ -1142,19 +1142,19 @@
     "thumb_lower_stitching": "assets/side/thumb-white-trim-r01/thread.png",
     "thumb_lower_panel": "assets/side/thumb-white-trim-r01/panel-artifact-back2.png",
     "thumb_lower_panel_hi": "assets/side/thumb-white-trim-r01/panel-artifact-back2_hi.png",
-    "scott_thumb_palm": "assets/thumb-scott-r12/palm.webp",
-    "scott_thumb_back1": "assets/thumb-scott-r12/back1.webp",
-    "scott_thumb_back2": "assets/thumb-scott-r12/back2.webp",
-    "scott_thumb_back3": "assets/thumb-scott-r12/back3.webp",
-    "scott_thumb_web": "assets/thumb-scott-r12/web.webp",
-    "scott_thumb_belt": "assets/thumb-scott-r12/belt.webp",
-    "scott_thumb_binding": "assets/thumb-scott-r12/binding.webp",
-    "scott_thumb_welting": "assets/thumb-scott-r12/welting.webp",
-    "scott_thumb_thumb_loops": "assets/thumb-scott-r12/thumb_loops.webp",
-    "scott_thumb_laces": "assets/thumb-scott-r12/laces.webp",
-    "scott_thumb_stitching": "assets/thumb-scott-r12/stitching.webp",
-    "scott_thumb_glove": "assets/thumb-scott-r12/empty.webp",
-    "scott_thumb_idmap": "assets/thumb-scott-r12/idmap.png",
+    "scott_thumb_palm": "assets/thumb-scott-r26/palm.webp",
+    "scott_thumb_back1": "assets/thumb-scott-r26/back1.webp",
+    "scott_thumb_back2": "assets/thumb-scott-r26/back2.webp",
+    "scott_thumb_back3": "assets/thumb-scott-r26/back3.webp",
+    "scott_thumb_web": "assets/thumb-scott-r26/web.webp",
+    "scott_thumb_belt": "assets/thumb-scott-r26/belt.webp",
+    "scott_thumb_binding": "assets/thumb-scott-r26/binding.webp",
+    "scott_thumb_welting": "assets/thumb-scott-r26/welting.webp",
+    "scott_thumb_thumb_loops": "assets/thumb-scott-r26/thumb_loops.webp",
+    "scott_thumb_laces": "assets/thumb-scott-r26/laces.webp",
+    "scott_thumb_stitching": "assets/thumb-scott-r26/stitching.webp",
+    "scott_thumb_glove": "assets/thumb-scott-r26/empty.webp",
+    "scott_thumb_idmap": "assets/thumb-scott-r26/idmap.png",
     "thumb_badge_hd": "assets/thumb-badge-r12.webp"
   },
   "sheen": {
@@ -2061,7 +2061,7 @@
       "laces",
       "stitching"
     ],
-    "traceSha256": "a978c3222c7af16311502ea2037b7eeff70e6ec0cc8efcaf3ba112a56317b736"
+    "traceSha256": "c909c8e8c2d36f22bcf8d7c8a04d3562ddbbd6cb3cfa714962159b92ac4c83a6"
   },
   "userCompleteTrace": {
     "revision": "THUMB-FINAL-TRACE-R01",
