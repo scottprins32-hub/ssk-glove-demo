@@ -1,0 +1,23 @@
+{
+  "shapes": 285,
+  "geometryChanges": 0,
+  "changes": [
+    {
+      "index": 12,
+      "view": "back",
+      "oldCategory": "welting",
+      "newCategory": "laces",
+      "oldName": "Welting 7",
+      "newName": "Veter",
+      "points": 15
+    }
+  ],
+  "rasterChangedPixels": {
+    "welting.webp": 1055,
+    "laces.webp": 1055,
+    "idmap.png": 864
+  },
+  "allOtherBackRasterBytesUnchanged": true,
+  "otherViewsUnchanged": true,
+  "liveOrderingUnchanged": true
+}

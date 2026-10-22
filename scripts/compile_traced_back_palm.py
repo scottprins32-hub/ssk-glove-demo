@@ -4,8 +4,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image,ImageDraw
-ROOT=Path(__file__).resolve().parents[1];APP=ROOT/'glove_builder/customiser';AUDIT=ROOT/'outputs/traced-back-palm-r03';SS=4
-p=argparse.ArgumentParser();p.add_argument('--tracer');p.add_argument('--view',choices=['back','palm']);args=p.parse_args()
+ROOT=Path(__file__).resolve().parents[1];APP=ROOT/'glove_builder/customiser';SS=4
+p=argparse.ArgumentParser();p.add_argument('--tracer');p.add_argument('--view',choices=['back','palm']);p.add_argument('--audit-dir',default='outputs/traced-back-palm-r03');p.add_argument('--asset-dir');p.add_argument('--previous-trace');args=p.parse_args()
+AUDIT=ROOT/args.audit_dir;AUDIT.mkdir(parents=True,exist_ok=True)
+if args.asset_dir and not args.view: p.error('--asset-dir requires a single --view')
 if args.tracer:
  d=json.loads(re.search(r'const DATA = (.*);',Path(args.tracer).read_text()).group(1));(AUDIT/'view-sources.json').write_text(json.dumps({v:d['views'][v]for v in ['back','palm']}))
 sources=json.loads((AUDIT/'view-sources.json').read_text());raw=(AUDIT/'trace-original.json').read_bytes();trace=json.loads(raw);report={'sha256':hashlib.sha256(raw).hexdigest(),'scope':'native H back and palm only','views':{}}
@@ -15,11 +17,15 @@ def role(s,view):
   m=re.search(r'Back\s*([1-9])',s['name'],re.I);r='back'+m.group(1)if m else'palm'
  return {'back7':'back78','ring_emb':'embroidery'}.get(r,r)if view=='back'else r
 def poly(im,pts,fill):ImageDraw.Draw(im).polygon([(round(x*SS),round(y*SS))for x,y in pts],fill=fill)
+previous={}
+if args.previous_trace:
+ previousRaw=(ROOT/args.previous_trace).read_bytes();report['previousTraceSha256']=hashlib.sha256(previousRaw).hexdigest()
+ previous={json.dumps([s['view'],s['pts']]):s for s in json.loads(previousRaw)['shapes']}
 if args.view and (AUDIT/'BUILD.json').exists():report['views']=json.loads((AUDIT/'BUILD.json').read_text())['views']
 for view in ([args.view] if args.view else ['back','palm']):
  src=sources[view];W,H=src['w'],src['h'];parts=[s for s in trace['shapes']if s['view']==view];metaFile=APP/f"assets/{'glove'if view=='back'else view}-data.json";meta=json.loads(metaFile.read_text())
  fields=(['palm','back2','back78','back8','back6','back5','back4','back3','web','belt','lining','binding','welting','pinky_loops','laces','embroidery','stitching'] if view=='back'else['palm','web','back1','back9','back3','back4','back6','back7','belt','binding','welting','thumb_loops','laces','stitching']);ns={f:i+1 for i,f in enumerate(fields)}
- out=APP/f'assets/{view}-scott-trace-r03';out.mkdir(exist_ok=True);cut=Image.new('L',(W*SS,H*SS));own=Image.new('L',cut.size)
+ out=APP/'assets'/(args.asset_dir or f'{view}-scott-trace-r03');out.mkdir(exist_ok=True);cut=Image.new('L',(W*SS,H*SS));own=Image.new('L',cut.size)
  for s in sorted(parts,key=lambda s:ns.get(role(s,view),999)):
   r=role(s,view)
   if r in ns:poly(own,s['pts'],ns[r])
@@ -49,6 +55,16 @@ for view in ([args.view] if args.view else ['back','palm']):
    c=np.array([int(lace['hex'][j:j+2],16) for j in [1,3,5]])
    laceRef=max(30,float(c@[.2126,.7152,.0722]))
    tone=np.clip((img@[.2126,.7152,.0722])/laceRef,.26,1.12)
+   # A reclassified contour retains the dye baked into its source rendering.
+   # Neutralize that former field only here; existing lace relief stays exact.
+   for shape in parts:
+    before=previous.get(json.dumps([shape['view'],shape['pts']]))
+    if role(shape,view)!='laces' or not before or role(before,view)=='laces':continue
+    oldRole=role(before,view);legend=next(z for z in src['legend'] if z.get('field')==oldRole)
+    c=np.array([int(legend['hex'][j:j+2],16) for j in [1,3,5]]);ref=max(30,float(c@[.2126,.7152,.0722]))
+    area=Image.new('L',(W*SS,H*SS));poly(area,shape['pts'],255);area=np.array(area.resize((W,H),Image.Resampling.LANCZOS))>0
+    tone=np.where(area,np.clip((img@[.2126,.7152,.0722])/ref,.26,1.12),tone)
+    report.setdefault('reclassifications',[]).append({'view':view,'name':shape['name'],'from':oldRole,'to':'laces','points':len(shape['pts'])})
   elif r in ['laces','embroidery']:
    tone=np.clip(light,.26,1.12) # preserve photographed lace/embroidered relief
   else:
@@ -84,7 +100,7 @@ for view in ([args.view] if args.view else ['back','palm']):
  key=f'scott_{view}_stitching';assets[key]=str((out/'stitching.webp').relative_to(APP));bbox['stitching']=list(Image.fromarray(thread[:,:,3]).getbbox()or[0,0,W,H]);bbox[key]=bbox['stitching'];zones.append({'id':'stitching','field':'stitching','n':ns['stitching'],'group':'stitching','label':'stitching'})
  for name,im in [('glove',Image.new('RGBA',(W,H))),('idmap',Image.fromarray(np.dstack([ids,ids,ids,np.full_like(ids,255)])))]:
   filename='empty.webp'if name=='glove'else'idmap.png';im.save(out/filename,**({'lossless':True}if name=='glove'else{}));assets[f'scott_{view}_{name}']=str((out/filename).relative_to(APP))
- defn={'revision':'SCOTT-BACK-PALM-R03','assets':{**{z['id']:f"scott_{view}_"+z['id']for z in zones},'glove':f'scott_{view}_glove','_idmap':f'scott_{view}_idmap'},'bbox':bbox,'zones':zones,'fieldsShown':[z['field']for z in zones],'materialResponse':responses,'traceSha256':report['sha256'],'embParts':embParts}
+ defn={'revision':'SCOTT-BACK-PALM-R03','assets':{**{z['id']:f"scott_{view}_"+z['id']for z in zones},'glove':f'scott_{view}_glove','_idmap':f'scott_{view}_idmap'},'bbox':bbox,'zones':zones,'fieldsShown':[z['field']for z in zones],'materialResponse':responses,'traceSha256':report['sha256'],'traceSource':str((AUDIT/'trace-original.json').relative_to(ROOT)),'traceReport':str((AUDIT/'BUILD.json').relative_to(ROOT)),'embParts':embParts}
  # Remove only superseded aliases from runtime registration; Git/source originals remain.
  meta['assets']={k:v for k,v in meta['assets'].items()if not k.startswith('scott_'+view+'_')};meta['assets'].update(assets);meta['nativeBackTrace'if view=='back'else'nativePalmTrace']=defn;metaFile.write_text(json.dumps(meta,indent=2)+'\n')
  report['views'][view]={'shapes':len(parts),'laceContours':sum(s['cat']=='laces'for s in parts),'cutouts':sum(s['cat']in['opening','remove']for s in parts),'paths':pathReport,'visibleThreadPixels':int(visible.sum()),'dashLength':dash,'gap':gap,'width':width,'roles':[z['id']for z in zones]}
