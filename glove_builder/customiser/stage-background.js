@@ -6,9 +6,21 @@ const luminance = hex => {
   return rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722;
 };
 const contrast = (a,b) => (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
-export function stageBackground(colours) {
+// `dark` asks for the darkest neutral that still clears 3:1 (the studio
+// setting); the default stays the lightest, as it always was.
+export function stageBackground(colours, dark = false) {
   const values = [...new Set(colours)].map(luminance).filter(v => v !== null);
-  if (!values.length) return '#a0a0a0';
+  if (!values.length) return dark ? '#2a2a2a' : '#a0a0a0';
+  if (dark) {
+    let best = '#2a2a2a', score = -1;
+    for (let v = 16; v <= 120; v += 4) {
+      const hex = '#' + v.toString(16).padStart(2, '0').repeat(3), l = luminance(hex);
+      const candidate = Math.min(...values.map(value => contrast(l, value)));
+      if (candidate >= 3) return hex;
+      if (candidate > score) { best = hex; score = candidate; }
+    }
+    return best;
+  }
   // Prefer the lightest neutral with 3:1 material contrast. When a mixed
   // palette cannot reach that, maximize its weakest material contrast.
   // This is presentation guidance, not a guarantee for shaded image pixels.
