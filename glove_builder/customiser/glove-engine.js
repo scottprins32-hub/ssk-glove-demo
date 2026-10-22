@@ -1629,7 +1629,16 @@ export class GloveRenderer {
     }
     if (D.bulletBox) this.drawWristBadge(ctx, bulletSel, mirror);
     if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
-      let c = this.tinted(highlight.id, '#ffffff');
+      let c = this.tinted(mirror && highlight.id==='embroidery' && D.embroideryLHT ? D.embroideryLHT : highlight.id, '#ffffff',highlight.id);
+      // Selection must cover restored leather under the original lettering,
+      // while the relocated embroidered artwork keeps its own ownership.
+      if(mirror && D.leftyRingHeals?.[highlight.id]){
+        const combined=document.createElement('canvas');combined.width=D.w;combined.height=D.h;
+        const g=combined.getContext('2d');g.drawImage(c,c._ox,c._oy);
+        const fill=this.tinted(D.leftyRingHeals[highlight.id],'#ffffff',highlight.id);g.drawImage(fill,fill._ox,fill._oy);
+        if(D.embroideryLHT && this.imgs[D.embroideryLHT]){g.globalCompositeOperation='destination-out';g.drawImage(this.imgs[D.embroideryLHT],0,0);}
+        combined._ox=combined._oy=0;c=combined;
+      }
       if (D.surfaceDetails?.length) {
         const combined=document.createElement('canvas');combined.width=D.w;combined.height=D.h;
         const g=combined.getContext('2d');g.drawImage(c,c._ox,c._oy);
