@@ -394,7 +394,8 @@
     "scott_pinky_idmap_lht": "assets/pinky-scott-trace-r20/idmap-lht.png",
     "lefty_ring_pinky_embroideryLHT": "assets/lefty-ring-r21/pinky/embroidery.webp",
     "lefty_ring_pinky_idmapLHT": "assets/lefty-ring-r21/pinky/idmap.png",
-    "lefty_ring_pinky_back7_heal": "assets/lefty-ring-r21/pinky/back7-heal.webp"
+    "lefty_ring_pinky_back7_heal": "assets/lefty-ring-r21/pinky/back7-heal.webp",
+    "lefty_ring_pinky_laces_heal": "assets/lefty-ring-r21/pinky/laces-heal.webp"
   },
   "sheen": {
     "back4": 1,
@@ -840,8 +841,14 @@
       "lefty_ring_pinky_embroideryLHT": [
         371,
         232,
-        517,
-        577
+        514,
+        568
+      ],
+      "lefty_ring_pinky_laces_heal": [
+        81,
+        53,
+        675,
+        978
       ]
     },
     "zones": [
@@ -1082,7 +1089,8 @@
     "idmapLHT": "lefty_ring_pinky_idmapLHT",
     "embroideryLHT": "lefty_ring_pinky_embroideryLHT",
     "leftyRingHeals": {
-      "back7": "lefty_ring_pinky_back7_heal"
+      "back7": "lefty_ring_pinky_back7_heal",
+      "laces": "lefty_ring_pinky_laces_heal"
     }
   }
 }

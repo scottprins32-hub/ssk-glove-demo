@@ -1282,7 +1282,6 @@ export class GloveRenderer {
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
       if(z.id==='welting')this.drawWeltEdgeHealing(ctx,state);
-      if(mirror && D.leftyRingHeals?.[z.id]){const q=onPad(this.tinted(D.leftyRingHeals[z.id],this.hex(z.id,state),z.id),z.id);ctx.drawImage(q,q._ox,q._oy);}
       let tinted = this.tinted(z.id, this.hex(z.id, state));
       // H thumb windows show a fixed white backing, independent of palm colour.
       // This is a display backing, not additional web leather or lace ownership.
@@ -1331,6 +1330,7 @@ export class GloveRenderer {
         }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
+      if(mirror && D.leftyRingHeals?.[z.id]){const q=onPad(this.tinted(D.leftyRingHeals[z.id],this.hex(z.id,state),z.id),z.id);ctx.drawImage(q,q._ox,q._oy);}
         // Under a swapped web the calibration glove's knot is not drawn, and
         // the panels it lay on have to be whole without it. knotHeal names a
         // patch over the knot's footprint on this panel, filled from the

@@ -1489,7 +1489,8 @@
     "lefty_ring_back_back78_heal": "assets/lefty-ring-r21/back/back78-heal.webp",
     "lefty_ring_back_back8_heal": "assets/lefty-ring-r21/back/back8-heal.webp",
     "lefty_ring_back_welting_heal": "assets/lefty-ring-r21/back/welting-heal.webp",
-    "lefty_ring_back_laces_heal": "assets/lefty-ring-r21/back/laces-heal.webp"
+    "lefty_ring_back_laces_heal": "assets/lefty-ring-r21/back/laces-heal.webp",
+    "lefty_ring_back_back6_heal": "assets/lefty-ring-r21/back/back6-heal.webp"
   },
   "bbox": {
     "back2": [
@@ -3242,7 +3243,13 @@
         169,
         211,
         266,
-        603
+        595
+      ],
+      "lefty_ring_back_back6_heal": [
+        254,
+        77,
+        372,
+        802
       ]
     },
     "zones": [
@@ -3549,6 +3556,7 @@
     "leftyRingHeals": {
       "back78": "lefty_ring_back_back78_heal",
       "back8": "lefty_ring_back_back8_heal",
+      "back6": "lefty_ring_back_back6_heal",
       "welting": "lefty_ring_back_welting_heal",
       "laces": "lefty_ring_back_laces_heal"
     }

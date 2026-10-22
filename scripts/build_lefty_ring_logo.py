@@ -7,8 +7,8 @@ R=Path(__file__).resolve().parents[1];A=R/'glove_builder/customiser';report={}
 for view,key,prop in [('back','glove','nativeBackTrace'),('pinky','pinky','nativePinkyTrace')]:
  path=A/f'assets/{key}-data.json';meta=json.loads(path.read_text());d=meta[prop];parts=d['embParts'];src=np.array(Image.open(A/meta['assets'][d['assets']['embroidery']]).convert('RGBA'));h,w=src.shape[:2]
  centres=np.array([[(b[0]+b[2])/2,(b[1]+b[3])/2]for b in parts]);_,_,v=np.linalg.svd(centres-centres.mean(axis=0),full_matrices=False);t=v[0];reflection=np.eye(2)-2*np.outer(t,t);out=np.zeros_like(src)
- for box,centre in zip(parts,centres):
-  x0,y0,x1,y1=box;piece=np.zeros_like(src);piece[y0:y1,x0:x1]=src[y0:y1,x0:x1];matrix=np.column_stack([reflection,centre-reflection@centre]);warp=cv2.warpAffine(piece,matrix,(w,h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_CONSTANT);take=warp[:,:,3]>out[:,:,3];out[take]=warp[take]
+ for index,(box,centre) in enumerate(zip(parts,centres)):
+  x0,y0,x1,y1=box;piece=np.zeros_like(src);piece[y0:y1,x0:x1]=src[y0:y1,x0:x1];transform=-reflection if index==int(np.argmax(centres[:,1])) else reflection;matrix=np.column_stack([transform,centre-transform@centre]);warp=cv2.warpAffine(piece,matrix,(w,h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_CONSTANT);take=warp[:,:,3]>out[:,:,3];out[take]=warp[take]
  folder=A/f'assets/lefty-ring-r21/{view}';folder.mkdir(parents=True,exist_ok=True);Image.fromarray(out).save(folder/'embroidery.webp',lossless=True)
  trace=json.loads((R/d['traceSource']).read_text());shapes=[s for s in trace['shapes']if s['view']==view];ns={z['id']:z['n']for z in d['zones']};own=Image.new('L',(w*4,h*4));cut=Image.new('L',own.size)
  def role(s):
@@ -26,7 +26,7 @@ for view,key,prop in [('back','glove','nativeBackTrace'),('pinky','pinky','nativ
  for zone,n in ns.items():
   if zone in ['embroidery','stitching']:continue
   mask=Image.eval(own,lambda x:255 if x==n else 0).resize((w,h),Image.Resampling.LANCZOS)
-  alpha=np.minimum(np.array(mask),src[:,:,3])
+  alpha=np.minimum(np.array(mask),cv2.dilate(src[:,:,3],np.ones((15,15),np.uint8)))
   if not np.any(alpha):continue
   patch=np.full_like(src,246);patch[:,:,3]=alpha;filename=zone+'-heal.webp';Image.fromarray(patch).save(folder/filename,lossless=True);alias=f'lefty_ring_{view}_{zone}_heal';meta['assets'][alias]=str((folder/filename).relative_to(A));d['leftyRingHeals'][zone]=alias;d['bbox'][alias]=list(mask.getbbox())
  ids=np.array(own.resize((w,h),Image.Resampling.NEAREST));thread=np.array(Image.open(A/meta['assets'][d['assets']['stitching']]))[:,:,3];ids[thread>=128]=ns['stitching'];ids[out[:,:,3]>=128]=ns['embroidery'];Image.fromarray(np.dstack([ids,ids,ids,np.full_like(ids,255)])).save(folder/'idmap.png')
