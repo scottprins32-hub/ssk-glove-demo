@@ -215,7 +215,7 @@ html[data-studio="dark"] .stage-view button.is-on img { filter: none; }
 .stage.is-compare .ghost img { display: block; max-width: 100%; height: auto; width: auto; opacity: .92; cursor: pointer; }
 .stage.is-compare .ghost figcaption { left: 0; }
 .stage.is-compare .ghost code { font: inherit; color: var(--text-muted); }
-.stage.is-compare #hover, .stage.is-compare .stage-label { display: none; }
+.stage.is-compare .stage-label { display: none; }
 .sum-compare { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
 .sum-compare .btn { flex: 1 1 auto; padding-inline: var(--space-3); font-size: var(--text-xs); }
 .sum-compare .btn[aria-pressed="true"] { background: var(--navy-900); color: var(--white); border-color: var(--navy-900); }
@@ -237,10 +237,6 @@ html[data-studio="dark"] .stage-view button.is-on img { filter: none; }
 }
 #glove.is-ready { opacity: 1; transform: none; }
 #glove.is-turning { transition: none; }
-#hover {
-  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
 .stage-label {
   position: absolute; z-index: 3; pointer-events: none; transform: translate(14px, 14px);
   padding: 4px 8px; border-radius: var(--radius-sm);
