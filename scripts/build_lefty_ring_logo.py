@@ -8,7 +8,11 @@ for view,key,prop in [('back','glove','nativeBackTrace'),('pinky','pinky','nativ
  path=A/f'assets/{key}-data.json';meta=json.loads(path.read_text());d=meta[prop];parts=d['embParts'];src=np.array(Image.open(A/meta['assets'][d['assets']['embroidery']]).convert('RGBA'));h,w=src.shape[:2]
  centres=np.array([[(b[0]+b[2])/2,(b[1]+b[3])/2]for b in parts]);_,_,v=np.linalg.svd(centres-centres.mean(axis=0),full_matrices=False);t=v[0];reflection=np.eye(2)-2*np.outer(t,t);out=np.zeros_like(src)
  for index,(box,centre) in enumerate(zip(parts,centres)):
-  x0,y0,x1,y1=box;piece=np.zeros_like(src);piece[y0:y1,x0:x1]=src[y0:y1,x0:x1];transform=-reflection if index==int(np.argmax(centres[:,1])) else reflection;matrix=np.column_stack([transform,centre-transform@centre]);warp=cv2.warpAffine(piece,matrix,(w,h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_CONSTANT);take=warp[:,:,3]>out[:,:,3];out[take]=warp[take]
+  x0,y0,x1,y1=box;piece=np.zeros_like(src);piece[y0:y1,x0:x1]=src[y0:y1,x0:x1];transform=-reflection if index==int(np.argmax(centres[:,1])) else reflection
+  if view=='back' and index==int(np.argmin(centres[:,1])):
+   # Clockwise in source space becomes 8deg left in the mirrored glove.
+   angle=math.radians(8);rotation=np.array([[math.cos(angle),-math.sin(angle)],[math.sin(angle),math.cos(angle)]]);transform=rotation@transform
+  matrix=np.column_stack([transform,centre-transform@centre]);warp=cv2.warpAffine(piece,matrix,(w,h),flags=cv2.INTER_CUBIC,borderMode=cv2.BORDER_CONSTANT);take=warp[:,:,3]>out[:,:,3];out[take]=warp[take]
  folder=A/f'assets/lefty-ring-r21/{view}';folder.mkdir(parents=True,exist_ok=True);Image.fromarray(out).save(folder/'embroidery.webp',lossless=True)
  trace=json.loads((R/d['traceSource']).read_text());shapes=[s for s in trace['shapes']if s['view']==view];ns={z['id']:z['n']for z in d['zones']};own=Image.new('L',(w*4,h*4));cut=Image.new('L',own.size)
  def role(s):
@@ -37,5 +41,5 @@ for view,key,prop in [('back','glove','nativeBackTrace'),('pinky','pinky','nativ
  for name,file in [('embroideryLHT','embroidery.webp'),('idmapLHT','idmap.png')]:
   alias=f'lefty_ring_{view}_{name}';meta['assets'][alias]=str((folder/file).relative_to(A));d[name]=alias
   if name=='embroideryLHT':d['bbox'][alias]=list(Image.fromarray(out[:,:,3]).getbbox())
- report[view]={'baseline':t.tolist(),'parts':len(parts),'pixels':int((out[:,:,3]>=128).sum())};path.write_text(json.dumps(meta,indent=2)+'\n')
+ report[view]={'baseline':t.tolist(),'parts':len(parts),'pixels':int((out[:,:,3]>=128).sum()),'symbolDisplayRotationDeg':-8 if view=='back' else 0};path.write_text(json.dumps(meta,indent=2)+'\n')
 p=R/'outputs/lefty-ring-r21';p.mkdir(exist_ok=True);(p/'BUILD.json').write_text(json.dumps(report,indent=2))

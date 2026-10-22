@@ -5,7 +5,8 @@
       0.9988765587097457
     ],
     "parts": 4,
-    "pixels": 16515
+    "pixels": 16508,
+    "symbolDisplayRotationDeg": -8
   },
   "pinky": {
     "baseline": [
@@ -13,6 +14,7 @@
       -0.9466192740294748
     ],
     "parts": 4,
-    "pixels": 9834
+    "pixels": 9834,
+    "symbolDisplayRotationDeg": 0
   }
 }
