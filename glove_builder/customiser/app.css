@@ -488,7 +488,15 @@ input[type="text"], input[type="tel"], input[type="email"] {
   background: var(--surface-card); border-top: 1px solid var(--border-default);
 }
 .bar-progress { display: flex; align-items: center; gap: var(--space-3); flex: 1 1 auto; min-width: 0; }
-.bar-count { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.bar-count { display: none; }
+/* What is still to choose, and where: the first open question, as a link. */
+.bar-next {
+  display: inline-flex; align-items: center; gap: var(--space-2); flex: none; max-width: 40vw;
+  font-size: var(--text-sm); color: var(--navy-900); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bar-next b { font-family: var(--font-display); font-size: var(--text-xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--red-600); }
+.bar-next.is-done b { color: var(--status-success); }
+.bar-next:hover { text-decoration: underline; }
 .bar-count b { color: var(--navy-900); }
 /* The progress is a seam being stitched: a red running stitch over a faint guide. */
 .bar-track {
@@ -652,6 +660,53 @@ body.sum-open { padding-right: var(--sum-w); }
 /* ---------------------------------------------------------- gallery save */
 .gallery-save input { margin-bottom: var(--space-2); }
 
+/* ------------------------------------------------------------ coach marks */
+.coach {
+  position: fixed; z-index: 80; display: flex; align-items: center; gap: var(--space-3);
+  max-width: min(360px, calc(100vw - 24px)); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--navy-900); color: var(--white); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay);
+  font-size: var(--text-sm); line-height: var(--leading-snug);
+  animation: rise var(--dur-reveal) var(--ease-out-expo);
+}
+.coach .btn { height: 36px; min-height: 36px; padding-inline: var(--space-3); font-size: var(--text-xs); flex: none; }
+.coach-dots { display: inline-flex; gap: 4px; flex: none; }
+.coach-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--navy-600); }
+.coach-dots i.on { background: var(--red-500); }
+.is-coached { outline: 3px solid var(--red-500); outline-offset: 4px; border-radius: var(--radius-md); }
+
+/* ------------------------------------------------------------------ print */
+/* The review step on one A4 for Pim: the four sides, the specification, the
+   code. Everything that is a control goes. */
+@media print {
+  @page { size: A4; margin: 11mm; }
+  html, body { height: auto; overflow: visible; background: #fff; color: #111; }
+  .hdr, .steps, .bar, .stage, .scrim, .sum-drawer, .coach, .resume, .skip, .hdr-more, .price-pop { display: none !important; }
+  .wrap { display: block; }
+  .panel { flex: none; border: 0; display: block; }
+  .panel-head, .panel-lead { display: none; }
+  .panel-title { margin: 0 0 3mm; font-size: 18pt; }
+  .panel-body { overflow: visible; padding: 0; display: block; }
+  .panel-body > * { margin-bottom: 5mm; }
+  .review-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
+  .review-strip img { background: #eee; height: 27mm; width: auto; max-width: 100%; margin: 0 auto; aspect-ratio: auto; }
+  .review-strip figure { align-items: center; }
+  .field:has(.missing), .commerce-panel, .gallery-save, .panel-body > .btn, .note-ok, .sw-tools, .part-group, .material-picker, .note { display: none !important; }
+  .spec { border-image: none; border-top: 2px solid #C8102E; }
+  .spec dl { grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0 5mm; font-size: 8.5pt; line-height: 1.3; }
+  .spec dt { font-size: 8.5pt; }
+  .spec dd { text-align: left; }
+  .spec h2 { margin: 2mm 0 0.5mm; font-size: 7.5pt; break-after: avoid; }
+  .panel-body > * { margin-bottom: 3mm; }
+  details.limits { display: block; font-size: 7.5pt; padding: 1mm 2mm; }
+  .limits .webref { display: none; }
+  details.limits summary { list-style: none; }
+  details.limits:not([open]) > :not(summary) { display: block; }
+  .panel-body::after {
+    content: "SSK Pro Custom · " attr(data-code) " · " attr(data-when); display: block;
+    margin-top: 2mm; font-family: var(--font-mono); font-size: 7pt; color: #555;
+  }
+}
+
 /* ---------------------------------------------------------------- mobile */
 @media (max-width: 1200px) { .hdr-tools .ref { display: none; } }
 @media (max-width: 900px) {
@@ -708,7 +763,8 @@ body.sum-open { padding-right: var(--sum-w); }
   .panel-title { font-size: var(--text-lg); }
   .panel-body { padding: var(--space-4); gap: var(--space-4); }
   .bar { padding: var(--space-2) var(--space-3); gap: var(--space-2); }
-  .bar-count, .bar-saved { display: none; }
+  .bar-saved { display: none; }
+  .bar-next { font-size: var(--text-xs); max-width: 44vw; }
   .bar-track { max-width: none; }
   .review-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sheet { padding: 24px 16px; }
