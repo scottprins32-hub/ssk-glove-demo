@@ -1,0 +1,38 @@
+✔ failed optional metadata stays visible and retries without reloading the page (6.652958ms)
+✔ a complete load retains a failed optional view for a later retry (4.545125ms)
+✔ failed back metadata can retry the whole bundle (4.020542ms)
+✔ failed core images can retry while successful images stay cached (4.386459ms)
+✔ preload and repeated flag selections share one decode and latest redraw (5.608ms)
+✔ late flag cannot replace another selection or restore a removed flag (4.63975ms)
+✔ failed flag decode can retry after preload failure (3.87925ms)
+✔ progressive back defers only web roots and crocodile, with priority core assets first (4.828875ms)
+✔ real back metadata follows selected material dependencies without loading optional webs (9.291458ms)
+✔ pinky material plates are ready with the view while Crocodile texture stays deferred (6.97125ms)
+✔ concurrent options and repeated selection share in-flight image decodes (4.317666ms)
+✔ failed optional image leaves selection unready and retry keeps successful dependencies (4.104875ms)
+✔ default complete API still includes every optional back web and texture (3.944125ms)
+✔ hashed URLs cover metadata, decoded assets and flags while offline/external sources stay unchanged (4.087792ms)
+✔ actual app gate ignores late selection completion and never draws an unready option (0.821042ms)
+✔ actual app gate exposes a retry button and retries only when requested (0.364834ms)
+✔ deferred angle stays selectable until its web availability is verified (0.197917ms)
+✔ ownership maps survive tint invalidation but are bounded and context-specific (4.271125ms)
+✔ pad-mask reuse follows both the immutable input layer and pad image (4.372541ms)
+✔ native images share one package fetch and preserve original source cache keys (4.194ms)
+✔ failed image package falls back to the original full-quality images (3.836959ms)
+✔ out-of-bounds package entries fall back instead of decoding wrong bytes (4.105542ms)
+✔ full frame reuse snapshots pixels and refreshes picking metadata on a hit (4.073833ms)
+✔ catalogue package failure retains the original image URL (4.631458ms)
+✔ removed catalogue cards release their unused blob URL (3.450458ms)
+✔ native palm aliases remain unready after a missing image and retry safely (4.147667ms)
+✔ native back aliases fail closed and retry the missing image (4.140083ms)
+✔ a lazily verified palm web switches from native aliases on the first selection (4.532334ms)
+✔ HD badge deferral survives rebuilt asset paths (6.339166ms)
+✔ traced pinky retries missing aliases and keeps exact geometry across web choices (4.681ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 261.899

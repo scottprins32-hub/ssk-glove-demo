@@ -456,3 +456,12 @@ test('HD badge deferral survives rebuilt asset paths', async () => {
   assert.ok(bundle.imgs[metadata.bullets[0].asset]);
   assert.equal(bundle.imgs[metadata.bullets[1].asset],undefined);
 });
+
+test('traced pinky retries missing aliases and keeps exact geometry across web choices',async()=>{
+ const basic={w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png'}};
+ const pinky={...basic,idmapLHT:'oldMap',assets:{...basic.assets,trace:'pinky-trace.png'},nativePinkyTrace:{revision:'SCOTT-BACK-PALM-R03',assets:{glove:'glove',_idmap:'_idmap',laces:'trace'},zones:[]}};
+ const h=await harness({metadata:url=>url==='assets/pinky-data.json'?pinky:basic,imageFailures:{'pinky-trace.png':1}});const b=await h.loadGlove({progressive:true});
+ await assert.rejects(b.views.pinky.load(),/body could not be loaded/);assert.equal(b.views.pinky.ready,false);await b.views.pinky.load();
+ const r=new h.GloveRenderer(b);r.setView('pinky');r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);assert.equal(r.DATA.idmapLHT,null);
+ for(const web of [null,'standard-i','spiral-i','smlee','trapeze']){r.setWeb(web);r.setWebMarked(!!web);assert.equal(r.DATA.tracedSeams,true);assert.equal(r.imgs.laces,b.views.pinky.imgs.trace);}
+});

@@ -228,7 +228,7 @@ export function loadGlove({ progressive = false, initialView = 'back' } = {}) {
           ...assetDependencies(DATA, [DATA.surfaceDetails, DATA.nativeHContour?.materialResponse]),
           ...Object.values(DATA.nativeHContour?.assets || {}),
           ...Object.values(DATA.nativePalmTrace?.assets || {}),
-          ...Object.values(DATA.nativeBackTrace?.assets || {})];
+          ...Object.values(DATA.nativeBackTrace?.assets || {}), ...Object.values(DATA.nativePinkyTrace?.assets || {}), DATA.nativePinkyTrace?.idmapLHT];
         if (core.some(key => DATA.assets[key] && !v.imgs[key])) throw new Error('Glove body could not be loaded: '+core.filter(key=>DATA.assets[key]&&!v.imgs[key]).join(', '));
         const ic = document.createElement('canvas'); ic.width = DATA.w; ic.height = DATA.h;
         const g = ic.getContext('2d', { willReadFrequently: true });
@@ -442,8 +442,8 @@ export class GloveRenderer {
   // their registered base; never leak an H-specific perimeter into another web.
   syncNativeHContour() {
     const base = this.views[this.view];
-    const def = this.view === 'back' ? base.DATA.nativeBackTrace : this.view === 'palm' ? base.DATA.nativePalmTrace : base.DATA.nativeHContour;
-    const active = ['back','thumb','palm'].includes(this.view) && !this.web && !this.webMarked && def;
+    const def = this.view === 'back' ? base.DATA.nativeBackTrace : this.view === 'palm' ? base.DATA.nativePalmTrace : this.view === 'pinky' ? base.DATA.nativePinkyTrace : base.DATA.nativeHContour;
+    const active = def && (this.view==='pinky' || (['back','thumb','palm'].includes(this.view) && !this.web && !this.webMarked));
     const key = this.view + '|' + (active ? def.revision : 'base');
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     if (this.nativeContourKey === key && !newTexture) return;
@@ -461,7 +461,8 @@ export class GloveRenderer {
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
-          ...(['back','palm'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
+          ...(['back','palm','pinky'].includes(this.view) ? {weltEdgeHealing:[], materialSources:{}, standardMaterialSources:{}} : {}),
+          ...(this.view==='pinky' && def.revision==='SCOTT-BACK-PALM-R03'?{idmapLHT:def.idmapLHT||null}:{}),
           ...(def.revision === 'SCOTT-BACK-PALM-R03' ? {approvedH:null,cleanLeftLace:null,surfaceDetails:[],embroideryLHT:null,embParts:def.embParts,sheen:{}, tracedSeams:true,...(this.view === 'thumb' ? {nativeHDetail:null,thumbWingtip:null,thumbLaceCorrection:null,nativeHWhiteWindows:null,nativeHTransparentWindows:null} : {})} : {}) },
           idData: g.getImageData(0,0,c.width,c.height).data };
       }

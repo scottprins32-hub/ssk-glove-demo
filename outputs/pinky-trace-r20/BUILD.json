@@ -1,0 +1,31 @@
+{
+  "sha256": "4b670535eaf5857f01fbc8c1af9d711b909e85f4ba49a14a3f318a002e97e470",
+  "scope": "native pinky exact contours",
+  "views": {
+    "pinky": {
+      "shapes": 46,
+      "laceContours": 10,
+      "cutouts": 2,
+      "paths": [],
+      "visibleThreadPixels": 0,
+      "dashLength": 6,
+      "gap": 2.52,
+      "width": 2.04,
+      "roles": [
+        "palm",
+        "back4",
+        "back5",
+        "back6",
+        "back7",
+        "back8",
+        "back9",
+        "binding",
+        "welting",
+        "pinky_loops",
+        "laces",
+        "embroidery",
+        "stitching"
+      ]
+    }
+  }
+}
