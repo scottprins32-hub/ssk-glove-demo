@@ -1,5 +1,9 @@
 export const PRICE_CENTS = Object.freeze({base:37495,flag:500});
-export const MATERIAL_FIELDS = Object.freeze(['back1','back2','back3','back4','back5','back6','back7','back8','back9','belt']);
+// Crocodile pattern is one choice for the whole back: Back 1 to 9 together, or
+// none of them (Scott, 22 Oct 2026). Never the web, palm, belt, lining or loops.
+export const MATERIAL_FIELDS = Object.freeze(['back1','back2','back3','back4','back5','back6','back7','back8','back9']);
+export const crocAll = materials => MATERIAL_FIELDS.some(k=>materials?.[k]==='snakeskin');
+export const normaliseMaterials = materials => crocAll(materials) ? Object.fromEntries(MATERIAL_FIELDS.map(k=>[k,'snakeskin'])) : {};
 export const quoteDesign = s => ({currency:'EUR',version:'ssk-2026-10',base:PRICE_CENTS.base,
   flag:s.flag&&s.flag!=='None'?PRICE_CENTS.flag:0,
   total:PRICE_CENTS.base+(s.flag&&s.flag!=='None'?PRICE_CENTS.flag:0)});

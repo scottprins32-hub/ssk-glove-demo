@@ -43,16 +43,18 @@ test('every known catalogue has a valid all-white value and valid badge',()=>{
 test('reject unavailable web, mismatched size and unknown palette code',()=>{
   for(const patch of [{webType:'Sasaki 1-Web'},{size:'12.5"',webType:'Spiral I-Web'},{colors:{...fixture().colors,back8:'0'}}])assert.throws(()=>validateDesign({...fixture(),...patch}));
 });
-test('Crocodile only applies to eligible individual panels without surcharge',()=>{
+test('Crocodile is all nine back panels or none, without surcharge',()=>{
   const d=validateDesign({...fixture(),materials:{back3:'snakeskin',back5:'snakeskin',back7:'snakeskin'}});
-  assert.equal(quoteDesign(d).total,37495);assert.equal(d.materials.back4,undefined);
-  for(const f of ['web','palm','laces','welting','pad_color'])assert.throws(()=>validateDesign({...fixture(),materials:{[f]:'snakeskin'}}));
+  assert.equal(quoteDesign(d).total,37495);
+  for(let i=1;i<=9;i++)assert.equal(d.materials['back'+i],'snakeskin');
+  assert.deepEqual(validateDesign(fixture()).materials,{});
+  for(const f of ['web','palm','laces','welting','pad_color','belt','lining','thumb_loops','pinky_loops'])assert.throws(()=>validateDesign({...fixture(),materials:{[f]:'snakeskin'}}));
 });
 test('flagged finger must have matching colour and material on both halves',()=>{
   const d={...fixture(),flag:'Japan',flagPosition:'middle'};
   assert.equal(validateDesign(d).flagPosition,'middle');
   assert.throws(()=>validateDesign({...d,colors:{...d.colors,back6:'20'}}));
-  assert.throws(()=>validateDesign({...d,materials:{back5:'snakeskin'}}));
+  assert.equal(validateDesign({...d,materials:{back5:'snakeskin'}}).materials.back6,'snakeskin');
 });
 test('personalization and numbers retain exact validated text outside reference code',()=>{
   const d=validateDesign({...fixture(),thumbText:'Modern Pitching',pinkyText:'SCOTT',thumbFont:'Block',thumbMain:'10',thumbNumber:'32',circle:'White',numberColor:'20'});
