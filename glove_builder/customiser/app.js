@@ -2,7 +2,7 @@
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
-import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign,crocAll,normaliseMaterials} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } from './glove-engine.js';
 import { NativeFrames, PublicRenders } from './render-cache.js';
 import { stageBackground } from './stage-background.js';
@@ -17,7 +17,9 @@ import { initStage } from './stage-interact.js';
    € 294,95 off the shelf, € 374,95 once you configure your own. This is the
    configurator, so it quotes the custom price. */
 // Scott confirmed snakeskin for the large exterior panels, at no surcharge.
-const cleanMaterials = input => Object.fromEntries(MATERIAL_FIELDS.filter(k=>input?.[k]==='snakeskin').map(k=>[k,'snakeskin']));
+// Crocodile is all nine back panels or none (Scott, 22 Oct 2026): a draft or
+// code with only some of them in crocodile opens with all of them.
+const cleanMaterials = input => normaliseMaterials(input);
 const materialLabel = value => value === 'snakeskin' ? 'Crocodile pattern' : (S.lang === 'nl' ? 'Normaal leer' : 'Standard leather');
 function layerMaterials(D=R.DATA, map=viewLayerField()) {
   return Object.fromEntries(D.zones.map(z=>[z.id,S.materials?.[map[z.id]] || 'standard']));
@@ -1298,18 +1300,16 @@ const FAMILY_OF = (num, name) => /gold|silver|foil/i.test(name) ? 'metal'
 const FAMILY_ORDER = ['neutral', 'warm', 'earth', 'green', 'blue', 'purple', 'metal'];
 const PART_SEEN = new Set();
 function renderColours(b) {
-  if (MATERIAL_FIELDS.includes(S.part)) {
-    const material = choiceField(S.lang === 'nl' ? 'Leertype' : 'Leather finish', [
-      {id:'standard', label:materialLabel('standard')},
-      {id:'snakeskin', label:'Crocodile pattern', sub:S.lang === 'nl' ? 'Zonder meerprijs' : 'No surcharge'}
-    ], S.materials?.[S.part] || 'standard', value => {
-      snapshot(); S.materials = cleanMaterials({...S.materials,[S.part]:value});
-      coupleFlagPanels(); draw(); paint();
-    }, true);
-    material.classList.add('material-picker');
-    material.prepend(el('p', 'material-part', colourLabel(S.part)));
-    b.appendChild(material);
-  }
+  // One finish for the whole back, Back 1 to 9 together.
+  const material = choiceField(t('backFinish'), [
+    {id:'standard', label:materialLabel('standard'), sub:t('backFinishStdSub')},
+    {id:'snakeskin', label:'Crocodile pattern', sub:t('backFinishCrocSub')}
+  ], crocAll(S.materials) ? 'snakeskin' : 'standard', value => {
+    snapshot(); S.materials = value === 'snakeskin' ? normaliseMaterials({ back1: 'snakeskin' }) : {};
+    draw(); paint();
+  }, true);
+  material.classList.add('material-picker');
+  b.appendChild(material);
   for (const [groupKey, fields] of PART_GROUPS) {
     const group = el('div', 'part-group');
     group.appendChild(el('span', 'part-group-lab', t(groupKey)));
@@ -1889,8 +1889,8 @@ function specRows() {
     if (colourPart(f) !== f) continue;
     push(colourLabel(f), colName(f));
   }
-  rows.push(['#', S.lang === 'nl' ? 'Leersoorten' : 'Leather finishes']);
-  for (const f of MATERIAL_FIELDS) if (colourPart(f) === f) push(colourLabel(f), materialLabel(S.materials?.[f]));
+  rows.push(['#', S.lang === 'nl' ? 'Leersoort' : 'Leather finish']);
+  push(t('backFinish'), crocAll(S.materials) ? 'Crocodile pattern (Back 1-9)' : materialLabel('standard'));
   rows.push(['#', t('logos')]);
   push(t('bullet'), DATA.bullets[S.bullet] && DATA.bullets[S.bullet].name);
   push(t('ringEmb'), colName('ring_emb'));
@@ -2302,8 +2302,7 @@ function paint(rebuildBody = true) {
   $('#steps').setAttribute('aria-label', L === 'en' ? 'Steps' : 'Stappen');
   const hadKey = focusKey(document.activeElement);
   const wasStep = paint.lastStep;
-  const revealMaterial = rebuildBody && S.step === 3
-    && MATERIAL_FIELDS.includes(S.part) && paint.lastPart !== S.part;
+  const revealMaterial = false;
   paint.lastPart = S.part;
   paint.lastStep = S.step;
   for (const e of document.querySelectorAll('[data-t]')) e.textContent = t(e.dataset.t);

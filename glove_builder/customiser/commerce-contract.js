@@ -1,8 +1,8 @@
 import {HANDS,SIZES,PADS,WEBS,FLAGS,EMB_FONTS,CIRCLE_COLORS,COLOUR_ORDER,PALETTE_OF} from './glove-catalog.js';
 import {encodeV4} from './refcode.js';
 import {COMMERCE_CATALOG} from './commerce-catalog.js';
-import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign} from './commerce-pricing.js';
-export {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign};
+import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign,crocAll,normaliseMaterials} from './commerce-pricing.js';
+export {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign,crocAll,normaliseMaterials};
 
 export const SHOP = Object.freeze({origin:'https://sskeurope.ccvshop.nl',productId:896372573,
   productUrl:'https://sskeurope.ccvshop.nl/SSK-Custom-Glove',productName:'SSK Custom Glove'});
@@ -32,11 +32,11 @@ export function validateDesign(raw) {
     if(!colour(value,PALETTE_OF(field))) fail('invalid_design_colour');
     colors[field]=value;
   }
-  const materials={};
   for(const [field,value] of Object.entries(raw.materials||{})) {
     if(!MATERIAL_FIELDS.includes(field)||value!=='snakeskin') fail('invalid_design_material');
-    materials[field]=value;
   }
+  // One pattern for the whole back: any panel in crocodile means all nine are.
+  const materials=normaliseMaterials(raw.materials);
   const flag=raw.flag??'None';
   if(!member(flag,FLAGS)) fail('invalid_design_flag');
   const flagPosition=raw.flagPosition??'index';
@@ -65,7 +65,7 @@ export const designCode = design => encodeV4(design,COMMERCE_CATALOG.bullets[des
 export function specification(design) {
   const rows=[['Design',designCode(design)],['Throwing hand',design.hand],['Size',design.size],['Web',design.webType],['Finger protection',design.pad],
     ...Object.entries(design.colors).filter(([key])=>key!=='pad_color'||design.pad!=='None').map(([key,value])=>[key,value+' · '+COMMERCE_CATALOG.palettes[PALETTE_OF(key)].find(c=>c.id===value).name]),
-    ...MATERIAL_FIELDS.map(key=>[`${key} material`,design.materials[key]==='snakeskin'?'Crocodile pattern':'Standard leather']),
+    ['Back panels material',crocAll(design.materials)?'Crocodile pattern (Back 1-9)':'Standard leather'],
     ['Badge',COMMERCE_CATALOG.bullets[design.bullet].name],['Flag',design.flag],['Flag position',design.flagPosition],
     ...['flagOther','thumbText','pinkyText','thumbFont','thumbMain','thumbOutline','thumbNumber','circle','numberColor'].filter(k=>design[k]).map(k=>[k,design[k]])];
   return rows;

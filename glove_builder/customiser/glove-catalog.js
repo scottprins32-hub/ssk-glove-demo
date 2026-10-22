@@ -170,6 +170,7 @@ export const T = {
   en: {
     builder: 'Custom glove builder', model: 'SSK Pro Custom',
     skipToChoices: 'Skip to the choices', turnHint: 'Drag to turn',
+    backFinish: 'Back panels, Back 1 to 9', backFinishStdSub: 'Smooth leather', backFinishCrocSub: 'All nine together, no surcharge',
     now: 'Now', kept: 'Kept', keepVersion: 'Keep this version', restoreKept: 'Back to the kept version', compareOn: 'Compare', clearKept: 'Clear',
     keptAt: 'Kept at %s', resumed: 'Your design is back', startOver: 'Start over',
     shareCard: 'Share the card', downloadCard: 'Download card',
@@ -291,6 +292,7 @@ export const T = {
   nl: {
     builder: 'Handschoen samenstellen', model: 'SSK Pro Custom',
     skipToChoices: 'Naar de keuzes', turnHint: 'Sleep om te draaien',
+    backFinish: 'Rugpanelen, Back 1 t/m 9', backFinishStdSub: 'Glad leer', backFinishCrocSub: 'Alle negen tegelijk, zonder meerprijs',
     now: 'Nu', kept: 'Vastgelegd', keepVersion: 'Deze versie vastleggen', restoreKept: 'Terug naar vastgelegd', compareOn: 'Vergelijk', clearKept: 'Wissen',
     keptAt: 'Vastgelegd om %s', resumed: 'Je ontwerp is hervat', startOver: 'Opnieuw beginnen',
     shareCard: 'Deel de kaart', downloadCard: 'Kaart downloaden',

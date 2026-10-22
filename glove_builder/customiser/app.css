@@ -193,7 +193,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 .sum-kept { flex: 1 0 100%; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
 /* A returning visitor: their draft is back, and a way out of it. */
 .resume {
-  position: absolute; left: 50%; top: var(--space-5); transform: translateX(-50%); z-index: 4;
+  position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 4;
   display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   background: var(--navy-900); color: var(--white); border-radius: var(--radius-pill); box-shadow: var(--shadow-overlay);
   font-size: var(--text-sm); white-space: nowrap; max-width: calc(100% - 32px);
@@ -660,7 +660,7 @@ body.sum-open { padding-right: var(--sum-w); }
   .stage-hint { left: var(--space-3); right: var(--space-3); bottom: 6px; max-width: none; font-size: 11px; }
   .stage-hint:not(:empty) { padding: 4px 8px; }
   .stage-turn { display: none; }
-  .resume { top: 56px; font-size: var(--text-xs); gap: var(--space-2); }
+  .resume { bottom: 40px; font-size: var(--text-xs); gap: var(--space-2); }
   .resume span span { display: none; }
   .stage-label { font-size: 11px; }
   .panel { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--border-default); }
