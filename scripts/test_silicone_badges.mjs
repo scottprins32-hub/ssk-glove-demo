@@ -55,3 +55,15 @@ test('all wrist badge options shrink uniformly about their own mount on both han
   assert.ok(calls.some(v=>v[0]==='rotate'&&Math.abs(v[1]-(b.artAngleDegrees||0)*Math.PI/180)<1e-12));
  }
 });
+
+test('a badge whose artwork has not arrived is skipped, never drawn turned from the stand-in',()=>{
+ for(let i=0;i<data.bullets.length;i++){
+  const b=data.bullets[i];if(!b.asset)continue;
+  const calls=[],ctx={save(){},restore(){},translate(){},scale(){},rotate(a){calls.push(a)}};
+  let drawn=0;const r={DATA:data,imgs:{bullet_logo:{},bullet_logo_tb:{}},unmirror:GloveRenderer.prototype.unmirror,drawBullet(){drawn++;}};
+  GloveRenderer.prototype.drawWristBadge.call(r,ctx,i,false);
+  assert.equal(drawn,0);assert.equal(calls.length,0);
+  r.imgs[b.asset]={};GloveRenderer.prototype.drawWristBadge.call(r,ctx,i,false);
+  assert.equal(drawn,1);
+ }
+});

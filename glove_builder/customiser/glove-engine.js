@@ -446,17 +446,22 @@ export class GloveRenderer {
     const active = def && (this.view==='pinky' || (['back','thumb','palm'].includes(this.view) && !this.web && !this.webMarked));
     const key = this.view + '|' + (active ? def.revision : 'base');
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
-    if (this.nativeContourKey === key && !newTexture) return;
+    // The bundle copies the view's image table. Assets that arrive later (a
+    // wrist badge, a flag) must reach the copy too, or the badge is drawn
+    // from its stand-in: rebuild whenever the table has grown.
+    const loaded = Object.keys(base.imgs).length;
+    const grown = active && !!this.nativeContourBundle && this.nativeContourBundle.base === base && this.nativeContourBundle.loaded !== loaded;
+    if (this.nativeContourKey === key && !newTexture && !grown) return;
     this.DATA = base.DATA; this.imgs = base.imgs; this.idData = base.idData;
     if (active) {
-      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture) {
+      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown) {
         const imgs = { ...base.imgs };
         for (const [zone, asset] of Object.entries(def.assets)) { imgs[zone] = base.imgs[asset]; if (def.revision === 'SCOTT-BACK-PALM-R03') delete imgs[zone+'_hi']; }
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
-        this.nativeContourBundle = { base, imgs, DATA: { ...base.DATA,
+        this.nativeContourBundle = { base, imgs, loaded, DATA: { ...base.DATA,
           bbox: { ...base.DATA.bbox, ...def.bbox },
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
@@ -843,7 +848,11 @@ export class GloveRenderer {
       ctx.save();
       ctx.translate(cx,cy);
       ctx.scale(0.9,0.9);
-      const angle = this.DATA.bullets[bulletSel]?.artAngleDegrees || 0;
+      const opt = this.DATA.bullets[bulletSel];
+      // The angle corrects the photographed artwork only. A badge whose
+      // artwork is not here yet is skipped, never drawn as a turned stand-in.
+      if (opt && opt.asset && this.imgs && !this.imgs[opt.asset]) { ctx.restore(); return; }
+      const angle = opt?.artAngleDegrees || 0;
       // unmirror already cancels the outer reflection: use the same art correction on both hands.
       ctx.rotate(angle*Math.PI/180);
       ctx.translate(-cx,-cy);
