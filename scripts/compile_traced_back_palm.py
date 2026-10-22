@@ -59,7 +59,18 @@ for view in ([args.view] if args.view else ['back','palm']):
    # Neutralize that former field only here; existing lace relief stays exact.
    for shape in parts:
     before=previous.get(json.dumps([shape['view'],shape['pts']]))
-    if role(shape,view)!='laces' or not before or role(before,view)=='laces':continue
+    if role(shape,view)!='laces':continue
+    if not before:
+     before=next((s for s in json.loads(previousRaw)['shapes'] if s['view']==view and s['name']==shape['name']),None)
+    if not before:
+     # Newly drawn laces may cover another source dye. Remove only that
+     # original palette colour, preserving the photographed relief.
+     area=Image.new('L',(W*SS,H*SS));poly(area,shape['pts'],255);area=np.array(area.resize((W,H),Image.Resampling.LANCZOS))>0
+     for sourceId,legend in enumerate(src['legend'],1):
+      c=np.array([int(legend['hex'][j:j+2],16) for j in [1,3,5]]);sourceRef=max(30,float(c@[.2126,.7152,.0722]))
+      tone=np.where(area & (old==sourceId),np.clip((img@[.2126,.7152,.0722])/sourceRef,.26,1.12),tone)
+     continue
+    if role(before,view)=='laces':continue
     oldRole=role(before,view);legend=next(z for z in src['legend'] if z.get('field')==oldRole)
     c=np.array([int(legend['hex'][j:j+2],16) for j in [1,3,5]]);ref=max(30,float(c@[.2126,.7152,.0722]))
     area=Image.new('L',(W*SS,H*SS));poly(area,shape['pts'],255);area=np.array(area.resize((W,H),Image.Resampling.LANCZOS))>0

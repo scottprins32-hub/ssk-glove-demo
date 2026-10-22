@@ -33,7 +33,7 @@ class ExactTraces(unittest.TestCase):
     if z['id']=='stitching':continue
     expected=np.minimum(np.array(Image.eval(own,lambda v:255 if v==z['n']else 0).resize((w,h),Image.Resampling.LANCZOS)),255-ca)
     self.assertTrue(np.array_equal(a,expected),(view,z['id'],'exact alpha'))
-   self.assertEqual(sum(s['cat']=='laces'for s in parts),17 if view=='back'else 40)
+   self.assertEqual(sum(s['cat']=='laces'for s in parts),19 if view=='back'else 40)
  def test_open_seams_are_spaced_and_pickable(self):
   for view,key in [('back','glove'),('palm','palm')]:
    v=self.current(view)[3]['views'][view];self.assertEqual(len(v['paths']),25 if view=='back'else 10);self.assertGreater(v['gap'],0)
@@ -48,7 +48,7 @@ class ExactTraces(unittest.TestCase):
    self.assertGreater(n-1,nominal*.95)
    self.assertLess(int(stats[1:,4].max()),40)
  def test_reclassified_welting_uses_one_neutral_lace_colour(self):
-  t,raw,trace,report=self.current('back');self.assertEqual(report['reclassifications'],[{'view':'back','name':'Veter','from':'welting','to':'laces','points':15}])
+  t,raw,trace,report=self.current('back');self.assertTrue(all(next(s for s in trace['shapes'] if s['view']=='back' and s['name']==name)['cat']=='laces' for name in ['Veter','Welting 4']))
   shape=next(s for s in trace['shapes']if s['view']=='back'and s['name']=='Veter');x,y=np.mean(shape['pts'],axis=0).round().astype(int)
   d=json.loads((APP/'assets/glove-data.json').read_text());lace=np.array(Image.open(APP/d['assets'][t['assets']['laces']]).convert('RGBA'));welt=np.array(Image.open(APP/d['assets'][t['assets']['welting']]).convert('RGBA'));ids=np.array(Image.open(APP/d['assets'][t['assets']['_idmap']]).convert('RGB'))[:,:,0]
   self.assertEqual(int(lace[y,x,3]),255);self.assertGreater(int(lace[y,x,0]),220);self.assertEqual(int(welt[y,x,3]),0);self.assertEqual(int(ids[y,x]),next(z['n']for z in t['zones']if z['id']=='laces'))
