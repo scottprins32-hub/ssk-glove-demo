@@ -895,7 +895,6 @@ function renderStart(b) {
       const img = el('img'); img.src = shipped; img.alt = ''; img.decoding = 'async';
       img.loading = grid.children.length < 2 ? 'eager' : 'lazy';   // the first row is in view
       img.width = shippedStarters.width; img.height = Math.round(DATA.h * shippedStarters.width / DATA.w);
-      img.style.width = '100%'; img.style.aspectRatio = DATA.w + '/' + DATA.h;
       c.appendChild(img);
       c.appendChild(el('span', 'cap',
         `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
@@ -907,7 +906,6 @@ function renderStart(b) {
     // CSS controls the card size; the backing canvas retains the full render.
     const cv = el('canvas'); cv.width = DATA.w; cv.height = DATA.h;
     cv.dataset.previewPending = 'true';
-    cv.style.width = '100%'; cv.style.aspectRatio = DATA.w + '/' + DATA.h;
     c.appendChild(cv);
     c.appendChild(el('span', 'cap',
       `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
