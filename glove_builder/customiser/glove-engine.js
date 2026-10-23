@@ -1637,7 +1637,10 @@ export class GloveRenderer {
       ctx.strokeStyle=this.hex('stitching',state);ctx.lineWidth=b.stitchWidth;ctx.lineCap='round';ctx.setLineDash(b.dash);ctx.stroke();ctx.restore();
     }
     if (D.bulletBox) this.drawWristBadge(ctx, bulletSel, mirror);
-    if (highlight && highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
+    // One part, or the panels that are one piece of leather together (a
+    // finger under its flag): every one of them lights up.
+    const lit = highlight ? (highlight.ids || [highlight.id]).map(id => ({ ...highlight, id })) : [];
+    for (const highlight of lit) if (highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
       let c = this.tinted(mirror && highlight.id==='embroidery' && D.embroideryLHT ? D.embroideryLHT : highlight.id, '#ffffff',highlight.id);
       // Selection must cover restored leather under the original lettering,
       // while the relocated embroidered artwork keeps its own ownership.

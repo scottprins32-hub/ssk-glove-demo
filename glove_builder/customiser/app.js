@@ -704,8 +704,11 @@ function draw(target = ctx, highlight = S.step === 3) {
   R.setPad(PAD_PART[S.pad] || null,
            S.colors.pad_color ? hexOf('pad_color') : null);
   R.setMaterials(layerMaterials());
-  const selected=highlight && viewFieldLayer()[S.part]
-    ? { id:viewFieldLayer()[S.part],amount:0.16 } : null;
+  // A finger under its flag is one piece: both its panels light up together.
+  const litFields = indexIsOnePiece() && S.part === 'back3' ? ['back3', 'back4']
+    : middleIsOnePiece() && S.part === 'back5' ? ['back5', 'back6'] : [S.part];
+  const litIds = highlight ? litFields.map(f => viewFieldLayer()[f]).filter(Boolean) : [];
+  const selected=litIds.length ? { id:litIds[0],ids:litIds,amount:0.16 } : null;
   if(target===ctx && !selected) {
     const signature=visualKey();nativeFrames.select(signature);
     const image=R.drawCached(target,layerState(),S.bullet,null,hasFlag(),isLefty(),nativeFrames,nativeFrameKey(view));
@@ -2067,8 +2070,12 @@ async function cardImage() {
 }
 /* The part icons: one sprite, in the order the generator wrote it. */
 const PART_ICONS = ['web', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'belt', 'lining', 'binding', 'welting', 'laces',
-  'pinky_loops', 'stitching', 'ring_emb', 'palm', 'back1', 'back9', 'thumb_loops', 'back2'];
-const partIcon = part => { const i = PART_ICONS.indexOf(part); return i < 0 ? '' : `<i class="pico" style="--i:${i}" aria-hidden="true"></i>`; };
+  'pinky_loops', 'stitching', 'ring_emb', 'palm', 'back1', 'back9', 'thumb_loops', 'back2', 'back34', 'back56'];
+// A finger under its flag is one piece: its icon shows both panels in red.
+const partIcon = part => {
+  const key = part === 'back3' && indexIsOnePiece() ? 'back34' : part === 'back5' && middleIsOnePiece() ? 'back56' : part;
+  const i = PART_ICONS.indexOf(key); return i < 0 ? '' : `<i class="pico" style="--i:${i}" aria-hidden="true"></i>`;
+};
 
 /* ------------------------------------------------------- turntable clip */
 /* A few seconds of the glove turning through its sides, 4:5 for Instagram
