@@ -813,3 +813,43 @@ body.sum-open { padding-right: var(--sum-w); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-delay: 0ms !important; }
 }
+/* ------------------------------------------------------------ the turn */
+/* The overlays a turn puts on the stage: the side that is leaving, the band
+   of light over the side that arrived, and the side's name, large, behind
+   the glove. All presentation; none of it takes a click. */
+.stage-frame { perspective: 1600px; }
+.stage-ghost, .stage-sheen { position: absolute; pointer-events: none; z-index: 2; will-change: transform, opacity, filter; }
+.stage-sheen { mix-blend-mode: screen; opacity: .7; }
+html[data-studio="dark"] .stage-sheen { opacity: .9; }
+#glove.is-turning { will-change: transform, opacity, filter; }
+.stage > .stage-word {
+  position: absolute; left: 50%; top: 50%; z-index: 0; transform: translate(-50%, -50%);
+  pointer-events: none; white-space: nowrap; overflow: hidden; padding: 0 .1em;
+  font-family: var(--font-display); font-weight: var(--weight-display-heavy, 800); text-transform: uppercase;
+  font-size: clamp(110px, 23vw, 380px); line-height: .9; letter-spacing: -.01em;
+  color: rgba(17,17,17,.035); -webkit-text-stroke: 1.5px rgba(17,17,17,.2);
+}
+html[data-studio="dark"] .stage > .stage-word { color: rgba(255,255,255,.035); -webkit-text-stroke-color: rgba(255,255,255,.2); }
+.stage-word-line { display: inline-block; }
+.stage-word-line > span { display: inline-block; }
+/* The chosen side: one ink pill that glides between the four tabs. */
+.stage-view-ink {
+  position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; z-index: 0; pointer-events: none;
+  background: var(--navy-900); border-radius: calc(var(--radius-md) - 2px);
+  transition: transform 520ms cubic-bezier(.16,1,.3,1), width 520ms cubic-bezier(.16,1,.3,1);
+}
+.stage-view-ink.is-placing { transition: none; }
+.stage-view.has-ink button { position: relative; z-index: 1; }
+.stage-view.has-ink button.is-on { background: transparent; }
+.stage-view.has-ink button.is-on img { transition-delay: 80ms; }
+html[data-studio="dark"] .stage-view-ink { background: var(--white); }
+@media (prefers-reduced-motion: reduce) {
+  .stage-view-ink { transition: none; }
+  .stage > .stage-word { display: none; }
+}
+/* The podium lifts its glow as the new side lands. */
+.stage.is-landing::before { animation: podium-lift 1300ms cubic-bezier(.22,1,.36,1); }
+@keyframes podium-lift { 0% { opacity: .22; transform: scale(1); } 40% { opacity: .5; transform: scale(1.06); } 100% { opacity: .22; transform: scale(1); } }
+html[data-studio="dark"] .stage.is-landing::before { animation-name: podium-lift-dark; }
+@keyframes podium-lift-dark { 0% { opacity: .34; transform: scale(1); } 40% { opacity: .7; transform: scale(1.06); } 100% { opacity: .34; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stage.is-landing::before { animation: none; } }

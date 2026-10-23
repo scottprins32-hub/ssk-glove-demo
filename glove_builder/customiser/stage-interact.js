@@ -4,7 +4,7 @@
 
 
 export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneOf, describe, onPick, onTurn }) {
-  let hovered = null, pointer = null, drag = null, suppressClick = false, held = null;
+  let hovered = null, pointer = null, drag = null, suppressClick = false, held = null, scrub = 0, turning = null;
   // Zoom is gentle: up to 2.2x, around the pointer, and it pans only while
   // zoomed in. A double click or Escape puts the glove back.
   const Z = { max: 2.2, step: 1.12 };
@@ -112,14 +112,34 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
       drag.panned = true; suppressClick = true;
       px = drag.px + dx; py = drag.py + dy; clampPan(); applyZoom(false); clear(); return;
     }
+    // Not zoomed: the glove leans with the finger before it commits to a turn.
+    if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy) * 1.2 && !reduced()) {
+      if (!drag.scrubbing) { drag.scrubbing = true; clear(); canvas.classList.add('is-turning'); }
+      scrub = Math.max(-28, Math.min(28, dx * 0.14));
+      canvas.style.transform = `perspective(1600px) translateX(${dx * 0.05}px) rotateY(${scrub}deg)`;
+    }
     if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
     drag.turned = true; suppressClick = true; clear();
-    onTurn(dx > 0 ? 1 : -1);
+    // swipe left for the next side, right for the one before: the side
+    // leaves the way the finger went
+    onTurn(dx > 0 ? -1 : 1);
   });
   const endDrag = ev => {
     if (ev && ev.pointerType === 'touch') { touches.delete(ev.pointerId); if (touches.size < 2) pinch = null; }
-    if (drag) { drag = null; setTimeout(() => { suppressClick = false; }, 0); }
+    if (drag) {
+      if (drag.scrubbing && !drag.turned) settle();
+      drag = null; setTimeout(() => { suppressClick = false; }, 0);
+    }
   };
+  // A lean that did not become a turn springs back, with a little overshoot.
+  function settle() {
+    const from = canvas.style.transform; scrub = 0;
+    if (!from) { canvas.classList.remove('is-turning'); return; }
+    const a = canvas.animate([{ transform: from }, { transform: 'perspective(1600px) translateX(0) rotateY(0deg)' }],
+      { duration: 520, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+    canvas.style.transform = '';
+    a.finished.catch(() => {}).then(() => canvas.classList.remove('is-turning'));
+  }
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
   stage.addEventListener('wheel', ev => {
@@ -142,22 +162,133 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
   });
 
   /* ---------------------------------------------------------------- flip */
-  // `swap` draws the new side. Returns once the glove has settled.
-  async function flip(direction, swap) {
+  /* A turn of the glove, as if it stood on a turntable: the side that was
+     showing leaves in depth the way it was turned while the next side swings
+     in from the other edge, overlapping. A band of studio light crosses the
+     new side once it lands, and the side's name rises large behind it.
+     Transform, opacity and filter only; a newer turn cuts the older short.
+     `swap` draws the new side; `name` is what the stage calls it. */
+  const ease = { out: 'cubic-bezier(.16,1,.3,1)', inOut: 'cubic-bezier(.65,0,.35,1)' };
+  function copyOf(src) {
+    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+    c.getContext('2d').drawImage(src, 0, 0); return c;
+  }
+  function overlay(cls, src, fit) {
+    // sits exactly on the glove inside the frame, whatever the layout; a
+    // side of another shape is fitted to the glove's height, centred
+    const c = src ? copyOf(src) : document.createElement('canvas');
+    c.className = cls; c.setAttribute('aria-hidden', 'true');
+    let w = canvas.offsetWidth, h = canvas.offsetHeight;
+    if (fit && src) { w = Math.min(frame.clientWidth || w, h * src.width / src.height); h = w * src.height / src.width; }
+    Object.assign(c.style, { left: canvas.offsetLeft + (canvas.offsetWidth - w) / 2 + 'px', top: canvas.offsetTop + (canvas.offsetHeight - h) / 2 + 'px',
+      width: w + 'px', height: h + 'px' });
+    frame.appendChild(c); return c;
+  }
+  function sheen(token, exit = 1) {
+    // the glove's own silhouette, half size, as the mask for the light band
+    const k = .5, w = Math.round(canvas.width * k), h = Math.round(canvas.height * k);
+    const mask = document.createElement('canvas'); mask.width = w; mask.height = h;
+    mask.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    const band = overlay('stage-sheen'); band.width = w; band.height = h;
+    const g = band.getContext('2d'), t0 = performance.now(), D = 1050;
+    const step = now => {
+      if (turning !== token) { band.remove(); return; }
+      const p = Math.min(1, (now - t0) / D), e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      // the band crosses the way the glove turned
+      const travel = -w * .5 + e * w * 2;
+      const x = exit < 0 ? travel : w - travel;
+      g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, w, h);
+      const lg = g.createLinearGradient(x - w * .22, 0, x + w * .22, h * .3);
+      const a = Math.sin(Math.PI * p);
+      lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(.42, `rgba(255,255,255,${.35 * a})`);
+      lg.addColorStop(.5, `rgba(255,255,255,${.85 * a})`); lg.addColorStop(.58, `rgba(255,255,255,${.35 * a})`); lg.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = lg; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = 'destination-in'; g.drawImage(mask, 0, 0);
+      if (p < 1) requestAnimationFrame(step); else band.remove();
+    };
+    requestAnimationFrame(step);
+  }
+  function word(name, exit, lag = 0) {
+    if (!name) return;
+    for (const old of stage.querySelectorAll('.stage-word')) old.remove();
+    const w = document.createElement('div'); w.className = 'stage-word'; w.setAttribute('aria-hidden', 'true');
+    const line = document.createElement('span'); line.className = 'stage-word-line';
+    [...name.toUpperCase()].forEach((ch, i) => {
+      const l = document.createElement('span'); l.textContent = ch === ' ' ? ' ' : ch;
+      l.animate([{ transform: `translate3d(${-exit * 40}px,110%,0) rotate(${-exit * 8}deg)`, opacity: 0 },
+                 { transform: 'translate3d(0,0,0) rotate(0)', opacity: 1 }],
+        { duration: 900, delay: 200 + lag + i * 38, easing: ease.out, fill: 'backwards' });
+      line.appendChild(l);
+    });
+    w.appendChild(line); stage.insertBefore(w, stage.firstChild);
+    // as large as the podium allows, never cut off at its edges
+    const room = stage.clientWidth * .9, used = line.offsetWidth;
+    if (used > room) w.style.fontSize = parseFloat(getComputedStyle(w).fontSize) * room / used + 'px';
+    w.animate([{ opacity: 1, transform: 'translate(-50%,-50%)', letterSpacing: '-.01em' }, { opacity: 0, transform: 'translate(-50%,-50%)', letterSpacing: '.06em' }],
+      { duration: 900, delay: 1500 + lag, easing: ease.inOut, fill: 'forwards' })
+      .finished.catch(() => {}).then(() => w.remove());
+  }
+  async function flip(direction, swap, name, via = []) {
     clear(); zoomReset(false);
-    if (reduced() || !canvas.animate) { swap(); return; }
-    const out = canvas.animate(
-      [{ transform: 'perspective(1400px) rotateY(0deg)', opacity: 1 },
-       { transform: `perspective(1400px) rotateY(${-22 * direction}deg) translateX(${-4 * direction}%)`, opacity: .25 }],
-      { duration: 130, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
-    await out.finished.catch(() => {});
+    const token = turning = {};
+    for (const old of frame.querySelectorAll('.stage-ghost, .stage-sheen, .stage-pass')) old.remove();
+    canvas.getAnimations().forEach(a => a.cancel());
+    const lean = scrub; scrub = 0; canvas.style.transform = '';
+    const fromRot = `perspective(1600px) translateX(0) rotateY(${lean}deg) scale(1)`;
+    if (!canvas.animate || !canvas.offsetWidth) { swap(); canvas.classList.remove('is-turning'); return; }
+    const ghost = overlay('stage-ghost', canvas);
+    canvas.classList.add('is-turning');
     swap();
-    out.cancel();
-    const back = canvas.animate(
-      [{ transform: `perspective(1400px) rotateY(${22 * direction}deg) translateX(${4 * direction}%)`, opacity: .25 },
-       { transform: 'perspective(1400px) rotateY(0deg)', opacity: 1 }],
-      { duration: 260, easing: 'cubic-bezier(.16,1,.3,1)' });
-    await back.finished.catch(() => {});
+    const shadow = (getComputedStyle(canvas).filter || 'none').replace('none', '');
+    if (reduced()) {
+      await ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'linear', fill: 'forwards' }).finished.catch(() => {});
+      ghost.remove(); if (turning === token) canvas.classList.remove('is-turning'); return;
+    }
+    const exit = -direction;                       // the way the old side leaves
+    const soft = coarse() ? '' : 'blur(6px) ';     // no blur on phones: keep it smooth
+    const P = 'perspective(1400px)';
+    ghost.style.filter = shadow;
+    // The old side accelerates away, as if pushed round.
+    const out = ghost.animate([
+      { transform: `${P} translateX(0) rotateY(${lean}deg) scale(1)`, opacity: 1, filter: `brightness(1) ${shadow}` },
+      { offset: .6, opacity: .9 },
+      { transform: `${P} translateX(${exit * 24}%) rotateY(${exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(.45) ${shadow}` }
+    ], { duration: 580, easing: 'cubic-bezier(.55,0,.8,.2)', fill: 'forwards' });
+    // The new side swings in from the far edge, passes a hair beyond square
+    // and settles: the weight of a real glove on a turntable.
+    // The sides in between pass by on the way: each swings in, across the
+    // middle and out again, so a long turn reads as one rotation.
+    const HOP = 340;
+    const passes = via.map((pic, k) => {
+      const o = overlay('stage-ghost stage-pass', pic, true);
+      o.style.filter = shadow;
+      const a = o.animate([
+        { transform: `${P} translateX(${-exit * 24}%) rotateY(${-exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(1.3) ${shadow}` },
+        { offset: .5, transform: `${P} translateX(0) rotateY(0deg) scale(.96)`, opacity: 1, filter: `brightness(1) ${shadow}` },
+        { transform: `${P} translateX(${exit * 24}%) rotateY(${exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(.5) ${shadow}` }
+      ], { duration: HOP * 2, delay: 170 + k * HOP, easing: 'cubic-bezier(.45,.05,.55,.95)', fill: 'both' });
+      a.finished.catch(() => {}).then(() => o.remove());
+      return a;
+    });
+    const lag = via.length * HOP;
+    const into = canvas.animate([
+      { transform: `${P} translateX(${-exit * 24}%) rotateY(${-exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(1.5) ${shadow}` },
+      { offset: .28, opacity: 1 },
+      { offset: .72, transform: `${P} translateX(${exit * .6}%) rotateY(${exit * 3.5}deg) scale(1.012)`, filter: `brightness(1.04) ${shadow}` },
+      { transform: `${P} translateX(0) rotateY(0deg) scale(1)`, opacity: 1, filter: `brightness(1) ${shadow}` }
+    ], { duration: via.length ? 1000 : 1150, delay: 230 + lag, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+    // the podium breathes with the landing
+    setTimeout(() => {
+      if (turning !== token) return;
+      stage.classList.remove('is-landing'); void stage.offsetWidth; stage.classList.add('is-landing');
+      setTimeout(() => stage.classList.remove('is-landing'), 1500);
+    }, lag);
+    word(name, exit, lag);
+    setTimeout(() => { if (turning === token) sheen(token, exit); }, 470 + lag);
+    await out.finished.catch(() => {}); ghost.remove();
+    await Promise.all(passes.map(a => a.finished.catch(() => {})));
+    await into.finished.catch(() => {});
+    if (turning === token) canvas.classList.remove('is-turning');
   }
 
   return {

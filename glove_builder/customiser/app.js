@@ -455,10 +455,19 @@ const flagArt = () => {
   const f = FLAGS.find(f => f.id === S.flag);
   return (f && f.art) || null;
 };
+/* The ink pill under the chosen side's tab glides to the new one. */
+function paintViewInk(vw) {
+  let ink = vw.querySelector('.stage-view-ink');
+  const on = vw.querySelector('button.is-on');
+  if (!on || !on.offsetWidth) return;
+  if (!ink) { ink = el('span', 'stage-view-ink is-placing'); ink.setAttribute('aria-hidden', 'true'); vw.prepend(ink); vw.classList.add('has-ink'); }
+  ink.style.transform = `translateX(${on.offsetLeft}px)`; ink.style.width = on.offsetWidth + 'px';
+  if (ink.classList.contains('is-placing')) requestAnimationFrame(() => requestAnimationFrame(() => ink.classList.remove('is-placing')));
+}
 function paintView() {
   const vw = $('#stageview');
   if (!vw || vw.hidden) return;
-  for (const b of vw.children) {
+  for (const b of vw.querySelectorAll('button')) {
     b.hidden = !R.hasView(b.dataset.view);
     b.querySelector('span').textContent = t(VIEW_KEYS[b.dataset.view]);
     b.setAttribute('aria-label', t(VIEW_KEYS[b.dataset.view]));
@@ -469,6 +478,7 @@ function paintView() {
     b.setAttribute('aria-disabled', 'false');
     b.title = a.ok ? '' : a.reason === 'webWithdrawn' ? withdrawnNote() : vt(a.reason);
   }
+  paintViewInk(vw);
 }
 
 /* Which sides of the glove can honestly show the chosen web. One answer, used
@@ -2600,7 +2610,7 @@ function paint(rebuildBody = true) {
   } else tag.hidden = true;
   // On any step, the stage says when it is not showing the chosen web.
   const wn = webPreviewNote();
-  const off = [...($('#stageview')?.children || [])]
+  const off = [...($('#stageview')?.querySelectorAll('button') || [])]
     .filter(b => !viewAvailability(b.dataset.view).ok).map(b => t(VIEW_KEYS[b.dataset.view]));
   const palmNote = [STAGE_NOTES.includes(wn) ? (wn === 'thumbEstimated' ? t(wn) : vt(wn)) : '',
     off.length ? vt('anglesUnavailable').replace('%s', off.join(', ')) : '',
@@ -2779,10 +2789,34 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
   const cv = $('#glove');
   const VIEW_ORDER = ['back', 'thumb', 'palm', 'pinky'];
   const shownViews = () => VIEW_ORDER.filter(v => v === 'back' || R.hasView(v));
+  // The glove turns round, never jumps: from the back to the palm it passes
+  // the thumb or the pinky side, whichever way it was last turned. A tab
+  // next door goes the short way.
+  let lastDir = 1;
+  const sidePicture = v => {
+    const w = WEBS.find(x => x.id === S.webType);
+    if (!R.hasView(v) || !viewAvailability(v, w).ok || R.views[v]?.ready === false) return null;
+    const cached = nativeFrames.get(nativeFrameKey(v === 'thumb' && thumbEstimatedViewOf(w) || v));
+    if (cached) return cached;
+    const keep = S.view;
+    try { const c = document.createElement('canvas'); S.view = v; draw(c.getContext('2d'), false); return c; }
+    catch { return null; }
+    finally { S.view = keep; }
+  };
   const turnTo = (view, direction) => {
     if (!R.hasView(view) || view === S.view) return;
+    const list = shownViews(), n = list.length, from = list.indexOf(S.view), to = list.indexOf(view);
+    if (direction == null) {
+      const fwd = (to - from + n) % n, back = (from - to + n) % n;
+      direction = fwd < back ? 1 : back < fwd ? -1 : lastDir;
+    }
+    lastDir = direction;
+    const via = [];
+    if (from >= 0 && to >= 0) for (let i = (from + direction + n) % n; i !== to && via.length < n; i = (i + direction + n) % n) via.push(list[i]);
     const swap = () => { S.view = view; draw(); paint(S.step !== 0); };
-    if (interact) interact.flip(direction, swap); else swap();
+    if (!interact) { swap(); return; }
+    const pictures = matchMedia('(prefers-reduced-motion: reduce)').matches ? [] : via.map(sidePicture).filter(Boolean);
+    interact.flip(direction, swap, t(VIEW_KEYS[view]), pictures);
   };
   interact = initStage({
     canvas: cv, label: $('#stagelabel'), stage: $('#stage'), frame: $('#stageframe'),
@@ -2821,8 +2855,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       b.innerHTML = `<img src="${assetURL('assets/ui/view-' + id + '.png')}" alt="" width="26" height="26"><span></span>`;
       b.onclick = () => {
         if (!R.hasView(id)) return;
-        const list = shownViews();
-        turnTo(id, list.indexOf(id) >= list.indexOf(S.view) ? 1 : -1);
+        turnTo(id);
       };
       // Warm an angle on intent. Avoid competing with the selected web by
       // immediately downloading all side views after the first frame.
