@@ -136,7 +136,7 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
     const from = canvas.style.transform; scrub = 0;
     if (!from) { canvas.classList.remove('is-turning'); return; }
     const a = canvas.animate([{ transform: from }, { transform: 'perspective(1600px) translateX(0) rotateY(0deg)' }],
-      { duration: 520, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+      { duration: 420, easing: 'cubic-bezier(.3,1.4,.6,1)' });
     canvas.style.transform = '';
     a.finished.catch(() => {}).then(() => canvas.classList.remove('is-turning'));
   }
@@ -168,7 +168,6 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
      new side once it lands, and the side's name rises large behind it.
      Transform, opacity and filter only; a newer turn cuts the older short.
      `swap` draws the new side; `name` is what the stage calls it. */
-  const ease = { out: 'cubic-bezier(.16,1,.3,1)', inOut: 'cubic-bezier(.65,0,.35,1)' };
   function copyOf(src) {
     const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
     c.getContext('2d').drawImage(src, 0, 0); return c;
@@ -190,7 +189,7 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
     const mask = document.createElement('canvas'); mask.width = w; mask.height = h;
     mask.getContext('2d').drawImage(canvas, 0, 0, w, h);
     const band = overlay('stage-sheen'); band.width = w; band.height = h;
-    const g = band.getContext('2d'), t0 = performance.now(), D = 1050;
+    const g = band.getContext('2d'), t0 = performance.now(), D = 720;
     const step = now => {
       if (turning !== token) { band.remove(); return; }
       const p = Math.min(1, (now - t0) / D), e = p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
@@ -207,26 +206,6 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
       if (p < 1) requestAnimationFrame(step); else band.remove();
     };
     requestAnimationFrame(step);
-  }
-  function word(name, exit, lag = 0) {
-    if (!name) return;
-    for (const old of stage.querySelectorAll('.stage-word')) old.remove();
-    const w = document.createElement('div'); w.className = 'stage-word'; w.setAttribute('aria-hidden', 'true');
-    const line = document.createElement('span'); line.className = 'stage-word-line';
-    [...name.toUpperCase()].forEach((ch, i) => {
-      const l = document.createElement('span'); l.textContent = ch === ' ' ? ' ' : ch;
-      l.animate([{ transform: `translate3d(${-exit * 40}px,110%,0) rotate(${-exit * 8}deg)`, opacity: 0 },
-                 { transform: 'translate3d(0,0,0) rotate(0)', opacity: 1 }],
-        { duration: 900, delay: 200 + lag + i * 38, easing: ease.out, fill: 'backwards' });
-      line.appendChild(l);
-    });
-    w.appendChild(line); stage.insertBefore(w, stage.firstChild);
-    // as large as the podium allows, never cut off at its edges
-    const room = stage.clientWidth * .9, used = line.offsetWidth;
-    if (used > room) w.style.fontSize = parseFloat(getComputedStyle(w).fontSize) * room / used + 'px';
-    w.animate([{ opacity: 1, transform: 'translate(-50%,-50%)', letterSpacing: '-.01em' }, { opacity: 0, transform: 'translate(-50%,-50%)', letterSpacing: '.06em' }],
-      { duration: 900, delay: 1500 + lag, easing: ease.inOut, fill: 'forwards' })
-      .finished.catch(() => {}).then(() => w.remove());
   }
   async function flip(direction, swap, name, via = []) {
     clear(); zoomReset(false);
@@ -253,12 +232,12 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
       { transform: `${P} translateX(0) rotateY(${lean}deg) scale(1)`, opacity: 1, filter: `brightness(1) ${shadow}` },
       { offset: .6, opacity: .9 },
       { transform: `${P} translateX(${exit * 24}%) rotateY(${exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(.45) ${shadow}` }
-    ], { duration: 580, easing: 'cubic-bezier(.55,0,.8,.2)', fill: 'forwards' });
+    ], { duration: 400, easing: 'cubic-bezier(.5,0,.7,.25)', fill: 'forwards' });
     // The new side swings in from the far edge, passes a hair beyond square
     // and settles: the weight of a real glove on a turntable.
     // The sides in between pass by on the way: each swings in, across the
     // middle and out again, so a long turn reads as one rotation.
-    const HOP = 340;
+    const HOP = 220;
     const passes = via.map((pic, k) => {
       const o = overlay('stage-ghost stage-pass', pic, true);
       o.style.filter = shadow;
@@ -266,7 +245,7 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
         { transform: `${P} translateX(${-exit * 24}%) rotateY(${-exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(1.3) ${shadow}` },
         { offset: .5, transform: `${P} translateX(0) rotateY(0deg) scale(.96)`, opacity: 1, filter: `brightness(1) ${shadow}` },
         { transform: `${P} translateX(${exit * 24}%) rotateY(${exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(.5) ${shadow}` }
-      ], { duration: HOP * 2, delay: 170 + k * HOP, easing: 'cubic-bezier(.45,.05,.55,.95)', fill: 'both' });
+      ], { duration: HOP * 2, delay: 90 + k * HOP, easing: 'cubic-bezier(.45,.05,.55,.95)', fill: 'both' });
       a.finished.catch(() => {}).then(() => o.remove());
       return a;
     });
@@ -274,17 +253,16 @@ export function initStage({ canvas, label, stage, frame, renderer, mirror, zoneO
     const into = canvas.animate([
       { transform: `${P} translateX(${-exit * 24}%) rotateY(${-exit * 88}deg) scale(.86)`, opacity: 0, filter: `${soft}brightness(1.5) ${shadow}` },
       { offset: .28, opacity: 1 },
-      { offset: .72, transform: `${P} translateX(${exit * .6}%) rotateY(${exit * 3.5}deg) scale(1.012)`, filter: `brightness(1.04) ${shadow}` },
+      { offset: .7, transform: `${P} translateX(${exit * .4}%) rotateY(${exit * 2}deg) scale(1.006)`, filter: `brightness(1.03) ${shadow}` },
       { transform: `${P} translateX(0) rotateY(0deg) scale(1)`, opacity: 1, filter: `brightness(1) ${shadow}` }
-    ], { duration: via.length ? 1000 : 1150, delay: 230 + lag, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+    ], { duration: 720, delay: 110 + lag, easing: 'cubic-bezier(.2,1,.3,1)', fill: 'backwards' });
     // the podium breathes with the landing
     setTimeout(() => {
       if (turning !== token) return;
       stage.classList.remove('is-landing'); void stage.offsetWidth; stage.classList.add('is-landing');
-      setTimeout(() => stage.classList.remove('is-landing'), 1500);
+      setTimeout(() => stage.classList.remove('is-landing'), 1000);
     }, lag);
-    word(name, exit, lag);
-    setTimeout(() => { if (turning === token) sheen(token, exit); }, 470 + lag);
+    setTimeout(() => { if (turning === token) sheen(token, exit); }, 300 + lag);
     await out.finished.catch(() => {}); ghost.remove();
     await Promise.all(passes.map(a => a.finished.catch(() => {})));
     await into.finished.catch(() => {});
