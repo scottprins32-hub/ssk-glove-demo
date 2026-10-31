@@ -33,6 +33,66 @@ const CLEAN_PINKY_LEATHER = Object.freeze({
   darkDetail: .10, softDetail: .04, grainScale: .30
 });
 
+// Palm inserts came from differently exposed photographs. Keep the relief
+// around folds, but use one restrained light range for every web's leather.
+const PALM_WEB_LEATHER = Object.freeze({
+  relief: .48, darkDetail: .42, softDetail: .12, grainScale: .20
+});
+
+// Carry the neighbouring palm's illumination across an inserted palm fold.
+// The coarse field changes light only: no alpha, contours or thread pixels.
+export function joinedPalmLighting(tone, base, box, reference, refBox, bounds) {
+  const step=4, margin=64, [bx,by]=box, width=box[2]-bx;
+  const x0=bx+bounds[0]-margin,y0=by+bounds[1]-margin;
+  const w=Math.ceil((bounds[2]-bounds[0]+margin*2)/step)+1;
+  const h=Math.ceil((bounds[3]-bounds[1]+margin*2)/step)+1;
+  const field=new Float32Array(w*h),dist=new Float32Array(w*h).fill(Infinity);
+  const rw=refBox[2]-refBox[0],rh=refBox[3]-refBox[1];let seeds=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const rx=x0+x*step-refBox[0],ry=y0+y*step-refBox[1];let sum=0,n=0;
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+      const xx=rx+dx,yy=ry+dy;if(xx<0||yy<0||xx>=rw||yy>=rh)continue;
+      const j=yy*rw+xx;if(reference.base[j*4+3]<245)continue;
+      sum+=reference.tone[j];n++;
+    }
+    if(n>=20){const j=y*w+x;field[j]=sum/n;dist[j]=0;seeds++;}
+  }
+  if(!seeds)return false;
+  const take=(j,k,cost)=>{if(dist[k]+cost<dist[j]){dist[j]=dist[k]+cost;field[j]=field[k];}};
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const j=y*w+x;if(x)take(j,j-1,1);if(y)take(j,j-w,1);
+    if(x&&y)take(j,j-w-1,Math.SQRT2);if(x+1<w&&y)take(j,j-w+1,Math.SQRT2);
+  }
+  for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){
+    const j=y*w+x;if(x+1<w)take(j,j+1,1);if(y+1<h)take(j,j+w,1);
+    if(x+1<w&&y+1<h)take(j,j+w+1,Math.SQRT2);if(x&&y+1<h)take(j,j+w-1,Math.SQRT2);
+  }
+  // Smooth the projected light, then interpolate at full native resolution.
+  const smooth=new Float32Array(field.length);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    let sum=0,n=0;for(let yy=Math.max(0,y-3);yy<=Math.min(h-1,y+3);yy++)
+      for(let xx=Math.max(0,x-3);xx<=Math.min(w-1,x+3);xx++){sum+=field[yy*w+xx];n++;}
+    smooth[y*w+x]=sum/n;
+  }
+  const cw=bounds[2]-bounds[0],ch=bounds[3]-bounds[1],own=new Float32Array(cw*ch);
+  for(let y=0;y<ch;y++)for(let x=0;x<cw;x++)own[y*cw+x]=tone[(y+bounds[1])*width+x+bounds[0]];
+  for(let y=bounds[1];y<bounds[3];y++)for(let x=bounds[0];x<bounds[2];x++){
+    const j=y*width+x;if(!base[j*4+3])continue;
+    let local=0,weight=0;
+    for(let yy=Math.max(bounds[1],y-2);yy<Math.min(bounds[3],y+3);yy++)
+      for(let xx=Math.max(bounds[0],x-2);xx<Math.min(bounds[2],x+3);xx++){
+        const a=base[(yy*width+xx)*4+3]/255;
+        local+=own[(yy-bounds[1])*cw+xx-bounds[0]]*a;weight+=a;
+      }
+    const detail=tone[j]-local/weight;
+    const fx=(bx+x-x0)/step,fy=(by+y-y0)/step,ix=Math.floor(fx),iy=Math.floor(fy),tx=fx-ix,ty=fy-iy;
+    const a=smooth[iy*w+ix]*(1-tx)+smooth[iy*w+ix+1]*tx;
+    const b=smooth[(iy+1)*w+ix]*(1-tx)+smooth[(iy+1)*w+ix+1]*tx;
+    tone[j]=Math.max(0,Math.min(298,a*(1-ty)+b*ty+detail*.65));
+  }
+  return true;
+}
+
 // Retain render dependencies, not superseded tracing/review exports. Metadata
 // references (including aliases, web inserts and material sources) are followed
 // recursively; each diffuse layer brings its highlight partner with it.
@@ -588,7 +648,8 @@ export class GloveRenderer {
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
-      ? this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
+      ? this.view === 'palm' && role === 'web' ? PALM_WEB_LEATHER
+        : this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
         : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER : null
       : null;
     // The split ring/side masks share one photographed light field when their
@@ -635,8 +696,9 @@ export class GloveRenderer {
     const lo=response?.calibration?.lo ?? quantile(.1),mid=response?.calibration?.mid ?? quantile(.5),high=response?.calibration?.high ?? quantile(.9);
     // A common midtone and highlight headroom. Only compress contrast:
     // expanding a flat cutout would amplify pores/noise into false relief.
-    const lower=Math.min(1,(response?.shadowRange ?? 40)/Math.max(1,mid-lo));
-    const upper=Math.min(1,22/Math.max(1,high-mid));
+    const palmWeb=this.view==='palm' && role==='web';
+    const lower=Math.min(1,(palmWeb?24:response?.shadowRange ?? 40)/Math.max(1,mid-lo));
+    const upper=Math.min(1,(palmWeb?14:22)/Math.max(1,high-mid));
     // This accepted palm fold was cut from a differently exposed web layer.
     // Keep its exact ownership/alpha, but calibrate only that mask against its
     // source lighting instead of treating the source shadow as black leather.
@@ -719,6 +781,12 @@ export class GloveRenderer {
         const mask=g.getImageData(0,0,width,height).data;
         for(let j=0;j<tone.length;j++) {const t=mask[j*4]/255;tone[j]=tone[j]*t+original.tone[j]*(1-t);}
       }
+    }
+    const join=response?.joinLighting;
+    if(join?.source && join.source!==id && this.imgs[join.source]) {
+      const reference=this.materialSurface(join.source,role);
+      if(reference)joinedPalmLighting(tone,base,this.DATA.bbox[id],reference,
+        this.DATA.bbox[join.source],[rx0,ry0,rx1,ry1]);
     }
     surface={hi,tone,base,lo,mid,high,lower,upper,role,
       texture:this.imgs._hdLeather, laceTexture:this.imgs._hdLace, snakeTexture:this.imgs._snakeLeather};

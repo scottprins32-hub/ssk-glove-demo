@@ -816,6 +816,16 @@
         "mid": 254,
         "high": 283
       }
+    },
+    "i_merge_standard_i_palm": {
+      "joinLighting": {
+        "source": "palm"
+      }
+    },
+    "i_merge_spiral_i_palm": {
+      "joinLighting": {
+        "source": "palm"
+      }
     }
   },
   "weltEdgeHealing": [
