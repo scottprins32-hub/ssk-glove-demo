@@ -39,3 +39,5 @@ test('only the two I-web palm support pieces opt into joining; roles and signed 
  assert.deepEqual(d.palmWebs.roles,{leather:'web',laces:'laces',stitching:'stitching'});
  assert.equal(Object.keys(d.palmWebs.entries).length,8);
 });
+
+test('removed donor fragments cannot remain lace picking targets',async()=>{const {palmTopLaceFragment}=await import('../glove_builder/customiser/glove-engine.js');assert.equal(palmTopLaceFragment(413,139),true);assert.equal(palmTopLaceFragment(450,700),false);assert.equal(palmTopLaceFragment(620,90),false);});

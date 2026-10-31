@@ -36,7 +36,7 @@ const CLEAN_PINKY_LEATHER = Object.freeze({
 // Palm inserts came from differently exposed photographs. Keep the relief
 // around folds, but use one restrained light range for every web's leather.
 const PALM_WEB_LEATHER = Object.freeze({
-  relief: .48, darkDetail: .42, softDetail: .12, grainScale: .20
+  midtone: 236, relief: .65, darkDetail: .42, softDetail: .12, grainScale: .20
 });
 
 // Carry the neighbouring palm's illumination across an inserted palm fold.
@@ -92,6 +92,8 @@ export function joinedPalmLighting(tone, base, box, reference, refBox, bounds) {
   }
   return true;
 }
+
+export const palmTopLaceFragment=(x,y)=>x>=0&&x<=605&&y>=0&&y<=365-272*x/605;
 
 // Retain render dependencies, not superseded tracing/review exports. Metadata
 // references (including aliases, web inserts and material sources) are followed
@@ -770,7 +772,7 @@ export class GloveRenderer {
         const retained=detail < -9 ? detail*(snake?1:(finish?.darkDetail ?? .72))
           : detail*(finish?.softDetail ?? (response?.detailRetention ?? .24)*(snake?1:.55));
         const grain=tex.values[ty[y]+tx[x]]*(snake?1:(finish?.grainScale ?? .30));
-        tone[full]=Math.max(0,Math.min(298,(response?.midtone ?? (snake||lace?246:248))+(macro-248)*(finish?.relief ?? response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
+        tone[full]=Math.max(0,Math.min(298,(finish?.midtone ?? response?.midtone ?? (snake||lace?246:248))+(macro-248)*(finish?.relief ?? response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
       }
     }
     const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
@@ -1127,7 +1129,12 @@ export class GloveRenderer {
     }
     for (const [part, zone] of Object.entries(P.roles)) {
       const t = this.tinted(e.parts[part].asset, this.hex(zone, state), e.parts[part].asset, zone);
-      g.drawImage(t, t._ox, t._oy);
+      if (part === 'laces') {
+        // Preserve the photographed top wraps; suppress donor fragments between them.
+        g.save();g.beginPath();g.rect(0,0,D.w,D.h);
+        g.moveTo(0,0);g.lineTo(605,0);g.lineTo(605,93);g.lineTo(0,365);g.closePath();
+        g.clip('evenodd');g.drawImage(t,t._ox,t._oy);g.restore();
+      } else g.drawImage(t, t._ox, t._oy);
     }
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
@@ -1768,7 +1775,8 @@ export class GloveRenderer {
           if (asset) {
             const s = document.createElement('canvas'); s.width = D.w; s.height = D.h;
             const gs = s.getContext('2d'), l = this.tinted(asset, '#ffffff');
-            gs.drawImage(l, l._ox, l._oy);
+            if(part==='laces'){gs.save();gs.beginPath();gs.rect(0,0,D.w,D.h);gs.moveTo(0,0);gs.lineTo(605,0);gs.lineTo(605,93);gs.lineTo(0,365);gs.closePath();gs.clip('evenodd');gs.drawImage(l,l._ox,l._oy);gs.restore();}
+            else gs.drawImage(l, l._ox, l._oy);
             gs.globalCompositeOperation = 'destination-in';
             gs.drawImage(this.imgs[P.footprint.asset + '#alpha'], 0, 0);
             gs.globalCompositeOperation = 'destination-out';
@@ -2026,7 +2034,7 @@ export class GloveRenderer {
       if (this.palmAlpha(P.protected.asset)[j] < 128) {
         const f = this.palmAlpha(P.footprint.asset)[j] / 255;
         if (f >= 0.5) {
-          const a = k => this.palmAlpha(pe.parts[k].asset)[j] / 255;
+          const a = k => k==='laces' && palmTopLaceFragment(x,y) ? 0 : this.palmAlpha(pe.parts[k].asset)[j] / 255;
           const s = a('stitching'), l = a('laces'), w = a('leather');
           const p = pe.palmSupport ? this.palmAlpha(pe.palmSupport.asset)[j] / 255 : 0;
           const vis = [['stitching', s], ['laces', l * (1 - s)], ['leather', w * (1 - l) * (1 - s)],
