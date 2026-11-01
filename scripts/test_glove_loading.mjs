@@ -436,13 +436,13 @@ test('native back aliases fail closed and retry the missing image', async()=>{
  const bundle=await h.loadGlove({progressive:true});assert.equal(bundle.views.back.ready,true);assert.ok(bundle.imgs.trace);
 });
 
-test('a lazily verified palm web switches from native aliases on the first selection',async()=>{
+test('a lazily verified palm web retains traced body aliases on the first selection',async()=>{
  const basic={w:1,h:1,palettes:{},zones:[],assets:{glove:'body.png',_idmap:'id.png'}};
  const palm={...basic,nativePalmTrace:{revision:'SCOTT-BACK-PALM-R03',assets:{glove:'glove',_idmap:'_idmap'},zones:[]}};
  const h=await harness({metadata:url=>url==='assets/palm-data.json'?palm:basic});const bundle=await h.loadGlove({progressive:true});await bundle.views.palm.load();
  const r=new h.GloveRenderer(bundle);r.setView('palm');r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);
  bundle.views.palm.DATA.palmWebs={entries:{'standard-i':{}}};
- r.setWeb('standard-i');r.setWebMarked(true);assert.equal(r.web,'standard-i');assert.equal(r.DATA,bundle.views.palm.DATA);
+ r.setWeb('standard-i');r.setWebMarked(true);assert.equal(r.web,'standard-i');assert.equal(r.DATA.tracedSeams,true);assert.deepEqual(r.DATA.nativePalmTrace,palm.nativePalmTrace);
  r.setWeb(null);r.setWebMarked(false);assert.equal(r.DATA.tracedSeams,true);
 });
 

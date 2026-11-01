@@ -526,13 +526,15 @@ export class GloveRenderer {
     return true;
   }
 
-  // User H-web contours are native-H-only. Alternate palm/thumb inserts keep
-  // their registered base; never leak an H-specific perimeter into another web.
+  // Palm body ownership always follows the saved traces. Web inserts replace
+  // only their registered footprint; the selected web never changes body ownership.
+  // Back/thumb retain their native-H-specific contours.
   syncNativeHContour() {
     const base = this.views[this.view];
     const def = this.view === 'back' ? base.DATA.nativeBackTrace : this.view === 'palm' ? base.DATA.nativePalmTrace : this.view === 'pinky' ? base.DATA.nativePinkyTrace : base.DATA.nativeHContour;
-    const active = def && (this.view==='pinky' || (['back','thumb','palm'].includes(this.view) && !this.web && !this.webMarked));
-    const key = this.view + '|' + (active ? def.revision : 'base');
+    const active = def && (['pinky','palm'].includes(this.view) || (['back','thumb'].includes(this.view) && !this.web && !this.webMarked));
+    const photoBody=active && this.view==='palm' && !!this.web;
+    const key = this.view + '|' + (active ? def.revision : 'base')+'|'+photoBody;
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     // The bundle copies the view's image table. Assets that arrive later (a
     // wrist badge, a flag) must reach the copy too, or the badge is drawn
@@ -542,15 +544,16 @@ export class GloveRenderer {
     if (this.nativeContourKey === key && !newTexture && !grown) return;
     this.DATA = base.DATA; this.imgs = base.imgs; this.idData = base.idData;
     if (active) {
-      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown) {
+      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown || this.nativeContourBundle.photoBody!==photoBody) {
         const imgs = { ...base.imgs };
         for (const [zone, asset] of Object.entries(def.assets)) { imgs[zone] = base.imgs[asset]; if (def.revision === 'SCOTT-BACK-PALM-R03') delete imgs[zone+'_hi']; }
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
-        this.nativeContourBundle = { base, imgs, loaded, DATA: { ...base.DATA,
+        this.nativeContourBundle = { base, imgs, loaded, photoBody, DATA: { ...base.DATA,
           bbox: { ...base.DATA.bbox, ...def.bbox },
+          tracedPalmPhotos:photoBody ? base : null,
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
           fieldsNotShown: def.fieldsNotShown || base.DATA.fieldsNotShown,
@@ -686,7 +689,7 @@ export class GloveRenderer {
       && ['back78','back8'].includes(role) && zone?.group === 'leather'
       && !response?.edgeBlend && !response?.webBlend ? 'shared-back78-back8' : role;
     const surfaceKey = JSON.stringify([cacheRole, this.materials?.[role] || 'standard',
-      this.DATA.h, this.DATA.bbox[id], response, finish]);
+      this.DATA.h, this.DATA.bbox[id], response, finish,!!this.DATA.tracedPalmPhotos]);
     let surface = surfaces.get(surfaceKey);
     if (surface && surface.hi === hi && surface.texture === this.imgs._hdLeather
         && surface.laceTexture === this.imgs._hdLace && surface.snakeTexture === this.imgs._snakeLeather) return surface;
@@ -808,6 +811,29 @@ export class GloveRenderer {
         g.clearRect(0,0,width,height);g.drawImage(this.imgs[blend.mask],-x0,-y0);
         const mask=g.getImageData(0,0,width,height).data;
         for(let j=0;j<tone.length;j++) {const t=mask[j*4]/255;tone[j]=tone[j]*t+original.tone[j]*(1-t);}
+      }
+    }
+    // Trace alpha owns the part; keep the registered photograph's illumination
+    // where available instead of replacing the whole body with a flat plate.
+    if(this.DATA.tracedPalmPhotos && id===role && role!=='web' && this.materials?.[role]!=='snakeskin') {
+      const source=this.DATA.tracedPalmPhotos;
+      if(!this.palmPhotoContext || this.palmPhotoContext.source!==source) {
+        const context=Object.create(GloveRenderer.prototype);
+        Object.assign(context,{DATA:source.DATA,imgs:source.imgs,view:'palm',web:this.web,
+          materials:{},materialCache:this.materialCache,cache:new Map(),order:[]});
+        this.palmPhotoContext={source,context};
+      }
+      const context=this.palmPhotoContext.context;
+      const candidates=[role,...(zone?.group==='leather'?['palm','back1','back9']:[])];
+      const plates=[...new Set(candidates)].filter(k=>source.imgs[k] && source.DATA.bbox[k])
+        .map(k=>({surface:context.materialSurface(k,k),box:source.DATA.bbox[k]})).filter(p=>p.surface);
+      for(let y=ry0;y<ry1;y++)for(let x=rx0;x<rx1;x++){
+        const j=y*width+x;if(!base[j*4+3])continue;
+        for(const p of plates){const [px,py,px1,py1]=p.box,xx=x+x0-px,yy=y+y0-py;
+          if(xx<0||yy<0||xx>=px1-px||yy>=py1-py)continue;
+          const q=yy*(px1-px)+xx,a=p.surface.base[q*4+3]/255;if(a<.98)continue;
+          tone[j]=p.surface.tone[q];break;
+        }
       }
     }
     if(finish?.edgeRelief)shadePalmWebEdges(tone,base,width,height,finish.edgeRelief);
