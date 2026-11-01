@@ -48,3 +48,19 @@ test('palm figure thread strengthens existing coverage without filling gaps or c
  definePalmThread(rgba,[242,240,234]);assert.equal(rgba[3],0);assert.ok(rgba[7]>64);assert.equal(rgba[11],255);
  assert.deepEqual(Array.from(rgba.slice(8,11)),[242,240,234]);assert.ok(rgba[4]<242);assert.ok(rgba[4]>rgba[6]);
 });
+
+test('web edge shading retains alpha and open spaces, with the centre light unchanged',async()=>{
+ const {shadePalmWebEdges}=await import('../glove_builder/customiser/glove-engine.js');
+ const base=new Uint8ClampedArray(9*9*4),tone=new Float32Array(81).fill(233);
+ for(let y=1;y<8;y++)for(let x=1;x<8;x++)base[(y*9+x)*4+3]=255;
+ const original=base.slice();shadePalmWebEdges(tone,base,9,9,8);
+ assert.equal(tone[4*9+1],225);assert.equal(tone[4*9+4],233);assert.equal(tone[0],233);assert.deepEqual(base,original);
+});
+
+test('palm web lighting recipes cannot reuse an earlier recipe tint',async()=>{
+ const {GloveRenderer}=await import('../glove_builder/customiser/glove-engine.js');
+ const r={view:'palm',web:'standard-i',views:{palm:{DATA:{palmWebs:{entries:{'standard-i':{},smk:{},smlee:{}}}}}},cache:new Map([['web|white',{}]]),order:['web|white'],syncNativeHContour(){}};
+ GloveRenderer.prototype.setWeb.call(r,'smk');assert.equal(r.cache.size,0);assert.equal(r.order.length,0);
+ r.cache.set('web|white',{});GloveRenderer.prototype.setWeb.call(r,'smlee');assert.equal(r.cache.size,1);
+ GloveRenderer.prototype.setWeb.call(r,'standard-i');assert.equal(r.cache.size,0);
+});

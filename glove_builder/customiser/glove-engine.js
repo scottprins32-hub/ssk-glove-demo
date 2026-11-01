@@ -39,6 +39,21 @@ const PALM_WEB_LEATHER = Object.freeze({
   midtone: 236, relief: .65, darkDetail: .42, softDetail: .12, grainScale: .20
 });
 
+const OTHER_PALM_WEB_LEATHER=Object.freeze({
+  ...PALM_WEB_LEATHER, midtone:233, relief:.82, edgeRelief:8
+});
+export function shadePalmWebEdges(tone,base,width,height,depth) {
+  const radius=Math.max(1,Math.round(height/450));
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const j=y*width+x;if(!base[j*4+3])continue;let coverage=1;
+    for(const [dx,dy] of [[-radius,0],[radius,0],[0,-radius],[0,radius]]){
+      const xx=x+dx,yy=y+dy;
+      coverage=Math.min(coverage,xx<0||xx>=width||yy<0||yy>=height?0:base[(yy*width+xx)*4+3]/255);
+    }
+    tone[j]=Math.max(0,tone[j]-depth*(1-coverage));
+  }
+}
+
 // Carry the neighbouring palm's illumination across an inserted palm fold.
 // The coarse field changes light only: no alpha, contours or thread pixels.
 export function joinedPalmLighting(tone, base, box, reference, refBox, bounds) {
@@ -661,7 +676,7 @@ export class GloveRenderer {
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
-      ? this.view === 'palm' && role === 'web' ? PALM_WEB_LEATHER
+      ? this.view === 'palm' && role === 'web' ? (['smk','smlee'].includes(this.web)?PALM_WEB_LEATHER:OTHER_PALM_WEB_LEATHER)
         : this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
         : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER : null
       : null;
@@ -795,6 +810,7 @@ export class GloveRenderer {
         for(let j=0;j<tone.length;j++) {const t=mask[j*4]/255;tone[j]=tone[j]*t+original.tone[j]*(1-t);}
       }
     }
+    if(finish?.edgeRelief)shadePalmWebEdges(tone,base,width,height,finish.edgeRelief);
     const join=response?.joinLighting;
     if(join?.source && join.source!==id && this.imgs[join.source]) {
       const reference=this.materialSurface(join.source,role);
@@ -1090,8 +1106,12 @@ export class GloveRenderer {
   setWeb(slug) {
     // Lazy inserts update the base metadata after a native alias was built.
     const data = this.views?.[this.view]?.DATA || this.DATA;
+    const previousWeb=this.web;
     this.web = slug && (data.webs?.[slug] || data.thumbWebs?.[slug]
       || data.palmWebs?.entries?.[slug]) ? slug : null;
+    if(this.view==='palm' && ['smk','smlee'].includes(previousWeb)!==['smk','smlee'].includes(this.web)) {
+      this.cache.clear();this.order=[];
+    }
     if (this.views?.[this.view]) this.syncNativeHContour();
   }
 
