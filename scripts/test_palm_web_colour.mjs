@@ -41,3 +41,10 @@ test('only the two I-web palm support pieces opt into joining; roles and signed 
 });
 
 test('removed donor fragments cannot remain lace picking targets',async()=>{const {palmTopLaceFragment}=await import('../glove_builder/customiser/glove-engine.js');assert.equal(palmTopLaceFragment(413,139),true);assert.equal(palmTopLaceFragment(450,700),false);assert.equal(palmTopLaceFragment(620,90),false);});
+
+test('palm figure thread strengthens existing coverage without filling gaps or changing colour family',async()=>{
+ const {definePalmThread}=await import('../glove_builder/customiser/glove-engine.js');
+ const rgba=new Uint8ClampedArray([0,0,0,0,235,235,235,64,235,235,235,255]);
+ definePalmThread(rgba,[242,240,234]);assert.equal(rgba[3],0);assert.ok(rgba[7]>64);assert.equal(rgba[11],255);
+ assert.deepEqual(Array.from(rgba.slice(8,11)),[242,240,234]);assert.ok(rgba[4]<242);assert.ok(rgba[4]>rgba[6]);
+});

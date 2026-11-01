@@ -93,6 +93,17 @@ export function joinedPalmLighting(tone, base, box, reference, refBox, bounds) {
   return true;
 }
 
+// Raised thread: a clear core and a restrained contact edge, using only
+// the existing stitch alpha. Source paths, gaps and ownership stay intact.
+export function definePalmThread(rgba, rgb) {
+  for(let i=0;i<rgba.length;i+=4){
+    const a=rgba[i+3]/255;if(!a)continue;
+    const light=.58+.42*Math.pow(a,.4);
+    for(let k=0;k<3;k++)rgba[i+k]=Math.round(rgb[k]*light);
+    rgba[i+3]=Math.round(255*Math.pow(a,.65));
+  }
+}
+
 export const palmTopLaceFragment=(x,y)=>x>=0&&x<=605&&y>=0&&y<=365-272*x/605;
 
 // Retain render dependencies, not superseded tracing/review exports. Metadata
@@ -885,6 +896,12 @@ export class GloveRenderer {
       }
       g.putImageData(pixels,0,0);
     }
+    if(this.view==='palm' && ['p1_smk_stitching','p1_smlee_stitching'].includes(id)
+        && /^#[0-9a-f]{6}$/i.test(hx)) {
+      const pixels=g.getImageData(0,0,c.width,c.height);
+      definePalmThread(pixels.data,[1,3,5].map(i=>parseInt(hx.slice(i,i+2),16)));
+      g.putImageData(pixels,0,0);
+    }
     c._ox = x0; c._oy = y0;
     if (variants) rememberTint(variants, sharedKey, c);
     this.cache.set(key, c);
@@ -1153,7 +1170,8 @@ export class GloveRenderer {
     g.drawImage(this.imgs[asset + '#alpha'] || this.imgs[asset], 0, 0);
     const d = g.getImageData(0, 0, D.w, D.h).data;
     a = new Uint8Array(D.w * D.h);
-    for (let j = 0; j < a.length; j++) a[j] = d[j * 4 + 3];
+    const definedThread=this.view==='palm' && ['p1_smk_stitching','p1_smlee_stitching'].includes(asset);
+    for (let j = 0; j < a.length; j++) a[j] = definedThread ? Math.round(255*Math.pow(d[j*4+3]/255,.65)) : d[j*4+3];
     this.cache.set(key, a);
     return a;
   }
