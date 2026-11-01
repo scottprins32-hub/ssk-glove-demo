@@ -832,7 +832,7 @@ export class GloveRenderer {
         for(const p of plates){const [px,py,px1,py1]=p.box,xx=x+x0-px,yy=y+y0-py;
           if(xx<0||yy<0||xx>=px1-px||yy>=py1-py)continue;
           const q=yy*(px1-px)+xx,a=p.surface.base[q*4+3]/255;if(a<.98)continue;
-          tone[j]=p.surface.tone[q];break;
+          tone[j]=role==='palm' ? Math.max(0,Math.min(298,tone[j]+(p.surface.tone[q]-248)*.20)) : p.surface.tone[q];break;
         }
       }
     }

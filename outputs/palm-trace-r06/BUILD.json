@@ -1,0 +1,92 @@
+{
+  "sha256": "ba646fd1c22c5ebff03cde33a19814581c4544403366efefae06f50160789852",
+  "scope": "native palm exact contours",
+  "views": {
+    "palm": {
+      "shapes": 98,
+      "laceContours": 40,
+      "cutouts": 8,
+      "paths": [
+        {
+          "name": "Open stiklijn 1",
+          "points": 7,
+          "length": 349.0401054581597,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 2",
+          "points": 7,
+          "length": 348.52971810082255,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 3",
+          "points": 6,
+          "length": 347.89911757012703,
+          "dashes": 41
+        },
+        {
+          "name": "Open stiklijn 4",
+          "points": 7,
+          "length": 345.91853538164406,
+          "dashes": 40
+        },
+        {
+          "name": "Open stiklijn 5",
+          "points": 5,
+          "length": 265.8735164752961,
+          "dashes": 31
+        },
+        {
+          "name": "Open stiklijn 6",
+          "points": 5,
+          "length": 263.2114679017325,
+          "dashes": 31
+        },
+        {
+          "name": "Open stiklijn 7",
+          "points": 5,
+          "length": 257.6649689593621,
+          "dashes": 30
+        },
+        {
+          "name": "Open stiklijn 8",
+          "points": 5,
+          "length": 254.59849992386137,
+          "dashes": 30
+        },
+        {
+          "name": "Open stiklijn 9",
+          "points": 4,
+          "length": 196.94366762313336,
+          "dashes": 23
+        },
+        {
+          "name": "Open stiklijn 10",
+          "points": 4,
+          "length": 177.51922180120164,
+          "dashes": 21
+        }
+      ],
+      "visibleThreadPixels": 3535,
+      "dashLength": 6,
+      "gap": 2.52,
+      "width": 2.04,
+      "roles": [
+        "palm",
+        "web",
+        "back1",
+        "back9",
+        "back3",
+        "back4",
+        "back6",
+        "back7",
+        "belt",
+        "welting",
+        "thumb_loops",
+        "laces",
+        "stitching"
+      ]
+    }
+  }
+}
