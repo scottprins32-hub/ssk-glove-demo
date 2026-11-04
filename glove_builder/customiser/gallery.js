@@ -1,3 +1,4 @@
+import './embed-context.js';
 /* Gallery page: lists the designs saved from the configurator.
    Reads the shared localStorage list, renders a card per design, and
    opens a design back in the configurator through its share-link hash. */

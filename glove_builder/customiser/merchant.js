@@ -1,3 +1,4 @@
+import './embed-context.js';
 import {createClient} from './merchant-auth.bundle.js';
 import {APP_ID,API_REVISION} from './commerce-config.js';
 import {displayDraft,node} from './commerce-display.js';

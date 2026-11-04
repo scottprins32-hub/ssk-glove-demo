@@ -1,3 +1,4 @@
+import './embed-context.js';
 /* SSK glove configurator — "Straight Line".
    Eight steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */

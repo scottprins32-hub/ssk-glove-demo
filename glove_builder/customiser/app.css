@@ -847,3 +847,6 @@ html[data-studio="dark"] .stage-view-ink { background: var(--white); }
 html[data-studio="dark"] .stage.is-landing::before { animation-name: podium-lift-dark; }
 @keyframes podium-lift-dark { 0% { opacity: .34; transform: scale(1); } 40% { opacity: .7; transform: scale(1.06); } 100% { opacity: .34; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .stage.is-landing::before { animation: none; } }
+
+/* The merchant page supplies the brand header around the embedded builder. */
+html[data-embedded] .hdr-brand{display:none}html[data-embedded] .hdr{padding-block:8px}html[data-embedded] .hdr-tools{margin-right:auto}

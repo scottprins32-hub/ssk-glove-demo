@@ -1,3 +1,4 @@
+import './embed-context.js';
 // Owned-app measurements only. No browser debugging, cache clearing, remote
 // telemetry or draft storage. Do not submit orders from this measurement page. Unique URL keys simulate an empty cache.
 const runner=document.querySelector('#runner'), status=document.querySelector('#status');

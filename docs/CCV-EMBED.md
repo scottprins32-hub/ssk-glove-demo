@@ -1,0 +1,13 @@
+# SSK configurator inside CCV Shop
+
+The builder is embedded on product896372573 at https://sskeurope.ccvshop.nl/SSK-Custom-Glove using integration/ccv-product-embed.html. The merchant script relocates the iframe above the former product layout and hides that layout, including its generic add-to-cart action. It only activates on the SSK shop origin and the named embed elements. Other products remain unchanged. Original descriptions and installation responses are retained locally under outputs/ccv-embed-r01/SHOP-INSTALL.jsonl.
+
+The iframe keeps the real builder, original assets and saved-design contract. It has an accessible title, origin-only referrer and a separate-page fallback. No contact/customer data is transferred to the parent. Existing order snapshots, server pricing, checkout capabilities and public v15 gate remain unchanged.
+
+After confirming the design, the saved review stays inside the iframe. Checkout sends its server-validated CCV URL to the parent using the exact SSK origin. The merchant listener verifies child origin, child window, message type, HTTPS shop origin, checkout path and OrderId before navigating the entire merchant page. The builder referrer changes to the builder origin after internal navigation, so it must not decide the merchant message target. Checkout is never intentionally framed: the bank/provider gets the normal full-page CCV flow.
+
+Base44's documented prevent_iframe_embedding flag is false. Its documented API does not expose a per-app allowlist setter, so this removes HTTP X-Frame-Options DENY globally; it is not a server-side origin allowlist. Application entry modules separately reject frames outside SSK/self and reject untrusted ancestors where the browser exposes ancestorOrigins. The shop itself sends SAMEORIGIN. This supports the public embedded product; do not remove API capability checks or admin authorization. Do not claim that JavaScript admission equals CSP frame-ancestors.
+
+No provider, beneficiary, bank-account or settlement settings were changed. Checkout continues through SSK Europe's CCV shop and its configured provider. The exact payout bank account remains unverified. A real charged transaction, payment return and confirmation email have not been tested.
+
+Installation uses only a temporary admin-only helper that reads the existing shop credentials inside Base44, checks the current product-description hash and patches description only. No credentials enter the browser or repository. The helper is removed after installation; the canonical frontend integration remains versioned. Normal base44 publication must include both embed-context.js and shop-embed.js.

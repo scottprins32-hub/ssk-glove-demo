@@ -1,3 +1,4 @@
+import {navigateCheckout} from './embed-context.js';
 import {api,errorMessage,readOrderItems,getCheckoutKey,saveCheckoutKey,orderItemsFragment,checkoutStorageAvailable,formatMoney,removeFromCart,TEST_MODE} from './commerce-client.js';
 import {SHOP,safeCheckoutUrl} from './commerce-contract.js';
 import {displayDraft,node} from './commerce-display.js';
@@ -48,7 +49,7 @@ async function start() {
   const message=node('p','', 'note');message.setAttribute('role','status');
   const help=node('p',tr('Hierna vul je in de SSK-webshop je adres in, kies je de bezorging en betaal je. Je ontwerp en personalisatie gaan automatisch mee.','Next, enter your address, choose delivery and pay in the SSK webshop. Your design and personalization are transferred automatically.'),'commerce-small');
   let completed=false;
-  const returnLink=node('a',tr('Terug naar SSK Custom Glove','Return to SSK Custom Glove'),'btn');returnLink.href=SHOP.productUrl;
+  const returnLink=node('a',tr('Terug naar SSK Custom Glove','Return to SSK Custom Glove'),'btn');returnLink.href=SHOP.productUrl;returnLink.target='_top';
   const share=node('button',tr('Ontwerplink kopiëren','Copy design link'),'btn');share.onclick=async()=>{
     try{await navigator.clipboard.writeText(location.href);message.textContent=tr('De ontwerplink is gekopieerd.','Design link copied.');}catch{message.textContent=tr('Kopieer de volledige ontwerplink uit de adresbalk.','Copy the full design link from the address bar.');}
   };
@@ -80,7 +81,7 @@ async function start() {
       }
       message.textContent=tr('Je winkelwagen wordt klaargezet…','Preparing your basket…');
       const keys=items.map(i=>({id:i.id,token:getCheckoutKey(i.id)}));
-      const result=await api('checkout',many?{items:keys}:keys[0]);location.assign(safeCheckoutUrl(result.url));
+      const result=await api('checkout',many?{items:keys}:keys[0]);navigateCheckout(safeCheckoutUrl(result.url));
     } catch(error){message.textContent=errorMessage(error,lead.design.lang);button.disabled=false;}
   };
   const refresh=node('button',tr('Bestelstatus controleren','Check order status'),'btn');refresh.disabled=!getCheckoutKey(lead.id)||!config.connected;
