@@ -2644,7 +2644,7 @@ function paint(rebuildBody = true) {
   paintBarNext();
   const body = $('#body'); body.dataset.code = code(); body.dataset.when = new Date().toLocaleDateString(S.lang === 'nl' ? 'nl-NL' : 'en-GB');
   $('#prev').disabled = S.step === 0;
-  $('#next').textContent = S.step === STEPS.length - 1 ? t('sendIt')
+  $('#next').textContent = S.step === STEPS.length - 1 ? (S.lang === 'nl' ? 'Opslaan en afrekenen' : 'Save and checkout')
     : `${t(STEPS[S.step + 1].title)} →`;
   $('#undo').disabled = !undoStack.length && !textTx;
   $('#redo').disabled = !redoStack.length;
@@ -2695,7 +2695,12 @@ function reportPerformance() {
 $('#prev').onclick = () => { flushText(); if (S.step > 0) { S.step--; paint(); } };
 $('#next').onclick = () => {
   flushText();
-  if (S.step === STEPS.length - 1) return openSheet();
+  if (S.step === STEPS.length - 1) {
+    const save = document.querySelector('[data-order-save]');
+    if (save && !save.disabled) return save.click();
+    document.querySelector('.commerce-panel')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   S.step++; paint();
 };
 $('#lang-nl').onclick = () => { S.lang = 'nl'; paint(); };

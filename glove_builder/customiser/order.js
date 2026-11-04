@@ -2,6 +2,9 @@ import {api,errorMessage,readOrderItems,getCheckoutKey,saveCheckoutKey,orderItem
 import {SHOP,safeCheckoutUrl} from './commerce-contract.js';
 import {displayDraft,node} from './commerce-display.js';
 const status=document.querySelector('#status'),host=document.querySelector('#order-content');
+// Shared copies and multi-glove removal change only this document's fragment.
+// Reload the snapshot and capabilities instead of leaving the previous controls mounted.
+window.addEventListener('hashchange',()=>location.reload());
 const items=readOrderItems();
 async function start() {
   if(!items)throw Object.assign(Error(),{code:'design_not_found'});
@@ -11,6 +14,11 @@ async function start() {
   document.documentElement.lang=en?'en':'nl';document.querySelector('h1').textContent=many?tr(`Je ${drafts.length} handschoenen en bestelling`,`Your ${drafts.length} gloves and order`):tr('Je ontwerp en bestelling','Your design and order');
   document.querySelector('.eyebrow').textContent=many?tr('JOUW HANDSCHOENEN','YOUR GLOVES'):tr('JOUW HANDSCHOEN','YOUR GLOVE');
   host.hidden=false;
+  const journey=node('ol',null,'commerce-journey');journey.setAttribute('aria-label',tr('Bestelstappen','Order steps'));
+  for(const [index,label] of [tr('Ontwerp opgeslagen','Design saved'),tr('Controleer je bestelling','Review your order'),tr('Adres en betaling bij SSK','Address and payment at SSK')].entries()) {
+    const step=node('li',label);if(index===1)step.setAttribute('aria-current','step');journey.append(step);
+  }
+  host.before(journey);
   const soonest=drafts.map(d=>new Date(d.expiresAt)).sort((a,b)=>a-b)[0];
   status.textContent=tr('Vaste ontwerpversie · bewaard tot ','Fixed design · saved until ')+new Intl.DateTimeFormat(en?'en-GB':'nl-NL',{dateStyle:'long'}).format(soonest);
   let aside;
@@ -38,6 +46,8 @@ async function start() {
   const ownAll=()=>items.every(i=>getCheckoutKey(i.id));
   const button=node('button',ownAll()?tr('Verder naar veilig afrekenen','Continue to secure checkout'):many?tr('Deze handschoenen zelf bestellen','Order these gloves'):tr('Dit ontwerp zelf bestellen','Order this design'),'btn btn-primary');button.type='button';
   const message=node('p','', 'note');message.setAttribute('role','status');
+  const help=node('p',tr('Hierna vul je in de SSK-webshop je adres in, kies je de bezorging en betaal je. Je ontwerp en personalisatie gaan automatisch mee.','Next, enter your address, choose delivery and pay in the SSK webshop. Your design and personalization are transferred automatically.'),'commerce-small');
+  let completed=false;
   const returnLink=node('a',tr('Terug naar SSK Custom Glove','Return to SSK Custom Glove'),'btn');returnLink.href=SHOP.productUrl;
   const share=node('button',tr('Ontwerplink kopiëren','Copy design link'),'btn');share.onclick=async()=>{
     try{await navigator.clipboard.writeText(location.href);message.textContent=tr('De ontwerplink is gekopieerd.','Design link copied.');}catch{message.textContent=tr('Kopieer de volledige ontwerplink uit de adresbalk.','Copy the full design link from the address bar.');}
@@ -50,6 +60,7 @@ async function start() {
   if(drafts.some(d=>d.design.flag==='Other Flag'))disable('flag_requires_confirmation');
   if(!checkoutStorageAvailable())disable('checkout_storage_required');
   button.onclick=async()=>{
+    if(button.disabled||completed)return;
     if(!checkoutStorageAvailable()){disable('checkout_storage_required');return;}
     if(!check.checked){message.textContent=many?tr('Bevestig eerst je gecontroleerde ontwerpen.','Confirm your reviewed designs first.'):tr('Bevestig eerst je gecontroleerde ontwerp.','Confirm your reviewed design first.');check.focus();return;}
     button.disabled=true;
@@ -73,7 +84,9 @@ async function start() {
     } catch(error){message.textContent=errorMessage(error,lead.design.lang);button.disabled=false;}
   };
   const refresh=node('button',tr('Bestelstatus controleren','Check order status'),'btn');refresh.disabled=!getCheckoutKey(lead.id)||!config.connected;
-  refresh.onclick=async()=>{refresh.disabled=true;try{const result=await api('status',{id:lead.id,token:getCheckoutKey(lead.id)});message.textContent=tr('Status bij CCV: ','CCV status: ')+result.status+tr(' · betaald: ',' · paid: ')+(result.paid?tr('ja','yes'):tr('nee','no'));if(result.status==='ordered')button.disabled=true;}catch(error){message.textContent=errorMessage(error,lead.design.lang);}finally{refresh.disabled=false;}};
-  card.append(consent,node('div',null,'commerce-actions'));card.lastChild.append(button,refresh,share,returnLink);card.append(message);
+  refresh.onclick=async()=>{refresh.disabled=true;try{const result=await api('status',{id:lead.id,token:getCheckoutKey(lead.id)});if(['uncertain','submitting'].includes(result.status)){button.disabled=true;message.textContent=errorMessage({code:result.status==='uncertain'?'checkout_needs_review':'checkout_processing'},lead.design.lang);return;}completed=result.status==='ordered';button.disabled=completed||!config.connected||config.checkoutEnabled!==true||drafts.some(d=>d.design.flag==='Other Flag')||!checkoutStorageAvailable();message.textContent=completed?(result.paid?tr('Je bestelling is geplaatst en betaald. Je ontvangt de bevestiging van SSK.','Your order is placed and paid. SSK will send your confirmation.'):tr('Je bestelling is geplaatst. De betaling is nog niet bevestigd door SSK.','Your order is placed. Payment has not yet been confirmed by SSK.')):result.status==='ready'?tr('Je winkelwagen staat klaar. Je kunt verder om af te rekenen.','Your basket is ready. Continue to checkout.'):tr('Je ontwerp is opgeslagen. Je kunt verder naar afrekenen.','Your design is saved. You can continue to checkout.');if(completed){button.disabled=true;button.textContent=tr('Bestelling geplaatst','Order placed');consent.hidden=true;}}catch(error){message.textContent=errorMessage(error,lead.design.lang);}finally{refresh.disabled=false;}};
+  const checkoutActions=node('div',null,'commerce-actions commerce-checkout-actions');checkoutActions.append(button);
+  const secondary=node('div',null,'commerce-actions commerce-secondary');secondary.append(refresh,share,returnLink);
+  card.append(help,consent,checkoutActions,message,secondary);
 }
 start().catch(error=>{status.textContent=errorMessage(error);const back=node('a','Terug naar de ontwerper / Back to designer','btn');back.href='./index.html';host.hidden=false;host.replaceChildren(back);});

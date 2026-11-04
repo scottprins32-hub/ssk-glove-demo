@@ -304,3 +304,14 @@ test('CCV adapter posts one row per glove and verifies every row against its own
   rows=[rowOf(one)];assert.equal((await ccv.order(78,one)).verifiedRow.memo,memoOf(one));
   await assert.rejects(ccv.prepare([one,two],[memoOf(one)]),/invalid_request/);
 });
+
+test('live v15 uses isolated approval flags and the same reviewed canonical dependencies',async()=>{
+ const index=await readFile(new URL('../base44/functions/ssk-commerce-v15/index.ts',import.meta.url),'utf8');
+ assert.match(index,/checkoutEnabled:Deno\.env\.get\('CCV_LIVE_ORDERING_V15_ENABLED'\)==='true'/);
+ assert.match(index,/acceptanceTestsEnabled:Deno\.env\.get\('CCV_ACCEPTANCE_V15_TESTS_ENABLED'\)==='true'/);
+ assert.ok(!index.includes('CCV_API_KEY'));assert.ok(!index.includes('_V14_'));
+ for(const name of ['service.js','store.js','ccv.js','commerce-contract.js','commerce-pricing.js','commerce-catalog.js','glove-catalog.js','refcode.js'])
+  assert.equal(await readFile(new URL('../base44/functions/ssk-commerce-v15/lib/'+name,import.meta.url),'utf8'),await readFile(new URL('../base44/functions/ssk-commerce-v14/lib/'+name,import.meta.url),'utf8'));
+ const config=await readFile(new URL('../glove_builder/customiser/commerce-config.js',import.meta.url),'utf8');
+ assert.ok(config.includes('/functions/ssk-commerce-v15'));assert.ok(config.includes('ccv-r03-01'));
+});

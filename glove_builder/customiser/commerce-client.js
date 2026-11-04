@@ -52,7 +52,7 @@ export function loadCart() {
   try{const list=JSON.parse(localStorage.getItem(CART_KEY)||'[]');return Array.isArray(list)?list.filter(i=>i&&typeof i.id==='string'&&typeof i.viewToken==='string').slice(0,MAX_ORDER_ITEMS):[];}catch{return [];}
 }
 export function saveCart(items) {try{if(items.length)localStorage.setItem(CART_KEY,JSON.stringify(items.slice(0,MAX_ORDER_ITEMS)));else localStorage.removeItem(CART_KEY);}catch{}}
-export function addToCart(item) {const items=loadCart().filter(i=>i.id!==item.id);items.push({id:item.id,viewToken:item.viewToken,reference:item.reference,total:item.total,when:new Date().toISOString()});saveCart(items);return items;}
+export function addToCart(item) {const items=loadCart().filter(i=>i.id!==item.id);if(items.length>=MAX_ORDER_ITEMS)throw Object.assign(Error('cart_full'),{code:'cart_full'});items.push({id:item.id,viewToken:item.viewToken,reference:item.reference,total:item.total,when:new Date().toISOString()});saveCart(items);return items;}
 export function removeFromCart(id) {const items=loadCart().filter(i=>i.id!==id);saveCart(items);return items;}
 export function clearCart() {saveCart([]);}
 export function saveCheckoutKey(id,key) {try{sessionStorage.setItem('ssk-checkout:'+id,key);}catch{}}

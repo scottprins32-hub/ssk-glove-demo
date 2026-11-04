@@ -15,6 +15,7 @@ export function mountCommerce(host,{lang,complete,capture,getDesign,onParked}) {
   const status=document.createElement('p');status.className='note';status.setAttribute('role','status');
   const acts=document.createElement('div');acts.className='commerce-actions';
   const button=document.createElement('button');button.type='button';button.className='btn btn-primary';
+  button.dataset.orderSave='true';
   const another=document.createElement('button');another.type='button';another.className='btn btn-ghost';
   another.textContent=tr('Bewaren en nog een handschoen bouwen','Save and build another glove');
   const cartBox=document.createElement('div');cartBox.className='commerce-cart';
@@ -25,6 +26,8 @@ export function mountCommerce(host,{lang,complete,capture,getDesign,onParked}) {
     const cart=loadCart();cartBox.replaceChildren();
     button.textContent=cart.length?tr(`Opslaan en bestelling bekijken (${cart.length+1} handschoenen)`,`Save and review order (${cart.length+1} gloves)`):tr('Opslaan en bestelling bekijken','Save and review order');
     another.hidden=cart.length>=MAX_ORDER_ITEMS-1;
+    button.disabled=!complete||cart.length>=MAX_ORDER_ITEMS;
+    if(cart.length>=MAX_ORDER_ITEMS)status.textContent=tr('Je bestelling bevat maximaal zes handschoenen. Bekijk je bestelling of verwijder eerst een handschoen.','Your order holds up to six gloves. Review your order or remove a glove first.');
     if(!cart.length){orderLink.hidden=true;return;}
     const h=document.createElement('p');h.className='commerce-cart-head';
     h.textContent=tr(`Al in je bestelling: ${cart.length} ${cart.length===1?'handschoen':'handschoenen'}`,`Already in your order: ${cart.length} ${cart.length===1?'glove':'gloves'}`);
@@ -43,6 +46,7 @@ export function mountCommerce(host,{lang,complete,capture,getDesign,onParked}) {
     cartBox.append(h,ul);
   }
   async function save() {
+    if(loadCart().length>=MAX_ORDER_ITEMS){paintCart();return null;}
     if(!confirm.checked){status.textContent=tr('Bevestig eerst dat je het ontwerp hebt gecontroleerd.','Please confirm that you reviewed your design.');confirm.focus();return null;}
     button.disabled=another.disabled=confirm.disabled=true;status.textContent=tr('De vier aanzichten worden klaargezet…','Preparing the four views…');
     try {
