@@ -1,5 +1,7 @@
 # SSK Europe: configurator → CCV Shop
 
+> Live ordering was approved and activated on 4 November 2026. The current execution pin is `ssk-commerce-v15` / `ccv-r03-01`; see [current activation and rollback instructions](CCV-LIVE-2026-11-04.md). The v14 approval-pending details below describe the earlier setup, not the current activation state.
+
 ## Verified shop entry and return page
 
 - Product: https://sskeurope.ccvshop.nl/SSK-Custom-Glove
