@@ -6,6 +6,7 @@ import './embed-context.js';
 import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign,crocAll,normaliseMaterials} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } from './glove-engine.js';
 import { NativeFrames, PublicRenders } from './render-cache.js';
+import { starterRenderKey, STARTER_RENDER_REVISION } from './starter-cache.js';
 import { stageBackground } from './stage-background.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
 import { WEB_REFERENCES, WITHDRAWN_WEBS, HANDS, SIZES, POSITIONS, PADS, WEBS, EMB_FONTS, FLAGS, CIRCLE_COLORS,
@@ -164,7 +165,7 @@ const S = {
 };
 let DATA, R, ctx, undoStack = [], redoStack = [], suppress = false;
 const nativeFrames=new NativeFrames();
-const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03|thumb-r13',window.__SSK_PERF__?.nonce || '');
+const publicRenders=new PublicRenders((window.__SSK_RENDER_REVISION__ || '')+'|scott-back-palm-r03|thumb-r13|'+STARTER_RENDER_REVISION,window.__SSK_PERF__?.nonce || '');
 let defaultVisual=null;
 const visualKey=()=>JSON.stringify([S.colors,S.materials,S.hand,S.size,S.webType,S.pad,S.bullet,S.flag,S.flagPosition,
   S.thumbText,S.thumbNumber,S.pinkyText,S.circle,S.numberColor]);
@@ -836,13 +837,7 @@ function stepOpen(i) {
 /* Shipped starter pictures (render_starters.mjs). Used only while the key
    they were drawn from still matches: what a starter looks like depends on
    the back-view data, the colourways and the catalogue's starters. */
-const starterKey = () => {
-  const s = JSON.stringify([DATA.w, DATA.h, DATA.presets, DATA.materialFinish, DATA.materialResponse,
-    STARTERS.map(st => [st.id, st.colors, st.bullet, st.flag, st.flagPosition]), DATA.bullets.map(b => [b.name, b.active, b.asset])]);
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-  return h.toString(16).padStart(8, '0') + '-' + s.length.toString(36);
-};
+const starterKey = () => starterRenderKey(DATA, STARTERS);
 let shippedStarters = null;   // { width, hands: { RHT: [...ids], LHT: [...] } } or false
 async function loadShippedStarters() {
   if (shippedStarters !== null) return shippedStarters;
@@ -915,7 +910,7 @@ function renderStart(b) {
       `<span class="kick">${groups[st.group]}</span><span class="nm">${st[S.lang]}</span>`));
     c.onclick = () => { applyStarter(st); paint(); };
     grid.appendChild(c);
-    const key = st.id + '|' + isLefty() + '|' + Object.keys(R._flags || {}).sort().join(',');
+    const key = starterKey() + '|' + st.id + '|' + isLefty() + '|' + Object.keys(R._flags || {}).sort().join(',');
     const show = async () => {
       if (!cv.isConnected) return;
       let image = starterImages.get(key);
