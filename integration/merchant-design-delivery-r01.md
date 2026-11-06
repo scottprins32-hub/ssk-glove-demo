@@ -1,0 +1,11 @@
+# SSK design delivery to CCV
+
+Open the CCV order's internal note headed **SSK ONTWERPEN — 4 afbeeldingen en volledige specificatie**. Each glove has its own read-only design-card link. The card shows its immutable stored specification and four original images, and offers text/JSON/image downloads and browser print/PDF. Payment and fulfilment decisions remain in CCV.
+
+New order rows include the same design link in their memo. Internal annotation is best-effort with a two-second whole-operation deadline; a notes outage cannot create a duplicate order or hold checkout open indefinitely. The row memo remains the guaranteed fallback. An authenticated administrator can retry from merchant.html using “Ontwerpkaarten bij CCV-bestelling zetten”. That administrator page derives the active function from commerce-config.js instead of hardcoding the obsolete v14 function.
+
+Existing orders can receive an internal note through admin-deliver-designs only after admin authentication, confirmation and exact upstream snapshot/specification/price verification. It does not replace rows, change financial or customer details, send order messages or trigger customer notifications. Sequential retries deduplicate exact internal notes. CCV provides no atomic note-create primitive: simultaneous identical repair requests can create duplicate notes, never duplicate orders.
+
+The design card uses a domain-separated 256-bit capability derived from the private checkout hash. It is not accepted for customer view/copy/checkout/status or administrative operations, does not list designs, and reveals no checkout credentials or buyer name/phone. It requires an existing ready/ordered snapshot linked to CCV and expires one year after snapshot creation; the existing customer draft expiry stays thirty days. Links belong in the private order, not source control or public reports. No-referrer and noindex apply to the card.
+
+Source/fixture validation: 169 Node tests and 20 package checks passed; independent source and original-byte download review passed. Real browser downloads of synthetic text/JSON/image files were inspected. Actual payment completion, PDF print output, physical devices and Pim's own login remain outside these checks. Deployment and existing-order repair receipts are saved separately.

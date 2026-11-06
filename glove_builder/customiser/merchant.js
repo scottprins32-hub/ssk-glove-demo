@@ -1,18 +1,22 @@
 import './embed-context.js';
 import {createClient} from './merchant-auth.bundle.js';
-import {APP_ID,API_REVISION} from './commerce-config.js';
+import {APP_ID,API_REVISION,API_ENDPOINT} from './commerce-config.js';
 import {displayDraft,node} from './commerce-display.js';
 import {errorMessage,formatMoney} from './commerce-client.js';
 const client=createClient({appId:APP_ID,appBaseUrl:'https://ssk-glove-configurator-da8db964.base44.app',requiresAuth:false});
 const status=document.querySelector('#status'),actions=document.querySelector('#merchant-actions'),list=document.querySelector('#merchant-list'),detail=document.querySelector('#merchant-detail');
 async function call(action,input={}) {
- try {const response=await client.functions.invoke('ssk-commerce-v14',{action,...input});const result=response.data??response;
+ try {const response=await client.functions.invoke(new URL(API_ENDPOINT).pathname.split('/').at(-1),{action,...input});const result=response.data??response;
  if(result.apiRevision!==API_REVISION)throw Object.assign(Error(),{code:'service_unavailable'});
  if(result.error)throw Object.assign(Error(result.error),{code:result.error});return result;
  }catch(error){throw Object.assign(Error(),{code:error.code||error.response?.data?.error||'service_unavailable'});}
 }
 async function open(id){
  const draft=await call('admin-read',{id});history.replaceState(null,'','#'+id);const aside=displayDraft(draft,detail);
+ const delivery=node('button','Ontwerpkaarten bij CCV-bestelling zetten','btn btn-primary');delivery.type='button';
+ delivery.onclick=async()=>{delivery.disabled=true;try{const result=await call('admin-deliver-designs',{id,confirmed:true});status.textContent='Ontwerpkaarten staan bij CCV-bestelling '+result.orderId+' onder interne notities.';for(const item of result.links){const link=node('a','Open ontwerpkaart: '+item.reference,'btn');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';aside.append(link);}}catch(e){status.textContent=errorMessage(e);}finally{delivery.disabled=false;}};
+ const cards=await call('admin-production-links',{id}).catch(()=>null);
+ if(cards){for(const item of cards.links){const link=node('a','Open ontwerpkaart: '+item.reference,'btn');link.href=item.url;link.target='_blank';link.rel='noopener noreferrer';aside.append(link);}aside.append(delivery);}
  const label=node('label','CCV-bestelnummer voor controle'),input=node('input');input.type='text';input.inputMode='numeric';input.pattern='[0-9]+';label.append(input);
  const reconcile=node('button','Bestaande CCV-bestelling controleren','btn');reconcile.onclick=async()=>{
   if(!/^[1-9][0-9]*$/.test(input.value.trim())){status.textContent='Vul een geldig CCV-bestelnummer in.';input.focus();return;}

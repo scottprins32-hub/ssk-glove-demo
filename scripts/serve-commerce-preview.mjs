@@ -31,7 +31,7 @@ http.createServer(async(req,res)=>{
    if(simulate){try{const result=await simulate(input);res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...result,apiRevision:API_REVISION}));}catch(e){res.writeHead(e.status||503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:e.code||'service_unavailable'}));}return;}
    const checkoutItems=input.items||[{id:input.id}];
    const qaBasket=allowQaBasket&&input.action==='checkout'&&checkoutItems.length>0&&checkoutItems.length<=6&&checkoutItems.every(i=>qaDraftIds.has(i.id));
-   if(!['config','create','copy','read','status'].includes(input.action)&&!qaBasket){res.writeHead(403);res.end('{"error":"preview_read_only_checkout"}');return;}
+   if(!['config','create','copy','read','production-read','status'].includes(input.action)&&!qaBasket){res.writeHead(403);res.end('{"error":"preview_read_only_checkout"}');return;}
    const upstream=await fetch('https://base44.app/api/apps/6acecad7d76f2c87da8db964/functions/ssk-commerce-v15',{method:'POST',headers:{'Content-Type':'application/json','X-App-Id':'6acecad7d76f2c87da8db964'},body});
    const reply=await upstream.text();
    if(upstream.ok&&input.action==='create'&&input.design?.thumbText==='QA DO NOT FULFIL'){try{qaDraftIds.add(JSON.parse(reply).id);}catch{}}

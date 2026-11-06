@@ -9,13 +9,13 @@ export async function signRequest(key,secret,method,path,body,date) {
 }
 export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
   const configured=!!key&&!!secret;
-  async function request(method,path,data) {
+  async function request(method,path,data,signal) {
     if(!configured) throw new CommerceError('checkout_not_connected',503);
-    if(!/^\/api\/rest\/v1\/(?:products\/[0-9]+\/|orders\/(?:[0-9]+\/(?:orderrows\/)?)?)$/.test(path)) throw new CommerceError('invalid_upstream_path',500);
+    if(!/^\/api\/rest\/v1\/(?:products\/[0-9]+\/|orders\/(?:[0-9]+\/(?:(?:orderrows|ordernotes)\/)?)?)$/.test(path)) throw new CommerceError('invalid_upstream_path',500);
     const body=data===undefined?'':JSON.stringify(data),date=now().toISOString().replace(/\.\d{3}Z$/,'Z');
     const signature=await signRequest(key,secret,method,path,body,date);
     let response;
-    try {response=await fetcher(SHOP.origin+path,{method,redirect:'manual',signal:AbortSignal.timeout(15000),
+    try {signal?.throwIfAborted();response=await fetcher(SHOP.origin+path,{method,redirect:'manual',signal:signal||AbortSignal.timeout(15000),
       headers:{'x-public':key,'x-date':date,'x-hash':signature,'Content-Type':'application/json','Accept':'application/json'},
       ...(data===undefined?{}:{body})});}
     catch(cause) {
@@ -74,7 +74,30 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     ...(verified.basket_href?{basketUrl:safeCheckoutUrl(verified.basket_href)}:{})});
   // Never replace an existing CCV row collection: CCV has no compare-and-swap
   // for simultaneous shop-cart edits. Initial bundles use a single POST.
-  return {configured,product,order,async prepare(draftOrDrafts,memoOrMemos) {
+  return {configured,product,order,async attachProductionLinks(id,links,{signal=AbortSignal.timeout(2000)}={}) {
+    if(!Number.isSafeInteger(id)||id<1||!Array.isArray(links)||!links.length||links.length>6)throw new CommerceError('invalid_request');
+    for(const link of links){
+      let url;try{url=new URL(link.url);}catch{throw new CommerceError('invalid_request');}
+      if(!/^[a-zA-Z0-9_-]{8,80}$/.test(link.id)||url.origin!=='https://ssk-glove-configurator-da8db964.base44.app'||url.pathname!=='/production.html'||url.search||url.username||url.password||
+        !new RegExp('^#'+link.id+'\\.[a-f0-9]{64}$').test(url.hash))throw new CommerceError('invalid_request');
+    }
+    const marker='[SSK-ONTWERP:'+links.map(l=>l.id).join(',')+']';
+    const note=[marker,'SSK ONTWERPEN — 4 afbeeldingen en volledige specificatie',
+      ...links.flatMap((l,i)=>['',`Handschoen ${i+1}: ${l.reference}`,l.url]),'',
+      'Open de ontwerpkaart. Daar kun je de specificatie en originele afbeeldingen opslaan of afdrukken.',
+      'Alleen-lezen ontwerplink: deel deze uitsluitend met de betrokken SSK-medewerker of fabrikant.'].join('\n');
+    const path=`/api/rest/v1/orders/${id}/ordernotes/`;
+    const exists=notes=>{
+      if(notes.next||notes.items!==undefined&&!Array.isArray(notes.items))throw new CommerceError('design_delivery_verification_failed',502);
+      return (notes.items||[]).some(n=>n.type==='internal'&&n.note===note);
+    };
+    if(exists(await request('GET',path,undefined,signal)))return {verified:true,alreadyPresent:true};
+    // This endpoint creates an INTERNAL note. Never use ordermessages or
+    // ordernotifications here: those can email the customer.
+    await request('POST',path,{note},signal);
+    if(!exists(await request('GET',path,undefined,signal)))throw new CommerceError('design_delivery_verification_failed',502);
+    return {verified:true,alreadyPresent:false};
+  },async prepare(draftOrDrafts,memoOrMemos) {
     const drafts=bundle(draftOrDrafts),memos=[].concat(memoOrMemos);
     if(memos.length!==drafts.length)throw new CommerceError('invalid_request');
     await product();

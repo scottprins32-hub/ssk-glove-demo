@@ -23,7 +23,7 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'r
                'embed-context.js', 'shop-embed.js', 'refcode.js', 'stage-background.js', 'stage-interact.js', 'c3-thumb.js', 'picked.js', 'app.css', 'favicon.svg', 'ssk-logo.svg', '.nojekyll',
                'commerce-catalog.js','commerce-pricing.js','commerce-contract.js','commerce-config.js',
                'commerce-client.js','commerce-ui.js','commerce-display.js','commerce-summary.js','commerce.css',
-               'order.html','order.js','merchant.html','merchant.js','merchant-auth.bundle.js',
+               'order.html','order.js','production.html','production.js','merchant.html','merchant.js','merchant-auth.bundle.js',
                'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
                'performance.html', 'performance.js')
 FOLDERS = ('ds', 'assets/ui', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs', 'assets/starters')
