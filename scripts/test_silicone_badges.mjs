@@ -5,7 +5,7 @@ import {GloveRenderer} from '../glove_builder/customiser/glove-engine.js';
 import {encodeV4,decodeV4} from '../glove_builder/customiser/refcode.js';
 import {COLOUR_ORDER} from '../glove_builder/customiser/glove-catalog.js';
 import {validateDesign} from '../glove_builder/customiser/commerce-contract.js';
-import {validateDesign as validateHostedDesign} from '../base44/functions/ssk-commerce-v14/lib/commerce-contract.js';
+import {validateDesign as validateHostedDesign} from '../base44/functions/ssk-commerce-v15/lib/commerce-contract.js';
 import {createCommerce} from '../commerce/backend/service.js';
 const data=JSON.parse(await readFile(new URL('../glove_builder/customiser/assets/glove-data.json',import.meta.url)));
 const fixture={hand:'RHT',size:'11.75"',webType:'H-Web',pad:'None',flag:'None',colors:Object.fromEntries(COLOUR_ORDER.map(f=>[f,'10'])),materials:{}};

@@ -47,6 +47,14 @@
     },
     "last_error": {
       "type": "string"
+    },
+    "bundle": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 6
     }
   },
   "required": [

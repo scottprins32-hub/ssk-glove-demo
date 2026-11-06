@@ -277,6 +277,7 @@ test('actual app keeps pending palm selectable but gates drawing until verificat
   assert.ok(gate.startsWith('let selectionRequest ='));
   assert.ok(drawSource.startsWith('function draw(target = ctx,'));
   const ui = new Function('R', `
+    const REVIEW_STEP=6;
     const S = { view:'palm', webType:'smk', materials:{}, colors:{}, lang:'en' }, NATIVE_WEB='H-Web';
     const WEBS=[{id:'smk',render:'smk'}], PAD_PART={}, DATA=R.DATA;
     const stageBackground=()=> '#949494', interact=null, paintCompare=()=>{}, studioDark=()=>false, indexIsOnePiece=()=>false, middleIsOnePiece=()=>false;

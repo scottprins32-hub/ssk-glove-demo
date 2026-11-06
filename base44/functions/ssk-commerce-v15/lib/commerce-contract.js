@@ -66,7 +66,7 @@ export const designCode = design => encodeV4(design,COMMERCE_CATALOG.bullets[des
 export function specification(design) {
   const rows=[['Design',designCode(design)],['Throwing hand',design.hand],['Size',design.size],['Web',design.webType],['Finger protection',design.pad],
     ...Object.entries(design.colors).filter(([key])=>key!=='pad_color'||design.pad!=='None').map(([key,value])=>[key,value+' · '+COMMERCE_CATALOG.palettes[PALETTE_OF(key)].find(c=>c.id===value).name]),
-    ['Back panels material',crocAll(design.materials)?'Crocodile pattern (Back 1-9)':'Standard leather'],
+    ['Back panels material',crocAll(design.materials)?(design.materials?.belt==='snakeskin'?'Crocodile pattern (Back 1-9 and belt)':'Crocodile pattern (Back 1-9)'):'Standard leather'],
     ['Badge',COMMERCE_CATALOG.bullets[design.bullet].name],['Flag',design.flag],['Flag position',design.flagPosition],
     ...['flagOther','thumbText','pinkyText','thumbFont','thumbMain','thumbOutline','thumbNumber','circle','numberColor'].filter(k=>design[k]).map(k=>[k,design[k]])];
   return rows;

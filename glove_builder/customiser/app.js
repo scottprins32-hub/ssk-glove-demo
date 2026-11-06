@@ -1,11 +1,12 @@
 import './embed-context.js';
 /* SSK glove configurator — "Straight Line".
-   Eight steps, one decision at a time, covering all 36 questions of SSK's
+   Seven steps, one decision at a time, covering all 36 questions of SSK's
    custom glove order form. */
 
 import {PRICE_CENTS,MATERIAL_FIELDS,quoteDesign,crocAll,normaliseMaterials} from './commerce-pricing.js';
 import { loadGlove, GloveRenderer, assetURL, setImageSource, preloadImages } from './glove-engine.js';
 import { NativeFrames, PublicRenders } from './render-cache.js';
+import {loadCart,orderItemsFragment} from './commerce-client.js';
 import { starterRenderKey, STARTER_RENDER_REVISION } from './starter-cache.js';
 import { stageBackground } from './stage-background.js';
 import { encodeV4, decodeV4, isV4, encodeV3, decodeV3, isV3, decodeV2, decodeV1, isV2 } from './refcode.js';
@@ -135,9 +136,6 @@ const QUESTIONS = [
   ...COLOUR_ORDER.map(f => ({ id: 'c:' + f, req: f !== 'pad_color' })),
   { id: 'hand', req: true }, { id: 'size', req: true }, { id: 'pad', req: true },
   { id: 'webType', req: true }, { id: 'bullet', req: true },
-  // Contact is the buyer's, not the design's: a draft is complete without it.
-  // contactOpen() reports it separately, for sending to SSK Europe.
-  { id: 'name', req: false, contact: true }, { id: 'phone', req: false, contact: true },
   { id: 'thumbText', req: false }, { id: 'thumbFont', req: false },
   { id: 'thumbMain', req: false }, { id: 'thumbOutline', req: false },
   { id: 'thumbNumber', req: false }, { id: 'circle', req: false },
@@ -240,7 +238,6 @@ function phoneOk(v) {
   const digits = main.replace(/\D/g, '').length;
   return digits >= 7 && digits <= 15;
 }
-const contactOpen = () => QUESTIONS.filter(q => q.contact && !answered(q)).length;
 const requiredQuestions = () => QUESTIONS.filter(q => q.req
   || (q.id === 'flagOther' && S.flag === 'Other Flag')
   || (['thumbFont', 'thumbMain'].includes(q.id) && (S.thumbText.trim() || S.pinkyText.trim()))
@@ -307,7 +304,6 @@ function cleanState(o) {
     const pal = DATA.palettes[PALETTE_OF(f)] || [];
     if (pal.some((c) => c[0] === src[f])) colors[f] = src[f];
   }
-  if (colors.palm) colors.back2 = colors.palm;      // one leather, one colour
 
   const clean = {
     lang: o.lang === 'en' ? 'en' : 'nl',
@@ -640,10 +636,10 @@ function gateSelection(target) {
   if (!request.pending && !request.error) {
     request.pending = selected.view.loadSelection(selected.web, selected.snake, selected.bullet).then(() => {
       if (selected.view === R.views.thumb) registerThumbViews();
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== REVIEW_STEP && S.step !== 5); }
     }).catch(error => {
       request.error = error;
-      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== 7 && S.step !== 5); }
+      if (selectionRequest === request && selectedAssets().key === request.key) { draw(); paint(S.step !== REVIEW_STEP && S.step !== 5); }
     });
   }
   return true;
@@ -666,7 +662,7 @@ function draw(target = ctx, highlight = S.step === 3) {
       const requested = S.view;
       pendingView.load().then(() => {
         registerThumbViews();
-        if (S.view === requested) { draw(); paint(S.step !== 0 && S.step !== 7 && S.step !== 5); }
+        if (S.view === requested) { draw(); paint(S.step !== 0 && S.step !== REVIEW_STEP && S.step !== 5); }
       }).catch(error => {
         window.__SSK_PERF__?.failure(error);
         if (S.view === requested) {
@@ -812,9 +808,9 @@ const STEPS = [
   { key: 'colours', title: 'colours', lead: 'pickColour', render: renderColours },
   { key: 'logos', title: 'logos', lead: null, render: renderLogos },
   { key: 'personal', title: 'name2', lead: null, render: renderPersonal },
-  { key: 'you', title: 'details', lead: null, render: renderYou },
   { key: 'review', title: 'review', lead: null, render: renderReview }
 ];
+const REVIEW_STEP = STEPS.length - 1;
 
 /* fields each step is responsible for, for the per-step status dot */
 const STEP_FIELDS = [
@@ -824,10 +820,9 @@ const STEP_FIELDS = [
   ['thumbText', 'thumbFont', 'thumbMain', 'thumbOutline', 'thumbNumber',
    'pinkyText',
    'circle', 'numberColor', 'flag', 'flagOther', 'personalCheck'],
-  ['name', 'phone'], []
+  []
 ];
 function stepOpen(i) {
-  if (STEPS[i].key === 'you') return contactOpen();
   return STEP_FIELDS[i]
     .map(id => requiredQuestions().find(q => q.id === id))
     .filter(q => q && !answered(q)).length;
@@ -1016,7 +1011,6 @@ function applyStarter(st, quiet) {
     if (!pal.some(c => c[0] === v)) v = pal[0][0];
     S.colors[f] = v;
   }
-  if (S.colors.palm) S.colors.back2 = S.colors.palm;
   if (st.bullet != null) S.bullet = st.bullet;
   // a national build comes with its flag on; every other starter clears it
   S.flag = st.flag || null;
@@ -1289,8 +1283,7 @@ function renderColours(b) {
       const p = el('button', 'part' + (S.part === f ? ' is-on' : ''));
       p.type = 'button';
       p.dataset.key = 'part|' + f;
-      p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` + colourLabel(f)
-        + (f === 'back2' ? ` <small>· ${t('tiedPalm')}</small>` : '');
+      p.innerHTML = `<span class="chip" style="background:${hexOf(f)}"></span>` + colourLabel(f);
       p.title = tsub('partDesc', f);
       p.setAttribute('aria-pressed', String(S.part === f));
       p.onclick = () => {
@@ -1325,7 +1318,7 @@ function renderColours(b) {
       snapshot();
       const v = S.colors[S.part];
       for (let i = 1; i <= 9; i++) S.colors['back' + i] = v;
-      S.colors.palm = S.colors.back2; markPicked(S, 'back1', 'back2', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'back9', 'palm');
+      markPicked(S, 'back1', 'back2', 'back3', 'back4', 'back5', 'back6', 'back7', 'back8', 'back9');
       draw(); paint();
     };
     b.appendChild(all);
@@ -1341,7 +1334,7 @@ function setColour(field, v) {
   S.colors[field] = v;
   if (indexIsOnePiece() && (field === 'back3' || field === 'back4')) S.colors.back3 = S.colors.back4 = v;
   if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) S.colors.back5 = S.colors.back6 = v;
-  if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v; markPicked(S, field, ...linkedFields(field, indexIsOnePiece(), middleIsOnePiece()));
+  markPicked(S, field, ...linkedFields(field, indexIsOnePiece(), middleIsOnePiece()));
   if (held && PALETTE_OF(field) === held.palette) { held = { ...held, num: v, hex: hexOf(field), label: colName(field) }; }
   draw(); paint();
 }
@@ -1545,37 +1538,12 @@ function threadField(key, label) {
   return swatchGrid(label, pal, S[key], v => { snapshot(); S[key] = v; paint(); }, requiredQuestions().some(q => q.id === key), null);
 }
 
-/* --------------------------------------------------------- 7. your details */
-function renderYou(b) {
-  const status = el('p', 'note');
-  status.setAttribute('role', 'status');
-  const showStatus = () => { status.textContent = t(contactOpen() ? 'contactMissing' : 'contactReady'); };
-  b.appendChild(textField(t('name'), S.name, 60, v => { S.name = v; showStatus(); return false; }, true));
-  const phone = textField(t('phone'), S.phone, 32,
-    v => { S.phone = v; showPhone(); showStatus(); return false; }, true, 'tel');
-  const input = phone.querySelector('input'), msg = el('p', 'note', t('phoneBad'));
-  msg.id = 'phonemsg';
-  input.setAttribute('aria-describedby', 'phonemsg');
-  input.autocomplete = 'tel';
-  // Checked in place, so typing is never interrupted by a rebuild.
-  const showPhone = () => {
-    const bad = !!S.phone.trim() && !phoneOk(S.phone);
-    msg.hidden = !bad;
-    if (bad) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
-  };
-  phone.appendChild(msg);
-  showPhone();
-  b.appendChild(phone);
-  showStatus();
-  b.appendChild(status);
-}
-
-/* -------------------------------------------------------------- 8. review */
+/* -------------------------------------------------------------- 7. review */
 function saveToGalleryField() {
   const box = el('div', 'field gallery-save');
   box.appendChild(el('span', 'field-lab', t('saveToGallery')));
   const nameInput = el('input'); nameInput.type = 'text'; nameInput.maxLength = 60;
-  nameInput.placeholder = t('galleryNamePh'); nameInput.value = S.name || '';
+  nameInput.placeholder = t('galleryNamePh'); nameInput.value = '';
   nameInput.setAttribute('aria-label', t('galleryNamePh'));
   const saveBtn = el('button', 'btn btn-ghost', t('saveToGalleryBtn')); saveBtn.type = 'button';
   saveBtn.style.alignSelf = 'flex-start';
@@ -1677,7 +1645,7 @@ function renderReview(b) {
       getDesign:()=>structuredClone(S),capture:captureOrderViews,onParked:parkedGlove});
     reportPerformance();
   }).catch(()=>{commerceHost.textContent=S.lang==='nl'?'Bestelfunctie kon niet worden geladen. Probeer opnieuw.':'Ordering could not load. Please try again.';});
-  if (contactOpen()) b.appendChild(el('p', 'note', t('contactMissing')));
+  b.appendChild(el('p', 'note', t('checkoutDetails')));
   b.appendChild(saveToGalleryField());
   const go = el('button', 'btn btn-primary', t('finish'));
   go.type = 'button'; go.style.alignSelf = 'flex-start';
@@ -1815,8 +1783,6 @@ function swatchField(field, note, required) {
       if (middleIsOnePiece() && (field === 'back5' || field === 'back6')) {
         S.colors.back5 = S.colors.back6 = v;
       }
-      // Back 2 is cut from the palm leather (Scott, 25 Sep 2026): one colour.
-      if (field === 'palm' || field === 'back2') S.colors.palm = S.colors.back2 = v;
       draw(); paint();
     }, required, note);
 }
@@ -1918,7 +1884,7 @@ function specRows() {
     push(colourLabel(f), colName(f));
   }
   rows.push(['#', S.lang === 'nl' ? 'Leersoort' : 'Leather finish']);
-  push(t('backFinish'), crocAll(S.materials) ? 'Crocodile pattern (Back 1-9)' : materialLabel('standard'));
+  push(t('backFinish'), crocAll(S.materials) ? 'Crocodile pattern (Back 1-9 and belt)' : materialLabel('standard'));
   rows.push(['#', t('logos')]);
   push(t('bullet'), DATA.bullets[S.bullet] && DATA.bullets[S.bullet].name);
   push(t('ringEmb'), colName('ring_emb'));
@@ -1940,9 +1906,7 @@ function specRows() {
   push(t('baseGlove'), money(price.base));
   if (price.flag) push(t('flagExtra'), money(price.flag));
   push(t('totalPrice'), money(price.total));
-  rows.push(['#', t('you')]);
-  push(t('name'), S.name);
-  push(t('phone'), S.phone);
+  rows.push(['#', S.lang === 'nl' ? 'Bestellen' : 'Order']);
   return rows;
 }
 function colName(f) {
@@ -1970,7 +1934,7 @@ function buildSpec() {
 const designStatus = () => [
   requiredQuestions().some(q => !answered(q)) ? t('draftNotice') : t('readyNotice'),
   S.flag === 'Other Flag' && S.flagOther.trim() ? t('flagPending') : '',
-  t(contactOpen() ? 'contactMissing' : 'contactReady')
+  t('checkoutDetails')
 ].filter(Boolean).join(' ');
 function specText() {
   if (flushText()) paint();
@@ -2030,7 +1994,7 @@ async function cardImage() {
     g.fillText(t(VIEW_KEYS[v]).toUpperCase(), box.x + box.w / 2, box.y + box.h + 16); g.textAlign = 'left';
   });
   // name, code, colours
-  const name = (S.thumbText.trim() || S.name.trim() || (S.lang === 'nl' ? 'Mijn handschoen' : 'My glove')).toUpperCase();
+  const name = (S.thumbText.trim() || (S.lang === 'nl' ? 'Mijn handschoen' : 'My glove')).toUpperCase();
   g.fillStyle = '#FFFFFF'; g.font = '800 72px "Barlow Condensed", Impact, sans-serif';
   let size = 72; while (g.measureText(name).width > W - 144 && size > 40) { size -= 4; g.font = `800 ${size}px "Barlow Condensed", Impact, sans-serif`; }
   g.fillText(name, 72, 1150);
@@ -2156,7 +2120,7 @@ async function readyForExport() {
       if (viewAvailability(S.view).ok) await selected.view.loadSelection(selected.web, selected.snake, selected.bullet);
     } catch (error) {
       if (selectedAssets().key === selected.key) {
-        selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== 7 && S.step !== 5);
+        selectionRequest = { key: selected.key, error }; draw(); paint(S.step !== REVIEW_STEP && S.step !== 5);
       }
       return false;
     }
@@ -2627,6 +2591,10 @@ function paint(rebuildBody = true) {
   // header + bar
   paintCode();
   $('#studio').title = t(studioDark() ? 'studioOff' : 'studio');
+  const cart=loadCart(),cartLink=$('#cartbtn');
+  cartLink.hidden=!cart.length;
+  cartLink.textContent=(S.lang==='nl'?'Winkelmandje':'Basket')+' ('+cart.length+')';
+  cartLink.href='./order.html#'+orderItemsFragment(cart);
   const total = money(priceBreakdown().total);
   if ($('#price').textContent !== total && $('#price').textContent !== '—') {
     const pb = $('#pricebtn'); pb.classList.remove('is-bumped'); void pb.offsetWidth; pb.classList.add('is-bumped');
@@ -2640,7 +2608,7 @@ function paint(rebuildBody = true) {
   paintBarNext();
   const body = $('#body'); body.dataset.code = code(); body.dataset.when = new Date().toLocaleDateString(S.lang === 'nl' ? 'nl-NL' : 'en-GB');
   $('#prev').disabled = S.step === 0;
-  $('#next').textContent = S.step === STEPS.length - 1 ? (S.lang === 'nl' ? 'Opslaan en afrekenen' : 'Save and checkout')
+  $('#next').textContent = S.step === STEPS.length - 1 ? (S.lang === 'nl' ? 'Aan winkelmandje toevoegen' : 'Add to basket')
     : `${t(STEPS[S.step + 1].title)} →`;
   $('#undo').disabled = !undoStack.length && !textTx;
   $('#redo').disabled = !redoStack.length;
@@ -2681,13 +2649,14 @@ function reportPerformance() {
   window.__SSK_PERF__?.ready({ step:S.step, view:S.view,
     ready:initialRendered && selectionIsReady() && viewAvailability(S.view).ok,
     flagsReady:S.step !== 0 || starterFlagsReady,
-    reviewReady:S.step !== 7 || !!document.querySelector('.commerce-panel'),
+    reviewReady:S.step !== REVIEW_STEP || !!document.querySelector('.commerce-panel'),
     width:ctx?.canvas.width, height:ctx?.canvas.height,
     renderCache:{publicHits:publicRenders.hits,publicWrites:publicRenders.writes,
       frameBytes:nativeFrames.bytes,frames:nativeFrames.entries.size} });
 }
 
 /* ------------------------------------------------------------------ wire */
+window.addEventListener('ssk:cart-change',()=>paint(false));
 $('#prev').onclick = () => { flushText(); if (S.step > 0) { S.step--; paint(); } };
 $('#next').onclick = () => {
   flushText();
@@ -2720,7 +2689,7 @@ const typing = () => /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.ta
 function paintKeys() {
   const dl = $('#keyslist'); if (!dl) return;
   const K = T[S.lang].keys || T.en.keys;
-  const rows = [['?', K.help], ['1 – 8', K.steps], ['← →', K.turn], ['scroll · ⌥', K.zoom], ['Esc', K.esc], ['⌘ Z', K.undo], ['⌘ ⇧ Z', K.redo]];
+  const rows = [['?', K.help], ['1 – ' + STEPS.length, K.steps], ['← →', K.turn], ['scroll · ⌥', K.zoom], ['Esc', K.esc], ['⌘ Z', K.undo], ['⌘ ⇧ Z', K.redo]];
   dl.innerHTML = rows.map(([k, d]) => `<dt><kbd>${k}</kbd></dt><dd>${d}</dd>`).join('');
 }
 function toggleKeys(on = $('#keyspop').hidden) {
@@ -2736,7 +2705,7 @@ document.addEventListener('keydown', ev => {
   if (ev.metaKey || ev.ctrlKey || ev.altKey || typing() || !$('#scrim').hidden) return;
   if (ev.key === '?') { ev.preventDefault(); toggleKeys(); return; }
   if (ev.key === 'Escape' && !$('#keyspop').hidden) { toggleKeys(false); return; }
-  if (/^[1-8]$/.test(ev.key) && R && $('#keyspop').hidden) {
+  if (/^[1-9]$/.test(ev.key) && +ev.key <= STEPS.length && R && $('#keyspop').hidden) {
     const n = +ev.key - 1; if (n === S.step) return;
     ev.preventDefault(); if (flushText()) paint(); S.step = n; paint();
   }
@@ -2787,7 +2756,7 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
     // First visit, nothing shared: the browser's language picks the start.
     if (!draft && !savedDraft) S.lang = /^nl\b/i.test(navigator.language || '') ? 'nl' : 'en';
     if (draft) Object.assign(S, draft, { step: Number.isInteger(savedDraft.step)
-      && savedDraft.step >= 0 && savedDraft.step < STEPS.length ? savedDraft.step : 0 });
+      && savedDraft.step >= 0 && savedDraft.step <= 7 ? Math.min(savedDraft.step, REVIEW_STEP) : 0 });
     if (draft && (S.step > 0 || visualKey() !== defaultVisual)) setTimeout(showResume, 600);
   }
   if (h) history.replaceState(null, '', location.pathname + location.search);

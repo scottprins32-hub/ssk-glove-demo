@@ -15,7 +15,6 @@ export function markPicked(S, ...fields) {
 export function linkedFields(field, indexOne, middleOne) {
   if (indexOne && (field === 'back3' || field === 'back4')) return ['back3', 'back4'];
   if (middleOne && (field === 'back5' || field === 'back6')) return ['back5', 'back6'];
-  if (field === 'palm' || field === 'back2') return ['palm', 'back2'];
   return [];
 }
 

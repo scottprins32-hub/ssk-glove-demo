@@ -25,9 +25,10 @@ async function start() {
   let aside;
   drafts.forEach((draft,index)=>{
     aside=displayDraft(draft,host,{index,count:drafts.length});
-    if(many){
+    {
       const drop=node('a',tr('Deze handschoen uit de bestelling halen','Remove this glove from the order'),'btn');
-      drop.href='./order.html#'+orderItemsFragment(items.filter(i=>i.id!==draft.id));
+      const remaining=items.filter(i=>i.id!==draft.id);
+      drop.href=remaining.length?'./order.html#'+orderItemsFragment(remaining):'./index.html';
       drop.onclick=()=>{removeFromCart(draft.id);};
       aside.append(drop);
     }
@@ -45,7 +46,7 @@ async function start() {
     host.append(card);
   }
   const ownAll=()=>items.every(i=>getCheckoutKey(i.id));
-  const button=node('button',ownAll()?tr('Verder naar veilig afrekenen','Continue to secure checkout'):many?tr('Deze handschoenen zelf bestellen','Order these gloves'):tr('Dit ontwerp zelf bestellen','Order this design'),'btn btn-primary');button.type='button';
+  const button=node('button',ownAll()?tr('Verder naar de SSK-winkelmand','Continue to the SSK basket'):many?tr('Deze handschoenen zelf bestellen','Order these gloves'):tr('Dit ontwerp zelf bestellen','Order this design'),'btn btn-primary');button.type='button';
   const message=node('p','', 'note');message.setAttribute('role','status');
   const help=node('p',tr('Hierna vul je in de SSK-webshop je adres in, kies je de bezorging en betaal je. Je ontwerp en personalisatie gaan automatisch mee.','Next, enter your address, choose delivery and pay in the SSK webshop. Your design and personalization are transferred automatically.'),'commerce-small');
   let completed=false;
@@ -81,8 +82,8 @@ async function start() {
       }
       message.textContent=tr('Je winkelwagen wordt klaargezet…','Preparing your basket…');
       const keys=items.map(i=>({id:i.id,token:getCheckoutKey(i.id)}));
-      const result=await api('checkout',many?{items:keys}:keys[0]);navigateCheckout(safeCheckoutUrl(result.url));
-    } catch(error){message.textContent=errorMessage(error,lead.design.lang);button.disabled=false;}
+      const result=await api('checkout',many?{items:keys,destination:'basket'}:{...keys[0],destination:'basket'});navigateCheckout(safeCheckoutUrl(result.url));
+    } catch(error){message.textContent=errorMessage(error,lead.design.lang);button.disabled=false;if(error.code==='cart_already_open'&&error.basketUrl){const url=safeCheckoutUrl(error.basketUrl),existing=node('button',tr('Bestaande SSK-winkelmand openen','Open existing SSK basket'),'btn');existing.type='button';existing.onclick=()=>navigateCheckout(url);message.replaceChildren(document.createTextNode(errorMessage(error,lead.design.lang)),existing);}}
   };
   const refresh=node('button',tr('Bestelstatus controleren','Check order status'),'btn');refresh.disabled=!getCheckoutKey(lead.id)||!config.connected;
   refresh.onclick=async()=>{refresh.disabled=true;try{const result=await api('status',{id:lead.id,token:getCheckoutKey(lead.id)});if(['uncertain','submitting'].includes(result.status)){button.disabled=true;message.textContent=errorMessage({code:result.status==='uncertain'?'checkout_needs_review':'checkout_processing'},lead.design.lang);return;}completed=result.status==='ordered';button.disabled=completed||!config.connected||config.checkoutEnabled!==true||drafts.some(d=>d.design.flag==='Other Flag')||!checkoutStorageAvailable();message.textContent=completed?(result.paid?tr('Je bestelling is geplaatst en betaald. Je ontvangt de bevestiging van SSK.','Your order is placed and paid. SSK will send your confirmation.'):tr('Je bestelling is geplaatst. De betaling is nog niet bevestigd door SSK.','Your order is placed. Payment has not yet been confirmed by SSK.')):result.status==='ready'?tr('Je winkelwagen staat klaar. Je kunt verder om af te rekenen.','Your basket is ready. Continue to checkout.'):tr('Je ontwerp is opgeslagen. Je kunt verder naar afrekenen.','Your design is saved. You can continue to checkout.');if(completed){button.disabled=true;button.textContent=tr('Bestelling geplaatst','Order placed');consent.hidden=true;}}catch(error){message.textContent=errorMessage(error,lead.design.lang);}finally{refresh.disabled=false;}};

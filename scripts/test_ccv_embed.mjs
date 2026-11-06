@@ -18,6 +18,7 @@ test('merchant ignores messages from other frames/origins and unsafe checkout de
  const valid={origin:BUILDER,source:frame.contentWindow,data:{type:'ssk:checkout',url:SHOP+'/website/index.php?Show=WebShopOneStepCheckout&OrderId=abc'}};
  for(const bad of [{...valid,origin:'https://evil.test'},{...valid,source:{}},{...valid,data:{...valid.data,url:'https://evil.test/'}},{...valid,data:{...valid.data,url:SHOP+'/other'}}])receive(bad);
  assert.equal(assignments.length,0);receive(valid);assert.equal(assignments.length,1);
+ receive({...valid,data:{...valid.data,url:SHOP+'/website/index.php?Show=WebShopBasket&OrderId=abc'}});assert.equal(assignments.length,2);
 });
 
 test('same-origin preview parents navigate the top document without a dropped message',()=>{

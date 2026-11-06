@@ -11,7 +11,7 @@ async function boot({connected=true,checkoutEnabled=true,configFailure=false,sto
  api:async(action,input)=>{calls.push({action,input});if(action==='read'){if(expired)throw {code:'design_expired'};return draft;}if(action==='config'){if(configFailure)throw {code:'service_unavailable'};return {connected,checkoutEnabled};}if(action==='copy')return {id:'copy_123',checkoutToken:'copy-owner',viewToken:'copy-view'};if(action==='checkout')return {url:'https://sskeurope.ccvshop.nl/checkout'};return {status:Array.isArray(orderStatus)?orderStatus.shift():orderStatus,paid:false};},
  getCheckoutKey:id=>keys.get(id),saveCheckoutKey:(id,key)=>{if(storage)keys.set(id,key);},checkoutStorageAvailable:()=>storage,errorMessage:e=>e.code,SHOP:{productUrl:'https://sskeurope.ccvshop.nl/SSK-Custom-Glove'},safeCheckoutUrl:s=>s,navigator:{clipboard:{writeText:async()=>{}}},location:{href:'http://local/order.html#read-key',assign:url=>redirects.push(url)}};
  vm.runInNewContext(source,context);await context.started;
- return {elements,status,host,calls,redirects,keys,button:elements.find(e=>['Continue to secure checkout','Order this design'].includes(e.textContent)),check:elements.find(e=>e.tag==='input')};
+ return {elements,status,host,calls,redirects,keys,button:elements.find(e=>['Continue to the SSK basket','Order this design'].includes(e.textContent)),check:elements.find(e=>e.tag==='input')};
 }
 test('configuration outage still displays the saved design but blocks checkout',async()=>{const h=await boot({configFailure:true});assert.ok(h.button);assert.equal(h.button.disabled,true);assert.equal(h.host.hidden,false);});
 test('paused public ordering blocks button handler as well as its appearance',async()=>{const h=await boot({owner:true,checkoutEnabled:false});h.check.checked=true;await h.button.onclick();assert.equal(h.button.disabled,true);assert.equal(h.calls.filter(c=>c.action==='checkout').length,0);});
@@ -30,9 +30,9 @@ test('Dutch review uses readable labels and exact embroidery color codes',()=>{
 test('selected-asset completion preserves pending review save controls',async()=>{
  const app=await readFile(new URL('../glove_builder/customiser/app.js',import.meta.url),'utf8');
  const gate=app.slice(app.indexOf('function gateSelection('),app.indexOf('function registerThumbViews('));
- for(const step of [5,7]) {
+ for(const step of [5,6]) {
    const paints=[];let resolve;const pending=new Promise(r=>resolve=r),view={selectionReady:()=>false,loadSelection:()=>pending};
-   const context={S:{step},R:{views:{thumb:{}}},ctx:{canvas:{width:1,height:1},clearRect(){}},selectionRequest:null,
+   const context={REVIEW_STEP:6,S:{step},R:{views:{thumb:{}}},ctx:{canvas:{width:1,height:1},clearRect(){}},selectionRequest:null,
      selectedAssets:()=>({view,key:'stable'}),$:()=>({setAttribute(){}}),selectionMessage:()=>'',selectionRetry(){},registerThumbViews(){},draw(){},paint:arg=>paints.push(arg)};
    vm.runInNewContext(gate+';gateSelection(ctx);',context);resolve();await pending;await Promise.resolve();
    assert.deepEqual(paints,[false],'Do not detach the active save or embroidery inputs');
@@ -43,7 +43,7 @@ test('failed export keeps visible review save error controls attached',async()=>
  const app=await readFile(new URL('../glove_builder/customiser/app.js',import.meta.url),'utf8');
  const fn=app.slice(app.indexOf('async function readyForExport('),app.indexOf('async function openSheet('));
  const paints=[],view={load:async()=>{throw Error('offline');}};
- const context={S:{step:7},selectedAssets:()=>({view,key:'one'}),registerThumbViews(){},viewAvailability:()=>({ok:true}),draw(){},paint:arg=>paints.push(arg),selectionRequest:null};
+ const context={REVIEW_STEP:6,S:{step:6},selectedAssets:()=>({view,key:'one'}),registerThumbViews(){},viewAvailability:()=>({ok:true}),draw(){},paint:arg=>paints.push(arg),selectionRequest:null};
  vm.runInNewContext(fn+';globalThis.result=readyForExport();',context);assert.equal(await context.result,false);assert.deepEqual(paints,[false]);
 });
 

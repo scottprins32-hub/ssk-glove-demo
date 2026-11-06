@@ -19,18 +19,19 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
       headers:{'x-public':key,'x-date':date,'x-hash':signature,'Content-Type':'application/json','Accept':'application/json'},
       ...(data===undefined?{}:{body})});}
     catch(cause) {
-      const error=new CommerceError(method==='POST'?'checkout_outcome_unknown':'shop_unavailable',502);
+      const error=new CommerceError(method!=='GET'?'checkout_outcome_unknown':'shop_unavailable',502);
       error.upstreamDetail=String(cause?.message||cause?.name||'Network request failed').slice(0,500).replaceAll(key,'[redacted]').replaceAll(secret,'[redacted]');
       throw error;
     }
     if(!response.ok) {
-      const error=new CommerceError(method==='POST'?'checkout_outcome_unknown':response.status===401||response.status===403?'shop_access_denied':'shop_unavailable',502);
+      const error=new CommerceError(method!=='GET'?'checkout_outcome_unknown':response.status===401||response.status===403?'shop_access_denied':'shop_unavailable',502);
       error.upstreamStatus=response.status;
       // Only returned to an authenticated administrator requesting diagnostics.
       error.upstreamDetail=(await response.text()).slice(0,1200).replaceAll(key,'[redacted]').replaceAll(secret,'[redacted]');
       throw error;
     }
-    try{return await response.json();}catch{throw new CommerceError(method==='POST'?'checkout_outcome_unknown':'invalid_checkout_response',502);}
+    if(response.status===204&&method!=='GET')return {};
+    try{return await response.json();}catch{throw new CommerceError(method!=='GET'?'checkout_outcome_unknown':'invalid_checkout_response',502);}
   }
   async function product() {
     const p=await request('GET',`/api/rest/v1/products/${SHOP.productId}/`);
@@ -60,12 +61,19 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     // CCV's aggregate total_orderrow_price includes shop shipping. Verify the
     // actual product rows, leaving delivery costs to the shop's checkout.
     const rows=await request('GET',`/api/rest/v1/orders/${id}/orderrows/`);
-    if(verified.id!==id||!Array.isArray(rows.items)||rows.items.length!==drafts.length||rows.next)throw new CommerceError('checkout_verification_failed',502);
+    if(verified.id!==id||!Array.isArray(rows.items)||rows.items.length<drafts.length||rows.next)throw new CommerceError('checkout_verification_failed',502);
     // every glove has exactly its own row, and every row belongs to a glove
     const verifiedRows=drafts.map(d=>rows.items.filter(row=>typeof row?.memo==='string'&&row.memo.includes(`Snapshot: ${d.id}`)));
+    // Ordinary shop products may share this basket. Never accept an extra
+    // custom glove without one of the authenticated design snapshots.
+    if(rows.items.some(row=>row.product_id===SHOP.productId&&!drafts.some(d=>typeof row.memo==='string'&&row.memo.includes(`Snapshot: ${d.id}`))))throw new CommerceError('checkout_verification_failed',502);
     if(verifiedRows.some((list,i)=>list.length!==1||!rowMatches(list[0],drafts[i],id)))throw new CommerceError('checkout_verification_failed',502);
-    return {...verified,verifiedRow:verifiedRows[0][0],verifiedRows:verifiedRows.map(list=>list[0])};
+    return {...verified,verifiedRow:verifiedRows[0][0],verifiedRows:verifiedRows.map(list=>list[0]),allRows:rows.items};
   }
+  const prepared=verified=>({id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href),
+    ...(verified.basket_href?{basketUrl:safeCheckoutUrl(verified.basket_href)}:{})});
+  // Never replace an existing CCV row collection: CCV has no compare-and-swap
+  // for simultaneous shop-cart edits. Initial bundles use a single POST.
   return {configured,product,order,async prepare(draftOrDrafts,memoOrMemos) {
     const drafts=bundle(draftOrDrafts),memos=[].concat(memoOrMemos);
     if(memos.length!==drafts.length)throw new CommerceError('invalid_request');
@@ -78,7 +86,7 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     try {
       const verified=await order(created.id,drafts);
       if(verified.is_completed!==false||verified.paid!==false) throw new CommerceError('checkout_verification_failed',502);
-      return {id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href)};
+      return prepared(verified);
     }catch(error){error.ccvOrderId=created.id;throw error;}
   }};
 }

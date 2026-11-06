@@ -1,6 +1,6 @@
 // Bump when rendering changes without a catalogue/data change. Keep the key
 // independent of host URL rewriting and thumbnail paths in the static package.
-export const STARTER_RENDER_REVISION = 'wrist-placement-r16';
+export const STARTER_RENDER_REVISION = 'independent-palm-belt-r17';
 
 export function starterRenderKey(data, starters) {
   const s = JSON.stringify([

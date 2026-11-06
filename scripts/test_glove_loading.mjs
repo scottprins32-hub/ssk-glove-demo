@@ -267,6 +267,7 @@ const appSource = await readFile(new URL('../glove_builder/customiser/app.js', i
 function appGateHarness() {
   const gateSource = appSource.slice(appSource.indexOf('let selectionRequest ='), appSource.indexOf('function registerThumbViews()'));
   return new Function(`
+    const REVIEW_STEP=6;
     const S = { view:'back', webType:'a', materials:{}, lang:'en' };
     const ready = new Set(), pending = new Map(), calls = [], draws = [];
     const R = { views: { back: {

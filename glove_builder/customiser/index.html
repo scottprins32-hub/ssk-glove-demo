@@ -57,6 +57,7 @@
     <button id="undo" class="icon-btn" type="button" aria-label="Undo">&#8630;</button>
     <button id="redo" class="icon-btn" type="button" aria-label="Redo">&#8631;</button>
     <button id="summary" aria-controls="sumdrawer" aria-expanded="false" class="btn btn-ghost" type="button" data-t="summary">Overzicht</button>
+    <a id="cartbtn" class="btn btn-ghost" href="order.html" hidden>Winkelmandje</a>
     <button id="share" class="btn btn-ghost" type="button" data-t="share">Ontwerp delen</button>
     <button id="studio" class="icon-btn" type="button" aria-pressed="false" title="Studio">&#9680;</button>
     <button id="keysbtn" class="icon-btn hdr-keys" type="button" aria-controls="keyspop" aria-expanded="false" title="Sneltoetsen">?</button>
@@ -73,7 +74,7 @@
   <div class="price-pop" id="pricepop" hidden></div>
 </header>
 
-<nav class="steps" id="steps" aria-label="Stappen"><button class="step is-on" type="button" disabled><span class="n">1</span>Start</button><button class="step" type="button" disabled><span class="n">2</span></button><button class="step" type="button" disabled><span class="n">3</span></button><button class="step" type="button" disabled><span class="n">4</span></button><button class="step" type="button" disabled><span class="n">5</span></button><button class="step" type="button" disabled><span class="n">6</span></button><button class="step" type="button" disabled><span class="n">7</span></button><button class="step" type="button" disabled><span class="n">8</span></button></nav>
+<nav class="steps" id="steps" aria-label="Stappen"><button class="step is-on" type="button" disabled><span class="n">1</span>Start</button><button class="step" type="button" disabled><span class="n">2</span></button><button class="step" type="button" disabled><span class="n">3</span></button><button class="step" type="button" disabled><span class="n">4</span></button><button class="step" type="button" disabled><span class="n">5</span></button><button class="step" type="button" disabled><span class="n">6</span></button><button class="step" type="button" disabled><span class="n">7</span></button></nav>
 
 <main class="wrap">
   <section class="stage" id="stage">
@@ -98,7 +99,7 @@
 
   <aside class="panel">
     <div class="panel-head">
-      <span class="panel-count"><b id="stepnum">01</b> / <span id="steptot">08</span></span>
+      <span class="panel-count"><b id="stepnum">01</b> / <span id="steptot">07</span></span>
       <span class="panel-state" id="stepstate"></span>
     </div>
     <h1 class="panel-title" id="steptitle">Start</h1>

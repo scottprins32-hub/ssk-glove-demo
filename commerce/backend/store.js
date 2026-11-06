@@ -34,6 +34,11 @@ export function createStore(entity,buckets,rateId) {
       }
       return false;
     },
-    claim:async id=>{try{const result=await entity.updateMany({id,status:'draft'},{$set:{status:'submitting'}});return result.updated===1;}catch(error){if(error.status===500){const row=await entity.get(id);if(row&&row.status!=='draft')return false;}throw error;}}
+    claim:async(id,status='draft',updatedDate)=>{
+      if(!['draft','ready'].includes(status)||status==='ready'&&!updatedDate)return false;
+      const expected={id,status,...(updatedDate?{updated_date:updatedDate}:{})};
+      try{const result=await entity.updateMany(expected,{$set:{status:'submitting'}});return result.updated===1;}
+      catch(error){if(error.status===500){const row=await entity.get(id);if(row&&(row.status!==status||updatedDate&&row.updated_date!==updatedDate))return false;}throw error;}
+    }
   };
 }

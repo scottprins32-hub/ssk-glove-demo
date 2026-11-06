@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 import { validateDesign, quoteDesign, validatePreviews, safeCheckoutUrl, specification } from '../glove_builder/customiser/commerce-contract.js';
 import {COMMERCE_CATALOG} from '../glove_builder/customiser/commerce-catalog.js';
@@ -12,15 +13,15 @@ export const fixture=()=>({hand:'RHT',size:'11.75"',webType:'H-Web',pad:'None',b
   colors:Object.fromEntries(COLOUR_ORDER.map(f=>[f,'10'])),materials:{},flag:'None',lang:'nl'});
 export const previews=()=>['back','palm','thumb','pinky'].map(view=>({view,available:false,notes:['Test: no preview supplied.']}));
 export function harness(ccvOverrides={},options={}) {
-  const data=new Map(),rates=new Map();let seq=0,posts=0;
+  const data=new Map(),rates=new Map();let seq=0,posts=0,revision=0;const stamp=()=>String(++revision);
   const store={get:async id=>structuredClone(data.get(id)),create:async d=>{
-    const row={...structuredClone(d),id:'draft_'+String(++seq).padStart(10,'0'),created_date:new Date().toISOString()};data.set(row.id,row);return structuredClone(row);},
-    update:async(id,patch)=>{Object.assign(data.get(id),structuredClone(patch));return structuredClone(data.get(id));},
+    const row={...structuredClone(d),id:'draft_'+String(++seq).padStart(10,'0'),created_date:new Date().toISOString(),updated_date:stamp()};data.set(row.id,row);return structuredClone(row);},
+    update:async(id,patch)=>{Object.assign(data.get(id),structuredClone(patch),{updated_date:stamp()});return structuredClone(data.get(id));},
     list:async()=>[...data.values()],reserveRate:async(hash,hour)=>{const k=hour,n=rates.get(k)||0;if(n>=100)return false;rates.set(k,n+1);return true;},
-    claim:async(id)=>{const d=data.get(id);if(d.status!=='draft')return false;d.status='submitting';return true;}};
+    claim:async(id,status='draft',updatedDate)=>{const d=data.get(id);if(d.status!==status||updatedDate&&d.updated_date!==updatedDate)return false;d.status='submitting';d.updated_date=stamp();return true;}};
   const ccv={configured:true,product:async()=>({id:896372573,name:'SSK Custom Glove',price:374.95,discount:0}),
-    prepare:async(d)=>{posts++;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout?basket=example'};},
-    order:async(id,d)=>{const lead=[].concat(d)[0];return {id,is_completed:false,paid:false,checkout_href:'https://sskeurope.ccvshop.nl/checkout',reservationnumber:'SSK-'+lead.id,currency:'EUR',total_orderrow_price:[].concat(d).reduce((n,x)=>n+x.quote.total,0)/100,order_row_taxes_included:true,verifiedRows:[].concat(d).map(()=>({tax:21}))};},...ccvOverrides};
+    prepare:async(d)=>{posts++;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout?basket=example',basketUrl:'https://sskeurope.ccvshop.nl/website/index.php?Show=WebShopBasket&OrderId=example'};},
+    order:async(id,d)=>{const lead=[].concat(d)[0];return {id,is_completed:false,paid:false,basket_href:'https://sskeurope.ccvshop.nl/website/index.php?Show=WebShopBasket&OrderId=example',checkout_href:'https://sskeurope.ccvshop.nl/checkout',reservationnumber:'SSK-'+lead.id,currency:'EUR',total_orderrow_price:[].concat(d).reduce((n,x)=>n+x.quote.total,0)/100,order_row_taxes_included:true,verifiedRows:[].concat(d).map(()=>({tax:21}))};},...ccvOverrides};
   const run=createCommerce({store,ccv,requireAdmin:async u=>{if(u?.role!=='admin')throw Object.assign(Error('admin_required'),{status:403});},appUrl:'https://example.com/',checkoutEnabled:true,...options});
   const save=()=>run({action:'create',confirmed:true,design:fixture(),previews:previews()});
   return {run,save,data,store,ccv,get posts(){return posts;}};
@@ -43,12 +44,14 @@ test('every known catalogue has a valid all-white value and valid badge',()=>{
 test('reject unavailable web, mismatched size and unknown palette code',()=>{
   for(const patch of [{webType:'Sasaki 1-Web'},{size:'12.5"',webType:'Spiral I-Web'},{colors:{...fixture().colors,back8:'0'}}])assert.throws(()=>validateDesign({...fixture(),...patch}));
 });
-test('Crocodile is all nine back panels or none, without surcharge',()=>{
+test('Crocodile covers all nine back panels and the belt, without surcharge',()=>{
   const d=validateDesign({...fixture(),materials:{back3:'snakeskin',back5:'snakeskin',back7:'snakeskin'}});
   assert.equal(quoteDesign(d).total,37495);
   for(let i=1;i<=9;i++)assert.equal(d.materials['back'+i],'snakeskin');
+  assert.equal(d.materials.belt,'snakeskin');
+  assert.equal(validateDesign({...fixture(),materials:{belt:'snakeskin'}}).materials.back1,'snakeskin');
   assert.deepEqual(validateDesign(fixture()).materials,{});
-  for(const f of ['web','palm','laces','welting','pad_color','belt','lining','thumb_loops','pinky_loops'])assert.throws(()=>validateDesign({...fixture(),materials:{[f]:'snakeskin'}}));
+  for(const f of ['web','palm','laces','welting','pad_color','lining','thumb_loops','pinky_loops'])assert.throws(()=>validateDesign({...fixture(),materials:{[f]:'snakeskin'}}));
 });
 test('flagged finger must have matching colour and material on both halves',()=>{
   const d={...fixture(),flag:'Japan',flagPosition:'middle'};
@@ -258,7 +261,8 @@ test('several gloves check out as one CCV order with one row per glove, each wit
   const request={action:'checkout',items:[{id:a.id,token:a.checkoutToken},{id:b.id,token:b.checkoutToken}]};
   assert.match((await h.run(request)).url,/basket=team/);
   assert.equal(posts,1);assert.equal(drafts.length,2);assert.equal(memos.length,2);
-  assert.match(memos[0],/Glove 1 of 2 in this order/);assert.match(memos[1],/Glove 2 of 2 in this order/);
+  // Basket length can grow later; immutable per-glove memos must not freeze an obsolete total.
+  assert.ok(memos.every(m=>!m.includes(' of 2 in this order')));
   assert.ok(memos[0].includes('Snapshot: '+a.id)&&!memos[0].includes('Snapshot: '+b.id));
   assert.ok(memos[1].includes('Snapshot: '+b.id)&&memos[1].includes('thumbText: TWO')&&memos[1].includes('Flag: Japan'));
   assert.ok(memos[0].includes('SSK Custom Glove | '+a.reference)&&memos[1].includes('SSK Custom Glove | '+b.reference));
@@ -310,8 +314,49 @@ test('live v15 uses isolated approval flags and the same reviewed canonical depe
  assert.match(index,/checkoutEnabled:Deno\.env\.get\('CCV_LIVE_ORDERING_V15_ENABLED'\)==='true'/);
  assert.match(index,/acceptanceTestsEnabled:Deno\.env\.get\('CCV_ACCEPTANCE_V15_TESTS_ENABLED'\)==='true'/);
  assert.ok(!index.includes('CCV_API_KEY'));assert.ok(!index.includes('_V14_'));
- for(const name of ['service.js','store.js','ccv.js','commerce-contract.js','commerce-pricing.js','commerce-catalog.js','glove-catalog.js','refcode.js'])
-  assert.equal(await readFile(new URL('../base44/functions/ssk-commerce-v15/lib/'+name,import.meta.url),'utf8'),await readFile(new URL('../base44/functions/ssk-commerce-v14/lib/'+name,import.meta.url),'utf8'));
+ const canonical={'service.js':'commerce/backend/service.js','store.js':'commerce/backend/store.js','ccv.js':'commerce/backend/ccv.js',...Object.fromEntries(['commerce-contract.js','commerce-pricing.js','commerce-catalog.js','glove-catalog.js','refcode.js'].map(n=>[n,'glove_builder/customiser/'+n]))};
+ for(const [name,path] of Object.entries(canonical))assert.equal(await readFile(new URL('../base44/functions/ssk-commerce-v15/lib/'+name,import.meta.url),'utf8'),'// Generated by scripts/build-commerce-function.mjs. Edit the canonical source.\n'+(await readFile(new URL('../'+path,import.meta.url),'utf8')).replaceAll('../../glove_builder/customiser/','./'));
  const config=await readFile(new URL('../glove_builder/customiser/commerce-config.js',import.meta.url),'utf8');
- assert.ok(config.includes('/functions/ssk-commerce-v15'));assert.ok(config.includes('ccv-r03-01'));
+ assert.ok(config.includes('/functions/ssk-commerce-v15'));assert.ok(config.includes('ccv-r03-01'));assert.ok(index.includes("apiBuild:'ccv-r04-03'"));
+});
+
+test('basket and checkout destinations share one idempotent verified CCV basket',async()=>{
+ const h=harness(),saved=await h.save();
+ const body={action:'checkout',id:saved.id,token:saved.checkoutToken};
+ const basket=await h.run({...body,destination:'basket'});
+ assert.match(basket.url,/Show=WebShopBasket/);assert.equal(h.posts,1);
+ const again=await h.run({...body,destination:'basket'});
+ assert.equal(again.url,basket.url);assert.equal(h.posts,1);
+ const checkout=await h.run(body);assert.notEqual(checkout.url,basket.url);assert.equal(h.posts,1);
+});
+
+test('invalid destination cannot claim a draft or create a CCV order',async()=>{
+ const h=harness(),saved=await h.save();
+ await assert.rejects(h.run({action:'checkout',id:saved.id,token:saved.checkoutToken,destination:'https://evil.test'}),/invalid_request/);
+ assert.equal(h.posts,0);assert.equal(h.data.get(saved.id).status,'draft');
+});
+
+test('old nine-panel snapshots retain their exact material memo while new designs include the belt',()=>{
+ const old={...fixture(),materials:Object.fromEntries(Array.from({length:9},(_,i)=>['back'+(i+1),'snakeskin']))};
+ assert.equal(specification(old).find(([key])=>key==='Back panels material')[1],'Crocodile pattern (Back 1-9)');
+ const current=validateDesign(old);
+ assert.equal(specification(current).find(([key])=>key==='Back panels material')[1],'Crocodile pattern (Back 1-9 and belt)');
+ assert.equal(old.materials.belt,undefined);
+});
+
+test('adding to a handed-off basket never replaces rows and preserves the new design',async()=>{
+ let writes=0;const h=harness({prepare:async()=>{writes++;return {id:777,url:'https://sskeurope.ccvshop.nl/checkout',basketUrl:'https://sskeurope.ccvshop.nl/website/index.php?Show=WebShopBasket&OrderId=qa'};}});
+ const a=await h.save();await h.run({action:'checkout',id:a.id,token:a.checkoutToken,destination:'basket'});
+ const b=await h.save();await assert.rejects(h.run({action:'checkout',items:[a,b].map(d=>({id:d.id,token:d.checkoutToken})),destination:'basket'}),e=>e.code==='cart_already_open'&&e.basketUrl.includes('WebShopBasket'));
+ assert.equal(writes,1);assert.equal(h.data.get(a.id).status,'ready');assert.equal(h.data.get(b.id).status,'draft');
+});
+
+test('CCV transport has no collection replacement method that can lose simultaneous shop edits',()=>{
+ const ccv=createCcv({key:'public',secret:'secret'});assert.equal(ccv.extend,undefined);
+});
+
+test('persistent draft schema retains bundle links and private RLS',()=>{
+ const schema=JSON.parse(readFileSync(new URL('../base44/entities/GloveOrderDraft.jsonc',import.meta.url),'utf8'));
+ assert.deepEqual(schema.properties.bundle,{type:'array',items:{type:'string'},minItems:1,maxItems:6});
+ for(const op of ['create','read','update','delete'])assert.deepEqual(schema.rls[op],{user_condition:{role:'admin'}});
 });

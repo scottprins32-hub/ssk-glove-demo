@@ -11,7 +11,7 @@
  window.addEventListener('message',event=>{
   if(event.origin!==BUILDER||event.source!==frame.contentWindow||event.data?.type!=='ssk:checkout'||typeof event.data.url!=='string')return;
   let url;try{url=new URL(event.data.url);}catch{return;}
-  if(url.origin!==SHOP||url.username||url.password||url.pathname!=='/website/index.php'||url.searchParams.get('Show')!=='WebShopOneStepCheckout'||!url.searchParams.get('OrderId'))return;
+  if(url.origin!==SHOP||url.username||url.password||url.pathname!=='/website/index.php'||!['WebShopOneStepCheckout','WebShopBasket'].includes(url.searchParams.get('Show'))||!url.searchParams.get('OrderId'))return;
   location.assign(url.href);
  });
 })();
