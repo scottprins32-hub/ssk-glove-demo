@@ -38,10 +38,10 @@ Deno.serve(async(request)=>{
       acceptanceTestsEnabled:Deno.env.get('CCV_ACCEPTANCE_V15_TESTS_ENABLED')==='true'});
     const ip=request.headers.get('x-forwarded-for')?.split(',')[0].trim()||'unknown';
     const clientFingerprint=await tokenHash(APP_ID+'|'+ip);
-    return Response.json({...await service(body,{clientFingerprint}),apiRevision:'ccv-r03-01',apiBuild:'ccv-r04-04'},{headers:cors});
+    return Response.json({...await service(body,{clientFingerprint}),apiRevision:'ccv-r03-01',apiBuild:'ccv-r04-05'},{headers:cors});
   } catch(error) {
     console.error('SSK commerce failure',error?.name,error?.status,error?.message);
-    return Response.json({error:error instanceof CommerceError?error.code:'service_unavailable',apiRevision:'ccv-r03-01',apiBuild:'ccv-r04-04',basketUrl:error?.code==='cart_already_open'?error.basketUrl:undefined,error_kind:error instanceof CommerceError?undefined:error?.name,upstream_status:error?.status||error?.response?.status,error_phase:error?.phase,diagnostic:diagnosticAdmin?{message:error?.message,detail:error?.response?.data?.detail,ccvStatus:error?.upstreamStatus,ccvDetail:error?.upstreamDetail}:undefined},
+    return Response.json({error:error instanceof CommerceError?error.code:'service_unavailable',apiRevision:'ccv-r03-01',apiBuild:'ccv-r04-05',basketUrl:error?.code==='cart_already_open'?error.basketUrl:undefined,error_kind:error instanceof CommerceError?undefined:error?.name,upstream_status:error?.status||error?.response?.status,error_phase:error?.phase,diagnostic:diagnosticAdmin?{message:error?.message,detail:error?.response?.data?.detail,ccvStatus:error?.upstreamStatus,ccvDetail:error?.upstreamDetail}:undefined},
       {status:error instanceof CommerceError?error.status:503,headers:cors});
   }
 });

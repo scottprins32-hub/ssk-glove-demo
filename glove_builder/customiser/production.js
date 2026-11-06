@@ -31,11 +31,13 @@ export function renderProduction(draft,host){
   card.append(table,node('p','De specificatie is leidend. Afbeeldingen kunnen een benadering zijn; opmerkingen per aanzicht staan bij de afbeelding.','note'));host.append(card);
 }
 
+let requestSerial=0;
 async function start(){
-  const status=document.querySelector('#status'),host=document.querySelector('#production-content'),item=readOrderFragment();
+  const serial=++requestSerial,status=document.querySelector('#status'),host=document.querySelector('#production-content'),item=readOrderFragment();
+  host.replaceChildren();host.hidden=true;status.textContent='Ontwerp laden…';
   if(!item){status.textContent='Deze ontwerplink is onvolledig. Open de volledige link uit de interne notitie bij de CCV-bestelling.';return;}
-  try{const draft=await api('production-read',item);renderProduction(draft,host);
+  try{const draft=await api('production-read',item);if(serial!==requestSerial)return;renderProduction(draft,host);
     status.textContent='Alleen-lezen ontwerpkaart · beschikbaar tot '+new Intl.DateTimeFormat('nl-NL',{dateStyle:'long'}).format(new Date(draft.expiresAt))+'. Deel deze link alleen met de betrokken SSK-medewerker of fabrikant.';
-  }catch(error){status.textContent=errorMessage(error);}
+  }catch(error){if(serial===requestSerial)status.textContent=errorMessage(error);}
 }
-if(typeof document!=='undefined'&&document.querySelector('#production-content'))start();
+if(typeof document!=='undefined'&&document.querySelector('#production-content')){window.addEventListener('hashchange',start);start();}

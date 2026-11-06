@@ -1,4 +1,5 @@
 import test from 'node:test';
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createCommerce,withDeliveryBudget} from '../commerce/backend/service.js';
@@ -59,7 +60,7 @@ test('completed bundle repair returns one private link per snapshot and never cr
 
 test('CCV attaches and verifies an internal note idempotently without replacing rows or emailing anyone',async()=>{
  const calls=[],notes=[{type:'internal',note:'Existing note'}],links=[{id:'draft_delivery_01',reference:'SSK-EXACT',url:appUrl+'production.html#draft_delivery_01.'+'a'.repeat(64)}];
- const ccv=createCcv({key:'test',secret:'test',fetcher:async(url,options)=>{calls.push({url,method:options.method});assert.ok(url.endsWith('/orders/123/ordernotes/'));assert.ok(['GET','POST'].includes(options.method));if(options.method==='POST'){const payload=JSON.parse(options.body);assert.deepEqual(Object.keys(payload),['note']);notes.push({type:'internal',note:payload.note});return new Response(null,{status:204});}return Response.json({items:notes});}});
+ const ccv=createCcv({key:'test',secret:'test',fetcher:async(url,options)=>{calls.push({url,method:options.method});assert.ok(url.endsWith('/orders/123/ordernotes/'));assert.ok(['GET','POST'].includes(options.method));if(options.method==='POST'){const payload=JSON.parse(options.body);assert.deepEqual(Object.keys(payload),['note']);notes.push({type:'internal',note:'<p>'+payload.note.replaceAll('\n','<br />')+'</p>'});return new Response(null,{status:204});}return Response.json({items:notes});}});
  assert.equal((await ccv.attachProductionLinks(123,links)).verified,true);assert.equal((await ccv.attachProductionLinks(123,links)).alreadyPresent,true);assert.equal(calls.filter(c=>c.method==='POST').length,1);assert.equal(notes[0].note,'Existing note');
  const note=notes[1].note;assert.ok(note.includes(links[0].url));assert.ok(note.includes('4 afbeeldingen'));
  await assert.rejects(ccv.attachProductionLinks(123,[{...links[0],url:'https://evil.test/production.html#draft_delivery_01.'+'a'.repeat(64)}]),/invalid_request/);
@@ -82,4 +83,17 @@ test('every note request shares the same whole-operation abort signal',async()=>
  const ccv=createCcv({key:'key',secret:'secret',fetcher:async(url,options)=>{seen.push(options.signal);if(options.method==='POST')notes.push({type:'internal',note:JSON.parse(options.body).note});return Response.json({items:notes});}});
  await ccv.attachProductionLinks(123,links,{signal:controller.signal});assert.equal(seen.length,3);assert.ok(seen.every(s=>s===controller.signal));
  controller.abort();await assert.rejects(ccv.attachProductionLinks(123,links,{signal:controller.signal}));assert.equal(seen.length,3);
+});
+
+
+test('switching design-card links clears the previous design and ignores a slower older response',async()=>{
+ const source=(await readFile(new URL('../glove_builder/customiser/production.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'').replace('export function renderProduction','function renderProduction');
+ const host={hidden:false,children:['old'],replaceChildren(){this.children=[];}},status={},handlers={},pending={};let item=null;
+ const context={document:{querySelector:s=>s==='#status'?status:host},window:{addEventListener:(event,fn)=>handlers[event]=fn},readOrderFragment:()=>item,api:(_,request)=>new Promise(resolve=>pending[request.id]=resolve),errorMessage:()=> 'error',Intl,Date};
+ vm.runInNewContext(source,context);assert.equal(host.hidden,true);assert.deepEqual(host.children,[]);
+ context.renderProduction=d=>{host.hidden=false;host.children=[d.id];};
+ const reply=id=>({id,expiresAt:'2027-11-06T00:00:00Z'});
+ item={id:'first',token:'a'};const a=handlers.hashchange();item={id:'second',token:'b'};const b=handlers.hashchange();
+ pending.second(reply('second'));await b;pending.first(reply('first'));await a;assert.deepEqual(host.children,['second']);
+ item=null;await handlers.hashchange();assert.equal(host.hidden,true);assert.deepEqual(host.children,[]);
 });

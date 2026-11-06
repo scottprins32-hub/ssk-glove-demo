@@ -88,13 +88,20 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     const path=`/api/rest/v1/orders/${id}/ordernotes/`;
     const exists=notes=>{
       if(notes.next||notes.items!==undefined&&!Array.isArray(notes.items))throw new CommerceError('design_delivery_verification_failed',502);
-      return (notes.items||[]).some(n=>n.type==='internal'&&n.note===note);
+      // CCV rewrites note formatting. Verify the private snapshot marker and
+      // every exact capability URL, rather than the transport's whitespace.
+      return (notes.items||[]).some(n=>n.type==='internal'&&typeof n.note==='string'&&n.note.includes(marker)&&links.every(l=>n.note.includes(l.url)));
     };
     if(exists(await request('GET',path,undefined,signal)))return {verified:true,alreadyPresent:true};
     // This endpoint creates an INTERNAL note. Never use ordermessages or
     // ordernotifications here: those can email the customer.
     await request('POST',path,{note},signal);
-    if(!exists(await request('GET',path,undefined,signal)))throw new CommerceError('design_delivery_verification_failed',502);
+    const saved=await request('GET',path,undefined,signal);
+    if(!exists(saved)){
+      const error=new CommerceError('design_delivery_verification_failed',502);
+      error.upstreamDetail=JSON.stringify({keys:Object.keys(saved),notes:(saved.items||[]).map(n=>({type:n.type,exact:n.note===note,marker:typeof n.note==='string'&&n.note.includes(marker),links:links.map(l=>typeof n.note==='string'&&n.note.includes(l.url))}))});
+      throw error;
+    }
     return {verified:true,alreadyPresent:false};
   },async prepare(draftOrDrafts,memoOrMemos) {
     const drafts=bundle(draftOrDrafts),memos=[].concat(memoOrMemos);
