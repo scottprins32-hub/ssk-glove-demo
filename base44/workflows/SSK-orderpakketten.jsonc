@@ -1,0 +1,47 @@
+{
+  "name": "SSK-orderpakketten",
+  "description": "Controleer afgeronde CCV-bestellingen en maak de productieoverdracht. Mail blijft uit zonder geconfigureerde en ingeschakelde verzendverbinding.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Amsterdam",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "ssk_production_packets",
+      "version": "1.0.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "prepare_orders": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ssk-production-v1",
+            "args": {
+              "action": "scan"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "SSK-orderpakketten voorbereiden",
+            "description": "Mail alleen met gekoppelde en ingeschakelde verzendverbinding"
+          }
+        }
+      }
+    ]
+  }
+}
