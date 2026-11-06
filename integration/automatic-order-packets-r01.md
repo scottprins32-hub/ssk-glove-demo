@@ -6,7 +6,7 @@ Pim processes orders from the CCV merchant confirmation email (confirmed 6 Novem
 
 Each package contains an English specification, four stored view images per design, a PDF and a ZIP preserving original image bytes. A missing/representative view is identified. Unsupported PDF font glyphs are shown explicitly as Unicode codepoints; literal personalization remains in the email and UTF-8 JSON/TXT. Large attachments are grouped into numbered messages under the same order. For an exceptionally large image PDF, the mail carries a specification PDF and original image ZIPs; the full image PDF remains in private administrator storage.
 
-A private `production_delivery` field stores optimistic claims, preparation state and per-message receipts. Unknown delivery outcomes are quarantined for manual provider reconciliation, never automatically resent. Safe rejection can retry only unaccepted parts using the exact saved packet. Native Base44 scheduling runs every five minutes as the creator. `factory.html` is an admin-only status/download fallback; its API uses private-file storage and signed media URLs.
+A private `production_delivery` field stores optimistic claims, preparation state and per-message receipts. Unknown delivery outcomes are quarantined for manual provider reconciliation, never automatically resent. Safe rejection can retry only unaccepted parts using the exact saved packet. The native Base44 workflow `SSK-orderpakketten` is configured for every five minutes. Its manual execution completed successfully; it is paused until the sender is connected, to avoid repeated paid polling while email cannot be sent. Legacy function automations were refused by the current platform and are not used. `factory.html` is an admin-only status/download fallback (its unauthenticated gate was opened; authenticated browser access remains unverified); its API uses private-file storage and signed media URLs.
 
 ## Sender connection
 
@@ -18,7 +18,7 @@ Configure secrets securely in Base44, never in source/client code:
 - Or verified Resend sender: provider `resend`, `SSK_PRODUCTION_FROM`, `SSK_RESEND_API_KEY`.
 - Only after the connection is configured and verified: `SSK_PRODUCTION_MAIL_ENABLED=true`.
 
-An initial live send and mailbox receipt/attachment check are still required. A successful provider response means accepted by the provider, not confirmed inbox delivery. CCV payment notifications and payment configuration are untouched.
+Hosted preparation and retrieval for existing completed order 28803 were verified; all four ZIP originals match stored preview SHA256/bytes. An initial live send and mailbox receipt/attachment check are still required. A successful provider response means accepted by the provider, not confirmed inbox delivery. CCV payment notifications and payment configuration are untouched.
 
 ## Checks
 
