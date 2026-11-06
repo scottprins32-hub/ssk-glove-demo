@@ -46,14 +46,15 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
       order.order_row_taxes_included!==true) throw new CommerceError('checkout_verification_failed',502);
     return order;
   }
-  function rowMatches(row,draft,id) {
-    return row&&row.order_id===id&&row.product_id===SHOP.productId&&Number(row.count)===1&&
+  function rowMatches(row,draft,id,{production=false}={}) {
+    const count=Number(row?.count);
+    return row&&row.order_id===id&&row.product_id===SHOP.productId&&(production?Number.isSafeInteger(count)&&count>=1&&count<=99:count===1)&&
       Number(row.discount)===0&&Math.round(Number(row.price)*100)===draft.quote.total&&
-      Math.round(Number(row.total_price)*100)===draft.quote.total&&Number.isFinite(Number(row.tax))&&Number(row.tax)>=0&&Number(row.tax)<=100&&
+      Math.round(Number(row.total_price)*100)===draft.quote.total*count&&Number.isFinite(Number(row.tax))&&Number(row.tax)>=0&&Number(row.tax)<=100&&
       typeof row.memo==='string'&&row.memo.includes(`Snapshot: ${draft.id}`)&&
       specificationLines(draft).every(line=>row.memo.split('\n').includes(line));
   }
-  async function order(id,draftOrDrafts) {
+  async function order(id,draftOrDrafts,{production=false}={}) {
     if(!Number.isSafeInteger(id)||id<1) throw new CommerceError('invalid_order_id');
     const drafts=bundle(draftOrDrafts);
     const verified=verifyOrder(await request('GET',`/api/rest/v1/orders/${id}/`),drafts);
@@ -66,7 +67,7 @@ export function createCcv({key,secret,fetcher=fetch,now=()=>new Date()}) {
     // Ordinary shop products may share this basket. Never accept an extra
     // custom glove without one of the authenticated design snapshots.
     if(rows.items.some(row=>row.product_id===SHOP.productId&&!drafts.some(d=>typeof row.memo==='string'&&row.memo.includes(`Snapshot: ${d.id}`))))throw new CommerceError('checkout_verification_failed',502);
-    if(verifiedRows.some((list,i)=>list.length!==1||!rowMatches(list[0],drafts[i],id)))throw new CommerceError('checkout_verification_failed',502);
+    if(verifiedRows.some((list,i)=>list.length!==1||!rowMatches(list[0],drafts[i],id,{production})))throw new CommerceError('checkout_verification_failed',502);
     return {...verified,verifiedRow:verifiedRows[0][0],verifiedRows:verifiedRows.map(list=>list[0]),allRows:rows.items};
   }
   const prepared=verified=>({id:verified.id,url:safeCheckoutUrl(verified.checkout_href||verified.basket_href),

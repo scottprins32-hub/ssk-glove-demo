@@ -55,6 +55,9 @@
       },
       "minItems": 1,
       "maxItems": 6
+    },
+    "production_delivery": {
+      "type": "object"
     }
   },
   "required": [
