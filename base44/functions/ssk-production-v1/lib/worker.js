@@ -32,7 +32,7 @@ export function createProductionWorker({store,ccv,buildPacket,files,mailer,onErr
    phase='verify_order';const order=await ccv.order(lead.ccv_order_id,drafts,{production:true});
    if(Number(order.status)===8){await finish({state:'cancelled'});return {status:'cancelled'};}
    if(order.is_completed!==true){await finish({state:'awaiting_checkout',next_attempt_at:later(15)});return {status:'awaiting_checkout'};}
-   phase='signature';const signature=await tokenHash(JSON.stringify({version:VERSION,order:order.id,designs:drafts.map(d=>[d.id,d.design,d.quote]),quantities:order.verifiedRows.map(r=>Number(r.count))}));
+   phase='signature';const signature=await tokenHash(JSON.stringify({version:VERSION,format:mailer.format||null,order:order.id,designs:drafts.map(d=>[d.id,d.design,d.quote]),quantities:order.verifiedRows.map(r=>Number(r.count))}));
    if(previous.sent_parts?.length&&previous.signature!==signature)throw Error('production_partially_sent_order_changed');
    Object.assign(state,{signature,sent_parts:previous.signature===signature?(previous.sent_parts||[]):[],order_number:String(order.ordernumber_full||order.ordernumber||order.order_number||order.id)});
    let packet;phase='read_packet';
@@ -58,7 +58,7 @@ export function createProductionWorker({store,ccv,buildPacket,files,mailer,onErr
     try {const message=messages[part],attachments=message.attachmentNames?.map(name=>packet.attachments.find(a=>a.filename===name));if(attachments?.some(a=>!a))throw Error('packet_attachment_missing');receipt=await mailer.send(attachments?{...message,attachments}:message,'ssk:'+order.id+':'+signature+':'+part);}
     catch(error) {
      const status=error.safeToRetry===true?'failed':'uncertain';
-     await finish({state:status,error:safeError(error)});return {status,error:safeError(error)};
+     await finish({state:status,error:safeError(error),...(error.providerReason?{provider_error:error.providerReason,provider_status:error.providerStatus}:{})});return {status,error:safeError(error),...(error.providerReason?{providerReason:error.providerReason,providerStatus:error.providerStatus}:{})};
     }
     state.sent_parts.push({part,message_id:receipt.messageId,provider:receipt.provider});
     await finish({state:'sending'});

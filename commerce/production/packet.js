@@ -1,4 +1,6 @@
 import {PDFDocument,rgb} from 'pdf-lib';
+import UPNGModule from '@pdf-lib/upng';
+const UPNG=typeof UPNGModule.decode==='function'?UPNGModule:UPNGModule.default;
 import fontkit from '@pdf-lib/fontkit';
 import {encode as pngEncode} from 'fast-png';
 import {zipSync,strToU8} from 'fflate';
@@ -47,7 +49,11 @@ async function decodeImage(dataUrl){
   }
  }
  if(!width||!height||width>4096||height>4096||width*height>8000000)throw Error('packet_image_dimensions');
- return {bytes,ext:match[1],png:match[1]==='png'?bytes:null};
+ if(match[1]==='png'){
+  const decoded=UPNG.decode(bytes.buffer);if(decoded.frames?.length>1)throw Error('packet_image_invalid');
+  rgba={width,height,data:new Uint8Array(UPNG.toRGBA8(decoded)[0])};
+ }
+ return {bytes,ext:match[1],png:match[1]==='png'?bytes:null,rgba};
 }
 function thumbnail(image,max=400){
  if(!image.rgba)return {bytes:image.bytes,type:'image/'+image.ext};
@@ -61,7 +67,7 @@ function thumbnail(image,max=400){
 const rowsFor=d=>{const spec=specification(d.design);return displaySpecification(spec,'en').map(([label,value],i)=>[partNames[spec[i][0]]||label,String(value)]);};
 export async function buildFactoryPacket({order,drafts}){
  if(!Number.isSafeInteger(order.id)||!Array.isArray(drafts)||!drafts.length||drafts.length>6)throw Error('packet_order_invalid');
- const number=String(order.ordernumber_full||order.ordernumber||order.order_number||order.id),name='SSK-Order-'+safeName(number),pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);const font=await pdf.embedFont(fontBytes,{subset:true}),glyphs=new Set(font.getCharacterSet()),attachments=[],zipFiles={},gloves=[],htmlGloves=[],imagePages=new Set();
+ const number=String(order.ordernumber_full||order.ordernumber||order.order_number||order.id),name='SSK-Order-'+safeName(number),pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);const font=await pdf.embedFont(fontBytes,{subset:true}),glyphs=new Set(font.getCharacterSet()),attachments=[],zipFiles={},gloves=[],htmlGloves=[],imagePages=new Set(),pdfGroups=[];
  // Never discard valid personalization when the PDF font lacks a glyph.
  // Literal text stays in HTML and UTF-8 source files; PDF notation is explicit.
  const printable=s=>[...String(s)].map(c=>glyphs.has(c.codePointAt(0))?c:'[U+'+c.codePointAt(0).toString(16).toUpperCase()+'] ').join('');
@@ -74,7 +80,7 @@ export async function buildFactoryPacket({order,drafts}){
   const d=drafts[i],qty=Number(d.quantity??1);if(!Number.isSafeInteger(qty)||qty<1||qty>99)throw Error('packet_quantity_invalid');totalQuantity+=qty;
   const rows=rowsFor(d),folder=String(i+1).padStart(2,'0')+'-'+safeName(d.reference),record={id:d.id,reference:d.reference,quantity:qty,design:{...d.design},specification:specification(d.design),previews:[]};delete record.design.name;delete record.design.phone;
   text(overview,(i+1)+'. '+d.design.size+' · '+d.design.webType+' · '+d.design.hand+' · quantity '+qty,32,summaryY,11);text(overview,d.reference,42,summaryY-19,8);summaryY-=56;
-  const sheet=page('Design '+(i+1)+' of '+drafts.length+' · quantity '+qty,'Design '+(i+1));text(sheet,d.reference,32,744,8);
+  const firstPage=pdf.getPageCount();const sheet=page('Design '+(i+1)+' of '+drafts.length+' · quantity '+qty,'Design '+(i+1));text(sheet,d.reference,32,744,8);
   imagePages.add(pdf.getPageCount()-1);let imageHtml='';
   for(let j=0;j<4;j++){
    const view=['back','palm','thumb','pinky'][j],p=d.previews.find(p=>p.view===view),x=32+(j%2)*272,y=407-Math.floor(j/2)*328;let caption=views[view];
@@ -90,6 +96,7 @@ export async function buildFactoryPacket({order,drafts}){
   let specPage=page('Design '+(i+1)+' · full specification','Design '+(i+1)),y=714;
   text(specPage,'Missing font glyphs use [U+code]; original text is in the email and UTF-8 source files.',32,739,7);
   for(const [key,value]of rows){const a=wrap(key,8.5,210),b=wrap(value,9,300),height=Math.max(a.length,b.length)*13+8;if(y-height<45){specPage=page('Design '+(i+1)+' · specification continued','Design '+(i+1));y=736;}a.forEach((line,k)=>text(specPage,line,32,y-k*13,8.5));b.forEach((line,k)=>text(specPage,line,255,y-k*13,9));specPage.drawLine({start:{x:32,y:y-height+6},end:{x:563,y:y-height+6},thickness:.35,color:rgb(.85,.85,.85)});y-=height;}
+  pdfGroups.push(Array.from({length:pdf.getPageCount()-firstPage},(_,n)=>firstPage+n));
   zipFiles[folder+'/specification.json']=strToU8(JSON.stringify(record,null,2));zipFiles[folder+'/specification.txt']=strToU8(['SSK Europe production specification','Order '+number,'Design '+(i+1)+' of '+drafts.length,'Quantity: '+qty,d.reference,...rows.map(([k,v])=>k+': '+v)].join('\n'));
   gloves.push(record);htmlGloves.push('<h2 style="color:#111">Design '+(i+1)+' of '+drafts.length+' · quantity '+qty+'</h2><p>'+escape(d.reference)+'</p><table role="presentation" width="100%"><tr>'+imageHtml+'</tr></table><table style="width:100%;border-collapse:collapse">'+rows.map(([k,v])=>'<tr><th style="padding:5px;text-align:left;border-bottom:1px solid #ddd">'+escape(k)+'</th><td style="padding:5px;border-bottom:1px solid #ddd">'+escape(v)+'</td></tr>').join('')+'</table>');
  }
@@ -120,6 +127,6 @@ export async function buildFactoryPacket({order,drafts}){
  const subject='SSK Custom · Order '+number+' · '+totalQuantity+' glove(s) · production pack';
  for(const a of sendAttachments)if(!attachments.some(existing=>existing.filename===a.filename))attachments.push(a);
  const messages=groups.map((files,i)=>({subject:subject+(groups.length>1?' · part '+(i+1)+'/'+groups.length:''),html:emailHtml.replace('<h1>','<p><strong>Production package part '+(i+1)+' of '+groups.length+'. Keep / forward all parts together.</strong></p><h1>'),attachmentNames:[...files,...inline].map(a=>a.filename)}));
- return {messages,subject:'SSK Custom · Order '+number+' · '+totalQuantity+' glove(s) · production pack',html,attachments,manifest,pdfBytes,zipBytes,estimatedBytes};
+ return {pdfGroups,messages,subject:'SSK Custom · Order '+number+' · '+totalQuantity+' glove(s) · production pack',html,attachments,manifest,pdfBytes,zipBytes,estimatedBytes};
 }
 export function previewEmail(packet){let html=packet.html;for(const a of packet.attachments.filter(a=>a.content_id))html=html.replaceAll('cid:'+a.content_id,'data:'+a.content_type+';base64,'+a.content);return html;}

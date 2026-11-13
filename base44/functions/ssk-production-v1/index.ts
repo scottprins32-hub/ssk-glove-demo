@@ -5,6 +5,7 @@ import{createProductionWorker}from'./lib/worker.js';
 import{productionStore}from'./lib/production-store.js';
 import{createMailer}from'./lib/mailer.js';
 import{buildFactoryPacket}from'./lib/packet.bundle.js';
+import{nativeDelivery}from'./lib/native-packet.bundle.js';
 const APP_ID='6acecad7d76f2c87da8db964';
 Deno.serve(async request=>{
  const origin=request.headers.get('Origin'),allowed=new Set(['https://ssk-glove-configurator-da8db964.base44.app','https://base44.app']);
@@ -25,10 +26,10 @@ Deno.serve(async request=>{
   authenticated=true;
   const raw=await request.text();if(raw.length>4096)return json({error:'request_too_large'},{status:413});
   const input=JSON.parse(raw);
-  const store=productionStore(client.asServiceRole.entities.GloveOrderDraft),ccv=createCcv({key:Deno.env.get('CCV_SHOP_API_KEY'),secret:Deno.env.get('CCV_SHOP_API_SECRET')}),mailer=createMailer({env:n=>Deno.env.get(n),smtpTransport:config=>nodemailer.createTransport(config)});
+  const store=productionStore(client.asServiceRole.entities.GloveOrderDraft),ccv=createCcv({key:Deno.env.get('CCV_SHOP_API_KEY'),secret:Deno.env.get('CCV_SHOP_API_SECRET')}),mailer=createMailer({env:n=>Deno.env.get(n),smtpTransport:config=>nodemailer.createTransport(config),nativeSendEmail:input=>client.asServiceRole.integrations.Core.SendEmail(input)});
   const bounded=async(p,ms)=>{let timer;try{return await Promise.race([p,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('packet_storage_timeout')),ms);})]);}finally{clearTimeout(timer);}};
   const files={async save(name,data){const result=await bounded(client.asServiceRole.integrations.Core.UploadPrivateFile({file:new File([JSON.stringify(data)],name,{type:'application/json'})}),40000);if(typeof result.file_uri!=='string')throw Error('packet_storage_failed');return result.file_uri;},async read(uri){if(typeof uri!=='string'||!uri.startsWith('mp/private/'+APP_ID+'/'))throw Error('packet_storage_invalid');const result=await bounded(client.asServiceRole.integrations.Core.CreateFileSignedUrl({file_uri:uri,expires_in:300}),20000);const url=new URL(result.signed_url);if(url.protocol!=='https:'||url.origin!=='https://media.base44.com'||!url.pathname.startsWith('/files/private/'+APP_ID+'/'))throw Error('packet_storage_invalid');const response=await fetch(url.href,{headers:{Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('packet_storage_failed');const raw=await response.text();if(raw.length>120000000)throw Error('packet_storage_too_large');return JSON.parse(raw);}};
-  const worker=createProductionWorker({store,ccv,buildPacket:buildFactoryPacket,files,mailer,onError:detail=>console.error('SSK production phase',JSON.stringify(detail))});
+  const worker=createProductionWorker({store,ccv,buildPacket:async input=>{const packet=await buildFactoryPacket(input);return mailer.provider==='base44'?nativeDelivery(packet):packet;},files,mailer,onError:detail=>console.error('SSK production phase',JSON.stringify(detail))});
   if(input.action==='list'){const offset=Number.isSafeInteger(input.offset)&&input.offset>=0&&input.offset<=10000?input.offset:0;const rows=await client.asServiceRole.entities.GloveOrderDraft.filter({status:{$in:['ready','ordered']},ccv_order_id:{$gt:0}},'-created_date',50,offset,['id','reference','ccv_order_id','bundle','production_delivery']);return json({orders:rows.filter(r=>!r.bundle||r.bundle[0]===r.id).map(r=>({id:r.id,reference:r.reference,orderId:r.ccv_order_id,designs:r.bundle?.length||1,state:r.production_delivery?.state||'unchecked',orderNumber:r.production_delivery?.order_number||null,error:r.production_delivery?.error||null,packetReady:!!r.production_delivery?.file_uri})),nextOffset:rows.length===50?offset+50:null});}
   if(input.action==='config')return json({provider:mailer.provider,mailConnected:mailer.ready,emailEnabled:mailer.enabled,recipient:mailer.recipient});
   if(input.action==='scan')return json({results:await worker.scan(),mailConnected:mailer.ready,emailEnabled:mailer.enabled});

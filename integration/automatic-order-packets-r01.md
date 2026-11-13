@@ -27,3 +27,15 @@ Package checks: `PYTHONPATH=scripts python3 -m unittest scripts.test_base44_pack
 Install generator dependencies via `npm ci --prefix commerce/production --ignore-scripts`. Build output lives in `base44/functions/ssk-production-v1/lib`; no generator dependency is added to the customer frontend.
 
 Independent review found and then verified fixes for six-design mail limits and valid Unicode blocking PDF generation. Source/fixture approval does not establish real mail delivery. No new financial order or payment was created during this work.
+
+## Native Base44 mail (13 November 2026)
+
+Base44 now supports PDF/image attachments. The native provider is implemented as `SSK_PRODUCTION_MAIL_PROVIDER=base44` with the same fixed recipient, private claims, stored packets and per-part receipts. No SMTP credential is required once SSK is eligible to receive native mail.
+
+Each design is sent as a numbered message containing one production PDF and its four unchanged original views (at most five attachments; below 5 MB each / 10 MB total). Full source-image PDF pages are preferred; a compact overview is used only if required by the native limit. Full per-view qualifications remain in both email and a PDF appendix. HTML is escaped. ZIP remains an administrator download and is not mailed because native SendEmail rejects archives.
+
+Two initial issues found by independent review were corrected: ambiguous acknowledgements are quarantined rather than marked sent; representative-size/personalization notes are retained. A third PNG stress case was corrected by decoding PNG thumbnail pixels with the existing PDF decoder, retaining all original PNG bytes. Source and bundle pass the accepted-1000px-PNG regression.
+
+Live native preparation for existing order 28803 succeeded. Sending was refused with HTTP 422: the recipient is not a registered app user and this app has no verified custom domain. The legitimate role-user provision alone does not satisfy this provider requirement. No user verification state was fabricated and no provider restriction was bypassed. Native sending is OFF and the workflow remains inactive while the one-time mailbox activation is pending. No successful send or inbox receipt has been established.
+
+Activate the registered SSK recipient through the proper invitation/sign-in process, or configure a verified custom domain/SMTP sender. Only after an accepted live send, enable the sender flag and the workflow. Do not confuse app-user provisioning with successful recipient activation.
