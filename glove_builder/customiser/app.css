@@ -156,6 +156,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible
 .step .dot { display: none; }
 .step.is-on { background: var(--navy-900); color: var(--white); }
 .step.is-on .n { background: var(--white); border-color: var(--white); color: var(--navy-900); }
+/* The stitch between two knots sits outside the pill, so the current step's
+   dark pill never carries the dashes of the line into it. */
+.step + .step { margin-left: 30px; }
+.step + .step::before { position: absolute; left: -24px; top: 50%; width: 18px; margin: 0; }
 
 /* ------------------------------------------------------------------- body */
 .wrap { flex: 1 1 auto; display: flex; flex-wrap: nowrap; min-height: 0; }
@@ -767,7 +771,8 @@ body.sum-open { padding-right: var(--sum-w); }
 
   .steps { padding: var(--space-2) var(--space-3); gap: 0; }
   .step { padding: 0 var(--space-2); font-size: 11px; }
-  .step + .step::before { width: 10px; margin-right: 4px; }
+  .step + .step { margin-left: 18px; }
+  .step + .step::before { width: 10px; left: -14px; }
   /* Only the current step keeps its name; the others are knots. */
   .step:not(.is-on) { font-size: 0; gap: 0; }
   .step:not(.is-on) .n { font-size: 10px; }
@@ -796,7 +801,10 @@ body.sum-open { padding-right: var(--sum-w); }
   .panel-body { padding: var(--space-4); gap: var(--space-4); }
   .bar { padding: var(--space-2) var(--space-3); gap: var(--space-2); }
   .bar-saved { display: none; }
-  .bar-next { font-size: var(--text-xs); max-width: 44vw; }
+  /* The open-choice link gives way to the buttons instead of running under them. */
+  .bar-next { font-size: var(--text-xs); max-width: 44vw; flex: 0 1 auto; min-width: 0; }
+  .bar-next span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .bar-track { display: none; }
   .bar-track { max-width: none; }
   .review-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sheet { padding: 24px 16px; }
