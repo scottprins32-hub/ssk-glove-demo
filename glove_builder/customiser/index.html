@@ -168,5 +168,21 @@
 </aside>
 
 <script type="module" src="app.js"></script>
-</body>
+<script>\n/* Generated public addresses only. No storage, orders, assets or design changes. */
+(() => {
+  const links = {"site": "https://ssk-europe-website-f48a1ecd.base44.app", "shop": "https://sskeurope.ccvshop.nl/"};
+  const tools = document.querySelector('.hdr-tools');
+  if (!tools || document.getElementById('ssk-site-return-links')) return;
+  const nav = document.createElement('nav'); nav.id = 'ssk-site-return-links';
+  nav.setAttribute('aria-label', 'SSK website en webshop');
+  nav.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
+  for (const [text, href] of [['SSK website', links.site], ['Webshop', links.shop]]) {
+    const a = document.createElement('a'); a.textContent = text + ' ↗'; a.href = href;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.style.cssText = 'color:inherit;border:1px solid currentColor;padding:7px 10px;font:inherit;font-size:12px;text-decoration:none;white-space:nowrap';
+    nav.append(a);
+  }
+  tools.append(nav);
+})();
+\n</script>\n</body>
 </html>
