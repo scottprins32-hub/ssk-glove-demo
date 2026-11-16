@@ -1,0 +1,14 @@
+:root{
+--font-display:'Barlow Condensed',Impact,sans-serif;
+--font-body:'Barlow','Helvetica Neue',Arial,sans-serif;
+--font-mono:'IBM Plex Mono',ui-monospace,monospace;
+/* Scale */
+--text-xs:12px;--text-sm:13px;--text-base:15px;--text-md:17px;--text-lg:20px;
+--display-sm:24px;--display-md:32px;--display-lg:44px;--display-xl:64px;
+/* Weights */
+--weight-body:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;--weight-display:700;--weight-display-heavy:800;
+/* Leading & tracking */
+--leading-tight:1.05;--leading-snug:1.25;--leading-body:1.55;
+--tracking-display:0.01em;--tracking-caps:0.08em;--tracking-wide-caps:0.14em;
+}
+body{font-family:var(--font-body);color:var(--text-body);font-size:var(--text-base);line-height:var(--leading-body)}
