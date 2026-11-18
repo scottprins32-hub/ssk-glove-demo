@@ -27,38 +27,14 @@
     },
     "do": [
       {
-        "check_config": {
+        "send_order_28846": {
           "call": "invoke_backend_function",
           "with": {
             "function_name": "ssk-production-v1",
             "args": {
-              "action": "config"
-            }
-          },
-          "then": "prepare_recent_pair"
-        }
-      },
-      {
-        "prepare_recent_pair": {
-          "call": "invoke_backend_function",
-          "with": {
-            "function_name": "ssk-production-v1",
-            "args": {
-              "action": "prepare",
-              "id": "6af9fa6285575a901e3af2ae"
-            }
-          },
-          "then": "prepare_earlier_pair"
-        }
-      },
-      {
-        "prepare_earlier_pair": {
-          "call": "invoke_backend_function",
-          "with": {
-            "function_name": "ssk-production-v1",
-            "args": {
-              "action": "prepare",
-              "id": "6af897349fa05db9689a8bb8"
+              "action": "send",
+              "id": "6af9fa6285575a901e3af2ae",
+              "confirmed": true
             }
           },
           "then": "end"
