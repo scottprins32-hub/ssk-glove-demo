@@ -27,17 +27,19 @@
     },
     "do": [
       {
-        "send_order_28846": {
+        "prepare_orders": {
           "call": "invoke_backend_function",
           "with": {
             "function_name": "ssk-production-v1",
             "args": {
-              "action": "send",
-              "id": "6af9fa6285575a901e3af2ae",
-              "confirmed": true
+              "action": "scan"
             }
           },
-          "then": "end"
+          "then": "end",
+          "x-base44": {
+            "title": "SSK-orderpakketten voorbereiden",
+            "description": "Mail alleen met gekoppelde en ingeschakelde verzendverbinding"
+          }
         }
       }
     ]
