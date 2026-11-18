@@ -27,19 +27,41 @@
     },
     "do": [
       {
-        "prepare_orders": {
+        "check_config": {
           "call": "invoke_backend_function",
           "with": {
             "function_name": "ssk-production-v1",
             "args": {
-              "action": "scan"
+              "action": "config"
             }
           },
-          "then": "end",
-          "x-base44": {
-            "title": "SSK-orderpakketten voorbereiden",
-            "description": "Mail alleen met gekoppelde en ingeschakelde verzendverbinding"
-          }
+          "then": "prepare_recent_pair"
+        }
+      },
+      {
+        "prepare_recent_pair": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ssk-production-v1",
+            "args": {
+              "action": "prepare",
+              "id": "6af9fa6285575a901e3af2ae"
+            }
+          },
+          "then": "prepare_earlier_pair"
+        }
+      },
+      {
+        "prepare_earlier_pair": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "ssk-production-v1",
+            "args": {
+              "action": "prepare",
+              "id": "6af897349fa05db9689a8bb8"
+            }
+          },
+          "then": "end"
         }
       }
     ]
