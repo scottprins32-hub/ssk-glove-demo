@@ -5,6 +5,7 @@
 // still matches, and draws live otherwise.
 //
 //   NODE_PATH=<dir holding playwright> node glove_builder/render_starters.mjs
+//   Install cwebp (libwebp) to encode the exact canvas pixels as lossless WebP.
 //
 // Run it after anything that changes how a starter looks: a colourway, a
 // badge, a flag, the back-view assets or the material pipeline.
@@ -13,11 +14,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, 'customiser');
 const OUT = path.join(ROOT, 'assets/starters');
 const WIDTH = 464;   // the card is ~200 css px wide; this covers 2x screens
+function writeLossless(file, pngDataUrl) {
+  const png = Buffer.from(pngDataUrl.split(',')[1], 'base64');
+  execFileSync('cwebp', ['-quiet', '-z', '9', '-exact', '-o', file, '--', '-'], { input: png });
+}
 let chromium;
 try { ({ chromium } = createRequire(import.meta.url)('playwright')); }
 catch { console.error('SKIP: playwright not found (set NODE_PATH)'); process.exit(3); }
@@ -64,15 +70,15 @@ for (const hand of ['RHT', 'LHT']) {
       const c = document.getElementById('glove'), s = document.createElement('canvas');
       s.width = w; s.height = Math.round(c.height * w / c.width);
       s.getContext('2d').drawImage(c, 0, 0, s.width, s.height);
-      return s.toDataURL('image/webp', 0.86);
+      return s.toDataURL('image/png');
     }, WIDTH);
-    fs.writeFileSync(path.join(OUT, `${id.replace(/[^A-Za-z0-9_-]+/g, '_')}-${hand}.webp`), Buffer.from(data.split(',')[1], 'base64'));
+    writeLossless(path.join(OUT, `${id.replace(/[^A-Za-z0-9_-]+/g, '_')}-${hand}.webp`), data);
     manifest.hands[hand].push(id);
     // The glove a first visitor sees: the blank starter, right-handed, full
     // size, so the first frame is a picture and not a render.
     if (id === 'blank' && hand === 'RHT') {
-      const full = await page.evaluate(() => document.getElementById('glove').toDataURL('image/webp', 0.9));
-      fs.writeFileSync(path.join(OUT, 'default-back.webp'), Buffer.from(full.split(',')[1], 'base64'));
+      const full = await page.evaluate(() => document.getElementById('glove').toDataURL('image/png'));
+      writeLossless(path.join(OUT, 'default-back.webp'), full);
       manifest.defaultBack = 'default-back.webp';
     }
     console.log(`  ${hand} ${id}`);

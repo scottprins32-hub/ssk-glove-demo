@@ -26,7 +26,8 @@ ENTRY_FILES = ('index.html', 'app.js', 'glove-engine.js', 'glove-catalog.js', 'r
                'order.html','order.js','production.html','production.js','merchant.html','merchant.js','merchant-auth.bundle.js','factory.html','factory.js','ssk-account.html','ssk-account.js',
                'gallery.html', 'gallery.js', 'gallery.css', 'gallery-store.js',
                'performance.html', 'performance.js')
-FOLDERS = ('ds', 'assets/ui', 'assets/form', 'assets/ref', 'assets/flags', 'assets/thumbs', 'assets/starters')
+# Badge thumbnails are picked from the registered options in dependencies().
+FOLDERS = ('ds', 'assets/ui', 'assets/form', 'assets/ref', 'assets/flags', 'assets/starters')
 HOSTED_ARTWORK = ROOT / 'base44' / 'hosted-artwork.json'
 ARTWORK_PREFIX = 'https://base44.app/api/apps/6acecad7d76f2c87da8db964/files/mp/public/6acecad7d76f2c87da8db964/'
 

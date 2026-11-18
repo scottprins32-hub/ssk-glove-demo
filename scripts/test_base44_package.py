@@ -26,6 +26,9 @@ class PackageTests(unittest.TestCase):
         for folder in build.FOLDERS:
             (self.source / folder).mkdir(parents=True, exist_ok=True)
             (self.source / folder / 'sample.svg').write_bytes(b'sample')
+        thumbs = self.source / 'assets/thumbs'
+        thumbs.mkdir()
+        (thumbs / 'sample.svg').write_bytes(b'sample')
         (self.source / 'assets/layer.webp').write_bytes(b'\x00\xfflayer')
         for view in ('glove', 'palm', 'thumb', 'pinky'):
             (self.source / f'assets/{view}-data.json').write_text(json.dumps({
@@ -39,12 +42,15 @@ class PackageTests(unittest.TestCase):
 
     def test_exact_bytes_and_excluded_unused_files(self):
         (self.source / 'assets/original-photo.jpg').write_bytes(b'do not publish')
+        (self.source / 'assets/thumbs/unused.svg').write_bytes(b'old badge')
         result = self.package()
         for entry in result['files']:
             if entry['path'] == 'performance-modules.json': continue
             self.assertEqual((self.output / entry['path']).read_bytes(),
                              (self.source / entry['path']).read_bytes())
         self.assertFalse((self.output / 'assets/original-photo.jpg').exists())
+        self.assertTrue((self.output / 'assets/thumbs/sample.svg').is_file())
+        self.assertFalse((self.output / 'assets/thumbs/unused.svg').exists())
         self.assertTrue((self.source / 'assets/original-photo.jpg').exists())
         self.assertEqual(json.loads(self.manifest.read_text()), result)
 
