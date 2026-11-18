@@ -3,12 +3,15 @@ import {tokenHash} from './service.js';
 const VERSION='factory-packet-v2';
 const safeError=e=>/^[a-z][a-z0-9_]{2,80}$/.test(e?.message||'')?e.message:'production_unavailable';
 const synthetic=d=>/^(?:QA(?:\s|$)|ACCEPTANCE(?:\s|$)|DO NOT FULFIL(?:\s|$))/i.test(d.design?.thumbText||'');
+// Base44 can return [] for an unset bundle on a single-glove order.
+export const productionBundle = row =>
+ Array.isArray(row.bundle) && row.bundle.length > 0 ? row.bundle : [row.id];
 export function createProductionWorker({store,ccv,buildPacket,files,mailer,onError=()=>{},now=()=>new Date(),id=()=>crypto.randomUUID()}) {
  const stamp=()=>now().toISOString(),later=minutes=>new Date(now().getTime()+minutes*60000).toISOString();
  async function process(leadId,{prepareOnly=false}={}) {
   const lead=await store.get(leadId);
   if(!lead?.ccv_order_id||!['ready','ordered'].includes(lead.status))return {status:'not_transferred'};
-  const ids=Array.isArray(lead.bundle)?lead.bundle:[lead.id];
+  const ids=productionBundle(lead);
   if(ids[0]!==lead.id){await store.cas(lead,{state:'bundle_member',checked_at:stamp()});return {status:'bundle_member'};}
   if(!ids.length||ids.length>6||new Set(ids).size!==ids.length)throw Error('production_bundle_invalid');
   const previous=lead.production_delivery||{};
@@ -27,7 +30,7 @@ export function createProductionWorker({store,ccv,buildPacket,files,mailer,onErr
   const finish=async(value)=>{if(!await store.finish(lead.id,claim,{...state,...value}))throw Error('production_claim_lost');};
   try {
    const drafts=await Promise.all(ids.map(x=>x===lead.id?lead:store.get(x)));
-   if(drafts.some(d=>!d||d.ccv_order_id!==lead.ccv_order_id||!['ready','ordered'].includes(d.status)||JSON.stringify(d.bundle||[d.id])!==JSON.stringify(ids)))throw Error('production_bundle_invalid');
+   if(drafts.some(d=>!d||d.ccv_order_id!==lead.ccv_order_id||!['ready','ordered'].includes(d.status)||JSON.stringify(productionBundle(d))!==JSON.stringify(ids)))throw Error('production_bundle_invalid');
    if(drafts.some(synthetic)){await finish({state:'synthetic_skipped'});return {status:'synthetic_skipped'};}
    phase='verify_order';const order=await ccv.order(lead.ccv_order_id,drafts,{production:true});
    if(Number(order.status)===8){await finish({state:'cancelled'});return {status:'cancelled'};}

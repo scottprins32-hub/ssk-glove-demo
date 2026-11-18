@@ -26,6 +26,19 @@ test('an incomplete cart is postponed without preparing or sending',async()=>{co
 test('cancelled order and labelled QA do not enter mail stream',async()=>{for(const label of ['QA DO NOT FULFIL','ACCEPTANCE TEST','DO NOT FULFIL']){const h=harness({thumbText:label});assert.equal((await h.worker.process('snapshot_0')).status,'synthetic_skipped');assert.equal(h.sends,0);}const h=harness();h.order.status=8;assert.equal((await h.worker.process('snapshot_0')).status,'cancelled');assert.equal(h.sends,0);});
 test('ordinary personalization containing QA is allowed',async()=>{const h=harness({thumbText:'IQA'});assert.equal((await h.worker.process('snapshot_0')).status,'sent');});
 test('bundle members are persistently excluded rather than starving scans',async()=>{const h=harness({amount:2});assert.equal((await h.worker.process('snapshot_1')).status,'bundle_member');assert.equal(h.data.get('snapshot_1').production_delivery.state,'bundle_member');});
+test('empty or missing bundles are scanned as single-glove orders exactly once', async () => {
+ for (const bundle of [[], undefined]) {
+  const h = harness({completed:false});
+  h.data.get('snapshot_0').bundle = bundle;
+  assert.equal((await h.worker.scan())[0].status, 'awaiting_checkout');
+  assert.equal(h.sends, 0);
+  h.advance(16*60000);
+  h.order.is_completed = true;
+  assert.equal((await h.worker.scan())[0].status, 'sent');
+  assert.deepEqual(await h.worker.scan(), []);
+  assert.equal(h.sends, 1);
+ }
+});
 test('unknown send outcome never retries automatically',async()=>{const h=harness({send:async()=>{throw Error('mail_outcome_unknown');}});assert.equal((await h.worker.process('snapshot_0')).status,'uncertain');h.advance(86400000);assert.equal((await h.worker.process('snapshot_0')).status,'uncertain');assert.equal(h.sends,1);});
 test('explicit non-delivery can retry using the exact saved packet',async()=>{let fail=true;const h=harness({send:async()=>{if(fail)throw Object.assign(Error('mail_provider_rejected'),{safeToRetry:true});return {messageId:'ok',provider:'resend'};}});assert.equal((await h.worker.process('snapshot_0')).status,'failed');fail=false;assert.equal((await h.worker.process('snapshot_0')).status,'sent');assert.equal(h.builds,1);});
 test('lost receipt persistence remains uncertain, never retryable',async()=>{const h=harness({finishFail:v=>v.state==='sent'});assert.equal((await h.worker.process('snapshot_0')).status,'uncertain');assert.equal(h.data.get('snapshot_0').production_delivery.state,'uncertain');assert.equal(h.sends,1);});
