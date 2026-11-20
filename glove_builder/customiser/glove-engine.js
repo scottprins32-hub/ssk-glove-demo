@@ -158,6 +158,53 @@ function despeckled(img) {
   smoothThread.set(img, c);
   return c;
 }
+// Where a web sits, windows and lacing included: the web leather's own shape
+// closed over its openings and grown by a lace's width. A canvas, opaque there.
+const webSpaces = new WeakMap();
+function webFootprint(img) {
+  const hit = webSpaces.get(img);
+  if (hit) return hit;
+  const w = img.width, h = img.height, N = w * h;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const px = g.getImageData(0, 0, w, h), a = new Float32Array(N);
+  for (let i = 0; i < N; i++) a[i] = px.data[i * 4 + 3] >= 128 ? 1 : 0;
+  softBlur(a, w, h, 16); for (let i = 0; i < N; i++) a[i] = a[i] > .03 ? 1 : 0;     // grow
+  softBlur(a, w, h, 16); for (let i = 0; i < N; i++) a[i] = a[i] > .9 ? 1 : 0;      // and back: openings stay closed
+  const reach = Float32Array.from(a);
+  softBlur(a, w, h, 2);
+  for (let i = 0; i < N; i++) { px.data[i * 4] = px.data[i * 4 + 1] = px.data[i * 4 + 2] = 255; px.data[i * 4 + 3] = Math.round(255 * Math.min(1, Math.max(0, (a[i] - .25) * 2))); }
+  g.putImageData(px, 0, 0);
+  // the lacing along the web's edge lies just outside its leather
+  softBlur(reach, w, h, 9);
+  const r = document.createElement('canvas'); r.width = w; r.height = h;
+  const gr = r.getContext('2d'), rp = gr.createImageData(w, h);
+  for (let i = 0; i < N; i++) rp.data[i * 4 + 3] = reach[i] > .04 ? 255 : 0;
+  gr.putImageData(rp, 0, 0);
+  c.reach = r;
+  // The place itself is drawn as the web's outline with its bays filled: the
+  // convex hull of the leather. It sits behind the glove, so where the hull
+  // runs under the thumb or a finger it is simply covered.
+  const pts = [];
+  for (let y = 0; y < h; y += 2) {
+    let x0 = -1, x1 = -1;
+    for (let x = 0; x < w; x++) if (px.data[(y * w + x) * 4 + 3] >= 128) { if (x0 < 0) x0 = x; x1 = x; }
+    if (x0 >= 0) pts.push([x0, y], [x1, y]);
+  }
+  pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cross = (o, p, q) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
+  const half = list => { const out = []; for (const p of list) { while (out.length > 1 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop(); out.push(p); } out.pop(); return out; };
+  const hull = [...half(pts), ...half([...pts].reverse())];
+  const place = document.createElement('canvas'); place.width = w; place.height = h;
+  if (hull.length > 2) {
+    const gp = place.getContext('2d'); gp.fillStyle = '#fff'; gp.lineJoin = 'round'; gp.lineWidth = 10; gp.strokeStyle = '#fff';
+    gp.beginPath(); hull.forEach(([x, y], i) => i ? gp.lineTo(x, y) : gp.moveTo(x, y)); gp.closePath(); gp.fill(); gp.stroke();
+  }
+  c.place = place;
+  webSpaces.set(img, c);
+  return c;
+}
 // A soft blur of one float plane, in place: three box passes each way. Plain
 // arithmetic, so it gives the same result in every browser (canvas filters
 // do not exist in all of them).
@@ -534,6 +581,8 @@ export class GloveRenderer {
     this.maskedPadLayers = new WeakMap();
     this.fittedPalms = new WeakMap();
     this.formShades = new Map();
+    this.outsideLayers = new WeakMap();
+    this.webPlaces = new WeakMap();
     this.materialCache = materialSurfaces;
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
@@ -592,9 +641,13 @@ export class GloveRenderer {
     // without the H-web's) and that web's insert goes on as it always did.
     const swapBody = !!def?.swapAssets && this.view==='back' && !!this.web && !!base.DATA.webs?.[this.web]
       && Object.values(def.swapAssets).every(asset => !!base.imgs[asset]);
-    const active = def && (['pinky','palm'].includes(this.view) || swapBody || (['back','thumb'].includes(this.view) && !this.web && !this.webMarked));
+    // The thumb side has a picture of the H-web only. With another web chosen
+    // the traced body is still this glove in its chosen colours, so it is drawn
+    // with the web left out — never the H-web standing in for it.
+    const webBlank = this.view==='thumb' && def?.revision==='SCOTT-BACK-PALM-R03' && !!def.assets?.web && (!!this.web || this.webMarked);
+    const active = def && (['pinky','palm'].includes(this.view) || swapBody || webBlank || (['back','thumb'].includes(this.view) && !this.web && !this.webMarked));
     const photoBody=active && this.view==='palm' && !!this.web;
-    const key = this.view + '|' + (active ? def.revision : 'base')+'|'+photoBody+'|'+swapBody;
+    const key = this.view + '|' + (active ? def.revision : 'base')+'|'+photoBody+'|'+swapBody+'|'+webBlank;
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     // The bundle copies the view's image table. Assets that arrive later (a
     // wrist badge, a flag) must reach the copy too, or the badge is drawn
@@ -604,7 +657,7 @@ export class GloveRenderer {
     if (this.nativeContourKey === key && !newTexture && !grown) return;
     this.DATA = base.DATA; this.imgs = base.imgs; this.idData = base.idData;
     if (active) {
-      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown || this.nativeContourBundle.photoBody!==photoBody || this.nativeContourBundle.swapBody!==swapBody) {
+      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown || this.nativeContourBundle.photoBody!==photoBody || this.nativeContourBundle.swapBody!==swapBody || this.nativeContourBundle.webBlank!==webBlank) {
         const imgs = { ...base.imgs };
         for (const [zone, asset] of Object.entries(def.assets)) { imgs[zone] = base.imgs[asset]; if (def.revision === 'SCOTT-BACK-PALM-R03') delete imgs[zone+'_hi']; }
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
@@ -614,9 +667,12 @@ export class GloveRenderer {
           if (imgs.embroidery) imgs.embroidery = despeckled(imgs.embroidery);
           if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = despeckled(imgs[def.embroideryLHT]);
         }
+        const webSpace = webBlank ? webFootprint(imgs.web) : null;
+        if (webBlank) delete imgs.web;
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
-        this.nativeContourBundle = { base, imgs, loaded, photoBody, swapBody, DATA: { ...base.DATA,
+        this.nativeContourBundle = { base, imgs, loaded, photoBody, swapBody, webBlank, DATA: { ...base.DATA,
+          ...(webBlank ? {webBlank:webSpace, thumbWebs:null, webMarker:null} : {}),
           // traced panels are whole under the knot: no photographed patch goes over them
           ...(swapBody ? {knotHeal:null} : {}),
           bbox: { ...base.DATA.bbox, ...def.bbox,
@@ -710,6 +766,32 @@ export class GloveRenderer {
     g.drawImage(pad, 0, 0);
     if (cut.src || cut._key) this.cache.set(key, masked);
     return masked;
+  }
+
+  webPlace(mask) {
+    let c = this.webPlaces.get(mask);
+    if (c) return c;
+    c = document.createElement('canvas'); c.width = mask.width; c.height = mask.height;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(0, 0, c.width, c.height);
+    g.strokeStyle = 'rgba(255,255,255,.42)'; g.lineWidth = 2;
+    for (let x = -c.height; x < c.width; x += 14) { g.beginPath(); g.moveTo(x, c.height); g.lineTo(x + c.height, 0); g.stroke(); }
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(mask.place || mask, 0, 0);
+    this.webPlaces.set(mask, c);
+    return c;
+  }
+
+  // A layer without what lies inside a mask. Kept per layer and mask.
+  outside(c, mask) {
+    let per = this.outsideLayers.get(c);
+    if (!per) { per = new WeakMap(); this.outsideLayers.set(c, per); }
+    const hit = per.get(mask);
+    if (hit) return hit;
+    const out = document.createElement('canvas'); out.width = c.width; out.height = c.height;
+    const g = out.getContext('2d'); g.drawImage(c, 0, 0);
+    g.globalCompositeOperation = 'destination-out'; g.drawImage(mask, -c._ox, -c._oy);
+    out._ox = c._ox; out._oy = c._oy; per.set(mask, out);
+    return out;
   }
 
   // Remove the stock web stitching's soft rim only when replacing its web.
@@ -1557,6 +1639,7 @@ export class GloveRenderer {
       // glove's knotted lace has to be punched away first, and a web that
       // carries its own knot would be punched with it.
       if (swap && z.id === 'web') continue;
+      if (D.webBlank && z.id === 'web') continue;
       if(z.id==='welting')this.drawWeltEdgeHealing(ctx,state);
       let tinted = this.tinted(z.id, this.hex(z.id, state));
       // H thumb windows show a fixed white backing, independent of palm colour.
@@ -1579,6 +1662,8 @@ export class GloveRenderer {
         local._ox=tinted._ox;local._oy=tinted._oy;tinted=local;
       }
       if(z.id === 'laces') tinted=this.refinedLaceBase(tinted,swap);
+      // lacing and thread that belong to the web go with it
+      if (D.webBlank && (z.id === 'laces' || z.id === 'stitching')) tinted = this.outside(tinted, D.webBlank.reach);
       let c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
       if (z.id === 'stitching' && D.thumbBadgeThread) {
         const original=c;c=document.createElement('canvas');c.width=original.width;c.height=original.height;
@@ -1919,6 +2004,8 @@ export class GloveRenderer {
     const lit = highlight ? (highlight.ids || [highlight.id]).map(id => ({ ...highlight, id })) : [];
     for (const highlight of lit) if (highlight.id && this.imgs[highlight.id] && D.bbox[highlight.id]) {
       let c = this.tinted(mirror && highlight.id==='embroidery' && D.embroideryLHT ? D.embroideryLHT : highlight.id, '#ffffff',highlight.id);
+      // the web's own lacing and thread are not on this side to light up
+      if (D.webBlank && (highlight.id === 'laces' || highlight.id === 'stitching')) c = this.outside(c, D.webBlank.reach);
       // Selection must cover restored leather under the original lettering,
       // while the relocated embroidered artwork keeps its own ownership.
       if(mirror && D.leftyRingHeals?.[highlight.id]){
@@ -2093,6 +2180,13 @@ export class GloveRenderer {
       ctx.save(); ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.imgs[D.nativeHTransparentWindows], 0, 0); ctx.restore();
     }
+    // The web's place on a side that has no picture of this web: a plain,
+    // lightly hatched shape behind the glove. It keeps the glove's outline
+    // whole and says a web goes here, without drawing one.
+    if (D.webBlank) {
+      ctx.save(); ctx.globalCompositeOperation = 'destination-over';
+      ctx.drawImage(this.webPlace(D.webBlank), 0, 0); ctx.restore();
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.formLight?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
   }
@@ -2202,6 +2296,17 @@ export class GloveRenderer {
     }
     if (mirror) x = D.w - 1 - x;
     if (x < 0 || y < 0 || x >= D.w || y >= D.h) return null;
+    // The web is not drawn on this side: its place picks nothing, and neither
+    // do the web's own lacing and thread that went with it.
+    if (D.webBlank) {
+      const n = this.idData[((y | 0) * D.w + (x | 0)) * 4], id = D.zones.find(z => z.n === n)?.id;
+      if (id === 'web') return null;
+      if (id === 'laces' || id === 'stitching') {
+        let reach = this.cache.get('hit|web-reach');
+        if (!reach) { reach = D.webBlank.reach.getContext('2d').getImageData(0, 0, D.w, D.h).data; this.cache.set('hit|web-reach', reach); }
+        if (reach[((y | 0) * D.w + (x | 0)) * 4 + 3] >= 128) return null;
+      }
+    }
     if (this.view === 'thumb' && !this.web && !this.webMarked && !D.nativeHDetail && D.nativeHWhiteWindows
         && this.imgs[D.nativeHWhiteWindows]) {
       const n = this.idData[((y | 0) * D.w + (x | 0)) * 4];
