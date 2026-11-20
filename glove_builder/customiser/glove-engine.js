@@ -125,6 +125,39 @@ export const palmTopLaceFragment=(x,y)=>x>=0&&x<=605&&y>=0&&y<=365-272*x/605;
 // references (including aliases, web inserts and material sources) are followed
 // recursively; each diffuse layer brings its highlight partner with it.
 const FIRST_ASSETS = ['glove','_idmap','_hdLeather','_hdLace'];
+// Traced embroidery carries the photograph's relief, and with it the
+// photograph's grain: dark specks through every letter, which on white thread
+// read as dirt. A 5x5 median over the letter's own pixels takes the specks
+// and keeps the raised edges; the relief that is left is eased a little.
+const smoothThread = new WeakMap();
+function despeckled(img) {
+  if (!img || !img.width) return img;
+  const hit = smoothThread.get(img);
+  if (hit) return hit;
+  const w = img.width, h = img.height;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const px = g.getImageData(0, 0, w, h), d = px.data, src = new Uint8ClampedArray(d);
+  const near = new Uint8Array(25);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    if (!src[i + 3]) continue;
+    let n = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const yy = y + dy, xx = x + dx;
+      if (yy < 0 || xx < 0 || yy >= h || xx >= w) continue;
+      const j = (yy * w + xx) * 4;
+      if (src[j + 3] >= 128) near[n++] = src[j];
+    }
+    if (!n) continue;
+    const sorted = near.subarray(0, n).sort(), tone = 255 - (255 - sorted[n >> 1]) * .7;
+    d[i] = d[i + 1] = d[i + 2] = tone;
+  }
+  g.putImageData(px, 0, 0);
+  smoothThread.set(img, c);
+  return c;
+}
 // A soft blur of one float plane, in place: three box passes each way. Plain
 // arithmetic, so it gives the same result in every browser (canvas filters
 // do not exist in all of them).
@@ -576,6 +609,10 @@ export class GloveRenderer {
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         if (swapBody) for (const [zone, asset] of Object.entries(def.swapAssets)) imgs[zone] = base.imgs[asset];
+        if (def.revision === 'SCOTT-BACK-PALM-R03' && this.view === 'back') {
+          if (imgs.embroidery) imgs.embroidery = despeckled(imgs.embroidery);
+          if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = despeckled(imgs[def.embroideryLHT]);
+        }
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
         this.nativeContourBundle = { base, imgs, loaded, photoBody, swapBody, DATA: { ...base.DATA,
