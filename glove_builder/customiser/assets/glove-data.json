@@ -1491,7 +1491,13 @@
     "lefty_ring_back_welting_heal": "assets/lefty-ring-r21/back/welting-heal.webp",
     "lefty_ring_back_laces_heal": "assets/lefty-ring-r21/back/laces-heal.webp",
     "lefty_ring_back_back6_heal": "assets/lefty-ring-r21/back/back6-heal.webp",
-    "pad_stitching": "assets/pad-thread-r01/stitching.png"
+    "pad_stitching": "assets/pad-thread-r01/stitching.png",
+    "scott_back_laces_body": "assets/back-scott-trace-r18/laces-body.webp",
+    "scott_back_stitching_body": "assets/back-scott-trace-r18/stitching-body.webp",
+    "scott_back_palm_body": "assets/back-scott-trace-r18/palm-body.webp",
+    "scott_back_back2_body": "assets/back-scott-trace-r18/back2-body.webp",
+    "scott_back_back3_body": "assets/back-scott-trace-r18/back3-body.webp",
+    "scott_back_welting_body": "assets/back-scott-trace-r18/welting-body.webp"
   },
   "bbox": {
     "back2": [
@@ -3258,6 +3264,42 @@
         77,
         372,
         802
+      ],
+      "scott_back_laces_body": [
+        97,
+        45,
+        468,
+        1021
+      ],
+      "scott_back_stitching_body": [
+        549,
+        639,
+        751,
+        968
+      ],
+      "scott_back_palm_body": [
+        543,
+        597,
+        777,
+        882
+      ],
+      "scott_back_back2_body": [
+        646,
+        726,
+        778,
+        935
+      ],
+      "scott_back_back3_body": [
+        492,
+        33,
+        642,
+        789
+      ],
+      "scott_back_welting_body": [
+        200,
+        15,
+        631,
+        816
       ]
     },
     "zones": [
@@ -3567,6 +3609,14 @@
       "back6": "lefty_ring_back_back6_heal",
       "welting": "lefty_ring_back_welting_heal",
       "laces": "lefty_ring_back_laces_heal"
+    },
+    "swapAssets": {
+      "palm": "scott_back_palm_body",
+      "back2": "scott_back_back2_body",
+      "back3": "scott_back_back3_body",
+      "welting": "scott_back_welting_body",
+      "laces": "scott_back_laces_body",
+      "stitching": "scott_back_stitching_body"
     }
   },
   "padBindingUnder": [

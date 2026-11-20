@@ -168,6 +168,7 @@ test('real back metadata follows selected material dependencies without loading 
   assert.equal(Object.keys(bundle.imgs).length, 84 + traced + silicone);
   assert.equal(h.images.size, 82 + traced + silicone);
   for (const b of metadata.bullets.slice(0,15)) assert.equal(bundle.imgs[b.asset], undefined);
+  for (const key of Object.values(metadata.nativeBackTrace?.swapAssets || {})) assert.equal(bundle.imgs[key], undefined, key);
   const deferred = ['palm_bridge_original_smk_body_heal', 'palm_bridge_original_smk_body_heal_hi',
     'smlee_r03_laces', 'smlee_r02_laces', 'smlee_r03_material_region'];
   for (const key of deferred) assert.equal(bundle.imgs[key], undefined, key);
@@ -180,8 +181,10 @@ test('real back metadata follows selected material dependencies without loading 
     assert.equal(bundle.views.back.selectionReady(web), true);
   }
   await bundle.views.back.loadSelection(null, true);
-  assert.equal(Object.keys(bundle.imgs).length, 143 + traced + silicone);
-  assert.equal(h.images.size, 141 + traced + silicone);
+  // every web chosen: the traced body's layers without the H-web arrive with the first of them
+  const swapped = Object.keys(metadata.nativeBackTrace?.swapAssets || {}).length;
+  assert.equal(Object.keys(bundle.imgs).length, 143 + traced + silicone + swapped);
+  assert.equal(h.images.size, 141 + traced + silicone + swapped);
   assert.equal(bundle.views.back.selectionReady(null,false,0),false);
   await bundle.views.back.loadSelection(null,false,0);
   assert.equal(bundle.views.back.selectionReady(null,false,0),true);

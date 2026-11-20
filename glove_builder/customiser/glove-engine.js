@@ -125,7 +125,7 @@ export const palmTopLaceFragment=(x,y)=>x>=0&&x<=605&&y>=0&&y<=365-272*x/605;
 // references (including aliases, web inserts and material sources) are followed
 // recursively; each diffuse layer brings its highlight partner with it.
 const FIRST_ASSETS = ['glove','_idmap','_hdLeather','_hdLace'];
-function assetDependencies(DATA, values, fixed = []) {
+function assetDependencies(DATA, values, fixed = [], skip = []) {
   const keys = new Set();
   const take = name => {
     if (typeof name !== 'string' || !DATA.assets[name] || keys.has(name)) return;
@@ -137,7 +137,7 @@ function assetDependencies(DATA, values, fixed = []) {
     if (typeof value === 'string') take(value);
     else if (Array.isArray(value)) value.forEach(walk);
     else if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
-      if (key !== 'bbox') walk(child);
+      if (key !== 'bbox' && !skip.includes(key)) walk(child);
     }
   };
   values.forEach(walk); fixed.forEach(take);
@@ -151,11 +151,13 @@ export function renderAssets(DATA, baseOnly = false) {
     'marks','pad','hood','bullet_logo','bullet_logo_tb','edge_gold','edge_silver','edge_gunmetal',
     'laces_web','laces_knot','stitching_web','welt_index','web_cut','knot_cut',
     'approved_h_common_cut','approved_h_cut','approved_h_openings','native_h_openings',
-    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art']).filter(key => !baseOnly || !DATA.bullets?.some(b => b.hdArtwork && b.asset === key));
+    'standard_remnants','master_pinky_openings','binding_thread_detail','thumb_circle_art'],
+    // the traced body without the H-web is only needed once another web is chosen
+    baseOnly ? ['swapAssets'] : []).filter(key => !baseOnly || !DATA.bullets?.some(b => b.hdArtwork && b.asset === key));
 }
 function selectionAssets(DATA, web, snake, palmManifest) {
   const palm = palmManifest?.entries?.[web];
-  return assetDependencies(DATA, [DATA.webs?.[web], ...(palm
+  return assetDependencies(DATA, [DATA.webs?.[web], DATA.webs?.[web] ? DATA.nativeBackTrace?.swapAssets : null, ...(palm
     ? [palm, palmManifest.footprint, palmManifest.protected] : [])], snake ? ['_snakeLeather'] : []);
 }
 // Build-time hashes change cache keys without changing metadata or image bytes.
@@ -479,6 +481,7 @@ export class GloveRenderer {
     this.order = [];
     this.ownerMaps = new Map();
     this.maskedPadLayers = new WeakMap();
+    this.fittedPalms = new WeakMap();
     this.materialCache = materialSurfaces;
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
@@ -532,9 +535,14 @@ export class GloveRenderer {
   syncNativeHContour() {
     const base = this.views[this.view];
     const def = this.view === 'back' ? base.DATA.nativeBackTrace : this.view === 'palm' ? base.DATA.nativePalmTrace : this.view === 'pinky' ? base.DATA.nativePinkyTrace : base.DATA.nativeHContour;
-    const active = def && (['pinky','palm'].includes(this.view) || (['back','thumb'].includes(this.view) && !this.web && !this.webMarked));
+    // The back keeps its traced body under every web: with another web chosen
+    // the body's own lacing and thread stay (swapAssets, the traced layers
+    // without the H-web's) and that web's insert goes on as it always did.
+    const swapBody = !!def?.swapAssets && this.view==='back' && !!this.web && !!base.DATA.webs?.[this.web]
+      && Object.values(def.swapAssets).every(asset => !!base.imgs[asset]);
+    const active = def && (['pinky','palm'].includes(this.view) || swapBody || (['back','thumb'].includes(this.view) && !this.web && !this.webMarked));
     const photoBody=active && this.view==='palm' && !!this.web;
-    const key = this.view + '|' + (active ? def.revision : 'base')+'|'+photoBody;
+    const key = this.view + '|' + (active ? def.revision : 'base')+'|'+photoBody+'|'+swapBody;
     const newTexture = active && this.nativeContourBundle?.imgs._snakeLeather !== base.imgs._snakeLeather;
     // The bundle copies the view's image table. Assets that arrive later (a
     // wrist badge, a flag) must reach the copy too, or the badge is drawn
@@ -544,15 +552,19 @@ export class GloveRenderer {
     if (this.nativeContourKey === key && !newTexture && !grown) return;
     this.DATA = base.DATA; this.imgs = base.imgs; this.idData = base.idData;
     if (active) {
-      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown || this.nativeContourBundle.photoBody!==photoBody) {
+      if (!this.nativeContourBundle || this.nativeContourBundle.base !== base || newTexture || grown || this.nativeContourBundle.photoBody!==photoBody || this.nativeContourBundle.swapBody!==swapBody) {
         const imgs = { ...base.imgs };
         for (const [zone, asset] of Object.entries(def.assets)) { imgs[zone] = base.imgs[asset]; if (def.revision === 'SCOTT-BACK-PALM-R03') delete imgs[zone+'_hi']; }
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
+        if (swapBody) for (const [zone, asset] of Object.entries(def.swapAssets)) imgs[zone] = base.imgs[asset];
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
         const g = c.getContext('2d'); g.drawImage(imgs._idmap,0,0);
-        this.nativeContourBundle = { base, imgs, loaded, photoBody, DATA: { ...base.DATA,
-          bbox: { ...base.DATA.bbox, ...def.bbox },
+        this.nativeContourBundle = { base, imgs, loaded, photoBody, swapBody, DATA: { ...base.DATA,
+          // traced panels are whole under the knot: no photographed patch goes over them
+          ...(swapBody ? {knotHeal:null} : {}),
+          bbox: { ...base.DATA.bbox, ...def.bbox,
+            ...(swapBody ? Object.fromEntries(Object.entries(def.swapAssets).map(([zone, asset]) => [zone, def.bbox[asset]])) : {}) },
           tracedPalmPhotos:photoBody ? base : null,
           materialResponse: { ...base.DATA.materialResponse, ...def.materialResponse },
           zones: def.zones || base.DATA.zones, fieldsShown: def.fieldsShown || base.DATA.fieldsShown,
@@ -1158,6 +1170,46 @@ export class GloveRenderer {
     g.drawImage(this.imgs[mask],-layer._ox,-layer._oy);c._ox=layer._ox;c._oy=layer._oy;return c;
   }
 
+  // A web insert's own palm piece, laid on the traced body. The index finger
+  // goes first: the piece stops at the finger's traced edge. Where the piece
+  // lies on traced palm leather its border fades over a few pixels, because
+  // both are the palm's colour and a hard edge there would only show where
+  // one photograph ends. Next to the open web the border stays as cut.
+  palmOnTrace(layer) {
+    const hit = this.fittedPalms.get(layer);
+    if (hit) return hit;
+    const w = layer.width, h = layer.height, ox = layer._ox, oy = layer._oy;
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c._ox = ox; c._oy = oy;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(layer, 0, 0);
+    if (this.imgs.back3) { g.globalCompositeOperation = 'destination-out'; g.drawImage(this.imgs.back3, -ox, -oy); g.globalCompositeOperation = 'source-over'; }
+    const m = document.createElement('canvas'); m.width = w; m.height = h;
+    const gm = m.getContext('2d', { willReadFrequently: true });
+    for (const id of ['palm', 'back2']) if (this.imgs[id]) gm.drawImage(this.imgs[id], -ox, -oy);
+    const px = g.getImageData(0, 0, w, h), under = gm.getImageData(0, 0, w, h).data, N = w * h;
+    // how far inside the piece each pixel is: its alpha, box-blurred three times
+    let a = new Float32Array(N), b = new Float32Array(N);
+    for (let i = 0; i < N; i++) a[i] = px.data[i * 4 + 3] / 255;
+    const R = 5, blur = (src, dst, step, len, lines, stride) => {
+      for (let l = 0; l < lines; l++) {
+        let sum = 0; const o = l * stride;
+        for (let k = -R; k <= R; k++) sum += src[o + Math.min(len - 1, Math.max(0, k)) * step];
+        for (let k = 0; k < len; k++) {
+          dst[o + k * step] = sum / (2 * R + 1);
+          sum += src[o + Math.min(len - 1, k + R + 1) * step] - src[o + Math.max(0, k - R) * step];
+        }
+      }
+    };
+    for (let pass = 0; pass < 3; pass++) { blur(a, b, 1, w, h, w); blur(b, a, w, h, w, 1); }
+    for (let i = 0; i < N; i++) {
+      const inside = Math.min(1, Math.max(0, (a[i] - .5) * 2)), onPalm = under[i * 4 + 3] / 255;
+      px.data[i * 4 + 3] = Math.round(px.data[i * 4 + 3] * (1 - onPalm * (1 - inside)));
+    }
+    g.putImageData(px, 0, 0);
+    this.fittedPalms.set(layer, c);
+    return c;
+  }
+
   // Reuse a photographed, cleaned lace knot at the attachment point of a
   // replacement web. Source/target rectangles are native view coordinates;
   // the normal draw transform mirrors this together with the glove.
@@ -1629,20 +1681,24 @@ export class GloveRenderer {
     // a lace-shaped tab floating beside the hand. This comes after the zones,
     // not with the web punch-out: the segmentation cut part of that lace into
     // back 2, which would otherwise paint it straight back in.
-    if (swap && this.imgs.knot_cut) {
+    // (The traced body never drew that lace, so there is nothing to take away.)
+    if (swap && this.imgs.knot_cut && !D.tracedSeams) {
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.drawImage(this.sparePad(this.imgs.knot_cut), 0, 0);
       ctx.restore();
     }
-    if (this.web === 'standard-i' && this.imgs.standard_remnants) {
+    const onTrace = !!swap && !!D.tracedSeams && this.view === 'back';
+    if (this.web === 'standard-i' && this.imgs.standard_remnants && !onTrace) {
       ctx.save();ctx.globalCompositeOperation='destination-out';
       ctx.drawImage(this.sparePad(this.imgs.standard_remnants),0,0);ctx.restore();
     }
     // And only now the web itself, on top of a glove with nothing of the
     // calibration glove's web left anywhere on it.
     if (swap) {
-      if (swap.cut && this.imgs[swap.cut]) {
+      // The traced body has no photographed web left in it to clear away, so
+      // neither the insert's own stencil nor the remnant punch applies there.
+      if (swap.cut && this.imgs[swap.cut] && !onTrace) {
         ctx.save();ctx.globalCompositeOperation='destination-out';
         ctx.drawImage(this.sparePad(this.imgs[swap.cut]),0,0);ctx.restore();
       }
@@ -1658,6 +1714,9 @@ export class GloveRenderer {
                                  [swap.webfinger, 'back3'],
                                  [swap.webLoopRoots, 'web'], [swap.loopLaces, 'laces'], [swap.webLoops, 'web']]) {
         if (!key || !this.imgs[key] || !D.bbox[key]) continue;
+        // On the traced body the index finger is whole and keeps its own edge:
+        // the photographed edge strip that hid the old join is not laid over it.
+        if (onTrace && key===swap.webfinger) continue;
         if (key===swap.laceweb && swap.laceSeats && this.imgs[swap.laceSeats]) {
           const cacheKey='lace-seats|'+swap.laceSeats;
           let seats=this.cache.get(cacheKey);
@@ -1666,7 +1725,7 @@ export class GloveRenderer {
           ctx.drawImage(this.underPad(seats),0,0);
         }
         const tinted = this.tinted(key, this.hex(zone, state), key, zone);
-        const c = this.underPad(tinted);
+        const c = this.underPad(onTrace && key===swap.palm ? this.palmOnTrace(tinted) : tinted);
         ctx.save();
         if(key===swap.webLoops||key===swap.webLoopRoots)ctx.globalCompositeOperation='source-over';
         ctx.drawImage(c, c._ox, c._oy);ctx.restore();
