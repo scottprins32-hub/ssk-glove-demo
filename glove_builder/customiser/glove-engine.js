@@ -533,6 +533,7 @@ export class GloveRenderer {
     this.ownerMaps = new Map();
     this.maskedPadLayers = new WeakMap();
     this.fittedPalms = new WeakMap();
+    this.formShades = new Map();
     this.materialCache = materialSurfaces;
     this.off = document.createElement('canvas');
     this.off.width = this.DATA.w; this.off.height = this.DATA.h;
@@ -2093,6 +2094,48 @@ export class GloveRenderer {
       ctx.drawImage(this.imgs[D.nativeHTransparentWindows], 0, 0); ctx.restore();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.formLight?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
+  }
+
+  // The two side views are a few large traced panels, each one even colour,
+  // and they read as cut paper beside the back. This gives them the light a
+  // rounded glove has: the leather falls away into shade toward the outline,
+  // and sits a little darker along its seams. Shadow only, laid over what is
+  // drawn, so no colour, edge or ownership changes. Colours do not move it:
+  // it is kept per view, web, pad and hand.
+  formLight(ctx, mirror) {
+    const D = this.DATA;
+    if (!D.tracedSeams || !['pinky', 'thumb'].includes(this.view)) return;
+    const key = ['form', this.view, this.web || '', this.webMarked ? 1 : 0, this.pad || '', mirror ? 1 : 0].join('|');
+    let shade = this.formShades.get(key);
+    if (!shade || shade.data !== D) {
+      const w = D.w, h = D.h, N = w * h;
+      const body = ctx.getImageData(0, 0, w, h).data;
+      const inside = new Float32Array(N), seams = new Float32Array(N);
+      for (let i = 0; i < N; i++) inside[i] = body[i * 4 + 3] / 255;
+      // seams: welting and binding, as drawn (mirrored with the glove)
+      const m = document.createElement('canvas'); m.width = w; m.height = h;
+      const gm = m.getContext('2d', { willReadFrequently: true });
+      if (mirror) gm.setTransform(-1, 0, 0, 1, w, 0);
+      for (const id of ['welting', 'binding']) if (this.imgs[id]) gm.drawImage(this.imgs[id], 0, 0);
+      const seam = gm.getImageData(0, 0, w, h).data;
+      for (let i = 0; i < N; i++) seams[i] = seam[i * 4 + 3] / 255;
+      softBlur(inside, w, h, 20); softBlur(seams, w, h, 5);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'), out = g.createImageData(w, h);
+      for (let i = 0; i < N; i++) {
+        if (!body[i * 4 + 3]) continue;
+        const rim = Math.min(1, Math.max(0, (1 - inside[i]) * 2));           // 1 at the outline, 0 well inside
+        const fold = Math.max(0, seams[i] - seam[i * 4 + 3] / 255 * .6);     // beside a seam, not on it
+        out.data[i * 4 + 3] = Math.round(255 * Math.min(.3, rim * rim * .22 + fold * .2));
+      }
+      g.putImageData(out, 0, 0);
+      shade = { canvas: c, data: D };
+      this.formShades.set(key, shade);
+      if (this.formShades.size > 12) this.formShades.delete(this.formShades.keys().next().value);
+    }
+    ctx.save(); ctx.globalCompositeOperation = 'source-atop';
+    ctx.drawImage(shade.canvas, 0, 0); ctx.restore();
   }
 
   // Who owns each pixel of the back view, read off draw() itself. The id map
