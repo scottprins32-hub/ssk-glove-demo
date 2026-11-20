@@ -87,7 +87,12 @@ for view in ([args.view] if args.view else ['back','palm']):
    if r=='lining':tone=np.clip(smooth,.55,1.05)
   rgba=np.empty((H,W,4),np.uint8);rgba[:,:,:3]=np.clip(tone[:,:,None]*255,0,255).astype('uint8');rgba[:,:,3]=alpha
   key=f'scott_{view}_{r}';Image.fromarray(rgba).save(out/(r+'.webp'),lossless=True,method=6);assets[key]=str((out/(r+'.webp')).relative_to(APP));bbox[r]=list(mask.getbbox());bbox[key]=bbox[r]
-  group='embroidery'if r=='embroidery'else'lace'if r in['binding','welting','laces']else'leather';field={'back78':'back7','embroidery':'ring_emb'}.get(r,r);zones.append({'id':r,'field':field,'n':n,'group':group,'label':field});responses[r]={'grainStrength':0,'calibration':{'lo':235,'mid':246,'high':255}}
+  group='embroidery'if r=='embroidery'else'lace'if r in['binding','welting','laces']else'leather';field={'back78':'back7','embroidery':'ring_emb'}.get(r,r);zones.append({'id':r,'field':field,'n':n,'group':group,'label':field})
+  # A panel that lies in shade as a whole (the pinky's outer side) would come
+  # out a darker colour than the one chosen for it. Its own middle tone is
+  # what the chosen colour maps to; the relief around that tone stays.
+  mid=int(np.median(tone[alpha>200]*255)) if np.any(alpha>200) else 246;mid=mid if group=='leather' and mid<240 else 246
+  responses[r]={'grainStrength':0,'calibration':{'lo':mid-11,'mid':mid,'high':mid+9}}
   if r=='embroidery':
    for s in parts:
     if role(s,view)==r:

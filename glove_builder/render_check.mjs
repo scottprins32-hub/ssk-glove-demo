@@ -49,6 +49,12 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript',
 const DATA = JSON.parse(readFileSync(join(ROOT, 'assets/glove-data.json')));
 const { STARTERS, COLOUR_ORDER, PALETTE_OF } =
   await import(join(ROOT, 'glove-catalog.js'));
+/* The back is drawn from Scott's trace, with its own zones and id map; the
+   photographed layers the check used to read are no longer what is on
+   screen. Read against whichever the engine draws. */
+const TRACE = DATA.nativeBackTrace || null;
+const ZONES = TRACE ? TRACE.zones : DATA.zones.map(z => ({ ...z, field: null }));
+const assetOf = key => (TRACE && DATA.assets[TRACE.assets[key]]) || `assets/${key === '_idmap' ? 'idmap.png' : key + '.webp'}`;
 const FIELD_TO_LAYER = {
   web: 'web', back2: 'back2', back3: 'back3', back4: 'back4', back5: 'back5',
   back6: 'back6', back7: 'back78', belt: 'belt', lining: 'lining',
@@ -103,7 +109,7 @@ const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } }
    is the render's, not the customer's. */
 const everything = (code, overrides = {}) => {
   const out = {};
-  for (const f of Object.keys(FIELD_TO_LAYER)) out[f] = code;
+  for (const f of COLOUR_ORDER) out[f] = code;
   return { ...out, palm: code, pad_color: code, ...overrides };
 };
 
@@ -131,16 +137,17 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
   await page.addInitScript(([cs, hd]) => {
     localStorage.setItem('ssk-glove-v1', JSON.stringify({
       lang: 'nl', part: 'web', bullet: 7, colors: cs, hand: hd,
-      size: '11.75', pad: 'No', webType: null, thumbText: '', thumbFont: null,
+      size: '11.75"', pad: 'None', webType: 'H-Web', thumbText: '', thumbFont: null,
       thumbMain: null, thumbOutline: null, thumbNumber: '', circle: null,
       numberColor: null, flag: null, name: '', phone: '' }));
   }, [colors, hand]);
   await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => [...document.querySelectorAll('canvas')]
     .some(c => c.width > 500), null, { timeout: 20000 });
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => { const c = document.getElementById('glove'); return c?.classList.contains('is-ready') && !c.hasAttribute('aria-busy'); }, null, { timeout: 30000 });
+  await page.waitForTimeout(1500);
 
-  const read = await page.evaluate(async ([w, h, zones, mirror, bullet]) => {
+  const read = await page.evaluate(async ([w, h, zones, mirror, bullet, idmap, idmapLHT]) => {
     const stage = [...document.querySelectorAll('canvas')]
       .filter(c => c.width === w && c.height === h)
       .sort((a, b) => b.width - a.width)[0];
@@ -156,7 +163,9 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
       c.getContext('2d').drawImage(img, 0, 0);
       return c.getContext('2d').getImageData(0, 0, w, h).data;
     };
-    const ids = await alphaOf('assets/idmap.png');
+    // A left-handed glove moves the ring-finger embroidery; the trace ships the
+    // map for it. Both maps are of the right-handed layers, like the layers.
+    const ids = await alphaOf(mirror && idmapLHT ? idmapLHT : idmap);
     if (!ids) return null;
 
     const out = {};
@@ -165,7 +174,7 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
       // between the letters, so it reads back the panel behind the mark
       // rather than the mark. The zone is where the map and the layer's own
       // alpha agree, and which is still visible on the finished canvas.
-      const own = await alphaOf(`assets/${z.id}.webp`);
+      const own = await alphaOf(mirror && z.lht ? z.lht : z.src);
       const pts = [];
       for (let i = 0; i < w * h; i++) {
         if (px[i * 4 + 3] < 240) continue;
@@ -202,8 +211,10 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
       out[z.n] = [mid(0), mid(1), mid(2), pts.length];
     }
     return out;
-  }, [DATA.w, DATA.h, DATA.zones.map(z => ({ id: z.id, n: z.n })),
-      hand === 'LHT', DATA.bulletBox]);
+  }, [DATA.w, DATA.h, ZONES.map(z => ({ id: z.id, n: z.n, src: assetOf(z.id),
+        lht: z.id === 'embroidery' && TRACE?.embroideryLHT ? DATA.assets[TRACE.embroideryLHT] : null })),
+      hand === 'LHT', DATA.bulletBox, assetOf('_idmap'),
+      TRACE?.idmapLHT ? DATA.assets[TRACE.idmapLHT] : null]);
 
   if (errs.length) {
     console.log(`FAIL  ${name} — page error: ${errs[0]}`);
@@ -217,10 +228,10 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
   }
 
   console.log(`\n${name}`);
-  for (const z of DATA.zones) {
+  for (const z of ZONES) {
     const got = read[z.n];
     if (!got) continue;
-    const field = LAYER_TO_FIELD[z.id] ?? z.id;
+    const field = z.field ?? LAYER_TO_FIELD[z.id] ?? z.id;
     const code = colors[field];
     const entry = DATA.palettes[z.group].find(c => c[0] === code);
     if (!entry) continue;
@@ -229,6 +240,10 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
       .map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
     const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     const depth = (DATA.cavity || {})[z.id];
+    // Traced thread is laid a shade under its colour with a lit ridge on top
+    // (compile_traced_back_palm.py), which is what lets white thread show on
+    // white leather. That relief is on purpose, so thread gets more room.
+    const allowed = TRACE && z.id === 'stitching' ? Math.max(TOLERANCE, 45) : TOLERANCE;
 
     // A cavity is a hole into the glove, built to come out darker than the
     // colour chosen for it. Holding it to "reads what it was given" would fail
@@ -244,7 +259,7 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
     }
 
     const off = Math.hypot(...want.map((v, i) => v - got[i]));
-    const ok = off <= TOLERANCE;
+    const ok = off <= allowed;
     if (!ok) failures += 1;
     console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${z.id.padEnd(12)} chose ${entry[2]}`
       + ` reads ${hex}  off by ${off.toFixed(1)}  (${got[3]} px)`);

@@ -125,6 +125,24 @@ export const palmTopLaceFragment=(x,y)=>x>=0&&x<=605&&y>=0&&y<=365-272*x/605;
 // references (including aliases, web inserts and material sources) are followed
 // recursively; each diffuse layer brings its highlight partner with it.
 const FIRST_ASSETS = ['glove','_idmap','_hdLeather','_hdLace'];
+// A soft blur of one float plane, in place: three box passes each way. Plain
+// arithmetic, so it gives the same result in every browser (canvas filters
+// do not exist in all of them).
+function softBlur(a, w, h, R) {
+  const b = new Float32Array(a.length);
+  const run = (src, dst, step, len, lines, stride) => {
+    for (let l = 0; l < lines; l++) {
+      let sum = 0; const o = l * stride;
+      for (let k = -R; k <= R; k++) sum += src[o + Math.min(len - 1, Math.max(0, k)) * step];
+      for (let k = 0; k < len; k++) {
+        dst[o + k * step] = sum / (2 * R + 1);
+        sum += src[o + Math.min(len - 1, k + R + 1) * step] - src[o + Math.max(0, k - R) * step];
+      }
+    }
+  };
+  for (let pass = 0; pass < 3; pass++) { run(a, b, 1, w, h, w); run(b, a, w, h, w, 1); }
+  return a;
+}
 function assetDependencies(DATA, values, fixed = [], skip = []) {
   const keys = new Set();
   const take = name => {
@@ -1170,6 +1188,36 @@ export class GloveRenderer {
     g.drawImage(this.imgs[mask],-layer._ox,-layer._oy);c._ox=layer._ox;c._oy=layer._oy;return c;
   }
 
+  // The hand opening is a hole into the glove. The traced lining is one flat
+  // piece of colour, so the depth is put back as shadow over it: darkest under
+  // the back of the glove, where the opening is overhung, easing toward the
+  // lip nearest the wrist, with a soft dark rim all the way round where the
+  // lining turns under the binding. DATA.cavity names how deep.
+  cavityShade(id) {
+    const D = this.DATA, depth = D.cavity?.[id];
+    if (!depth || !D.tracedSeams || !this.imgs[id] || !D.bbox[id]) return null;
+    const key = 'cavity|' + id;
+    let c = this.cache.get(key);
+    if (c) return c;
+    const [x0, y0, x1, y1] = D.bbox[id], w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), N = w * h;
+    c = document.createElement('canvas'); c.width = w; c.height = h; c._ox = x0; c._oy = y0;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(this.imgs[id], -x0, -y0);
+    const px = g.getImageData(0, 0, w, h), inside = new Float32Array(N);
+    for (let i = 0; i < N; i++) inside[i] = px.data[i * 4 + 3] / 255;
+    softBlur(inside, w, h, 9);
+    for (let i = 0; i < N; i++) {
+      const y = ((i / w) | 0) / Math.max(1, h - 1);
+      const rim = Math.min(1, Math.max(0, (1 - inside[i]) * 1.6));         // 0 deep inside, 1 at the edge
+      const shade = Math.min(.86, (1 - depth) * (1.2 - .7 * y) + rim * .34);
+      px.data[i * 4] = px.data[i * 4 + 1] = px.data[i * 4 + 2] = 0;
+      px.data[i * 4 + 3] = Math.round(px.data[i * 4 + 3] * shade);
+    }
+    g.putImageData(px, 0, 0);
+    this.cache.set(key, c);
+    return c;
+  }
+
   // A web insert's own palm piece, laid on the traced body. The index finger
   // goes first: the piece stops at the finger's traced edge. Where the piece
   // lies on traced palm leather its border fades over a few pixels, because
@@ -1188,19 +1236,9 @@ export class GloveRenderer {
     for (const id of ['palm', 'back2']) if (this.imgs[id]) gm.drawImage(this.imgs[id], -ox, -oy);
     const px = g.getImageData(0, 0, w, h), under = gm.getImageData(0, 0, w, h).data, N = w * h;
     // how far inside the piece each pixel is: its alpha, box-blurred three times
-    let a = new Float32Array(N), b = new Float32Array(N);
+    const a = new Float32Array(N);
     for (let i = 0; i < N; i++) a[i] = px.data[i * 4 + 3] / 255;
-    const R = 5, blur = (src, dst, step, len, lines, stride) => {
-      for (let l = 0; l < lines; l++) {
-        let sum = 0; const o = l * stride;
-        for (let k = -R; k <= R; k++) sum += src[o + Math.min(len - 1, Math.max(0, k)) * step];
-        for (let k = 0; k < len; k++) {
-          dst[o + k * step] = sum / (2 * R + 1);
-          sum += src[o + Math.min(len - 1, k + R + 1) * step] - src[o + Math.max(0, k - R) * step];
-        }
-      }
-    };
-    for (let pass = 0; pass < 3; pass++) { blur(a, b, 1, w, h, w); blur(b, a, w, h, w, 1); }
+    softBlur(a, w, h, 5);
     for (let i = 0; i < N; i++) {
       const inside = Math.min(1, Math.max(0, (a[i] - .5) * 2)), onPalm = under[i * 4 + 3] / 255;
       px.data[i * 4 + 3] = Math.round(px.data[i * 4 + 3] * (1 - onPalm * (1 - inside)));
@@ -1530,6 +1568,7 @@ export class GloveRenderer {
         }
       } else {
         ctx.drawImage(c, c._ox, c._oy);
+        if (z.id === 'lining') { const shade = this.cavityShade(z.id); if (shade) { const o = onPad(shade, z.id); ctx.drawImage(o, o._ox, o._oy); } }
       if(mirror && D.leftyRingHeals?.[z.id]){const q=onPad(this.tinted(D.leftyRingHeals[z.id],this.hex(z.id,state),z.id),z.id);ctx.drawImage(q,q._ox,q._oy);}
         // Under a swapped web the calibration glove's knot is not drawn, and
         // the panels it lay on have to be whole without it. knotHeal names a
@@ -1603,6 +1642,8 @@ export class GloveRenderer {
           const t = this.tinted(over, this.hex(over, state));
           const o = this.pad === 'pad' ? t : this.underPad(t);
           ctx.drawImage(o, o._ox, o._oy);
+          const shade = over === 'lining' && this.cavityShade(over);
+          if (shade) { const so = this.pad === 'pad' ? shade : this.underPad(shade); ctx.drawImage(so, so._ox, so._oy); }
         }
         ctx.restore();
       }
@@ -1972,6 +2013,8 @@ export class GloveRenderer {
     if (this.imgs.lining && this.DATA.assets.lining?.includes('_refined')) {
       const lining=this.underPad(this.tinted('lining',this.hex('lining',state)),this.pad==='pad'?D.padBindingUnder||D.padUnder:null);
       ctx.drawImage(lining,lining._ox,lining._oy);
+      const shade=this.cavityShade('lining');
+      if(shade){const o=this.underPad(shade,this.pad==='pad'?D.padBindingUnder||D.padUnder:null);ctx.drawImage(o,o._ox,o._oy);}
     }
     if (this.imgs.binding_thread_detail) {
       const thread=this.underPad(this.tinted('binding_thread_detail',this.hex('stitching',state)),this.pad==='pad'?D.padBindingUnder||D.padUnder:null);

@@ -3470,9 +3470,9 @@
       "back8": {
         "grainStrength": 0,
         "calibration": {
-          "lo": 235,
-          "mid": 246,
-          "high": 255
+          "lo": 218,
+          "mid": 229,
+          "high": 238
         }
       },
       "back6": {
