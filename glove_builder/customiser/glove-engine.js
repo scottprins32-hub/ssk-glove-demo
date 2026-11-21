@@ -45,8 +45,14 @@ const PALM_WEB_LEATHER = Object.freeze({
 const TRACED_LEATHER_GRAIN = 12;
 
 // Traced parts that are round in the hand, and how much they turn.
-const TRACED_ROUND_PARTS = Object.freeze(['laces', 'pinky_loops', 'thumb_loops']);
-const TRACED_ROUND = Object.freeze({ shade: 56, light: 40 });
+// A lace turns over a wider field than the thin piping along a finger. The
+// light goes past full colour on purpose: that part is added as sheen, which
+// is the only light a navy or black lace can show.
+const TRACED_ROUND = Object.freeze({
+  laces: { reach: 1, shade: 56, light: 66 }, pinky_loops: { reach: 1, shade: 56, light: 66 },
+  thumb_loops: { reach: 1, shade: 56, light: 66 },
+  welting: { reach: 0, shade: 34, light: 44 }, binding: { reach: 1, shade: 40, light: 44 }
+});
 
 // The rough back webs: the photograph's blotches are smoothed away over a
 // wide field, the folds and stitch rows that give the web its shape stay.
@@ -176,6 +182,37 @@ function despeckled(img) {
   }
   g.putImageData(px, 0, 0);
   smoothThread.set(img, c);
+  return c;
+}
+// The wordmark is satin stitch: rows of thread laid side by side across each
+// letter, standing a little proud of the leather. The traced letters carry
+// only the photograph's blotches, so their surface is laid here instead:
+// fine thread rows, an edge that turns away into shade, and light on the
+// side facing the lamp. The letter shapes are the tracing's, untouched.
+const threadWork = new WeakMap();
+function stitched(img) {
+  if (!img || !img.width || typeof document === 'undefined') return img;
+  const hit = threadWork.get(img);
+  if (hit) return hit;
+  const w = img.width, h = img.height, N = w * h;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const px = g.getImageData(0, 0, w, h), d = px.data, cover = new Float32Array(N);
+  for (let i = 0; i < N; i++) cover[i] = d[i * 4 + 3] / 255;
+  softBlur(cover, w, h, 2);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!d[i * 4 + 3]) continue;
+    if (cover[i] < .22) { d[i * 4 + 3] = 0; continue; }       // a stray fleck of the tracing, not a letter
+    const edge = 1 - Math.min(1, Math.max(0, (cover[i] - .5) * 2.2));
+    const lit = x > 0 && y > 0 && x < w - 1 && y < h - 1 ? cover[i + w + 1] - cover[i - w - 1] : 0;
+    const row = Math.sin((y + x * .22) * (2 * Math.PI / 3.4));
+    const tone = Math.max(150, Math.min(255, 240 + row * 9 - edge * edge * 50 + Math.max(-1, Math.min(1, lit * 3)) * 22));
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = tone;
+  }
+  g.putImageData(px, 0, 0);
+  threadWork.set(img, c);
   return c;
 }
 // Three webs on the back were cut out of photographs by hand and came out
@@ -715,11 +752,11 @@ export class GloveRenderer {
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         if (swapBody) for (const [zone, asset] of Object.entries(def.swapAssets)) imgs[zone] = base.imgs[asset];
-        if (def.revision === 'SCOTT-BACK-PALM-R03' && this.view === 'back') {
-          if (imgs.embroidery) imgs.embroidery = despeckled(imgs.embroidery);
-          if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = despeckled(imgs[def.embroideryLHT]);
+        if (def.revision === 'SCOTT-BACK-PALM-R03' && ['back', 'pinky'].includes(this.view)) {
+          if (imgs.embroidery) imgs.embroidery = stitched(imgs.embroidery);
+          if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = stitched(imgs[def.embroideryLHT]);
         }
-        if (swapBody) for (const slug of ROUGH_BACK_WEBS) for (const part of ['web', 'laceweb', 'webfinger']) {
+        if (swapBody) for (const slug of [...ROUGH_BACK_WEBS, 'trapeze']) for (const part of ['web', 'laceweb', 'webfinger']) {
           const id = base.DATA.webs[slug]?.[part];
           if (id && imgs[id]) imgs[id] = cleanEdges(imgs[id]);
         }
@@ -1019,15 +1056,16 @@ export class GloveRenderer {
     // away into shade along both edges and catches light on the side facing
     // the lamp (upper left, as on the photographed back). The same rule gives
     // a knot its bulk. Tone only: outline and colour stay as traced.
-    if (this.DATA.tracedSeams && id===role && TRACED_ROUND_PARTS.includes(role) && this.materials?.[role]!=='snakeskin') {
+    const round=this.DATA.tracedSeams && id===role && this.materials?.[role]!=='snakeskin' ? TRACED_ROUND[role] : null;
+    if (round) {
       const cover=new Float32Array(width*height);
       for(let j=0;j<cover.length;j++)cover[j]=base[j*4+3]/255;
-      softBlur(cover,width,height,Math.max(1,Math.round(this.DATA.h/550)));
+      softBlur(cover,width,height,Math.max(1,Math.round(this.DATA.h/550)+round.reach-1));
       for(let y=ry0;y<ry1;y++)for(let x=rx0;x<rx1;x++){
         const j=y*width+x;if(!base[j*4+3])continue;
         const edge=1-Math.min(1,Math.max(0,(cover[j]-.5)*2.2));            // 1 on the outline, 0 along the middle
         const lit=(x>0&&y>0&&x<width-1&&y<height-1 ? cover[j+width+1]-cover[j-width-1] : 0);   // rises away from the lamp-side edge
-        tone[j]=Math.max(0,Math.min(298,tone[j]-edge*edge*TRACED_ROUND.shade+Math.max(-1,Math.min(1,lit*3))*TRACED_ROUND.light));
+        tone[j]=Math.max(0,Math.min(322,tone[j]-edge*edge*round.shade+Math.max(-1,Math.min(1,lit*3))*round.light));
       }
     }
     const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
@@ -2287,8 +2325,45 @@ export class GloveRenderer {
       ctx.drawImage(this.webPlace(D.webBlank), 0, 0); ctx.restore();
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.formLight?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
+    this.sealSeams?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
+    this.formLight?.(ctx, mirror);
     if (onTrace && this.imgs[swap.web]) this.seamShade?.(ctx, mirror, swap, shade(this.hex('web', state), -.5));
+    if (D.tracedSeams && this.view === 'palm' && this.imgs.palm) this.fingerShade?.(ctx, mirror, shade(this.hex('palm', state), -.58));
+  }
+
+  // Two traced parts that share an edge are each drawn with a soft edge, and
+  // where two soft edges meet the page shows through as a pale hairline.
+  // Inside the glove those pixels are filled from behind with the colours
+  // right beside them. The outline and real openings are left alone: only
+  // pixels with glove all around them count as inside.
+  sealSeams(ctx, mirror) {
+    const D = this.DATA, canvas = ctx.canvas;
+    if (!D.tracedSeams || !canvas || canvas.width !== D.w || canvas.height !== D.h) return;
+    const w = D.w, h = D.h, N = w * h;
+    const key = ['seal', this.view, this.web || '', this.webMarked ? 1 : 0, this.pad || '', mirror ? 1 : 0].join('|');
+    let seal = this.formShades.get(key);
+    if (!seal || seal.data !== D) {
+      const body = ctx.getImageData(0, 0, w, h).data;
+      const a = new Float32Array(N);
+      for (let i = 0; i < N; i++) a[i] = body[i * 4 + 3] / 255;
+      softBlur(a, w, h, 2);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'), out = g.createImageData(w, h);
+      for (let i = 0; i < N; i++) if (a[i] > .66 && body[i * 4 + 3] < 255) out.data[i * 4 + 3] = 255;
+      g.putImageData(out, 0, 0);
+      seal = { canvas: c, data: D, layer: document.createElement('canvas') };
+      seal.layer.width = w; seal.layer.height = h;
+      this.formShades.set(key, seal);
+      if (this.formShades.size > 24) this.formShades.delete(this.formShades.keys().next().value);
+    }
+    const g = seal.layer.getContext('2d');
+    g.globalCompositeOperation = 'copy'; g.drawImage(canvas, 1, 0);
+    g.globalCompositeOperation = 'source-over';
+    g.drawImage(canvas, -1, 0); g.drawImage(canvas, 0, 1); g.drawImage(canvas, 0, -1);
+    for (const d of [2, 3]) { g.drawImage(canvas, d, 0); g.drawImage(canvas, -d, 0); g.drawImage(canvas, 0, d); g.drawImage(canvas, 0, -d); }
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(seal.canvas, 0, 0);
+    ctx.save(); ctx.globalCompositeOperation = 'destination-over';
+    ctx.drawImage(seal.layer, 0, 0); ctx.restore();
   }
 
   // A cut-out web does not meet the fingers pixel for pixel: slivers of the
@@ -2296,26 +2371,61 @@ export class GloveRenderer {
   // Openings narrower than a lace, within the web's own reach, are filled
   // behind the glove with the web's colour in shade. Real windows stay open.
   seamShade(ctx, mirror, swap, colour) {
+    const web = this.imgs[swap.web], w = this.DATA.w;
+    this.gapShade(ctx, ['seam', this.web, this.pad || '', mirror ? 1 : 0].join('|'), web, 4, colour, g => {
+      g.globalCompositeOperation = 'destination-in';
+      if (mirror) g.setTransform(-1, 0, 0, 1, w, 0);
+      g.drawImage(webFootprint(web).reach, 0, 0);
+    });
+  }
+
+  // Between the fingers of the palm the page shows through a slit. On a
+  // glove the finger walls are there, in shadow. Slits well inside the glove
+  // are filled behind it with the palm's colour in shade; the web's windows
+  // and everything along the outline stay as drawn.
+  fingerShade(ctx, mirror, colour) {
+    const D = this.DATA, w = D.w, h = D.h;
+    if (!D.tracedSeams || this.view !== 'palm') return;
+    const web = D.bbox.web;
+    this.gapShade(ctx, ['slit', this.web || '', this.pad || '', mirror ? 1 : 0].join('|'), this.imgs.palm, Math.round(h / 175), colour, (g, deep) => {
+      g.globalCompositeOperation = 'destination-in'; g.drawImage(deep, 0, 0);
+      if (web) {
+        g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000';
+        const x0 = web[0] - 12, x1 = web[2] + 12;
+        g.fillRect(mirror ? w - x1 : x0, 0, x1 - x0, h);
+      }
+    }, Math.round(h / 58));
+  }
+
+  // The shared work: openings up to twice `reach` wide, closed behind the
+  // glove in one colour. `limit` cuts the fill down to where it belongs; with
+  // `depth` it is handed a mask of the pixels that have glove all around them.
+  gapShade(ctx, key, source, reach, colour, limit, depth = 0) {
     const D = this.DATA, w = D.w, h = D.h, N = w * h;
-    const key = ['seam', this.web, this.pad || '', mirror ? 1 : 0].join('|');
     let seam = this.formShades.get(key);
-    if (!seam || seam.data !== D || seam.web !== this.imgs[swap.web]) {
+    if (!seam || seam.data !== D || seam.source !== source) {
       const body = ctx.getImageData(0, 0, w, h).data;
       const a = new Float32Array(N);
       for (let i = 0; i < N; i++) a[i] = body[i * 4 + 3] >= 128 ? 1 : 0;
-      softBlur(a, w, h, 4); for (let i = 0; i < N; i++) a[i] = a[i] > .1 ? 1 : 0;
-      softBlur(a, w, h, 4);
+      let deep = null;
+      if (depth) {
+        const around = softBlur(Float32Array.from(a), w, h, depth);
+        deep = document.createElement('canvas'); deep.width = w; deep.height = h;
+        const gd = deep.getContext('2d'), dp = gd.createImageData(w, h);
+        for (let i = 0; i < N; i++) if (around[i] > .8) dp.data[i * 4 + 3] = 255;
+        gd.putImageData(dp, 0, 0);
+      }
+      softBlur(a, w, h, reach); for (let i = 0; i < N; i++) a[i] = a[i] > .1 ? 1 : 0;
+      softBlur(a, w, h, reach);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const g = c.getContext('2d'), out = g.createImageData(w, h);
       for (let i = 0; i < N; i++) if (a[i] > .9 && body[i * 4 + 3] < 255) out.data[i * 4 + 3] = 255;
       g.putImageData(out, 0, 0);
-      g.globalCompositeOperation = 'destination-in';
-      if (mirror) g.setTransform(-1, 0, 0, 1, w, 0);
-      g.drawImage(webFootprint(this.imgs[swap.web]).reach, 0, 0);
-      seam = { canvas: c, data: D, web: this.imgs[swap.web], tint: document.createElement('canvas') };
+      limit(g, deep);
+      seam = { canvas: c, data: D, source, tint: document.createElement('canvas') };
       seam.tint.width = w; seam.tint.height = h;
       this.formShades.set(key, seam);
-      if (this.formShades.size > 12) this.formShades.delete(this.formShades.keys().next().value);
+      if (this.formShades.size > 24) this.formShades.delete(this.formShades.keys().next().value);
     }
     if (seam.colour !== colour) {
       const g = seam.tint.getContext('2d');
@@ -2384,7 +2494,7 @@ export class GloveRenderer {
       g.putImageData(out, 0, 0);
       shade = { canvas: c, data: D };
       this.formShades.set(key, shade);
-      if (this.formShades.size > 12) this.formShades.delete(this.formShades.keys().next().value);
+      if (this.formShades.size > 24) this.formShades.delete(this.formShades.keys().next().value);
     }
     ctx.save(); ctx.globalCompositeOperation = 'source-atop';
     ctx.drawImage(shade.canvas, 0, 0); ctx.restore();

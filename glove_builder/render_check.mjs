@@ -141,6 +141,9 @@ for (const [name, colors, hand = 'RHT'] of SCENARIOS) {
       thumbMain: null, thumbOutline: null, thumbNumber: '', circle: null,
       numberColor: null, flag: null, name: '', phone: '' }));
   }, [colors, hand]);
+  // Untouched, the page turns the glove to its next side every few seconds.
+  // This check reads the back: ask for no motion, so it stays on the back.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => [...document.querySelectorAll('canvas')]
     .some(c => c.width > 500), null, { timeout: 20000 });
