@@ -37,7 +37,7 @@ PANEL_REACH, STRIPS = 41, {'back3'}
 EDGE = 2.2           # how far the leather's edge is evened, in pixels
 SLIVER, SEAL, HOLE = 11, 19, 2500      # a gap this narrow (SEAL on a web that is not a lattice), or an enclosed hole this small, is not an opening
 FOOT_HOLE = 8000     # ... and one this small beside the palm leather under an open web's foot is palm
-CORNER, RING = 3, 25     # how round a window's corners are, and how wide its edge is lit evenly, in pixels
+CORNER, RING = 3, 61     # how round a window's corners are, and how wide its edge is lit evenly, in pixels
 LATTICE = {'trapeze', 'modified-trapeze'}    # webs of laced straps: their small openings are real
 # the four H-web windows, palm side -> thumb side (window centres), to start the fit from
 START = ([[585, 330], [630, 579], [427, 417], [496, 672]], [[312, 286], [216, 497], [458, 366], [345, 576]])
@@ -314,8 +314,11 @@ def main():
                 # the photograph's shading of the old nicks goes with them: an even light round the window
                 ring = (cv2.dilate(quad.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (RING, RING))) > 0) & ~quad & (a > .5)
                 if ring.any():
-                    weight = (a > .5).astype(np.float32); even = cv2.GaussianBlur(rgb * weight[:, :, None], (0, 0), 5) / np.maximum(cv2.GaussianBlur(weight, (0, 0), 5), 1e-3)[:, :, None]
-                    rgb[ring] = even[ring]
+                    # lit from the leather beyond the ring, so the old rim's shading does not come back in
+                    weight = ((a > .5) & ~ring).astype(np.float32)
+                    even = cv2.GaussianBlur(rgb * weight[:, :, None], (0, 0), RING / 2) / np.maximum(cv2.GaussianBlur(weight, (0, 0), RING / 2), 1e-3)[:, :, None]
+                    blend = np.clip(cv2.GaussianBlur(ring.astype(np.float32), (0, 0), 3), 0, 1)[:, :, None]
+                    rgb[:] = rgb * (1 - blend) + even * blend
                 soft = cv2.GaussianBlur(quad.astype(np.float32), (0, 0), .8)
                 for _, alpha_ in layers.values(): alpha_ *= 1 - soft
         entries[slug] = {}
