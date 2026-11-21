@@ -39,8 +39,28 @@ const PALM_WEB_LEATHER = Object.freeze({
   midtone: 236, relief: .65, darkDetail: .42, softDetail: .12, grainScale: .20
 });
 
+// Scott's traced panels are flat tone plates: they carry the fold light but
+// no surface. A fine grain, far below the fold relief, makes them read as
+// leather when zoomed in without clouding a pale colour from a distance.
+const TRACED_LEATHER_GRAIN = 12;
+
+// Traced parts that are round in the hand, and how much they turn.
+const TRACED_ROUND_PARTS = Object.freeze(['laces', 'pinky_loops', 'thumb_loops']);
+const TRACED_ROUND = Object.freeze({ shade: 56, light: 40 });
+
+// The rough back webs: the photograph's blotches are smoothed away over a
+// wide field, the folds and stitch rows that give the web its shape stay.
+const ROUGH_WEB_LEATHER = Object.freeze({
+  blurScale: 3, blurPasses: 2, relief: 1.1, darkDetail: .62, softDetail: .26, grainScale: .30
+});
+
 const OTHER_PALM_WEB_LEATHER=Object.freeze({
   ...PALM_WEB_LEATHER, midtone:233, relief:.82, edgeRelief:8
+});
+// The same three webs on the palm: their photographed streaks are spread
+// over a wider field, so a pale web is not striped.
+const ROUGH_PALM_WEB_LEATHER=Object.freeze({
+  ...OTHER_PALM_WEB_LEATHER, blurScale:3, blurPasses:2, relief:.6, softDetail:.08
 });
 export function shadePalmWebEdges(tone,base,width,height,depth) {
   const radius=Math.max(1,Math.round(height/450));
@@ -156,6 +176,38 @@ function despeckled(img) {
   }
   g.putImageData(px, 0, 0);
   smoothThread.set(img, c);
+  return c;
+}
+// Three webs on the back were cut out of photographs by hand and came out
+// rough: a ragged outline, and leather that carries the photograph's blotches.
+// Their outline is evened out here (spurs and notches of a pixel or two go,
+// the shape stays) and their leather takes one calm light (ROUGH_WEB_LEATHER).
+const ROUGH_BACK_WEBS = Object.freeze(['em-rocket', 'modified-trapeze', 'closed-diamond-net']);
+const evenEdges = new WeakMap();
+function cleanEdges(img) {
+  if (!img || !img.width || typeof document === 'undefined') return img;
+  const hit = evenEdges.get(img);
+  if (hit) return hit;
+  const w = img.width, h = img.height, N = w * h;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(img, 0, 0);
+  const px = g.getImageData(0, 0, w, h), d = px.data;
+  const a = new Float32Array(N), tone = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  for (let i = 0; i < N; i++) {
+    const v = d[i * 4 + 3] / 255; a[i] = v;
+    for (let k = 0; k < 3; k++) tone[k][i] = d[i * 4 + k] * v;
+  }
+  const solid = Float32Array.from(a);
+  softBlur(a, w, h, 2); for (const t of tone) softBlur(t, w, h, 2);
+  for (let i = 0; i < N; i++) {
+    const even = Math.min(1, Math.max(0, (a[i] - .34) / .32));
+    // a pixel that gains cover takes the colour of the leather around it
+    if (solid[i] < .8 && a[i] > .01) for (let k = 0; k < 3; k++) d[i * 4 + k] = tone[k][i] / a[i];
+    d[i * 4 + 3] = Math.round(255 * even);
+  }
+  g.putImageData(px, 0, 0);
+  evenEdges.set(img, c);
   return c;
 }
 // Where a web sits, windows and lacing included: the web leather's own shape
@@ -667,6 +719,10 @@ export class GloveRenderer {
           if (imgs.embroidery) imgs.embroidery = despeckled(imgs.embroidery);
           if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = despeckled(imgs[def.embroideryLHT]);
         }
+        if (swapBody) for (const slug of ROUGH_BACK_WEBS) for (const part of ['web', 'laceweb', 'webfinger']) {
+          const id = base.DATA.webs[slug]?.[part];
+          if (id && imgs[id]) imgs[id] = cleanEdges(imgs[id]);
+        }
         const webSpace = webBlank ? webFootprint(imgs.web) : null;
         if (webBlank) delete imgs.web;
         const c = document.createElement('canvas'); c.width=base.DATA.w; c.height=base.DATA.h;
@@ -829,9 +885,11 @@ export class GloveRenderer {
     if (!surfaces) { surfaces = new Map(); this.materialCache.set(img, surfaces); }
     const response = this.DATA.materialResponse?.[id];
     const finish = zone?.group === 'leather' && this.materials?.[role] !== 'snakeskin'
-      ? this.view === 'palm' && role === 'web' ? (['smk','smlee'].includes(this.web)?PALM_WEB_LEATHER:OTHER_PALM_WEB_LEATHER)
+      ? this.view === 'palm' && role === 'web' ? (['smk','smlee'].includes(this.web)?PALM_WEB_LEATHER
+          :ROUGH_BACK_WEBS.includes(this.web)?ROUGH_PALM_WEB_LEATHER:OTHER_PALM_WEB_LEATHER)
         : this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
-        : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER : null
+        : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER
+        : this.view === 'back' && role === 'web' && ROUGH_BACK_WEBS.includes(this.web) ? ROUGH_WEB_LEATHER : null
       : null;
     // The split ring/side masks share one photographed light field when their
     // material recipes match. Their colours and ownership stay independent.
@@ -935,7 +993,10 @@ export class GloveRenderer {
         blur=box(blur);weight=box(weight);
       }
       const tex=this.leatherGrain(snake,zone?.group==='lace');
-      const lace=zone?.group==='lace',strength=snake?17:(response?.grainStrength ?? (lace?2.2:8.5));
+      const lace=zone?.group==='lace';
+      const tracedLeather=!!this.DATA.tracedSeams && zone?.group==='leather' && role!=='lining' && id===role;
+      const strength=snake?17:(tracedLeather && !response?.grainStrength ? TRACED_LEATHER_GRAIN
+        : response?.grainStrength ?? (lace?2.2:8.5));
       // The material coordinates are separable: wrap each row/column once,
       // not twice per pixel. This preserves the exact same texture samples.
       const tx=Int32Array.from({length:w},(_,x)=>tex.wrap(x+x0+rx0));
@@ -952,6 +1013,21 @@ export class GloveRenderer {
           : detail*(finish?.softDetail ?? (response?.detailRetention ?? .24)*(snake?1:.55));
         const grain=tex.values[ty[y]+tx[x]]*(snake?1:(finish?.grainScale ?? .30));
         tone[full]=Math.max(0,Math.min(298,(finish?.midtone ?? response?.midtone ?? (snake||lace?246:248))+(macro-248)*(finish?.relief ?? response?.relief ?? (snake||lace?1.2:1.35))+retained+grain*strength));
+      }
+    }
+    // Scott's traced laces are flat shapes. A lace is a round thong: it turns
+    // away into shade along both edges and catches light on the side facing
+    // the lamp (upper left, as on the photographed back). The same rule gives
+    // a knot its bulk. Tone only: outline and colour stay as traced.
+    if (this.DATA.tracedSeams && id===role && TRACED_ROUND_PARTS.includes(role) && this.materials?.[role]!=='snakeskin') {
+      const cover=new Float32Array(width*height);
+      for(let j=0;j<cover.length;j++)cover[j]=base[j*4+3]/255;
+      softBlur(cover,width,height,Math.max(1,Math.round(this.DATA.h/550)));
+      for(let y=ry0;y<ry1;y++)for(let x=rx0;x<rx1;x++){
+        const j=y*width+x;if(!base[j*4+3])continue;
+        const edge=1-Math.min(1,Math.max(0,(cover[j]-.5)*2.2));            // 1 on the outline, 0 along the middle
+        const lit=(x>0&&y>0&&x<width-1&&y<height-1 ? cover[j+width+1]-cover[j-width-1] : 0);   // rises away from the lamp-side edge
+        tone[j]=Math.max(0,Math.min(298,tone[j]-edge*edge*TRACED_ROUND.shade+Math.max(-1,Math.min(1,lit*3))*TRACED_ROUND.light));
       }
     }
     const blend=response?.edgeBlend?.role===role ? response.edgeBlend : response?.webBlend;
@@ -1118,7 +1194,30 @@ export class GloveRenderer {
     ctx.restore();
   }
 
+  // The badge sits on the belt as a sewn-on part: a soft shadow under it and
+  // a hairline of light along its edge. A badge the colour of the belt would
+  // otherwise sink into it. Its own artwork and colours are drawn untouched.
   drawWristBadge(ctx, bulletSel, mirror) {
+    const opt = this.DATA.bullets?.[bulletSel];
+    if (!this.DATA.bulletBox || opt && opt.asset && this.imgs && !this.imgs[opt.asset]) return;
+    const canvas = ctx.canvas;
+    if (!canvas || typeof document === 'undefined') { GloveRenderer.prototype.paintWristBadge.call(this, ctx, bulletSel, mirror); return; }
+    const layer = this.badgeLayer ||= document.createElement('canvas');
+    if (layer.width !== canvas.width || layer.height !== canvas.height) { layer.width = canvas.width; layer.height = canvas.height; }
+    const g = layer.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, layer.width, layer.height);
+    g.setTransform(ctx.getTransform());
+    GloveRenderer.prototype.paintWristBadge.call(this, g, bulletSel, mirror);
+    const k = Math.hypot(ctx.getTransform().a, ctx.getTransform().b) * this.DATA.h / 1100;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.shadowColor = 'rgba(0,0,0,.42)'; ctx.shadowBlur = 5 * k; ctx.shadowOffsetY = 2 * k;
+    ctx.drawImage(layer, 0, 0);
+    ctx.shadowColor = 'rgba(255,255,255,.6)'; ctx.shadowBlur = 2 * k; ctx.shadowOffsetY = -.6 * k;
+    ctx.drawImage(layer, 0, 0);
+    ctx.restore();
+  }
+
+  paintWristBadge(ctx, bulletSel, mirror) {
     const bb = this.DATA.bulletBox;
     if (!bb) return;
     const [dx,dy] = this.DATA.bullets[bulletSel]?.mountOffset || [0,0];
@@ -2189,17 +2288,57 @@ export class GloveRenderer {
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.formLight?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
+    if (onTrace && this.imgs[swap.web]) this.seamShade?.(ctx, mirror, swap, shade(this.hex('web', state), -.5));
   }
 
-  // The two side views are a few large traced panels, each one even colour,
-  // and they read as cut paper beside the back. This gives them the light a
-  // rounded glove has: the leather falls away into shade toward the outline,
-  // and sits a little darker along its seams. Shadow only, laid over what is
+  // A cut-out web does not meet the fingers pixel for pixel: slivers of the
+  // page show through along the seam. A glove has leather in shadow there.
+  // Openings narrower than a lace, within the web's own reach, are filled
+  // behind the glove with the web's colour in shade. Real windows stay open.
+  seamShade(ctx, mirror, swap, colour) {
+    const D = this.DATA, w = D.w, h = D.h, N = w * h;
+    const key = ['seam', this.web, this.pad || '', mirror ? 1 : 0].join('|');
+    let seam = this.formShades.get(key);
+    if (!seam || seam.data !== D || seam.web !== this.imgs[swap.web]) {
+      const body = ctx.getImageData(0, 0, w, h).data;
+      const a = new Float32Array(N);
+      for (let i = 0; i < N; i++) a[i] = body[i * 4 + 3] >= 128 ? 1 : 0;
+      softBlur(a, w, h, 4); for (let i = 0; i < N; i++) a[i] = a[i] > .1 ? 1 : 0;
+      softBlur(a, w, h, 4);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'), out = g.createImageData(w, h);
+      for (let i = 0; i < N; i++) if (a[i] > .9 && body[i * 4 + 3] < 255) out.data[i * 4 + 3] = 255;
+      g.putImageData(out, 0, 0);
+      g.globalCompositeOperation = 'destination-in';
+      if (mirror) g.setTransform(-1, 0, 0, 1, w, 0);
+      g.drawImage(webFootprint(this.imgs[swap.web]).reach, 0, 0);
+      seam = { canvas: c, data: D, web: this.imgs[swap.web], tint: document.createElement('canvas') };
+      seam.tint.width = w; seam.tint.height = h;
+      this.formShades.set(key, seam);
+      if (this.formShades.size > 12) this.formShades.delete(this.formShades.keys().next().value);
+    }
+    if (seam.colour !== colour) {
+      const g = seam.tint.getContext('2d');
+      g.globalCompositeOperation = 'copy'; g.drawImage(seam.canvas, 0, 0);
+      g.globalCompositeOperation = 'source-in'; g.fillStyle = colour; g.fillRect(0, 0, w, h);
+      seam.colour = colour;
+    }
+    ctx.save(); ctx.globalCompositeOperation = 'destination-over';
+    ctx.drawImage(seam.tint, 0, 0); ctx.restore();
+  }
+
+  // The palm and the two side views are a few large traced panels, each one
+  // even colour, and they read as cut paper beside the back. This gives them
+  // the light a rounded glove has: the leather falls away into shade toward
+  // the outline, and sits a little darker along its seams. The palm also
+  // sinks into its pocket, and its outline is taken with the web's windows
+  // closed so no shade gathers around them. Shadow only, laid over what is
   // drawn, so no colour, edge or ownership changes. Colours do not move it:
   // it is kept per view, web, pad and hand.
   formLight(ctx, mirror) {
     const D = this.DATA;
-    if (!D.tracedSeams || !['pinky', 'thumb'].includes(this.view)) return;
+    if (!D.tracedSeams || !['palm', 'pinky', 'thumb'].includes(this.view)) return;
+    const palm = this.view === 'palm';
     const key = ['form', this.view, this.web || '', this.webMarked ? 1 : 0, this.pad || '', mirror ? 1 : 0].join('|');
     let shade = this.formShades.get(key);
     if (!shade || shade.data !== D) {
@@ -2214,14 +2353,33 @@ export class GloveRenderer {
       for (const id of ['welting', 'binding']) if (this.imgs[id]) gm.drawImage(this.imgs[id], 0, 0);
       const seam = gm.getImageData(0, 0, w, h).data;
       for (let i = 0; i < N; i++) seams[i] = seam[i * 4 + 3] / 255;
-      softBlur(inside, w, h, 20); softBlur(seams, w, h, 5);
+      let pocket = null;
+      if (palm) {
+        const close = Math.round(h / 37);       // wider than half a web window
+        for (let i = 0; i < N; i++) inside[i] = inside[i] >= .5 ? 1 : 0;
+        softBlur(inside, w, h, close); for (let i = 0; i < N; i++) inside[i] = inside[i] > .03 ? 1 : 0;
+        softBlur(inside, w, h, close); for (let i = 0; i < N; i++) inside[i] = inside[i] > .9 ? 1 : 0;
+        // the pocket lies in the palm, a third of the way toward the web
+        const p = D.bbox.palm, v = D.bbox.web;
+        if (p && v) {
+          const px = (p[0] + p[2]) / 2, py = (p[1] + p[3]) / 2;
+          const x = px + ((v[0] + v[2]) / 2 - px) * .34, y = py + ((v[1] + v[3]) / 2 - py) * .34;
+          pocket = { x: mirror ? w - x : x, y, r: (p[2] - p[0]) * .3 };
+        }
+      }
+      softBlur(inside, w, h, palm ? Math.round(h / 42) : 20); softBlur(seams, w, h, 5);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const g = c.getContext('2d'), out = g.createImageData(w, h);
       for (let i = 0; i < N; i++) {
         if (!body[i * 4 + 3]) continue;
         const rim = Math.min(1, Math.max(0, (1 - inside[i]) * 2));           // 1 at the outline, 0 well inside
         const fold = Math.max(0, seams[i] - seam[i * 4 + 3] / 255 * .6);     // beside a seam, not on it
-        out.data[i * 4 + 3] = Math.round(255 * Math.min(.3, rim * rim * .22 + fold * .2));
+        let deep = 0;
+        if (pocket) {
+          const dx = (i % w - pocket.x) / pocket.r, dy = (((i / w) | 0) - pocket.y) / pocket.r;
+          deep = Math.exp(-(dx * dx + dy * dy) * 1.4) * .11;
+        }
+        out.data[i * 4 + 3] = Math.round(255 * Math.min(.3, rim * rim * .22 + fold * .2 + deep));
       }
       g.putImageData(out, 0, 0);
       shade = { canvas: c, data: D };
