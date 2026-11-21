@@ -990,7 +990,7 @@
     "thumb_estimate_smlee_stitching": [
       154,
       79,
-      603,
+      611,
       722
     ],
     "thumb_estimate_smk_leather": [
@@ -1132,7 +1132,7 @@
       697
     ],
     "thumb_estimate_heal_back2": [
-      356,
+      360,
       312,
       586,
       695
@@ -1140,14 +1140,14 @@
     "thumb_estimate_heal_palm": [
       177,
       717,
-      205,
-      738
+      180,
+      720
     ],
     "thumb_estimate_heal_back3": [
-      99,
-      169,
-      249,
-      478
+      84,
+      60,
+      335,
+      717
     ]
   },
   "assets": {

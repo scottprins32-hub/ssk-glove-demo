@@ -32,8 +32,12 @@ OUT = APP / 'assets/thumb-web-estimate-r01'; REVISION = 'THUMB-WEB-ESTIMATE-R01'
 ROLES = ['leather', 'laces', 'stitching']
 TIE_AREA = 4500      # a lace piece smaller than this, beside the web, is a strap end of the H-web
 # How wide a notch the H-web may have cut in a panel and still be closed, and
-# the panel that shows only as a strip along the outline (the index finger's side).
-PANEL_REACH, STRIPS = 85, {'back3'}
+# the panel that is the index finger's side along the outline.
+PANEL_REACH, STRIPS = 41, {'back3'}
+EDGE = 2.2           # how far the leather's edge is evened, in pixels
+SLIVER, SEAL, HOLE = 11, 19, 2500      # a gap this narrow (SEAL on a web that is not a lattice), or an enclosed hole this small, is not an opening
+FOOT_HOLE = 8000     # ... and one this small beside the palm leather under an open web's foot is palm
+LATTICE = {'trapeze', 'modified-trapeze'}    # webs of laced straps: their small openings are real
 # the four H-web windows, palm side -> thumb side (window centres), to start the fit from
 START = ([[585, 330], [630, 579], [427, 417], [496, 672]], [[312, 286], [216, 497], [458, 366], [345, 576]])
 
@@ -122,7 +126,11 @@ def main():
     # its place meets the page, the place's own traced edge is the outline.
     covered = (thumb_full > 0) & (thumb_web == 0)
     under = cv2.dilate(place, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))) > 0
-    envelope = cv2.GaussianBlur(((place > 0) | (under & covered)).astype(np.float32), (0, 0), .7)
+    # (anywhere inside the glove's outline beside its place counts as under: a
+    # nick the H-web's window left in a panel's edge is not an opening)
+    contours, _ = cv2.findContours(thumb_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    outline = np.zeros_like(thumb_full); cv2.drawContours(outline, contours, -1, 1, -1)
+    envelope = cv2.GaussianBlur(((place > 0) | (under & (outline > 0))).astype(np.float32), (0, 0), .7)
     rim = cv2.dilate(covered.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (29, 29))) > 0
     # what the palm side could not see of it
     hidden = cv2.warpPerspective((((palm_full > 0) & (palm_web == 0)) * 255).astype(np.uint8), H, size) > 127
@@ -142,28 +150,6 @@ def main():
         OUT.mkdir(parents=True, exist_ok=True)
         Image.fromarray(rgba).save(APP / rel, lossless=True, method=6)
 
-    for slug, entry in palm['palmWebs']['entries'].items():
-        parts = {role: entry['parts'][role]['asset'] for role in ROLES}
-        if entry.get('palmSupport'): parts['support'] = entry['palmSupport']['asset']
-        layers = {role: list(carried(APP / palm['assets'][key], H, size)) for role, key in parts.items()}
-        rgb, a = layers['leather']
-        solid = (a > .5).astype(np.uint8)
-        if solid.any():
-            dist, lab = cv2.distanceTransformWithLabels((solid == 0).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
-            ys, xs = np.nonzero(solid); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
-            # unseen from the palm: carried on from the leather beside it. And a
-            # sliver between leather and the finger it is laced to is leather.
-            margin = (under & (solid == 0)) & ((hidden & (dist < 110)) | (rim & (dist < 22)))
-            my, mx = np.nonzero(margin); sy, sx = nearest[lab[my, mx]].T
-            rgb[my, mx] = rgb[sy, sx]; a[my, mx] = 1
-            smooth = cv2.GaussianBlur(rgb, (0, 0), 3); rgb[my, mx] = smooth[my, mx]
-        entries[slug] = {}
-        for role, (rgb, a) in layers.items():
-            rgba = (np.dstack([np.clip(rgb, 0, 1), a * np.clip(envelope, 0, 1)]) * 255 + .5).astype(np.uint8)
-            if not rgba[:, :, 3].any(): continue
-            key = f"thumb_estimate_{slug.replace('-', '_')}_{role}"
-            entries[slug][role] = key; put(key, f'{slug}-{role}.webp', rgba)
-
     # The H-web's straps are tied off through the thumb panel: short lace ends
     # beside the web that no other web has. They are named here so the engine
     # can leave them out, and the panel they pierce is made whole under them
@@ -173,6 +159,7 @@ def main():
     laces = (alpha(thumb, trace, 'laces') > 127).astype(np.uint8)
     n, lab, stats, _ = cv2.connectedComponentsWithStats(laces, connectivity=8)
     beside = cv2.dilate(place, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (51, 51))) > 0
+    beside_web = cv2.dilate(place, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))) > 0
     ties = np.zeros_like(laces)
     for i in range(1, n):
         if stats[i, cv2.CC_STAT_AREA] < TIE_AREA and ((lab == i) & beside).any(): ties[lab == i] = 1
@@ -191,17 +178,32 @@ def main():
     # web, and the web is drawn there. Nothing the H-web did not cover is touched.
     freed = ((ties > 0) | (thumb_web > 0)) & (owner == 0)
     claim = np.zeros(ties.shape, np.int32)
-    depth = cv2.distanceTransform(thumb_full, cv2.DIST_L2, 5)        # how far inside the glove's outline
+    # The glove's outline with its openings filled, how deep each pixel lies
+    # inside it, and which way out is nearest.
+    depth, out = cv2.distanceTransformWithLabels(outline, cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+    oy, ox = np.nonzero(outline == 0); exit_at = np.zeros((out.max() + 1, 2), np.float32); exit_at[out[oy, ox]] = np.stack([ox, oy], 1)
+    gy, gx = np.mgrid[0:outline.shape[0], 0:outline.shape[1]]
+    way = exit_at[out] - np.dstack([gx, gy]); way /= np.maximum(np.linalg.norm(way, axis=2, keepdims=True), 1e-3)
+    # the web's own axes: along it (toward the hand) and across it
+    wy, wx = np.nonzero(place); spread = np.stack([wx, wy], 1) - np.array([wx.mean(), wy.mean()])
+    across = np.linalg.svd(spread, full_matrices=False)[2][1]
     for i, z in enumerate(panels):
         mine = (owner == i + 1).astype(np.uint8)
         whole = cv2.morphologyEx(mine, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (PANEL_REACH, PANEL_REACH))) > 0
         if z in STRIPS and mine.any():
-            # A strip along the outline that the H-web's straps lap over: it is
-            # as deep everywhere as where no strap covers it, along its own length.
-            hull = np.zeros_like(mine); cv2.fillConvexPoly(hull, cv2.convexHull(cv2.findNonZero(mine)), 1)
-            band = (hull > 0) & (depth <= np.percentile(depth[mine > 0], 90))
-            whole |= band; freed = freed | (band & (owner == 0) & (thumb_full > 0))    # thread and lace ends on it too
+            # The index finger's side. Beside the H-web it shows only between the
+            # straps that lap over it; beside any other web the whole side shows,
+            # from the fingertip to the hand: one band along the outline, as deep
+            # as the side is where no strap covers it, wherever the way out of
+            # the glove is sideways off the web on the finger's side.
+            sy_, sx_ = np.nonzero(mine); side = np.sign((np.stack([sx_, sy_], 1) - np.array([wx.mean(), wy.mean()])) @ across).sum()
+            band = (outline > 0) & (depth <= float(np.percentile(depth[mine > 0], 99)) + 1) & ((way @ across) * np.sign(side) > .6) & beside_web
+            band = (cv2.GaussianBlur(band.astype(np.float32), (0, 0), 3) > .5) & (outline > 0)     # one clean end, no fringe
+            whole |= band; freed = freed | (band & (owner == 0))
         claim[whole & freed & (claim == 0)] = i + 1
+    # a strap end that reaches further from the web than the web is ever drawn lies on a panel: it is that panel
+    fy, fx = np.nonzero((ties > 0) & (claim == 0) & (owner == 0) & ~under); ny, nx = nearest[lab[fy, fx]].T
+    claim[fy, fx] = owner[ny, nx]
     ty, tx = np.nonzero(claim); sy, sx = nearest[lab[ty, tx]].T
     for i, z in enumerate(panels):
         mine = claim[ty, tx] == i + 1
@@ -216,6 +218,71 @@ def main():
         cover = cv2.GaussianBlur((rgba[:, :, 3] > 0).astype(np.float32), (0, 0), 4)
         rgba[ty[mine], tx[mine], :3] = np.clip(tone[ty[mine], tx[mine]] / np.maximum(cover[ty[mine], tx[mine], None], 1e-3) + .5, 0, 255).astype(np.uint8)
         tie_block['heal'][z] = f'thumb_estimate_heal_{z}'; put(tie_block['heal'][z], f'heal-{z}.webp', rgba)
+    # what the traced glove covers once that is done: the web shows only where it does not
+    glove = ((covered & (ties == 0)) | (claim > 0)).astype(np.uint8)
+
+    for slug, entry in palm['palmWebs']['entries'].items():
+        parts = {role: entry['parts'][role]['asset'] for role in ROLES}
+        if entry.get('palmSupport'): parts['support'] = entry['palmSupport']['asset']
+        layers = {role: list(carried(APP / palm['assets'][key], H, size)) for role, key in parts.items()}
+        rgb, a = layers['leather']
+        solid = (a > .5).astype(np.uint8)
+        if solid.any():
+            dist, lab = cv2.distanceTransformWithLabels((solid == 0).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+            ys, xs = np.nonzero(solid); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
+            # unseen from the palm: carried on from the leather beside it. And a
+            # sliver between leather and the finger it is laced to is leather.
+            margin = (under & (solid == 0)) & ((hidden & (dist < 110)) | (rim & (dist < 22)))
+            my, mx = np.nonzero(margin); sy, sx = nearest[lab[my, mx]].T
+            rgb[my, mx] = rgb[sy, sx]; a[my, mx] = 1
+            smooth = cv2.GaussianBlur(rgb, (0, 0), 3); rgb[my, mx] = smooth[my, mx]
+        # Carried over and filled, the leather's edge is ragged where the pieces
+        # meet: steps a few pixels deep along a window. A strap's edge is even.
+        even = cv2.GaussianBlur((a > .5).astype(np.float32), (0, 0), EDGE)
+        grown = (even > .5) & (a <= .5)
+        if grown.any() and solid.any():
+            dist, lab = cv2.distanceTransformWithLabels((a <= .5).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+            ys, xs = np.nonzero(a > .5); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
+            gy_, gx_ = np.nonzero(grown); sy, sx = nearest[lab[gy_, gx_]].T; rgb[gy_, gx_] = rgb[sy, sx]
+        a[:] = np.clip((even - .5) * 4 + .5, 0, 1)
+        # Slivers of page between the web's parts and the glove are leather: a
+        # gap narrower than a lace, and (unless the web is a lattice, whose small
+        # openings are real) a small hole wholly enclosed by web and glove.
+        drawn = np.maximum.reduce([(alpha_ > .5).astype(np.uint8) for _, alpha_ in layers.values()] + [glove])
+        reach = SLIVER if slug in LATTICE else SEAL
+        sealed = cv2.morphologyEx(drawn, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (reach, reach)))
+        gaps = (sealed > 0) & (drawn == 0)
+        if slug not in LATTICE:
+            n, holes, stats, _ = cv2.connectedComponentsWithStats((sealed == 0).astype(np.uint8), connectivity=4)
+            edge = set(np.unique(np.concatenate([holes[0], holes[-1], holes[:, 0], holes[:, -1]])).tolist())
+            for h in range(1, n):
+                if h not in edge and stats[h, cv2.CC_STAT_AREA] < HOLE: gaps |= holes == h
+            # Under the laces that tie an open web's foot to the hand lies the
+            # palm, not the page: an enclosed hole beside that palm leather is palm.
+            if 'support' in layers:
+                srgb, sa = layers['support']; palm_here = cv2.dilate((sa > .5).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
+                foot = np.zeros(gaps.shape, bool)
+                for h in range(1, n):
+                    if h not in edge and HOLE <= stats[h, cv2.CC_STAT_AREA] < FOOT_HOLE and ((holes == h) & palm_here).any(): foot |= holes == h
+                foot = cv2.dilate(foot.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+                if foot.any():
+                    _, lab = cv2.distanceTransformWithLabels((sa <= .5).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+                    ys, xs = np.nonzero(sa > .5); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
+                    fy, fx = np.nonzero(foot & (sa <= .5)); sy, sx = nearest[lab[fy, fx]].T; srgb[fy, fx] = srgb[sy, sx]; sa[fy, fx] = 1
+        gaps |= (ties > 0) & (claim == 0) & (owner == 0)        # where a strap end of the H-web lay on the web
+        gaps &= under
+        if gaps.any() and (a > .5).any():
+            dist, lab = cv2.distanceTransformWithLabels((a <= .5).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+            ys, xs = np.nonzero(a > .5); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
+            gy_, gx_ = np.nonzero(gaps); sy, sx = nearest[lab[gy_, gx_]].T; rgb[gy_, gx_] = rgb[sy, sx]; a[gy_, gx_] = 1
+            smooth = cv2.GaussianBlur(rgb, (0, 0), 3); rgb[gy_, gx_] = smooth[gy_, gx_]
+        entries[slug] = {}
+        for role, (rgb, a) in layers.items():
+            rgba = (np.dstack([np.clip(rgb, 0, 1), a * np.clip(envelope, 0, 1)]) * 255 + .5).astype(np.uint8)
+            if not rgba[:, :, 3].any(): continue
+            key = f"thumb_estimate_{slug.replace('-', '_')}_{role}"
+            entries[slug][role] = key; put(key, f'{slug}-{role}.webp', rgba)
+
     block = {'revision': REVISION, 'label': 'estimated', 'source': 'palmWebs (PALM-P3), carried to the thumb side by one plane mapping',
              'mapping': mapping, 'outlineOverlap': overlap, 'hWebTies': tie_block, 'entries': entries}
     if args.check:
