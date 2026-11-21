@@ -37,6 +37,7 @@ PANEL_REACH, STRIPS = 41, {'back3'}
 EDGE = 2.2           # how far the leather's edge is evened, in pixels
 SLIVER, SEAL, HOLE = 11, 19, 2500      # a gap this narrow (SEAL on a web that is not a lattice), or an enclosed hole this small, is not an opening
 FOOT_HOLE = 8000     # ... and one this small beside the palm leather under an open web's foot is palm
+CORNER, RING = 3, 25     # how round a window's corners are, and how wide its edge is lit evenly, in pixels
 LATTICE = {'trapeze', 'modified-trapeze'}    # webs of laced straps: their small openings are real
 # the four H-web windows, palm side -> thumb side (window centres), to start the fit from
 START = ([[585, 330], [630, 579], [427, 417], [496, 672]], [[312, 286], [216, 497], [458, 366], [345, 576]])
@@ -96,6 +97,22 @@ def fit(source, target, size):
                 if c < cost - 1e-6: best, cost, better = h, c, True
         if not better: step /= 2
     return [round(float(v), 9) for v in best], round(float(1 - cost), 4)
+
+
+def four_sides(hole):
+    """The four-sided outline that fits a hole best: its corners where its outline turns most."""
+    contour = max(cv2.findContours(hole, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0], key=cv2.contourArea)
+    hull = cv2.convexHull(contour)
+    for k in np.linspace(.01, .2, 40):
+        poly = cv2.approxPolyDP(hull, k * cv2.arcLength(hull, True), True)
+        if len(poly) <= 4: break
+    if len(poly) != 4: poly = np.int32(cv2.boxPoints(cv2.minAreaRect(contour)))[:, None, :]
+    # the fitted shape keeps the hole's own area: shrink it toward its centre until it does
+    poly = poly.reshape(-1, 2).astype(np.float64); centre = poly.mean(0); area = hole.sum()
+    for scale in np.linspace(1, .8, 41):
+        q = np.zeros_like(hole); cv2.fillPoly(q, [np.int32(np.round(centre + (poly - centre) * scale))], 1)
+        if q.sum() <= area: break
+    return np.int32(np.round(centre + (poly - centre) * scale))
 
 
 def carried(path, H, size):
@@ -276,6 +293,31 @@ def main():
             ys, xs = np.nonzero(a > .5); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
             gy_, gx_ = np.nonzero(gaps); sy, sx = nearest[lab[gy_, gx_]].T; rgb[gy_, gx_] = rgb[sy, sx]; a[gy_, gx_] = 1
             smooth = cv2.GaussianBlur(rgb, (0, 0), 3); rgb[gy_, gx_] = smooth[gy_, gx_]
+        # A window in a web is a clean four-sided hole. Carried over and cut to
+        # the glove it comes out with nicks and steps; each one is redrawn as
+        # the four-sided shape that fits it best, corners slightly rounded.
+        # Leather fills what the hole loses, and no lace or thread is drawn in it.
+        if slug not in LATTICE:
+            drawn = np.maximum.reduce([(alpha_ > .5).astype(np.uint8) for _, alpha_ in layers.values()] + [glove])
+            n, holes, stats, _ = cv2.connectedComponentsWithStats((drawn == 0).astype(np.uint8), connectivity=4)
+            edge = set(np.unique(np.concatenate([holes[0], holes[-1], holes[:, 0], holes[:, -1]])).tolist())
+            for h in range(1, n):
+                if h in edge or stats[h, cv2.CC_STAT_AREA] < HOLE: continue
+                hole = (holes == h).astype(np.uint8)
+                quad = np.zeros_like(hole); cv2.fillPoly(quad, [four_sides(hole)], 1)
+                quad = cv2.GaussianBlur(quad.astype(np.float32), (0, 0), CORNER) > .5
+                lost = (hole > 0) & ~quad
+                if lost.any() and (a > .5).any():
+                    _, lab = cv2.distanceTransformWithLabels((a <= .5).astype(np.uint8), cv2.DIST_L2, 5, labelType=cv2.DIST_LABEL_PIXEL)
+                    ys, xs = np.nonzero(a > .5); nearest = np.zeros((lab.max() + 1, 2), np.int32); nearest[lab[ys, xs]] = np.stack([ys, xs], 1)
+                    gy_, gx_ = np.nonzero(lost); sy, sx = nearest[lab[gy_, gx_]].T; rgb[gy_, gx_] = rgb[sy, sx]; a[gy_, gx_] = 1
+                # the photograph's shading of the old nicks goes with them: an even light round the window
+                ring = (cv2.dilate(quad.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (RING, RING))) > 0) & ~quad & (a > .5)
+                if ring.any():
+                    weight = (a > .5).astype(np.float32); even = cv2.GaussianBlur(rgb * weight[:, :, None], (0, 0), 5) / np.maximum(cv2.GaussianBlur(weight, (0, 0), 5), 1e-3)[:, :, None]
+                    rgb[ring] = even[ring]
+                soft = cv2.GaussianBlur(quad.astype(np.float32), (0, 0), .8)
+                for _, alpha_ in layers.values(): alpha_ *= 1 - soft
         entries[slug] = {}
         for role, (rgb, a) in layers.items():
             rgba = (np.dstack([np.clip(rgb, 0, 1), a * np.clip(envelope, 0, 1)]) * 255 + .5).astype(np.uint8)
