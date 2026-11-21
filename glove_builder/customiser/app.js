@@ -501,6 +501,7 @@ const VIEW_TEXT = {
     thumbAwaitingReview: 'The thumb-side picture of this web is being redone and is not shown until it is approved. It is ordered exactly as chosen.',
     webNoThumb: 'There is no thumb-side picture of this web yet. It is ordered exactly as chosen.',
     thumbNoWeb: 'Thumb side without the web: the hatched shape is where your web goes. There is no approved picture of this web from this side yet. The rest of the glove is in your colours, and your web is ordered exactly as chosen.',
+    thumbWebEstimated: 'Estimated thumb side: the web is worked out from its inside face, not a photograph of this web from here. Fit and construction are not shown. Your web and colours are ordered as chosen.',
     viewNotLoaded: 'This side could not be loaded.',
     viewUnavailableTitle: 'No picture of this side for %s',
     anglesUnavailable: 'Not available for this web: %s.',
@@ -514,6 +515,7 @@ const VIEW_TEXT = {
     thumbAwaitingReview: 'De afbeelding van de duimzijde van dit web wordt opnieuw gemaakt en pas getoond na goedkeuring. Het wordt precies zo besteld.',
     webNoThumb: 'Van dit web is nog geen afbeelding van de duimzijde. Het wordt precies zo besteld.',
     thumbNoWeb: 'Duimzijde zonder het web: het gearceerde vlak is de plek van je web. Van dit web is vanaf deze kant nog geen goedgekeurde afbeelding. De rest van de handschoen staat in jouw kleuren en je web wordt precies zo besteld.',
+    thumbWebEstimated: 'Geschatte duimzijde: het web is omgerekend vanaf de binnenkant, geen foto van dit web vanaf deze kant. Pasvorm en constructie worden niet getoond. Je web en kleuren worden besteld zoals gekozen.',
     viewNotLoaded: 'Deze kant kon niet worden geladen.',
     viewUnavailableTitle: 'Geen afbeelding van deze kant voor %s',
     anglesUnavailable: 'Niet beschikbaar voor dit web: %s.',
@@ -540,7 +542,10 @@ function viewAvailability(view, w = selectedWeb()) {
     if (estimatesThumb(w)) return { ok: true, note: 'thumbEstimated' };
     // The body of this glove from the thumb side, in its own colours, with
     // the web left out: there is no approved picture of this web from here.
-    if (R.views.thumb?.DATA?.nativeHContour?.assets?.web) return { ok: true, note: 'thumbNoWeb' };
+    // Where the web has been carried over from its palm side it is drawn, and
+    // said to be an estimate; otherwise its place is left open.
+    if (R.views.thumb?.DATA?.nativeHContour?.assets?.web) return { ok: true,
+      note: R.views.thumb.DATA.thumbWebEstimates?.entries?.[w.render]?.leather ? 'thumbWebEstimated' : 'thumbNoWeb' };
     return R.views.thumb?.DATA?.thumbWebs?.[w.render]
       ? { ok: false, reason: 'thumbAwaitingReview' } : { ok: false, reason: 'webNoThumb' };
   }
@@ -1239,7 +1244,7 @@ function webPreviewNote() {
 }
 /* Notes the stage itself carries, whatever step is open. */
 const STAGE_NOTES = ['pinkyNoWeb', 'webNoBack', 'webNoPalm', 'thumbAwaitingReview',
-                     'webNoThumb', 'thumbNoWeb', 'viewNotLoaded', 'thumbEstimated', 'palmEstimated'];
+                     'webNoThumb', 'thumbNoWeb', 'thumbWebEstimated', 'viewNotLoaded', 'thumbEstimated', 'palmEstimated'];
 
 import { estimatedThumbViews } from './c3-thumb.js';
 /* {slug -> viewName}. Populated at load once the C3 bodies decode. */

@@ -980,6 +980,150 @@
       843,
       276,
       912
+    ],
+    "thumb_estimate_smlee_leather": [
+      82,
+      51,
+      638,
+      759
+    ],
+    "thumb_estimate_smlee_stitching": [
+      140,
+      75,
+      629,
+      740
+    ],
+    "thumb_estimate_smk_leather": [
+      82,
+      51,
+      638,
+      759
+    ],
+    "thumb_estimate_smk_stitching": [
+      120,
+      66,
+      631,
+      740
+    ],
+    "thumb_estimate_em_rocket_leather": [
+      82,
+      51,
+      638,
+      759
+    ],
+    "thumb_estimate_em_rocket_laces": [
+      96,
+      89,
+      540,
+      650
+    ],
+    "thumb_estimate_em_rocket_stitching": [
+      129,
+      78,
+      626,
+      731
+    ],
+    "thumb_estimate_closed_diamond_net_leather": [
+      82,
+      51,
+      638,
+      759
+    ],
+    "thumb_estimate_closed_diamond_net_laces": [
+      116,
+      108,
+      531,
+      626
+    ],
+    "thumb_estimate_closed_diamond_net_stitching": [
+      112,
+      71,
+      621,
+      736
+    ],
+    "thumb_estimate_modified_trapeze_leather": [
+      82,
+      51,
+      638,
+      759
+    ],
+    "thumb_estimate_modified_trapeze_laces": [
+      82,
+      171,
+      572,
+      723
+    ],
+    "thumb_estimate_modified_trapeze_stitching": [
+      147,
+      65,
+      634,
+      739
+    ],
+    "thumb_estimate_trapeze_leather": [
+      82,
+      53,
+      638,
+      759
+    ],
+    "thumb_estimate_trapeze_laces": [
+      90,
+      95,
+      571,
+      664
+    ],
+    "thumb_estimate_trapeze_stitching": [
+      104,
+      78,
+      571,
+      739
+    ],
+    "thumb_estimate_standard_i_leather": [
+      84,
+      51,
+      638,
+      753
+    ],
+    "thumb_estimate_standard_i_laces": [
+      95,
+      49,
+      576,
+      691
+    ],
+    "thumb_estimate_standard_i_stitching": [
+      105,
+      78,
+      628,
+      737
+    ],
+    "thumb_estimate_standard_i_support": [
+      82,
+      505,
+      350,
+      740
+    ],
+    "thumb_estimate_spiral_i_leather": [
+      82,
+      50,
+      638,
+      757
+    ],
+    "thumb_estimate_spiral_i_laces": [
+      82,
+      49,
+      625,
+      699
+    ],
+    "thumb_estimate_spiral_i_stitching": [
+      97,
+      86,
+      623,
+      725
+    ],
+    "thumb_estimate_spiral_i_support": [
+      82,
+      522,
+      333,
+      740
     ]
   },
   "assets": {
@@ -1155,7 +1299,31 @@
     "scott_thumb_stitching": "assets/thumb-scott-r26/stitching.webp",
     "scott_thumb_glove": "assets/thumb-scott-r26/empty.webp",
     "scott_thumb_idmap": "assets/thumb-scott-r26/idmap.png",
-    "thumb_badge_hd": "assets/thumb-badge-r12.webp"
+    "thumb_badge_hd": "assets/thumb-badge-r12.webp",
+    "thumb_estimate_smlee_leather": "assets/thumb-web-estimate-r01/smlee-leather.webp",
+    "thumb_estimate_smlee_stitching": "assets/thumb-web-estimate-r01/smlee-stitching.webp",
+    "thumb_estimate_smk_leather": "assets/thumb-web-estimate-r01/smk-leather.webp",
+    "thumb_estimate_smk_stitching": "assets/thumb-web-estimate-r01/smk-stitching.webp",
+    "thumb_estimate_em_rocket_leather": "assets/thumb-web-estimate-r01/em-rocket-leather.webp",
+    "thumb_estimate_em_rocket_laces": "assets/thumb-web-estimate-r01/em-rocket-laces.webp",
+    "thumb_estimate_em_rocket_stitching": "assets/thumb-web-estimate-r01/em-rocket-stitching.webp",
+    "thumb_estimate_closed_diamond_net_leather": "assets/thumb-web-estimate-r01/closed-diamond-net-leather.webp",
+    "thumb_estimate_closed_diamond_net_laces": "assets/thumb-web-estimate-r01/closed-diamond-net-laces.webp",
+    "thumb_estimate_closed_diamond_net_stitching": "assets/thumb-web-estimate-r01/closed-diamond-net-stitching.webp",
+    "thumb_estimate_modified_trapeze_leather": "assets/thumb-web-estimate-r01/modified-trapeze-leather.webp",
+    "thumb_estimate_modified_trapeze_laces": "assets/thumb-web-estimate-r01/modified-trapeze-laces.webp",
+    "thumb_estimate_modified_trapeze_stitching": "assets/thumb-web-estimate-r01/modified-trapeze-stitching.webp",
+    "thumb_estimate_trapeze_leather": "assets/thumb-web-estimate-r01/trapeze-leather.webp",
+    "thumb_estimate_trapeze_laces": "assets/thumb-web-estimate-r01/trapeze-laces.webp",
+    "thumb_estimate_trapeze_stitching": "assets/thumb-web-estimate-r01/trapeze-stitching.webp",
+    "thumb_estimate_standard_i_leather": "assets/thumb-web-estimate-r01/standard-i-leather.webp",
+    "thumb_estimate_standard_i_laces": "assets/thumb-web-estimate-r01/standard-i-laces.webp",
+    "thumb_estimate_standard_i_stitching": "assets/thumb-web-estimate-r01/standard-i-stitching.webp",
+    "thumb_estimate_standard_i_support": "assets/thumb-web-estimate-r01/standard-i-support.webp",
+    "thumb_estimate_spiral_i_leather": "assets/thumb-web-estimate-r01/spiral-i-leather.webp",
+    "thumb_estimate_spiral_i_laces": "assets/thumb-web-estimate-r01/spiral-i-laces.webp",
+    "thumb_estimate_spiral_i_stitching": "assets/thumb-web-estimate-r01/spiral-i-stitching.webp",
+    "thumb_estimate_spiral_i_support": "assets/thumb-web-estimate-r01/spiral-i-support.webp"
   },
   "sheen": {
     "back1": 0.5
@@ -2403,5 +2571,63 @@
     "artAngleDegrees": -60,
     "sskAngleDegrees": 40,
     "sskLeftAngleDegrees": -16
+  },
+  "thumbWebEstimates": {
+    "revision": "THUMB-WEB-ESTIMATE-R01",
+    "label": "estimated",
+    "source": "palmWebs (PALM-P3), carried to the thumb side by one plane mapping",
+    "mapping": [
+      -0.995758311,
+      -0.195582795,
+      856.827426932,
+      -0.184477065,
+      0.681868652,
+      81.364942078,
+      -0.000175582,
+      -0.000161151
+    ],
+    "outlineOverlap": 0.6787,
+    "entries": {
+      "smlee": {
+        "leather": "thumb_estimate_smlee_leather",
+        "stitching": "thumb_estimate_smlee_stitching"
+      },
+      "smk": {
+        "leather": "thumb_estimate_smk_leather",
+        "stitching": "thumb_estimate_smk_stitching"
+      },
+      "em-rocket": {
+        "leather": "thumb_estimate_em_rocket_leather",
+        "laces": "thumb_estimate_em_rocket_laces",
+        "stitching": "thumb_estimate_em_rocket_stitching"
+      },
+      "closed-diamond-net": {
+        "leather": "thumb_estimate_closed_diamond_net_leather",
+        "laces": "thumb_estimate_closed_diamond_net_laces",
+        "stitching": "thumb_estimate_closed_diamond_net_stitching"
+      },
+      "modified-trapeze": {
+        "leather": "thumb_estimate_modified_trapeze_leather",
+        "laces": "thumb_estimate_modified_trapeze_laces",
+        "stitching": "thumb_estimate_modified_trapeze_stitching"
+      },
+      "trapeze": {
+        "leather": "thumb_estimate_trapeze_leather",
+        "laces": "thumb_estimate_trapeze_laces",
+        "stitching": "thumb_estimate_trapeze_stitching"
+      },
+      "standard-i": {
+        "leather": "thumb_estimate_standard_i_leather",
+        "laces": "thumb_estimate_standard_i_laces",
+        "stitching": "thumb_estimate_standard_i_stitching",
+        "support": "thumb_estimate_standard_i_support"
+      },
+      "spiral-i": {
+        "leather": "thumb_estimate_spiral_i_leather",
+        "laces": "thumb_estimate_spiral_i_laces",
+        "stitching": "thumb_estimate_spiral_i_stitching",
+        "support": "thumb_estimate_spiral_i_support"
+      }
+    }
   }
 }
