@@ -17,6 +17,11 @@ class ThumbWebEstimates(unittest.TestCase):
             self.assertIn('leather', entry, slug)   # a closed web may carry no lacing of its own
             for key in entry.values():
                 self.assertTrue((APP / self.thumb['assets'][key]).exists(), key); self.assertEqual(len(self.thumb['bbox'][key]), 4)
+    def test_the_h_webs_own_ties_are_named_and_the_panels_healed(self):
+        ties = self.block['hWebTies']
+        self.assertTrue((APP / self.thumb['assets'][ties['mask']]).exists())
+        self.assertTrue({'back2', 'back3'} <= set(ties['heal']))       # the thumb panel and the index finger's strip
+        for key in ties['heal'].values(): self.assertTrue((APP / self.thumb['assets'][key]).exists(), key)
     def test_the_engine_draws_it_behind_the_glove_and_the_app_says_estimate(self):
         engine = (APP / 'glove-engine.js').read_text(); app = (APP / 'app.js').read_text()
         self.assertIn("DATA.thumbWebEstimates?.entries?.[web]", engine)          # loaded with the chosen web only

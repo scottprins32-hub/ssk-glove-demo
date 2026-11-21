@@ -983,147 +983,171 @@
     ],
     "thumb_estimate_smlee_leather": [
       82,
-      51,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_smlee_stitching": [
-      140,
-      75,
-      629,
-      740
+      154,
+      79,
+      603,
+      722
     ],
     "thumb_estimate_smk_leather": [
       82,
-      51,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_smk_stitching": [
       120,
-      66,
-      631,
-      740
+      68,
+      619,
+      720
     ],
     "thumb_estimate_em_rocket_leather": [
       82,
-      51,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_em_rocket_laces": [
       96,
-      89,
-      540,
-      650
+      111,
+      549,
+      690
     ],
     "thumb_estimate_em_rocket_stitching": [
-      129,
-      78,
-      626,
-      731
+      146,
+      71,
+      621,
+      761
     ],
     "thumb_estimate_closed_diamond_net_leather": [
       82,
-      51,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_closed_diamond_net_laces": [
-      116,
-      108,
-      531,
-      626
+      103,
+      133,
+      541,
+      671
     ],
     "thumb_estimate_closed_diamond_net_stitching": [
       112,
-      71,
-      621,
-      736
+      65,
+      618,
+      699
     ],
     "thumb_estimate_modified_trapeze_leather": [
       82,
-      51,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_modified_trapeze_laces": [
-      82,
-      171,
-      572,
-      723
+      95,
+      205,
+      559,
+      751
     ],
     "thumb_estimate_modified_trapeze_stitching": [
-      147,
-      65,
-      634,
-      739
+      164,
+      70,
+      621,
+      707
     ],
     "thumb_estimate_trapeze_leather": [
       82,
-      53,
+      52,
       638,
-      759
+      761
     ],
     "thumb_estimate_trapeze_laces": [
-      90,
       95,
-      571,
-      664
+      79,
+      578,
+      709
     ],
     "thumb_estimate_trapeze_stitching": [
-      104,
-      78,
-      571,
-      739
+      120,
+      98,
+      579,
+      758
     ],
     "thumb_estimate_standard_i_leather": [
-      84,
+      82,
       51,
       638,
-      753
+      757
     ],
     "thumb_estimate_standard_i_laces": [
-      95,
-      49,
-      576,
-      691
+      83,
+      66,
+      585,
+      727
     ],
     "thumb_estimate_standard_i_stitching": [
-      105,
-      78,
-      628,
-      737
+      118,
+      76,
+      616,
+      636
     ],
     "thumb_estimate_standard_i_support": [
-      82,
-      505,
-      350,
-      740
+      85,
+      566,
+      364,
+      761
     ],
     "thumb_estimate_spiral_i_leather": [
       82,
-      50,
+      51,
       638,
       757
     ],
     "thumb_estimate_spiral_i_laces": [
-      82,
-      49,
-      625,
-      699
+      99,
+      66,
+      593,
+      740
     ],
     "thumb_estimate_spiral_i_stitching": [
-      97,
-      86,
-      623,
-      725
+      93,
+      95,
+      621,
+      744
     ],
     "thumb_estimate_spiral_i_support": [
-      82,
-      522,
-      333,
-      740
+      87,
+      579,
+      348,
+      761
+    ],
+    "thumb_estimate_h_ties": [
+      354,
+      305,
+      588,
+      697
+    ],
+    "thumb_estimate_heal_back2": [
+      356,
+      312,
+      586,
+      695
+    ],
+    "thumb_estimate_heal_palm": [
+      177,
+      717,
+      205,
+      738
+    ],
+    "thumb_estimate_heal_back3": [
+      99,
+      169,
+      249,
+      478
     ]
   },
   "assets": {
@@ -1323,7 +1347,11 @@
     "thumb_estimate_spiral_i_leather": "assets/thumb-web-estimate-r01/spiral-i-leather.webp",
     "thumb_estimate_spiral_i_laces": "assets/thumb-web-estimate-r01/spiral-i-laces.webp",
     "thumb_estimate_spiral_i_stitching": "assets/thumb-web-estimate-r01/spiral-i-stitching.webp",
-    "thumb_estimate_spiral_i_support": "assets/thumb-web-estimate-r01/spiral-i-support.webp"
+    "thumb_estimate_spiral_i_support": "assets/thumb-web-estimate-r01/spiral-i-support.webp",
+    "thumb_estimate_h_ties": "assets/thumb-web-estimate-r01/h-ties.webp",
+    "thumb_estimate_heal_back2": "assets/thumb-web-estimate-r01/heal-back2.webp",
+    "thumb_estimate_heal_palm": "assets/thumb-web-estimate-r01/heal-palm.webp",
+    "thumb_estimate_heal_back3": "assets/thumb-web-estimate-r01/heal-back3.webp"
   },
   "sheen": {
     "back1": 0.5
@@ -2577,16 +2605,24 @@
     "label": "estimated",
     "source": "palmWebs (PALM-P3), carried to the thumb side by one plane mapping",
     "mapping": [
-      -0.995758311,
-      -0.195582795,
-      856.827426932,
-      -0.184477065,
-      0.681868652,
-      81.364942078,
-      -0.000175582,
-      -0.000161151
+      -0.989508311,
+      -0.173082795,
+      847.077426932,
+      -0.153227065,
+      0.704368652,
+      74.614942078,
+      -0.000283707,
+      -0.000103651
     ],
-    "outlineOverlap": 0.6787,
+    "outlineOverlap": 0.8783,
+    "hWebTies": {
+      "mask": "thumb_estimate_h_ties",
+      "heal": {
+        "palm": "thumb_estimate_heal_palm",
+        "back2": "thumb_estimate_heal_back2",
+        "back3": "thumb_estimate_heal_back3"
+      }
+    },
     "entries": {
       "smlee": {
         "leather": "thumb_estimate_smlee_leather",

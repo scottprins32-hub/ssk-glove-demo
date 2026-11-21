@@ -347,7 +347,7 @@ export function renderAssets(DATA, baseOnly = false) {
 function selectionAssets(DATA, web, snake, palmManifest) {
   const palm = palmManifest?.entries?.[web];
   return assetDependencies(DATA, [DATA.webs?.[web], DATA.webs?.[web] ? DATA.nativeBackTrace?.swapAssets : null,
-    DATA.thumbWebEstimates?.entries?.[web], ...(palm
+    DATA.thumbWebEstimates?.entries?.[web], DATA.thumbWebEstimates?.entries?.[web] ? DATA.thumbWebEstimates.hWebTies : null, ...(palm
     ? [palm, palmManifest.footprint, palmManifest.protected] : [])], snake ? ['_snakeLeather'] : []);
 }
 // Build-time hashes change cache keys without changing metadata or image bytes.
@@ -882,7 +882,8 @@ export class GloveRenderer {
   webEstimate() {
     const D = this.DATA, entry = D.webBlank && this.web ? D.thumbWebEstimates?.entries?.[this.web] : null;
     if (!entry || !entry.leather) return null;
-    return Object.values(entry).every(id => this.imgs[id] && D.bbox[id]) ? entry : null;
+    const ties = D.thumbWebEstimates.hWebTies;
+    return [...Object.values(entry), ties.mask, ...Object.values(ties.heal)].every(id => this.imgs[id] && D.bbox[id]) ? entry : null;
   }
 
   // A layer without what lies inside a mask. Kept per layer and mask.
@@ -1043,7 +1044,7 @@ export class GloveRenderer {
       }
       const tex=this.leatherGrain(snake,zone?.group==='lace');
       const lace=zone?.group==='lace';
-      const tracedLeather=!!this.DATA.tracedSeams && zone?.group==='leather' && role!=='lining' && id===role;
+      const tracedLeather=!!this.DATA.tracedSeams && zone?.group==='leather' && role!=='lining' && (id===role || id.startsWith('thumb_estimate_heal_'));
       const strength=snake?17:(tracedLeather && !response?.grainStrength ? TRACED_LEATHER_GRAIN
         : response?.grainStrength ?? (lace?2.2:8.5));
       // The material coordinates are separable: wrap each row/column once,
@@ -1814,6 +1815,12 @@ export class GloveRenderer {
       // lacing and thread that belong to the web go with it
       // with an estimated web the lacing that ties a web in stays; the H-web's own thread does not
       if (D.webBlank && (z.id === 'stitching' || z.id === 'laces' && !this.webEstimate())) tinted = this.outside(tinted, D.webBlank.reach);
+      // the H-web's strap ends through the thumb panel go too, and the panel is whole under them
+      else if (D.webBlank && z.id === 'laces') {
+        const ties = D.thumbWebEstimates.hWebTies;
+        tinted = this.outside(tinted, this.imgs[ties.mask]);
+        for (const [zone, id] of Object.entries(ties.heal)) { const heal = this.tinted(id, this.hex(zone, state), zone, zone); ctx.drawImage(heal, heal._ox, heal._oy); }
+      }
       let c = onPad(swap && z.id === 'stitching' ? this.outsideWeb(tinted) : tinted, z.id);
       if (z.id === 'stitching' && D.thumbBadgeThread) {
         const original=c;c=document.createElement('canvas');c.width=original.width;c.height=original.height;
@@ -2156,6 +2163,7 @@ export class GloveRenderer {
       let c = this.tinted(mirror && highlight.id==='embroidery' && D.embroideryLHT ? D.embroideryLHT : highlight.id, '#ffffff',highlight.id);
       // the web's own lacing and thread are not on this side to light up
       if (D.webBlank && (highlight.id === 'stitching' || highlight.id === 'laces' && !this.webEstimate())) c = this.outside(c, D.webBlank.reach);
+      else if (D.webBlank && highlight.id === 'laces') c = this.outside(c, this.imgs[D.thumbWebEstimates.hWebTies.mask]);
       // Selection must cover restored leather under the original lettering,
       // while the relocated embroidered artwork keeps its own ownership.
       if(mirror && D.leftyRingHeals?.[highlight.id]){
@@ -2598,20 +2606,23 @@ export class GloveRenderer {
         if (!reach) { reach = D.webBlank.reach.getContext('2d').getImageData(0, 0, D.w, D.h).data; this.cache.set('hit|web-reach', reach); }
         if (reach[at * 4 + 3] >= 128) open = true;
       }
+      const covers = id => {
+        const key = 'hit|' + id;
+        let cover = this.cache.get(key);
+        if (!cover) {
+          const c = document.createElement('canvas'); c.width = D.w; c.height = D.h;
+          const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(this.imgs[id], 0, 0);
+          const px = g.getImageData(0, 0, D.w, D.h).data; cover = new Uint8Array(D.w * D.h);
+          for (let i = 0; i < cover.length; i++) cover[i] = px[i * 4 + 3];
+          this.cache.set(key, cover);
+        }
+        return cover[at] >= 128;
+      };
+      if (id === 'laces' && this.webEstimate()) for (const [zone, heal] of Object.entries(D.thumbWebEstimates.hWebTies.heal)) if (covers(heal)) return zone;
       if (open) {
         const estimate = this.webEstimate();
         if (estimate) for (const [part, zone] of ESTIMATE_PARTS) {
-          if (!estimate[part]) continue;
-          const key = 'hit|' + estimate[part];
-          let cover = this.cache.get(key);
-          if (!cover) {
-            const c = document.createElement('canvas'); c.width = D.w; c.height = D.h;
-            const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(this.imgs[estimate[part]], 0, 0);
-            const px = g.getImageData(0, 0, D.w, D.h).data; cover = new Uint8Array(D.w * D.h);
-            for (let i = 0; i < cover.length; i++) cover[i] = px[i * 4 + 3];
-            this.cache.set(key, cover);
-          }
-          if (cover[at] >= 128) return zone;
+          if (estimate[part] && covers(estimate[part])) return zone;
         }
         return null;
       }
