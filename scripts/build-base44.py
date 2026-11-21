@@ -59,8 +59,25 @@ MAX_ARCHIVE_BYTES = 50_000_000
 MAX_EXTRACTED_BYTES = 50_000_000
 
 
+def unreachable_assets(source, data):
+    """Registered assets no code and no view data ever names.
+
+    The engine loads an asset only by a key reached from the view data (outside
+    its asset table) or named in a script; superseded revisions stay in the
+    asset table for provenance but are never fetched. Leaving them out keeps
+    the package under the host's limit without touching any data file."""
+    code = ''.join(p.read_text() for p in source.glob('*.js'))
+    rest = json.dumps({k: v for k, v in data.items() if k not in ('assets', 'bbox')})
+    zones = {z['id'] for z in data.get('zones', [])}
+    def named(key):
+        base = key[:-3] if key.endswith('_hi') else key
+        return (base in zones or re.search(r'["\']' + re.escape(base) + r'["\']', rest)
+                or re.search(r'\b' + re.escape(base) + r'\b', code))
+    used = {v for k, v in data['assets'].items() if named(k)}
+    return {v for k, v in data['assets'].items() if v not in used}
+
 def dependencies(source):
-    """Keep all registered view assets, including non-default webs and badges."""
+    """Keep every view asset the configurator can load, including non-default webs and badges."""
     keep = set(ENTRY_FILES)
     for name in FOLDERS:
         folder = source / name
@@ -72,7 +89,14 @@ def dependencies(source):
         keep.add(filename)
         data = json.loads((source / filename).read_text())
         approved = {r['url'] for r in hosted_artwork()}
-        keep.update(v for v in data['assets'].values() if not v.startswith('data:') and v not in approved)
+        registered = {v for v in data['assets'].values() if not v.startswith('data:') and v not in approved}
+        # every registered file must still exist and stay inside the site,
+        # whether or not it ships
+        for name in registered:
+            path = source / name
+            if not path.is_file() or not path.resolve().is_relative_to(source.resolve()):
+                raise ValueError(f'Missing or external package dependency: {name}')
+        keep.update(registered - unreachable_assets(source, data))
         keep.update(b['thumb'] for b in data.get('bullets', []) if b.get('thumb'))
     keep.update(str(p.relative_to(source)) for p in (source/'assets/runtime').rglob('*') if p.is_file())
     for name in keep:
