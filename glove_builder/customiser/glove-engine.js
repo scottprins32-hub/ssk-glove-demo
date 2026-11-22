@@ -57,7 +57,7 @@ const TRACED_ROUND = Object.freeze({
 // The rough back webs: the photograph's blotches are smoothed away over a
 // wide field, the folds and stitch rows that give the web its shape stay.
 const ROUGH_WEB_LEATHER = Object.freeze({
-  blurScale: 3, blurPasses: 2, relief: 1.1, darkDetail: .62, softDetail: .26, grainScale: .30
+  blurScale: 4, blurPasses: 2, relief: 1.0, darkDetail: .22, softDetail: .06, grainScale: .30
 });
 
 const OTHER_PALM_WEB_LEATHER=Object.freeze({
@@ -66,7 +66,7 @@ const OTHER_PALM_WEB_LEATHER=Object.freeze({
 // The same three webs on the palm: their photographed streaks are spread
 // over a wider field, so a pale web is not striped.
 const ROUGH_PALM_WEB_LEATHER=Object.freeze({
-  ...OTHER_PALM_WEB_LEATHER, blurScale:3, blurPasses:2, relief:.6, softDetail:.08
+  ...OTHER_PALM_WEB_LEATHER, blurScale:6, blurPasses:2, relief:.5, darkDetail:.18, softDetail:.03
 });
 export function shadePalmWebEdges(tone,base,width,height,depth) {
   const radius=Math.max(1,Math.round(height/450));
@@ -223,9 +223,9 @@ const ESTIMATE_PARTS = Object.freeze([['stitching', 'stitching'], ['laces', 'lac
 // the shape stays) and their leather takes one calm light (ROUGH_WEB_LEATHER).
 const ROUGH_BACK_WEBS = Object.freeze(['em-rocket', 'modified-trapeze', 'closed-diamond-net']);
 const evenEdges = new WeakMap();
-function cleanEdges(img) {
+function cleanEdges(img, reach = 2, keep = false) {
   if (!img || !img.width || typeof document === 'undefined') return img;
-  const hit = evenEdges.get(img);
+  const hit = evenEdges.get(img)?.[reach + (keep ? 'k' : '')];
   if (hit) return hit;
   const w = img.width, h = img.height, N = w * h;
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -238,15 +238,16 @@ function cleanEdges(img) {
     for (let k = 0; k < 3; k++) tone[k][i] = d[i * 4 + k] * v;
   }
   const solid = Float32Array.from(a);
-  softBlur(a, w, h, 2); for (const t of tone) softBlur(t, w, h, 2);
+  softBlur(a, w, h, reach); for (const t of tone) softBlur(t, w, h, reach);
   for (let i = 0; i < N; i++) {
     const even = Math.min(1, Math.max(0, (a[i] - .34) / .32));
     // a pixel that gains cover takes the colour of the leather around it
     if (solid[i] < .8 && a[i] > .01) for (let k = 0; k < 3; k++) d[i * 4 + k] = tone[k][i] / a[i];
-    d[i * 4 + 3] = Math.round(255 * even);
+    // keep: only fill the nicks, never take away what was drawn (no new gaps beside it)
+    d[i * 4 + 3] = Math.round(255 * (keep ? Math.max(even, solid[i]) : even));
   }
   g.putImageData(px, 0, 0);
-  evenEdges.set(img, c);
+  evenEdges.set(img, { ...(evenEdges.get(img) || {}), [reach + (keep ? 'k' : '')]: c });
   return c;
 }
 // Where a web sits, windows and lacing included: the web leather's own shape
@@ -755,6 +756,9 @@ export class GloveRenderer {
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const z of base.DATA.zones) if (!def.assets[z.id]) delete imgs[z.id];
         if (def.revision === 'SCOTT-BACK-PALM-R03') for (const key of ['native_h_openings','binding_thread_detail','master_pinky_openings','laces_web','laces_knot','stitching_web']) delete imgs[key];
         if (swapBody) for (const [zone, asset] of Object.entries(def.swapAssets)) imgs[zone] = base.imgs[asset];
+        // the traced lacing on the pinky side is ragged round its knots: even its outline
+        if (def.revision === 'SCOTT-BACK-PALM-R03' && this.view === 'pinky')
+          for (const zone of ['laces', 'pinky_loops']) if (imgs[zone]) imgs[zone] = cleanEdges(imgs[zone], 3, true);
         if (def.revision === 'SCOTT-BACK-PALM-R03' && ['back', 'pinky'].includes(this.view)) {
           if (imgs.embroidery) imgs.embroidery = stitched(imgs.embroidery);
           if (def.embroideryLHT && imgs[def.embroideryLHT]) imgs[def.embroideryLHT] = stitched(imgs[def.embroideryLHT]);
@@ -939,7 +943,8 @@ export class GloveRenderer {
         : this.DATA.view === 'pinky' ? response?.finish || CLEAN_PINKY_LEATHER
         : this.DATA.view === 'thumb' && role === 'back1' ? SMOOTH_SIDE_LEATHER
         : this.view === 'back' && role === 'web' && ROUGH_BACK_WEBS.includes(this.web) ? ROUGH_WEB_LEATHER
-        : this.view === 'thumb' && role === 'web' && id.startsWith('thumb_estimate_') ? OTHER_PALM_WEB_LEATHER : null
+        : this.view === 'thumb' && role === 'web' && id.startsWith('thumb_estimate_')
+          ? (ROUGH_BACK_WEBS.includes(this.web) ? ROUGH_PALM_WEB_LEATHER : OTHER_PALM_WEB_LEATHER) : null
       : null;
     // The split ring/side masks share one photographed light field when their
     // material recipes match. Their colours and ownership stay independent.
@@ -1215,7 +1220,11 @@ export class GloveRenderer {
       }
       g.putImageData(pixels,0,0);
     }
-    if(this.view==='palm' && ['p1_smk_stitching','p1_smlee_stitching'].includes(id)
+    // Every web's thread rows on the palm and the estimated thumb side read as
+    // thread, not as a soft streak: a clear core, a restrained contact edge.
+    const webThread = (this.view==='palm' && /^(p1_\w+_stitching|i_merge_\w+_stitching)$/.test(id))
+      || (this.view==='thumb' && /^thumb_estimate_\w+_stitching$/.test(id));
+    if(webThread
         && /^#[0-9a-f]{6}$/i.test(hx)) {
       const pixels=g.getImageData(0,0,c.width,c.height);
       definePalmThread(pixels.data,[1,3,5].map(i=>parseInt(hx.slice(i,i+2),16)));
@@ -1713,7 +1722,13 @@ export class GloveRenderer {
 
   // The official palm artwork is a deboss in the leather, not embroidery.
   // Keep the two marks readable on either hand, without mirroring their glyphs.
-  drawPalmStamps(ctx, mirror) {
+  // A dark recess cannot darken black leather: there the stamp is read by the
+  // light its edge catches and the burnish of the pressed leather, so both
+  // grow as the leather darkens. On pale leather it stays as it was.
+  drawPalmStamps(ctx, mirror, colour = '#c8c8c8') {
+    const n = parseInt(String(colour).slice(1), 16);
+    const lum = Number.isFinite(n) ? (.2126 * (n >> 16 & 255) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255 : .8;
+    const dark = Math.max(0, Math.min(1, (.55 - lum) / .45));
     for (const mark of this.DATA.palmStamps || []) {
       const im = this.imgs[mark.asset];
       if (!im) continue;
@@ -1727,10 +1742,12 @@ export class GloveRenderer {
         if(!lip){lip=document.createElement('canvas');lip.width=im.width;lip.height=im.height;
           const g=lip.getContext('2d');g.drawImage(im,0,0);g.globalCompositeOperation='source-in';
           g.fillStyle='#fff';g.fillRect(0,0,lip.width,lip.height);this.cache.set(key,lip);}
-        ctx.globalCompositeOperation='screen';ctx.globalAlpha=.16;
+        ctx.globalCompositeOperation='screen';ctx.globalAlpha=.16+.16*dark;
         ctx.drawImage(lip,-w/2+.7,-h/2+1,w,h);
         ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.53;
-        ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore();
+        ctx.drawImage(im,-w/2,-h/2,w,h);
+        if (dark) { ctx.globalCompositeOperation='screen';ctx.globalAlpha=.045*dark;ctx.drawImage(lip,-w/2,-h/2,w,h); }
+        ctx.restore();
       });
     }
   }
@@ -1874,7 +1891,7 @@ export class GloveRenderer {
         // it on the mirrored side of the glove, still reading forwards, with
         // nothing but the letters having moved.
         const mk = D.marks;
-        if (z.id === 'palm' && D.palmStamps) this.drawPalmStamps(ctx, mirror);
+        if (z.id === 'palm' && D.palmStamps) this.drawPalmStamps(ctx, mirror, this.hex('palm', state));
         if (mk && mk.zone === z.id && this.imgs.marks) {
           ctx.save();
           ctx.globalCompositeOperation = 'multiply';
@@ -2357,7 +2374,7 @@ export class GloveRenderer {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.sealSeams?.(ctx, mirror);   // (a bare draw in a test has no renderer around it)
     this.formLight?.(ctx, mirror);
-    if (onTrace && this.imgs[swap.web]) this.seamShade?.(ctx, mirror, swap, shade(this.hex('web', state), -.5));
+    if (onTrace && this.imgs[swap.web]) this.seamShade?.(ctx, mirror, swap, null);
     if (D.tracedSeams && this.view === 'palm' && this.imgs.palm) this.fingerShade?.(ctx, mirror, shade(this.hex('palm', state), -.58));
   }
 
@@ -2397,12 +2414,12 @@ export class GloveRenderer {
   }
 
   // A cut-out web does not meet the fingers pixel for pixel: slivers of the
-  // page show through along the seam. A glove has leather in shadow there.
-  // Openings narrower than a lace, within the web's own reach, are filled
-  // behind the glove with the web's colour in shade. Real windows stay open.
+  // page show through along the seam. Openings narrower than a lace, within
+  // the web's own reach, are filled behind the glove from the leather right
+  // beside them, so they read as that leather. Real windows stay open.
   seamShade(ctx, mirror, swap, colour) {
     const web = this.imgs[swap.web], w = this.DATA.w;
-    this.gapShade(ctx, ['seam', this.web, this.pad || '', mirror ? 1 : 0].join('|'), web, 4, colour, g => {
+    this.gapShade(ctx, ['seam', this.web, this.pad || '', mirror ? 1 : 0].join('|'), web, 6, colour, g => {
       g.globalCompositeOperation = 'destination-in';
       if (mirror) g.setTransform(-1, 0, 0, 1, w, 0);
       g.drawImage(webFootprint(web).reach, 0, 0);
@@ -2457,7 +2474,15 @@ export class GloveRenderer {
       this.formShades.set(key, seam);
       if (this.formShades.size > 24) this.formShades.delete(this.formShades.keys().next().value);
     }
-    if (seam.colour !== colour) {
+    if (colour === null) {
+      // filled from the leather right beside it, nearest first, so it is that leather
+      const g = seam.tint.getContext('2d'), canvas = ctx.canvas;
+      g.globalCompositeOperation = 'copy'; g.drawImage(canvas, 0, 0);
+      g.globalCompositeOperation = 'destination-over';
+      for (let d = 1; d <= 8; d++) for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]) g.drawImage(canvas, dx * d, dy * d);
+      g.globalCompositeOperation = 'destination-in'; g.drawImage(seam.canvas, 0, 0);
+      seam.colour = null;
+    } else if (seam.colour !== colour) {
       const g = seam.tint.getContext('2d');
       g.globalCompositeOperation = 'copy'; g.drawImage(seam.canvas, 0, 0);
       g.globalCompositeOperation = 'source-in'; g.fillStyle = colour; g.fillRect(0, 0, w, h);
