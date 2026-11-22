@@ -115,6 +115,31 @@ def four_sides(hole):
     return np.int32(np.round(centre + (poly - centre) * scale))
 
 
+def inscribed(hole, angle):
+    """The largest rectangle at this angle that lies wholly inside the hole, as four corners."""
+    x, y, w, h = cv2.boundingRect(hole); pad = max(w, h)
+    crop = np.zeros((h + 2 * pad, w + 2 * pad), np.uint8); crop[pad:pad + h, pad:pad + w] = hole[y:y + h, x:x + w]
+    centre = (crop.shape[1] / 2, crop.shape[0] / 2)
+    turn = cv2.getRotationMatrix2D(centre, angle, 1)
+    flat = cv2.warpAffine(crop, turn, crop.shape[::-1], flags=cv2.INTER_NEAREST) > 0
+    # largest all-hole rectangle in the turned grid (histogram method)
+    best, heights = (0, 0, 0, 0, 0), np.zeros(flat.shape[1], np.int32)
+    for row in range(flat.shape[0]):
+        heights = np.where(flat[row], heights + 1, 0); stack = []
+        for col in range(flat.shape[1] + 1):
+            cur = heights[col] if col < flat.shape[1] else 0
+            start = col
+            while stack and stack[-1][1] >= cur:
+                start, height = stack.pop()
+                if height * (col - start) > best[0]: best = (height * (col - start), start, row - height + 1, col, row + 1)
+            stack.append((start, cur))
+    _, c0, r0, c1, r1 = best
+    corners = np.float64([[c0, r0], [c1, r0], [c1, r1], [c0, r1]])
+    back = cv2.invertAffineTransform(turn)
+    corners = corners @ back[:, :2].T + back[:, 2]
+    return np.int32(np.round(corners + np.array([x - pad, y - pad])))
+
+
 def carried(path, H, size):
     """A palm layer on the thumb side: (rgb 0..1, alpha 0..1)."""
     im = np.array(Image.open(path).convert('RGBA')).astype(np.float32) / 255
@@ -193,7 +218,19 @@ def main():
     # in it are closed: where its strap ends pierce the thumb panel, and where
     # its straps cross the strip of the index finger. Past that edge lies the
     # web, and the web is drawn there. Nothing the H-web did not cover is touched.
-    freed = ((ties > 0) | (thumb_web > 0)) & (owner == 0)
+    # The windows of the other webs, from their own leather: the thumb panel is
+    # not carried over them, so a window stays whole where the H-web had leather.
+    windows_all = np.zeros(ties.shape, bool)
+    for slug, entry in palm['palmWebs']['entries'].items():
+        if slug in LATTICE: continue
+        own = [carried(APP / palm['assets'][entry['parts'][r]['asset']], H, size)[1] > .5 for r in ('leather', 'laces')]
+        own = (own[0] | own[1]).astype(np.uint8)
+        n, holes, stats, _ = cv2.connectedComponentsWithStats((own == 0).astype(np.uint8), connectivity=4)
+        edge = set(np.unique(np.concatenate([holes[0], holes[-1], holes[:, 0], holes[:, -1]])).tolist())
+        for h in range(1, n):
+            if h in edge or stats[h, cv2.CC_STAT_AREA] < HOLE: continue
+            quad = np.zeros(ties.shape, np.uint8); cv2.fillPoly(quad, [four_sides((holes == h).astype(np.uint8))], 1); windows_all |= quad > 0
+    freed = ((ties > 0) | (thumb_web > 0)) & (owner == 0) & ~windows_all
     claim = np.zeros(ties.shape, np.int32)
     # The glove's outline with its openings filled, how deep each pixel lies
     # inside it, and which way out is nearest.
@@ -301,10 +338,14 @@ def main():
             drawn = np.maximum.reduce([(alpha_ > .5).astype(np.uint8) for _, alpha_ in layers.values()] + [glove])
             n, holes, stats, _ = cv2.connectedComponentsWithStats((drawn == 0).astype(np.uint8), connectivity=4)
             edge = set(np.unique(np.concatenate([holes[0], holes[-1], holes[:, 0], holes[:, -1]])).tolist())
-            for h in range(1, n):
-                if h in edge or stats[h, cv2.CC_STAT_AREA] < HOLE: continue
+            found = [h for h in range(1, n) if h not in edge and stats[h, cv2.CC_STAT_AREA] >= HOLE]
+            # every window of a web is a rectangle square to its largest window
+            if found:
+                big = max(found, key=lambda h: stats[h, cv2.CC_STAT_AREA])
+                angle = cv2.minAreaRect(cv2.findNonZero((holes == big).astype(np.uint8)))[2]
+            for h in found:
                 hole = (holes == h).astype(np.uint8)
-                quad = np.zeros_like(hole); cv2.fillPoly(quad, [four_sides(hole)], 1)
+                quad = np.zeros_like(hole); cv2.fillPoly(quad, [inscribed(hole, angle)], 1)
                 quad = cv2.GaussianBlur(quad.astype(np.float32), (0, 0), CORNER) > .5
                 lost = (hole > 0) & ~quad
                 if lost.any() and (a > .5).any():
