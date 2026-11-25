@@ -5,8 +5,8 @@
 const F = 'assets/form/';
 
 export const HANDS = [
-  { id: 'RHT', en: 'Right handed thrower', nl: 'Rechtshandige werper', sub: 'Glove on your left hand' },
-  { id: 'LHT', en: 'Left handed thrower', nl: 'Linkshandige werper', sub: 'Glove on your right hand' }
+  { id: 'RHT', en: 'Right handed thrower', nl: 'Rechtshandige werper', sub: { en: 'Glove on your left hand', nl: 'Handschoen aan je linkerhand' } },
+  { id: 'LHT', en: 'Left handed thrower', nl: 'Linkshandige werper', sub: { en: 'Glove on your right hand', nl: 'Handschoen aan je rechterhand' } }
 ];
 
 export const SIZES = ['11.5"', '11.75"', '12"', '12.25"', '12.5"', '12.75"'];
@@ -112,12 +112,12 @@ export const PALETTE_OF = f =>
 
 // Fields the order form asks for that the back-view render cannot show.
 export const OFFSTAGE = {
-  back1: 'Wingtip — hidden behind the thumb on this view',
-  back9: 'Wingtip — hidden behind the pinky on this view',
+  back1: { en: 'Wingtip — hidden behind the thumb on this view', nl: 'De wingtip zit in dit aanzicht achter de duim.' },
+  back9: { en: 'Wingtip — hidden behind the pinky on this view', nl: 'De wingtip zit in dit aanzicht achter de pink.' },
   // What this view showed as thumb loops turned out to be the knotted lace,
   // mis-cut by the segmentation. The loops themselves are on the palm side.
-  thumb_loops: 'Palm side — not visible on this view',
-  pad_color: 'Only visible with a pad or hood fitted'
+  thumb_loops: { en: 'Palm side — not visible on this view', nl: 'De duimlussen zitten aan de palmzijde.' },
+  pad_color: { en: 'Only visible with a pad or hood fitted', nl: 'Kies een vingerpad of kap om de kleur ervan te zien.' }
 };
 
 // Blank first: a visitor starts from a clean glove and builds it up, rather

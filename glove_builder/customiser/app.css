@@ -803,6 +803,15 @@ body.sum-open { padding-right: var(--sum-w); }
   .sum-drawer { width: 100%; }
   body.sum-open { padding-right: 0; }
 }
+/* Keep the current question and navigation in separate tap targets on phones. */
+@media (max-width: 600px) {
+  .bar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .bar-next { min-height: 44px; max-width: 100%; flex-shrink: 1; }
+  .bar-next b { flex: none; }
+  .bar-next span { overflow: hidden; text-overflow: ellipsis; }
+  .bar-acts { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+  #next { min-width: 0; max-width: none; white-space: normal; line-height: 1.1; }
+}
 @media (max-width: 380px) {
   .wordmark { width: 128px; height: 36px; padding: 5px 8px; }
 }

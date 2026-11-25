@@ -1035,7 +1035,7 @@ function applyStarter(st, quiet) {
 /* --------------------------------------------------------------- 2. fit */
 function renderFit(b) {
   b.appendChild(choiceField(t('hand'), HANDS.map(h => ({
-    id: h.id, label: h[S.lang], sub: h.sub
+    id: h.id, label: h[S.lang], sub: h.sub[S.lang]
   })), S.hand, v => { snapshot(); S.hand = v; draw(); paint(); }, true));
 
   const pos = POSITIONS.find(p => p.id === S.position);
@@ -1059,7 +1059,7 @@ function renderFit(b) {
   padThumbs(padF);
 
   const padOn = S.pad && S.pad !== 'None';
-  const note = padOn ? null : OFFSTAGE.pad_color;
+  const note = padOn ? null : OFFSTAGE.pad_color[S.lang];
   b.appendChild(swatchField('pad_color', note, false));
 }
 
@@ -1315,7 +1315,7 @@ function renderColours(b) {
     (S.part === 'back3' && indexIsOnePiece()) ? t('indexMerged')
       : (S.part === 'back5' && middleIsOnePiece()) ? t('middleMerged')
       : sideData() ? (sideData().fieldsShown.includes(S.part) ? null : t('notOnThisSide'))
-      : (R.DATA.zones.some(z=>z.id===FIELD_TO_LAYER[S.part]) ? null : OFFSTAGE[S.part] || null)));
+      : (R.DATA.zones.some(z=>z.id===FIELD_TO_LAYER[S.part]) ? null : OFFSTAGE[S.part]?.[S.lang] || null)));
   // Thread the colour of the leather it runs through disappears into it.
   if (S.part === 'stitching' && S.colors.stitching && [S.colors.palm, S.colors.back3, S.colors.back5, S.colors.web]
       .filter(Boolean).every(c => c === S.colors.stitching))

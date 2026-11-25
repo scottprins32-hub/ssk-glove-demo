@@ -1,0 +1,28 @@
+<!-- CCV homepage HTML element. The custom glove's native order button is disabled
+     in CCV so this product link also works before JavaScript loads. -->
+<script>
+(() => {
+  // CCV serves html[lang=en] for both languages. Use the localized native caption.
+  const captions = new Map([['Bekijk', 'Ontwerp je handschoen'], ['View', 'Design your glove']]);
+  function labelGloveLinks(root) {
+    const selector = 'a.button[href]';
+    const links = root.matches?.(selector) ? [root] : root.querySelectorAll(selector);
+    for (const link of links) {
+      const url = new URL(link.href);
+      if (url.origin !== location.origin || url.pathname.replace(/\/$/, '') !== '/SSK-Custom-Glove') continue;
+      const caption = link.querySelector('span') || link;
+      const label = captions.get(caption.textContent.trim());
+      if (label) caption.textContent = label;
+    }
+  }
+  labelGloveLinks(document);
+  // CCV can insert the product carousel after the homepage HTML.
+  new MutationObserver(records => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) labelGloveLinks(node);
+      }
+    }
+  }).observe(document.documentElement, {childList: true, subtree: true});
+})();
+</script>
