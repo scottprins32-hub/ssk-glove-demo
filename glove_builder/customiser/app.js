@@ -2769,6 +2769,9 @@ loadGlove({ progressive:true, initialView: Object.hasOwn(VIEW_KEYS, requestedIni
       && savedDraft.step >= 0 && savedDraft.step <= 7 ? Math.min(savedDraft.step, REVIEW_STEP) : 0 });
     if (draft && (S.step > 0 || visualKey() !== defaultVisual)) setTimeout(showResume, 600);
   }
+  // CCV's selected storefront language also applies when resuming a saved glove.
+  const shopLanguage = new URLSearchParams(location.search).get('lang');
+  if (shopLanguage === 'nl' || shopLanguage === 'en') S.lang = shopLanguage;
   if (h) history.replaceState(null, '', location.pathname + location.search);
 
   const cv = $('#glove');
